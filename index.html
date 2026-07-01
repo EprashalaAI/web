@@ -289,6 +289,33 @@
                                 Honorary Doctorate in Education (2025) awarded to Founder Mr. Pramod Shinde
                             </li>
                         </ul>
+						<!-- Video Showcase Buttons -->
+                        <div class="mt-8 pt-6 border-t border-slate-200">
+                            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Watch Our National Features</h4>
+                            <div class="flex flex-col sm:flex-row gap-3">
+                                <!-- Times Now Video Button -->
+                                <button data-video-src="v2.mp4" class="video-trigger flex-1 flex items-center justify-start gap-3 bg-brand-dark text-white p-3 rounded-xl hover:bg-brand-primary hover:-translate-y-1 transition-all duration-300 shadow-lg group">
+                                    <div class="bg-white/10 p-2 rounded-full group-hover:bg-white/20 transition">
+                                        <svg class="w-5 h-5 text-brand-solar" fill="currentColor" viewBox="0 0 20 20"><path d="M8 5v10l7-5-7-5z"/></svg>
+                                    </div>
+                                    <div class="text-left leading-tight">
+                                        <span class="block text-sm font-bold">Amazing Indians</span>
+                                        <span class="block text-[11px] text-slate-400 group-hover:text-slate-200">Times Now (2011)</span>
+                                    </div>
+                                </button>
+                                
+                                <!-- NDTV Video Button -->
+                                <button data-video-src="v1.mp4" class="video-trigger flex-1 flex items-center justify-start gap-3 bg-brand-dark text-white p-3 rounded-xl hover:bg-brand-primary hover:-translate-y-1 transition-all duration-300 shadow-lg group">
+                                    <div class="bg-white/10 p-2 rounded-full group-hover:bg-white/20 transition">
+                                        <svg class="w-5 h-5 text-brand-solar" fill="currentColor" viewBox="0 0 20 20"><path d="M8 5v10l7-5-7-5z"/></svg>
+                                    </div>
+                                    <div class="text-left leading-tight">
+                                        <span class="block text-sm font-bold">Think Science</span>
+                                        <span class="block text-[11px] text-slate-400 group-hover:text-slate-200">NDTV (2012)</span>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                 </div>
@@ -665,6 +692,17 @@
         <img id="lightboxImage" src="" alt="Full Screen Image">
     </div>
 
+	<!-- Fullscreen Video Lightbox Modal -->
+    <div id="videoLightbox" class="hidden fixed inset-0 z-[10000] bg-brand-dark/95 backdrop-blur-md flex justify-center items-center p-4 sm:p-8 opacity-0 transition-opacity duration-300">
+        <span class="close-video-lightbox absolute top-4 right-6 sm:top-6 sm:right-10 text-white text-4xl sm:text-5xl cursor-pointer hover:text-red-500 transition-colors z-50" title="Close (Esc)">&times;</span>
+        <div class="relative w-full max-w-5xl bg-black rounded-2xl overflow-hidden shadow-2xl border border-slate-700 transform scale-95 transition-transform duration-300" id="videoContainer">
+            <video id="lightboxVideoPlayer" controls class="w-full h-auto max-h-[85vh] outline-none">
+                <source src="" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+    </div>
+	
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             
@@ -727,6 +765,65 @@
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape' && lightbox.classList.contains('active')) {
                     closeLightbox();
+                }
+            });
+			// --- Video Lightbox Logic ---
+            const videoLightbox = document.getElementById('videoLightbox');
+            const videoPlayer = document.getElementById('lightboxVideoPlayer');
+            const videoContainer = document.getElementById('videoContainer');
+            const closeVideoBtn = document.querySelector('.close-video-lightbox');
+            const videoTriggers = document.querySelectorAll('.video-trigger');
+
+            // Open Video Modal & Play
+            videoTriggers.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const videoSrc = btn.getAttribute('data-video-src');
+                    if(videoSrc) {
+                        videoPlayer.src = videoSrc;
+                        videoLightbox.classList.remove('hidden');
+                        
+                        // Small timeout to allow display:block to apply before animating opacity
+                        setTimeout(() => {
+                            videoLightbox.classList.remove('opacity-0');
+                            videoContainer.classList.remove('scale-95');
+                            videoContainer.classList.add('scale-100');
+                        }, 10);
+                        
+                        document.body.style.overflow = 'hidden';
+                        videoPlayer.play();
+                    }
+                });
+            });
+
+            // Close Video Modal & Stop Playing
+            const closeVideoLightbox = () => {
+                videoLightbox.classList.add('opacity-0');
+                videoContainer.classList.remove('scale-100');
+                videoContainer.classList.add('scale-95');
+                
+                setTimeout(() => {
+                    videoLightbox.classList.add('hidden');
+                    videoPlayer.pause();
+                    videoPlayer.currentTime = 0; // Reset video to start
+                    videoPlayer.src = ""; // Clear source
+                }, 300); // Matches transition duration
+                
+                document.body.style.overflow = 'auto';
+            };
+
+            closeVideoBtn.addEventListener('click', closeVideoLightbox);
+            
+            // Close if clicked on the background (outside the video player)
+            videoLightbox.addEventListener('click', (e) => {
+                if (e.target === videoLightbox) {
+                    closeVideoLightbox();
+                }
+            });
+            
+            // Close video with Escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && !videoLightbox.classList.contains('hidden')) {
+                    closeVideoLightbox();
                 }
             });
         });
