@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ePrashala - Empowering Digital Education</title>
+    <style>
+        /* General Styles */
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #e67e22; /* Orange for energy/solar */
+            --light-bg: #f4f7f6;
+            --text-color: #333;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            color: var(--text-color);
+        }
+
+        /* Navigation */
+        nav {
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .nav-links a {
+            margin-left: 20px;
+            text-decoration: none;
+            color: var(--text-color);
+            font-weight: 500;
+            transition: 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--accent-color);
+        }
+
+        /* Hero Section */
+        header {
+            background: linear-gradient(rgba(44, 62, 80, 0.8), rgba(44, 62, 80, 0.8)), url('https://images.unsplash.com/photo-1509062522246-3755977927d7?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80');
+            background-size: cover;
+            background-position: center;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+            padding: 0 20px;
+        }
+
+        header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 0 auto 30px auto;
+        }
+
+        .btn {
+            background-color: var(--accent-color);
+            color: white;
+            padding: 10px 25px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #d35400;
+        }
+
+        /* Sections */
+        section {
+            padding: 60px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2rem;
+            color: var(--primary-color);
+            margin-bottom: 40px;
+        }
+
+        /* About & Features */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .feature-card {
+            background: var(--light-bg);
+            padding: 30px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .feature-card h3 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        /* Products */
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+        }
+
+        .product-card {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.3s;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .product-info {
+            padding: 20px;
+        }
+
+        .product-price {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        /* Contact */
+        .contact-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 40px;
+            text-align: center;
+        }
+
+        .contact-item {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        /* Footer */
+        footer {
+            background-color: var(--primary-color);
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin-top: 50px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            header h1 { font-size: 2rem; }
+            .nav-links { display: none; } /* Simplified for single page demo */
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="nav-container">
+            <a href="#" class="logo">ePrashala</a>
+            <div class="nav-links">
+                <a href="#about">About</a>
+                <a href="#products">Products</a>
+                <a href="#features">Why Us</a>
+                <a href="#contact">Contact</a>
+            </div>
+        </div>
+    </nav>
+
+    <header>
+        <div>
+            <h1>Empowering Rural Education</h1>
+            <p>Innovative digital classroom solutions powered by solar energy. Bridging the gap between rural and urban education.</p>
+            <a href="#contact" class="btn">Get in Touch</a>
+        </div>
+    </header>
+
+    <section id="about">
+        <h2 class="section-title">Our Mission</h2>
+        <div style="text-align: center; max-width: 800px; margin: 0 auto;">
+            <p>At ePrashala, we are dedicated to transforming education in India. We provide cutting-edge technology solutions specifically designed for schools in rural areas where electricity and resources can be scarce. Our goal is to make digital education accessible to every child.</p>
+        </div>
+    </section>
+
+    <section id="products">
+        <h2 class="section-title">Our Solutions</h2>
+        <div class="product-grid">
+            <div class="product-card">
+                <div class="product-info">
+                    <h3>EP9.0 Digital Classroom</h3>
+                    <p>Short throw 3D DLP Projector (3000 Lumens), Intel Core i7 PC, 1TB HDD. Interactive Smart Board support.</p>
+                    <p class="product-price">High Performance</p>
+                </div>
+            </div>
+            <div class="product-card">
+                <div class="product-info">
+                    <h3>EP6.0 All-In-One</h3>
+                    <p>LED Projector (1500 Lumens), Quad Core CPU, Solar Compatible. Consumes just 45 Watts.</p>
+                    <p class="product-price">Energy Efficient</p>
+                </div>
+            </div>
+            <div class="product-card">
+                <div class="product-info">
+                    <h3>ePustak & Content</h3>
+                    <p>Digital content for 1st to 10th Std (English, Marathi, Semi-English). Engaging multimedia learning.</p>
+                    <p class="product-price">Comprehensive</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" style="background-color: #f9f9f9;">
+        <h2 class="section-title">Why Choose ePrashala?</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3>☀️ Solar Powered</h3>
+                <p>Our systems can run entirely on solar energy, perfect for areas with frequent power cuts.</p>
+            </div>
+            <div class="feature-card">
+                <h3>🖥️ Built-in Computer</h3>
+                <p>No need for separate messy wires. The projector has a fully functional computer inside.</p>
+            </div>
+            <div class="feature-card">
+                <h3>📚 Vernacular Content</h3>
+                <p>Education in your language. We support Marathi, English, and Semi-English mediums.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact">
+        <h2 class="section-title">Contact Us</h2>
+        <div class="contact-container">
+            <div class="contact-item">
+                <h3>📍 Office Address</h3>
+                <p>5B-46 Highstreet Corporate Centre,<br>Kapurbavdi, Majiwada,<br>Thane West 400607</p>
+            </div>
+            <div class="contact-item">
+                <h3>📞 Phone</h3>
+                <p>+91 9320453744<br>+91 9869065253</p>
+            </div>
+            <div class="contact-item">
+                <h3>✉️ Email</h3>
+                <p>info@eprashala.com<br>eprashala@hotmail.com</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2025 ePrashala. All Rights Reserved.</p>
+    </footer>
+
+</body>
+</html>
