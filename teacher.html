@@ -13,11 +13,11 @@
             font-family: 'Inter', sans-serif; 
             touch-action: manipulation; 
             user-select: none;
+            background-color: #020617;
         }
         
         h1, .cinzel { font-family: 'Cinzel', serif; }
 
-        /* The glowing central mic */
         .big-mic {
             background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
             box-shadow: 0 10px 25px rgba(2, 132, 199, 0.5), inset 0 2px 5px rgba(255,255,255,0.2);
@@ -49,7 +49,6 @@
             50% { opacity: 0.8; transform: scale(0.95); }
         }
 
-        /* Glassmorphism containers */
         .glass-panel {
             background: rgba(15, 23, 42, 0.85);
             backdrop-filter: blur(12px);
@@ -88,28 +87,36 @@
     </style>
 </head>
 
-<body class="bg-[#020617] text-white flex flex-col items-center h-screen overflow-hidden">
+<body class="text-white flex flex-col items-center h-screen overflow-hidden">
 
     <div id="start-overlay" class="cursor-pointer text-center px-4 absolute inset-0 z-[100] bg-[radial-gradient(circle_at_center,#1e293b_0%,#020617_100%)] flex flex-col items-center justify-center">
         <div class="text-xl text-sky-400 font-bold mb-2 uppercase tracking-widest">Eprashala Education</div>
         <div class="golden-om">📖</div>
         <h1 class="text-3xl cinzel text-transparent bg-clip-text bg-gradient-to-r from-sky-300 to-sky-600 mb-4 mt-4">Tap to Enter Classroom</h1>
-        <p class="text-slate-400 text-sm">Interactive AI Teacher for Maha Board</p>
+        <p class="text-slate-400 text-sm mb-4">Interactive AI for Maha Board Schools</p>
+        <p class="text-xs text-slate-500 bg-slate-900/50 px-3 py-1 rounded-full border border-slate-700">Requires Full Screen Mode</p>
     </div>
 
     <div id="settings-modal" class="hidden fixed inset-0 bg-black/80 z-[150] flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl relative">
             <button id="btn-close-settings" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl">✕</button>
-            <h2 class="text-xl font-bold text-sky-400 mb-5 cinzel">Student Profile & Settings</h2>
+            <h2 class="text-xl font-bold text-sky-400 mb-5 cinzel">Profile & Settings</h2>
             
             <div class="space-y-4">
                 <div>
-                    <label class="block text-xs text-gray-400 mb-1 ml-1 uppercase tracking-wider">Student Name</label>
-                    <input type="text" id="manual-name" class="custom-input !p-2 text-sm" placeholder="e.g. Arjun">
+                    <label class="block text-xs text-gray-400 mb-1 ml-1 uppercase tracking-wider">I am a...</label>
+                    <select id="user-role" class="custom-input !py-2 text-sm font-bold cursor-pointer">
+                        <option value="Student">Student (विद्यार्थी)</option>
+                        <option value="Teacher">Teacher (शिक्षक)</option>
+                    </select>
                 </div>
                 <div>
-                    <label class="block text-xs text-gray-400 mb-1 ml-1 uppercase tracking-wider">Student Age</label>
-                    <input type="number" id="manual-age" class="custom-input !p-2 text-sm" placeholder="e.g. 12">
+                    <label class="block text-xs text-gray-400 mb-1 ml-1 uppercase tracking-wider">Name</label>
+                    <input type="text" id="manual-name" class="custom-input !p-2 text-sm" placeholder="e.g. Arjun / Sir">
+                </div>
+                <div id="age-container">
+                    <label class="block text-xs text-gray-400 mb-1 ml-1 uppercase tracking-wider">Age (Optional)</label>
+                    <input type="number" id="manual-age" class="custom-input !p-2 text-sm" placeholder="Auto-calculated if blank">
                 </div>
                 <div>
                     <label class="block text-xs text-gray-400 mb-1 ml-1 uppercase tracking-wider">Custom Gemini API Key</label>
@@ -166,14 +173,14 @@
         <main id="conversation-log" class="flex-1 overflow-y-auto p-4 space-y-5 pb-12 scroll-smooth">
             <div class="text-gray-400 text-center mt-12 cinzel" id="welcome-msg">
                 <p class="text-sky-400 text-2xl mb-3 font-bold">Namaste!</p>
-                Select your class above. Tap the glowing microphone once to ask your question.
+                Select the class above. Tap the microphone once to speak.
             </div>
         </main>
 
         <footer class="w-full glass-panel rounded-t-3xl p-3 pb-safe flex flex-col flex-shrink-0 relative z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
             
             <div class="w-full flex gap-2 items-center mb-3">
-                <input type="text" id="text-input" class="custom-input flex-1 text-sm rounded-full px-5 py-3 placeholder-slate-500 focus:bg-slate-900 border-slate-700" placeholder="Type your message...">
+                <input type="text" id="text-input" class="custom-input flex-1 text-sm rounded-full px-5 py-3 placeholder-slate-500 focus:bg-slate-900 border-slate-700" placeholder="Ask your question here...">
                 <button id="btn-send" class="p-3.5 bg-sky-700 hover:bg-sky-600 rounded-full transition-colors shadow-lg outline-none">
                     <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
                 </button>
@@ -258,8 +265,10 @@
             settingsModal: document.getElementById('settings-modal'),
             btnCloseSet: document.getElementById('btn-close-settings'),
             btnSaveSet: document.getElementById('btn-save-settings'),
+            role: document.getElementById('user-role'),
             name: document.getElementById('manual-name'),
             age: document.getElementById('manual-age'),
+            ageContainer: document.getElementById('age-container'),
             keyIn: document.getElementById('custom-api-key-input'),
             remember: document.getElementById('remember-checkbox'),
             welcome: document.getElementById('welcome-msg'),
@@ -275,16 +284,26 @@
         let isListening = false; 
         let state = { isProcessing: false, isMuted: false, lastAIMessage: "" };
 
-        // --- 3. INITIALIZATION ---
+        // --- 3. INITIALIZATION & FULLSCREEN ---
         window.onload = () => {
             loadData();
             initSpeechRecognition(); 
+            
+            // Toggle Age field based on Role selection
+            UI.role.addEventListener('change', (e) => {
+                if(e.target.value === 'Teacher') UI.ageContainer.style.display = 'none';
+                else UI.ageContainer.style.display = 'block';
+            });
         };
 
-        UI.overlay.addEventListener('click', () => {
-            if (document.documentElement.requestFullscreen) {
+        function enforceFullscreen() {
+            if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
                 document.documentElement.requestFullscreen().catch(() => {});
             }
+        }
+
+        UI.overlay.addEventListener('click', () => {
+            enforceFullscreen();
             unlockAudio(); 
             UI.overlay.style.display = 'none';
             setupEventListeners(); 
@@ -315,6 +334,9 @@
 
         // --- 4. DATA MANAGEMENT ---
         function loadData() {
+            UI.role.value = localStorage.getItem('edu_role') || "Student";
+            if(UI.role.value === 'Teacher') UI.ageContainer.style.display = 'none';
+
             UI.name.value = localStorage.getItem('edu_name') || "";
             UI.age.value = localStorage.getItem('edu_age') || "";
             UI.keyIn.value = localStorage.getItem('edu_api_key') || "";
@@ -341,7 +363,7 @@
                         if (chatHistory.length > 0) {
                             UI.welcome.style.display = 'none';
                             chatHistory.forEach(msg => {
-                                renderMessage(msg.role === 'user' ? (UI.name.value || "Student") : "Teacher", msg.parts[0].text, msg.role === 'model');
+                                renderMessage(msg.role === 'user' ? (UI.name.value || UI.role.value) : "Teacher", msg.parts[0].text, msg.role === 'model');
                             });
                             const lastModel = [...chatHistory].reverse().find(m => m.role === 'model');
                             if (lastModel) state.lastAIMessage = lastModel.parts[0].text;
@@ -352,6 +374,7 @@
         }
 
         function saveData() {
+            localStorage.setItem('edu_role', UI.role.value);
             localStorage.setItem('edu_name', UI.name.value);
             localStorage.setItem('edu_age', UI.age.value);
             localStorage.setItem('edu_api_key', UI.keyIn.value);
@@ -375,7 +398,7 @@
             synth.cancel();
         }
 
-        // --- 5. EXACT ORIGINAL SPEECH RECOGNITION LOGIC ---
+        // --- 5. SPEECH RECOGNITION ---
         function initSpeechRecognition() {
             const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRec) return;
@@ -435,14 +458,12 @@
                 return;
             }
 
-            // Create a clean, white-background container for the PDF
             const container = document.createElement('div');
             container.style.padding = '30px';
             container.style.fontFamily = 'Arial, sans-serif';
             container.style.color = '#000';
             container.style.backgroundColor = '#FFF';
 
-            // Title
             const title = document.createElement('h2');
             title.innerText = `Eprashala Notes: Std ${UI.selStd.value} - ${UI.selSub.value}`;
             title.style.textAlign = 'center';
@@ -451,15 +472,14 @@
             title.style.marginBottom = '20px';
             container.appendChild(title);
 
-            // Iterate over chat and style for print
             chatHistory.forEach(msg => {
                 const msgDiv = document.createElement('div');
                 msgDiv.style.marginBottom = '20px';
                 
                 const sender = document.createElement('div');
-                sender.innerText = msg.role === 'user' ? (UI.name.value || "Student") : "AI Teacher";
+                sender.innerText = msg.role === 'user' ? (UI.name.value || UI.role.value) : "AI Teacher";
                 sender.style.fontWeight = 'bold';
-                sender.style.color = msg.role === 'user' ? '#0284c7' : '#16a34a'; // Blue for User, Green for Teacher
+                sender.style.color = msg.role === 'user' ? '#0284c7' : '#16a34a';
                 sender.style.marginBottom = '5px';
                 sender.style.fontSize = '1.1rem';
                 
@@ -467,7 +487,7 @@
                 content.innerText = msg.parts[0].text;
                 content.style.lineHeight = '1.6';
                 content.style.fontSize = '1rem';
-                content.style.whiteSpace = 'pre-wrap'; // Preserve line breaks
+                content.style.whiteSpace = 'pre-wrap'; 
                 
                 msgDiv.appendChild(sender);
                 msgDiv.appendChild(content);
@@ -476,13 +496,12 @@
 
             const opt = {
                 margin:       0.5,
-                filename:     `AI_Teacher_Notes_Std${UI.selStd.value}_${UI.selSub.value.replace(/[^a-zA-Z0-9]/g, '')}.pdf`,
+                filename:     `Notes_Std${UI.selStd.value}_${UI.selSub.value.replace(/[^a-zA-Z0-9]/g, '')}.pdf`,
                 image:        { type: 'jpeg', quality: 0.98 },
                 html2canvas:  { scale: 2 },
                 jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
             };
 
-            // Call html2pdf
             html2pdf().set(opt).from(container).save();
         }
 
@@ -520,14 +539,11 @@
             UI.btnMute.onclick = (e) => { e.stopPropagation(); state.isMuted = !state.isMuted; if(state.isMuted) { synth.cancel(); UI.iconVol.classList.add('hidden'); UI.iconMute.classList.remove('hidden'); } else { UI.iconVol.classList.remove('hidden'); UI.iconMute.classList.add('hidden'); } };
             UI.btnRestart.onclick = (e) => { e.stopPropagation(); clearData(); };
             
-            // PDF Download Click Event
-            UI.btnSharePdf.onclick = (e) => {
-                e.stopPropagation();
-                exportChatToPDF();
-            };
+            UI.btnSharePdf.onclick = (e) => { e.stopPropagation(); exportChatToPDF(); };
 
             UI.btnSend.onclick = (e) => { 
                 e.stopPropagation(); 
+                enforceFullscreen();
                 unlockAudio(); 
                 processInput(UI.textIn.value); 
             };
@@ -535,6 +551,7 @@
             UI.textIn.onkeypress = (e) => { 
                 e.stopPropagation(); 
                 if(e.key === 'Enter') {
+                    enforceFullscreen();
                     unlockAudio();
                     processInput(UI.textIn.value);
                 } 
@@ -542,6 +559,7 @@
 
             UI.btnMic.addEventListener('click', (e) => {
                 e.stopPropagation();
+                enforceFullscreen();
                 unlockAudio(); 
                 if (state.isProcessing || !recognition) return;
                 if (isListening) { recognition.stop(); } 
@@ -565,7 +583,7 @@
             UI.status.style.backgroundColor = '#facc15'; 
             setMicThinkingState(true);
 
-            const userName = UI.name.value || "Student";
+            const userName = UI.name.value || UI.role.value;
             renderMessage(userName, userText, false);
             chatHistory.push({ role: 'user', parts: [{ text: userText }] });
             saveData();
@@ -589,28 +607,45 @@
         }
 
         async function getAIResponse(history) {
+            const role = UI.role.value;
             const med = UI.selMedium.value;
             const std = UI.selStd.value;
             const sub = UI.selSub.value;
-            
             const customKey = (UI.keyIn.value.trim().length > 10) ? UI.keyIn.value.trim() : null;
             const headers = { 'Content-Type': 'application/json' };
             if (customKey) headers['X-Custom-Api-Key'] = customKey;
 
-            const studentName = UI.name.value || "Child";
-            let contextAddon = ` Address them affectionately as ${studentName}.`;
-            if (UI.age.value) contextAddon += ` The student is ${UI.age.value} years old. Adjust your explanation's complexity accordingly.`;
+            let prompt = "";
 
-            const prompt = `You are an expert, caring, and highly polite teacher. 
-            You are currently teaching a student in Standard ${std} studying the subject "${sub}" in ${med} Medium, strictly adhering to the syllabus of the Maharashtra State Board textbook.
-            
-            CRITICAL RULES:
-            1. PERSONA: You must answer the user in a gender-neutral way.${contextAddon}
-            2. EXPERTISE: Draw your explanations, facts, and lessons strictly from the Maharashtra State Board textbook for Standard ${std}, Subject: ${sub}. Do not provide information outside their grade level.
-            3. TEACHING STYLE: Teach the lesson in the best possible way—be encouraging, clear, and patient.
-            4. REFERENCES: In your chat response, if the student needs extra visual or conceptual help, provide specific suggestions to search on the internet or YouTube.
-            5. LANGUAGE: Your primary language of instruction MUST BE MARATHI (मराठी) to support regional learning. ONLY explain in English or Hindi if the user explicitly asks you to.
-            6. FORMATTING: Do not use any markdown characters (*, #, _, [, ]). Write in plain text so the Text-to-Speech engine can read it perfectly.`;
+            if (role === 'Teacher') {
+                const teacherName = UI.name.value ? ` as ${UI.name.value}` : "";
+                prompt = `You are an expert educational assistant helping a fellow teacher${teacherName}.
+                Context: Maharashtra State Board, Standard ${std}, Subject: "${sub}", Medium: ${med}.
+                CRITICAL RULES:
+                1. Strictly adhere to the syllabus for this standard and subject.
+                2. If the teacher asks for questions, quizzes, lesson plans, or summaries, provide them accurately based on the textbook.
+                3. Tone: Professional, helpful, collaborative, and peer-to-peer.
+                4. Language: Primary language is ${med}, but adapt smoothly if the request is in English/Hindi.
+                5. FORMATTING: Do not use any markdown characters (*, #, _, [, ]). Write in plain text so the Text-to-Speech engine can read it perfectly.`;
+            } else {
+                const studentName = UI.name.value || "Child";
+                const estimatedAge = parseInt(std) + 5;
+                const finalAge = UI.age.value ? parseInt(UI.age.value) : estimatedAge;
+                const isYoung = finalAge <= 11 || parseInt(std) <= 5;
+                
+                const toneInstruction = isYoung ? 
+                    "Use EXTREMELY simple words. Keep answers SHORT, highly nurturing, caring, and easy to digest. Talk to them like a loving primary school teacher." : 
+                    "Use clear, encouraging, and detailed explanations appropriate for a teenager.";
+
+                prompt = `You are a highly polite, caring, and expert teacher.
+                Context: You are teaching a student named ${studentName} (Age: ~${finalAge}), in Standard ${std}, Subject: "${sub}", Medium: ${med} (Maharashtra State Board).
+                CRITICAL RULES:
+                1. PERSONA: Answer in a gender-neutral, deeply caring way. Address them affectionately as ${studentName}.
+                2. EXPERTISE: Draw explanations strictly from the textbook for this grade. Out-of-book examples are allowed ONLY if they simplify the in-book concept.
+                3. COMPLEXITY: ${toneInstruction}
+                4. Language: Primary language is ${med}.
+                5. FORMATTING: Do not use any markdown characters (*, #, _, [, ]). Write in plain text so the Text-to-Speech engine can read it perfectly.`;
+            }
 
             const payload = { 
                 model: "gemini-3.1-flash", 
@@ -618,12 +653,7 @@
                 systemInstruction: { parts: [{ text: prompt }] } 
             };
 
-            const response = await fetch(PROXY_URL, { 
-                method: 'POST', 
-                headers: headers, 
-                body: JSON.stringify(payload) 
-            });
-            
+            const response = await fetch(PROXY_URL, { method: 'POST', headers: headers, body: JSON.stringify(payload) });
             if (!response.ok) throw new Error('API Error');
             const data = await response.json();
             return data.candidates[0].content.parts[0].text;
@@ -651,7 +681,6 @@
 
             div.innerHTML = htmlContent;
 
-            // Attach event listeners to specific buttons
             if (isModel) {
                 const playBtn = div.querySelector('.msg-play-btn');
                 playBtn.addEventListener('click', (e) => {
@@ -663,7 +692,6 @@
                 copyBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     navigator.clipboard.writeText(text).then(() => {
-                        // Visual feedback that text was copied
                         copyBtn.classList.add('text-green-400');
                         copyBtn.classList.remove('text-slate-400');
                         setTimeout(() => {
@@ -690,8 +718,20 @@
                 window.currentUtterance = utterance; 
                 
                 utterance.lang = UI.selMedium.value === 'Marathi' ? 'mr-IN' : 'en-IN';
-                utterance.rate = 0.9; 
-                utterance.pitch = 1.1; 
+                
+                const isTeacher = UI.role.value === 'Teacher';
+                const std = parseInt(UI.selStd.value);
+                
+                if (isTeacher) {
+                    utterance.rate = 1.0;
+                    utterance.pitch = 1.0;
+                } else if (std <= 5) {
+                    utterance.rate = 0.75; // Slower for young children
+                    utterance.pitch = 1.15; // Warmer, slightly higher pitch
+                } else {
+                    utterance.rate = 0.9;
+                    utterance.pitch = 1.05;
+                }
                 
                 utterance.onend = () => togglePlayIcon(true);
                 utterance.onerror = () => togglePlayIcon(true);
