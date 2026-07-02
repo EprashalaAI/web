@@ -348,6 +348,9 @@
         };
 
         let chatHistory = [];
+		// --- EXPERT TTS TRACKING STATE ---
+		let ttsStatus = 'STOPPED'; // Tracks 'STOPPED', 'PLAYING', or 'PAUSED'
+		let lastSpokenIndex = 0;   // Remembers the exact character we paused on
         let recognition = null;
         let synth = window.speechSynthesis;
         let isListening = false; 
@@ -827,45 +830,63 @@
             });
         }
 
-		function handleIndividualPlayPause(text, btnElement) {
-			if (state.isMuted) return;
+			function handleIndividualPlayPause(text, btnElement) {
+				if (state.isMuted) return;
 
-            const playIcon = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
-            const pauseIcon = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+				const playIcon = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+				const pauseIcon = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
 
-			// SCENARIO 1: The user clicked play/pause on the CURRENTLY active text
-			if (window.currentPlayingText === text) {
-                // OPTIMISTIC UI FIX: Do not wait for browser onpause/onresume events to fire. 
-                // We update the button immediately upon click to bypass the Android delay bug.
-				if (synth.paused) {
-					synth.resume();
-                    btnElement.innerHTML = pauseIcon; // Show pause immediately (it is resuming)
-					return; 
-				} else if (synth.speaking) {
-					synth.pause();
-                    btnElement.innerHTML = playIcon; // Show play immediately (it is pausing)
+				// SCENARIO 1: Interacting with the currently active message
+				if (window.currentPlayingText === text) {
+					
+					if (ttsStatus === 'PAUSED') {
+						// EXPERT RESUME: We slice the text and start a new utterance
+						ttsStatus = 'PLAYING';
+						btnElement.innerHTML = pauseIcon; // Optimistic UI
+						
+						synth.cancel(); // Clear any hung states in the OS
+						
+						setTimeout(() => {
+							// Slice the original text from the exact character we stopped at
+							const remainingText = text.substring(lastSpokenIndex);
+							startNewUtterance(remainingText, text, btnElement, lastSpokenIndex);
+						}, 50);
+						return;
+						
+					} else if (ttsStatus === 'PLAYING') {
+						// EXPERT PAUSE: We kill the audio entirely to avoid the resume bug
+						ttsStatus = 'PAUSED';
+						btnElement.innerHTML = playIcon; // Optimistic UI
+						synth.cancel(); // Instantly halts audio and is 100% reliable
+						return;
+					}
+				}
+
+				// SCENARIO 2: Starting a brand new message from the beginning
+				synth.cancel(); 
+				resetAllPlayButtons();
+				
+				window.currentPlayingText = text;
+				ttsStatus = 'PLAYING';
+				lastSpokenIndex = 0;
+				btnElement.innerHTML = pauseIcon; 
+
+				setTimeout(() => {
+					startNewUtterance(text, text, btnElement, 0);
+				}, 50);
+			}
+
+			// --- HELPER FUNCTION: Handles the actual speaking logic ---
+			function startNewUtterance(textToSpeak, fullOriginalText, btnElement, offsetIndex) {
+				if (!textToSpeak.trim()) {
+					// Fallback if we accidentally try to read empty space at the end
+					btnElement.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+					ttsStatus = 'STOPPED';
 					return;
 				}
-			}
 
-			// SCENARIO 2: The user clicked a NEW text message entirely
-			synth.cancel();
-			
-			// THE WAKE-UP CALL. If the engine was paused when we hit cancel(), 
-			// it gets stuck forever. We must force a resume() immediately after cancel().
-			if (synth.paused) {
-				synth.resume();
-			}
-
-			resetAllPlayButtons();
-            btnElement.innerHTML = pauseIcon; // Optimistic update for the new block
-			
-			// Timeout prevents browser bug where cancel immediately followed by speak gets dropped
-			setTimeout(() => {
-				const utterance = new SpeechSynthesisUtterance(text);
-				window.currentUtterance = utterance; 
-				window.currentPlayingText = text;
-				window.currentPlayingBtn = btnElement;
+				const utterance = new SpeechSynthesisUtterance(textToSpeak);
+				window.currentUtterance = utterance; // Prevents aggressive garbage collection
 				
 				utterance.lang = UI.selMedium.value === 'Marathi' ? 'mr-IN' : 'en-IN';
 				
@@ -883,25 +904,34 @@
 					utterance.pitch = 1.05;
 				}
 				
-				// Keep native event listeners as a fallback to ensure the UI eventually 
-                // syncs with the engine, even though we now optimisticly update on click.
-				utterance.onstart = () => btnElement.innerHTML = pauseIcon;
-				utterance.onpause = () => btnElement.innerHTML = playIcon;
-				utterance.onresume = () => btnElement.innerHTML = pauseIcon;
+				// THE MAGIC: Track exactly where the AI is in the sentence natively
+				utterance.onboundary = (event) => {
+					// event.charIndex is relative to the chunk being spoken. 
+					// We add the offset to track the position in the full original text.
+					lastSpokenIndex = offsetIndex + event.charIndex;
+				};
 				
 				utterance.onend = () => {
-					btnElement.innerHTML = playIcon;
-					window.currentPlayingText = "";
-					window.currentPlayingBtn = null;
+					// Only reset the UI if it finished naturally (not if we manually cancelled it to pause)
+					if (ttsStatus === 'PLAYING') {
+						btnElement.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+						ttsStatus = 'STOPPED';
+						window.currentPlayingText = "";
+						lastSpokenIndex = 0;
+					}
 				};
 
 				utterance.onerror = (e) => {
-					btnElement.innerHTML = playIcon;
+					// Ignore "canceled" errors, as we trigger those intentionally to pause
+					if (e.error !== 'canceled' && e.error !== 'interrupted') {
+						btnElement.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+						ttsStatus = 'STOPPED';
+					}
 				};
 
+				synth.resume(); // Flushes any ghost pauses left in the engine queue
 				synth.speak(utterance);
-			}, 50);
-		}
+			}
 
         // Modifies the renderer to return the generated play button for auto-play logic
         function renderMessage(sender, text, isModel, isNewMessage = true) {
