@@ -742,83 +742,83 @@
             });
         }
 
-			function handleIndividualPlayPause(text, btnElement) {
-				if (state.isMuted) return;
+		function handleIndividualPlayPause(text, btnElement) {
+			if (state.isMuted) return;
 
-				// SCENARIO 1: The user clicked play/pause on the CURRENTLY active text
-				if (window.currentPlayingText === text) {
-					
-					// FIX 1: Explicitly check synth.paused instead of relying on synth.speaking.
-					if (synth.paused) {
-						synth.resume();
-						return; // Exit early, let the onresume event handle the UI change
-					} else if (synth.speaking) {
-						synth.pause();
-						return; // Exit early, let the onpause event handle the UI change
-					}
-				}
-
-				// SCENARIO 2: The user clicked a NEW text message entirely
-				synth.cancel();
+			// SCENARIO 1: The user clicked play/pause on the CURRENTLY active text
+			if (window.currentPlayingText === text) {
 				
-				// FIX 2: THE WAKE-UP CALL. If the engine was paused when we hit cancel(), 
-				// it gets stuck forever. We must force a resume() immediately after cancel().
+				// FIX 1: Explicitly check synth.paused instead of relying on synth.speaking.
 				if (synth.paused) {
 					synth.resume();
+					return; // Exit early, let the onresume event handle the UI change
+				} else if (synth.speaking) {
+					synth.pause();
+					return; // Exit early, let the onpause event handle the UI change
 				}
-
-				resetAllPlayButtons();
-				
-				// Timeout prevents browser bug where cancel immediately followed by speak gets dropped
-				setTimeout(() => {
-					const utterance = new SpeechSynthesisUtterance(text);
-					window.currentUtterance = utterance; 
-					window.currentPlayingText = text;
-					window.currentPlayingBtn = btnElement;
-					
-					utterance.lang = UI.selMedium.value === 'Marathi' ? 'mr-IN' : 'en-IN';
-					
-					const isTeacher = UI.role.value === 'Teacher';
-					const std = parseInt(UI.selStd.value);
-					
-					if (isTeacher) {
-						utterance.rate = 1.0;
-						utterance.pitch = 1.0;
-					} else if (std <= 5) {
-						utterance.rate = 0.75; 
-						utterance.pitch = 1.15; 
-					} else {
-						utterance.rate = 0.9;
-						utterance.pitch = 1.05;
-					}
-					
-					// UI SYNC: Use native events to handle the button icons so the UI 
-					// perfectly mirrors what the hardware engine is actually doing.
-					utterance.onstart = () => {
-						btnElement.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
-					};
-					
-					utterance.onpause = () => {
-						btnElement.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
-					};
-
-					utterance.onresume = () => {
-						btnElement.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
-					};
-					
-					utterance.onend = () => {
-						btnElement.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
-						window.currentPlayingText = "";
-						window.currentPlayingBtn = null;
-					};
-
-					utterance.onerror = (e) => {
-						btnElement.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
-					};
-
-					synth.speak(utterance);
-				}, 50);
 			}
+
+			// SCENARIO 2: The user clicked a NEW text message entirely
+			synth.cancel();
+			
+			// FIX 2: THE WAKE-UP CALL. If the engine was paused when we hit cancel(), 
+			// it gets stuck forever. We must force a resume() immediately after cancel().
+			if (synth.paused) {
+				synth.resume();
+			}
+
+			resetAllPlayButtons();
+			
+			// Timeout prevents browser bug where cancel immediately followed by speak gets dropped
+			setTimeout(() => {
+				const utterance = new SpeechSynthesisUtterance(text);
+				window.currentUtterance = utterance; 
+				window.currentPlayingText = text;
+				window.currentPlayingBtn = btnElement;
+				
+				utterance.lang = UI.selMedium.value === 'Marathi' ? 'mr-IN' : 'en-IN';
+				
+				const isTeacher = UI.role.value === 'Teacher';
+				const std = parseInt(UI.selStd.value);
+				
+				if (isTeacher) {
+					utterance.rate = 1.0;
+					utterance.pitch = 1.0;
+				} else if (std <= 5) {
+					utterance.rate = 0.75; 
+					utterance.pitch = 1.15; 
+				} else {
+					utterance.rate = 0.9;
+					utterance.pitch = 1.05;
+				}
+				
+				// UI SYNC: Use native events to handle the button icons so the UI 
+				// perfectly mirrors what the hardware engine is actually doing.
+				utterance.onstart = () => {
+					btnElement.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+				};
+				
+				utterance.onpause = () => {
+					btnElement.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+				};
+
+				utterance.onresume = () => {
+					btnElement.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+				};
+				
+				utterance.onend = () => {
+					btnElement.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+					window.currentPlayingText = "";
+					window.currentPlayingBtn = null;
+				};
+
+				utterance.onerror = (e) => {
+					btnElement.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+				};
+
+				synth.speak(utterance);
+			}, 50);
+		}
 
         // Modifies the renderer to return the generated play button for auto-play logic
         function renderMessage(sender, text, isModel, isNewMessage = true) {
