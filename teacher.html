@@ -274,11 +274,22 @@
             }
         });
 
-        function enforceFullscreen() {
+		function enforceFullscreen() {
             if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+                // The catch block silently handles instances where the browser denies the request
                 document.documentElement.requestFullscreen().catch(() => {});
             }
         }
+
+        // --- AGGRESSIVE FULL-SCREEN LOCK ---
+        // By attaching this to the 'capture' phase, we ensure it fires the exact 
+        // millisecond the user touches the screen, before any other button logic runs.
+        ['click', 'touchstart', 'keydown'].forEach(eventType => {
+            document.addEventListener(eventType, enforceFullscreen, { 
+                capture: true,  
+                passive: true   // Keeps scrolling and UI performant
+            });
+        });
 
         // --- 1. DATA STRUCTURES & CONFIG ---
         const PROXY_URL = "https://eprashala.pythonanywhere.com/api/chat"; 
