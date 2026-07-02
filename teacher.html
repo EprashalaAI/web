@@ -21,7 +21,7 @@
         }
 
         /* Allow typing/selecting in inputs only */
-        input, select {
+        input, select, textarea {
             user-select: auto !important;
             -webkit-user-select: auto !important;
         }
@@ -100,10 +100,10 @@
 <body class="text-white flex flex-col items-center h-screen overflow-hidden" ondragstart="return false;" ondrop="return false;">
 
     <div id="start-overlay" class="cursor-pointer text-center px-4 absolute inset-0 z-[100] bg-[radial-gradient(circle_at_center,#1e293b_0%,#020617_100%)] flex flex-col items-center justify-center">
-        <div class="text-xl text-sky-400 font-bold mb-2 uppercase tracking-widest">Eprashala Digital Education</div>
+        <div class="text-xl text-sky-400 font-bold mb-2 uppercase tracking-widest">Eprashala Education</div>
         <div class="golden-om">📖</div>
         <h1 class="text-3xl cinzel text-transparent bg-clip-text bg-gradient-to-r from-sky-300 to-sky-600 mb-4 mt-4">Tap to Enter Classroom</h1>
-        <p class="text-slate-400 text-sm mb-4">Interactive AI for Maharashtra State Board Schools</p>
+        <p class="text-slate-400 text-sm mb-4">Interactive AI for Maha Board Schools</p>
         <p class="text-xs text-slate-500 bg-slate-900/50 px-3 py-1 rounded-full border border-slate-700">Requires Full Screen Mode</p>
     </div>
 
@@ -129,9 +129,9 @@
                     <input type="number" id="manual-age" class="custom-input !p-2 text-sm" placeholder="Auto-calculated if blank">
                 </div>
                 <div>
-                    <label class="block text-xs text-gray-400 mb-1 ml-1 uppercase tracking-wider">Custom Eprashala Key</label>
+                    <label class="block text-xs text-gray-400 mb-1 ml-1 uppercase tracking-wider">Custom Gemini API Key</label>
                     <div class="flex gap-2">
-                        <input type="password" id="custom-api-key-input" class="custom-input !p-2 text-sm flex-1" placeholder="Paste Eprashala Key here">
+                        <input type="password" id="custom-api-key-input" class="custom-input !p-2 text-sm flex-1" placeholder="Paste API Key here">
                         <button id="btn-paste-key" class="bg-slate-700 hover:bg-slate-600 text-white text-xs px-4 rounded-xl transition-colors font-semibold shadow-inner border border-slate-600">
                             Paste
                         </button>
@@ -157,7 +157,7 @@
             <div class="flex flex-col items-center justify-center mb-5 relative mt-2">
                 <div id="status-indicator" class="absolute left-0 top-0 w-2.5 h-2.5 rounded-full bg-gray-600 shadow-[0_0_8px_rgba(75,85,99,0.8)]" title="Idle"></div>
                 <h1 class="text-xl md:text-2xl font-bold tracking-widest text-center uppercase mb-3">
-                    <span class="text-sky-400">Eprashala AI Teacher</span> 
+                    <span class="text-sky-400">AI Teacher</span> 
                 </h1>
             </div>
 
@@ -239,7 +239,7 @@
     </div>
 
     <script>
-        // --- 0. SECURITY & ANTI-COPY MEASURES ---
+        // --- 0. SECURITY, WAKE LOCK & FULLSCREEN ---
         document.addEventListener('contextmenu', event => event.preventDefault());
 
         document.addEventListener('keydown', (e) => {
@@ -250,6 +250,27 @@
                 e.preventDefault(); return false;
             }
         });
+
+        // WAKE LOCK API (Prevents screen from sleeping)
+        let wakeLock = null;
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                }
+            } catch (err) {
+                console.log('Wake Lock Error:', err.message);
+            }
+        }
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') requestWakeLock();
+        });
+
+        function enforceFullscreen() {
+            if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            }
+        }
 
         // --- 1. DATA STRUCTURES & CONFIG ---
         const PROXY_URL = "https://eprashala.pythonanywhere.com/api/chat"; 
@@ -314,7 +335,7 @@
         let isListening = false; 
         let state = { isProcessing: false, isMuted: false, lastAIMessage: "" };
 
-        // --- 3. INITIALIZATION & FULLSCREEN ---
+        // --- 3. INITIALIZATION ---
         window.onload = () => {
             loadData();
             initSpeechRecognition(); 
@@ -325,19 +346,15 @@
             });
         };
 
-        function enforceFullscreen() {
-            if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
-                document.documentElement.requestFullscreen().catch(() => {});
-            }
-        }
-
         UI.overlay.addEventListener('click', () => {
             enforceFullscreen();
+            requestWakeLock();
             unlockAudio(); 
             UI.overlay.style.display = 'none';
             setupEventListeners(); 
         });
 
+        // Trigger silent audio to wake up iOS/Android TTS Engines
         function unlockAudio() {
             const silent = new SpeechSynthesisUtterance('');
             silent.volume = 0;
@@ -576,7 +593,7 @@
             UI.btnSend.onclick = (e) => { 
                 e.stopPropagation(); 
                 enforceFullscreen();
-                unlockAudio(); 
+                unlockAudio(); // Safe here because user is explicitly typing, not using mic.
                 processInput(UI.textIn.value); 
             };
             
@@ -592,10 +609,12 @@
             UI.btnMic.addEventListener('click', (e) => {
                 e.stopPropagation();
                 enforceFullscreen();
-                unlockAudio(); 
+                // CRITICAL FIX: Do NOT call unlockAudio() here, as it triggers synth.speak() and kills the microphone focus.
+                
                 if (state.isProcessing || !recognition) return;
-                if (isListening) { recognition.stop(); } 
-                else { 
+                if (isListening) { 
+                    recognition.stop(); 
+                } else { 
                     recognition.lang = UI.selMedium.value === 'Marathi' ? 'mr-IN' : 'en-IN'; 
                     try { recognition.start(); } catch(err) {} 
                 }
@@ -717,7 +736,6 @@
             div.innerHTML = htmlContent;
 
             if (isModel) {
-                // Individual PDF Button Logic
                 const pdfBtn = div.querySelector('.msg-pdf-btn');
                 pdfBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -753,14 +771,12 @@
                     html2pdf().set(opt).from(container).save();
                 });
 
-                // Play Button Logic
                 const playBtn = div.querySelector('.msg-play-btn');
                 playBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     speakText(text);
                 });
 
-                // Copy Button Logic
                 const copyBtn = div.querySelector('.msg-copy-btn');
                 copyBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
