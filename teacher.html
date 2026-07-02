@@ -6,6 +6,9 @@
     <title>Eprashala AI Teacher</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@300;400;600&display=swap');
         
@@ -105,6 +108,20 @@
         <h1 class="text-3xl cinzel text-transparent bg-clip-text bg-gradient-to-r from-sky-300 to-sky-600 mb-4 mt-4">Tap to Enter Classroom</h1>
         <p class="text-slate-400 text-sm mb-4">Interactive AI for Maharashtra state Board Schools</p>
         <p class="text-xs text-slate-500 bg-slate-900/50 px-3 py-1 rounded-full border border-slate-700">Requires Full Screen Mode</p>
+    </div>
+
+    <div id="crop-modal" class="hidden fixed inset-0 bg-black z-[200] flex flex-col">
+        <div class="flex-1 overflow-hidden relative bg-black flex items-center justify-center">
+            <img id="crop-image" class="max-w-full block" src="">
+        </div>
+        <div class="h-20 bg-slate-900 flex justify-between items-center px-6 border-t border-slate-700 pb-safe">
+            <button id="btn-crop-retake" class="text-red-400 font-bold py-3 px-4 rounded-xl active:bg-slate-800 transition-colors outline-none tracking-wide">
+                RETAKE
+            </button>
+            <button id="btn-crop-done" class="bg-sky-600 text-white font-bold py-3 px-8 rounded-xl active:bg-sky-700 transition-colors shadow-[0_0_15px_rgba(2,132,199,0.4)] outline-none tracking-wide">
+                DONE
+            </button>
+        </div>
     </div>
 
     <div id="settings-modal" class="hidden fixed inset-0 bg-black/80 z-[150] flex items-center justify-center p-4 backdrop-blur-sm">
@@ -265,8 +282,10 @@
             if (document.visibilityState === 'visible') {
                 requestWakeLock();
             } else {
-                if (synth.speaking && !synth.paused) {
-                    synth.pause();
+                if (ttsStatus === 'PLAYING') {
+                    // Safe pause handling if app is minimized
+                    ttsStatus = 'PAUSED';
+                    synth.cancel();
                     if (window.currentPlayingBtn) {
                         window.currentPlayingBtn.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
                     }
@@ -274,22 +293,26 @@
             }
         });
 
-		function enforceFullscreen() {
+        // AGGRESSIVE FULLSCREEN ENFORCEMENT
+        function enforceFullscreen() {
             if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
-                // The catch block silently handles instances where the browser denies the request
                 document.documentElement.requestFullscreen().catch(() => {});
             }
         }
 
-        // --- AGGRESSIVE FULL-SCREEN LOCK ---
-        // By attaching this to the 'capture' phase, we ensure it fires the exact 
-        // millisecond the user touches the screen, before any other button logic runs.
+        // Global listener intercepts any touch/click/key before anything else and enforces fullscreen
         ['click', 'touchstart', 'keydown'].forEach(eventType => {
             document.addEventListener(eventType, enforceFullscreen, { 
                 capture: true,  
-                passive: true   // Keeps scrolling and UI performant
+                passive: true   
             });
         });
+
+        function unlockAudio() {
+            const silent = new SpeechSynthesisUtterance('');
+            silent.volume = 0;
+            synth.speak(silent);
+        }
 
         // --- 1. DATA STRUCTURES & CONFIG ---
         const PROXY_URL = "https://eprashala.pythonanywhere.com/api/chat"; 
@@ -326,9 +349,13 @@
             iconVol: document.getElementById('icon-vol'),
             iconMute: document.getElementById('icon-mute'),
             
-            // Multimodal Additions
+            // Multimodal & Crop Additions
             btnCamera: document.getElementById('btn-camera'),
             cameraInput: document.getElementById('camera-input'),
+            cropModal: document.getElementById('crop-modal'),
+            cropImage: document.getElementById('crop-image'),
+            btnCropRetake: document.getElementById('btn-crop-retake'),
+            btnCropDone: document.getElementById('btn-crop-done'),
             
             advToggle: document.getElementById('adv-toggle'),
             settingsModal: document.getElementById('settings-modal'),
@@ -348,16 +375,18 @@
         };
 
         let chatHistory = [];
-		// --- EXPERT TTS TRACKING STATE ---
-		let ttsStatus = 'STOPPED'; // Tracks 'STOPPED', 'PLAYING', or 'PAUSED'
-		let lastSpokenIndex = 0;   // Remembers the exact character we paused on
         let recognition = null;
         let synth = window.speechSynthesis;
         let isListening = false; 
-        let pendingImageData = null; // Holds the compressed base64 image
+        
+        let pendingImageData = null; 
+        let cropper = null;
+        
         let state = { isProcessing: false, isMuted: false, lastAIMessage: "" };
 
-        // Globals for individual TTS Button Logic
+        // --- EXPERT TTS TRACKING STATE ---
+        let ttsStatus = 'STOPPED'; 
+        let lastSpokenIndex = 0;   
         window.currentPlayingText = "";
         window.currentPlayingBtn = null;
 
@@ -379,12 +408,6 @@
             UI.overlay.style.display = 'none';
             setupEventListeners(); 
         });
-
-        function unlockAudio() {
-            const silent = new SpeechSynthesisUtterance('');
-            silent.volume = 0;
-            synth.speak(silent);
-        }
 
         function updateSubjectsList() {
             const std = parseInt(UI.selStd.value);
@@ -437,7 +460,6 @@
                         if (chatHistory.length > 0) {
                             UI.welcome.style.display = 'none';
                             chatHistory.forEach(msg => {
-                                // For visual log, just grab the text part
                                 const textPart = msg.parts.find(p => p.text)?.text || "📷 [Image attached]";
                                 renderMessage(msg.role === 'user' ? (UI.name.value || UI.role.value) : "Teacher", textPart, msg.role === 'model', false); 
                             });
@@ -473,6 +495,9 @@
             UI.log.innerHTML = `<div class="text-gray-400 text-center mt-12 cinzel"><p class="text-sky-500 text-xl mb-2 font-bold">🧹 History Cleared</p>Let's start a new lesson.</div>`;
             synth.cancel();
             resetAllPlayButtons();
+            ttsStatus = 'STOPPED';
+            lastSpokenIndex = 0;
+            window.currentPlayingText = "";
         }
 
         // --- 5. SPEECH RECOGNITION ---
@@ -593,12 +618,14 @@
             UI.btnSaveSet.onclick = (e) => { e.stopPropagation(); saveData(); UI.settingsModal.classList.add('hidden'); };
             UI.settingsModal.addEventListener('click', e => e.stopPropagation());
             
-            // Image Upload Event Listeners
+            // --- NEW MULTIMODAL CROP LOGIC ---
             UI.btnCamera.addEventListener('click', (e) => {
                 e.stopPropagation();
+                enforceFullscreen();
                 UI.cameraInput.click(); 
             });
 
+            // 1. Load image into the Crop Modal
             UI.cameraInput.addEventListener('change', (event) => {
                 const file = event.target.files[0];
                 if (!file) return;
@@ -606,29 +633,64 @@
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
                 reader.onload = (e) => {
-                    const img = new Image();
-                    img.src = e.target.result;
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 800; // Optimal scaling for textbook text readability without bloated payloads
-                        let scaleSize = 1;
-                        if (img.width > MAX_WIDTH) {
-                            scaleSize = MAX_WIDTH / img.width;
-                        }
-                        
-                        canvas.width = img.width * scaleSize;
-                        canvas.height = img.height * scaleSize;
-                        
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        
-                        pendingImageData = canvas.toDataURL('image/jpeg', 0.6).split(',')[1];
-                        
-                        UI.textIn.placeholder = "📷 Image attached! Add text or send...";
-                        UI.btnCamera.classList.remove('text-gray-400');
-                        UI.btnCamera.classList.add('text-sky-400'); 
-                    };
+                    // Show modal and set image source
+                    UI.cropImage.src = e.target.result;
+                    UI.cropModal.classList.remove('hidden');
+                    
+                    // Destroy old cropper instance if it exists
+                    if (cropper) cropper.destroy();
+                    
+                    // Initialize touch-friendly cropper
+                    cropper = new Cropper(UI.cropImage, {
+                        viewMode: 2,       // Restrict crop box to not exceed canvas
+                        dragMode: 'move',  // Allow panning the image with one finger
+                        autoCropArea: 0.9,
+                        restore: false,
+                        guides: true,
+                        center: true,
+                        highlight: false,
+                        cropBoxMovable: true,
+                        cropBoxResizable: true,
+                        toggleDragModeOnDblclick: false,
+                    });
                 };
+            });
+
+            // 2. RETAKE Button
+            UI.btnCropRetake.addEventListener('click', (e) => {
+                e.stopPropagation();
+                enforceFullscreen();
+                if (cropper) cropper.destroy();
+                UI.cropModal.classList.add('hidden');
+                UI.cameraInput.value = ''; // Reset input
+                UI.cameraInput.click();    // Re-trigger camera
+            });
+
+            // 3. DONE Button
+            UI.btnCropDone.addEventListener('click', (e) => {
+                e.stopPropagation();
+                enforceFullscreen();
+                if (!cropper) return;
+
+                // Extract the cropped area
+                const canvas = cropper.getCroppedCanvas({
+                    maxWidth: 800,
+                    maxHeight: 1200,
+                    fillColor: '#fff', 
+                });
+
+                // Extract pure Base64
+                pendingImageData = canvas.toDataURL('image/jpeg', 0.6).split(',')[1];
+                
+                // Cleanup and close
+                cropper.destroy();
+                cropper = null;
+                UI.cropModal.classList.add('hidden');
+
+                // Visual Feedback
+                UI.textIn.placeholder = "📷 Cropped image attached! Ask question...";
+                UI.btnCamera.classList.remove('text-gray-400');
+                UI.btnCamera.classList.add('text-sky-400');
             });
 
             UI.btnPasteKey.addEventListener('click', async (e) => {
@@ -653,6 +715,7 @@
                 state.isMuted = !state.isMuted; 
                 if(state.isMuted) { 
                     synth.cancel(); 
+                    ttsStatus = 'STOPPED';
                     resetAllPlayButtons();
                     window.currentPlayingText = "";
                     UI.iconVol.classList.add('hidden'); 
@@ -708,7 +771,7 @@
         // --- 7. AI LOGIC & PROCESSING ---
         async function processInput(userText) {
             userText = userText.trim();
-            if (!userText && !pendingImageData) return; // Need at least text or image
+            if (!userText && !pendingImageData) return; 
 
             // UI Resets
             UI.textIn.value = '';
@@ -823,117 +886,113 @@
             return data.candidates[0].content.parts[0].text;
         }
 
-        // --- DYNAMIC PLAY/PAUSE UI LOGIC ---
+        // --- EXPERT DYNAMIC PLAY/PAUSE UI LOGIC ---
         function resetAllPlayButtons() {
             document.querySelectorAll('.msg-play-btn').forEach(b => {
                 b.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
             });
         }
 
-			function handleIndividualPlayPause(text, btnElement) {
-				if (state.isMuted) return;
+        function handleIndividualPlayPause(text, btnElement) {
+            if (state.isMuted) return;
 
-				const playIcon = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
-				const pauseIcon = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+            const playIcon = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+            const pauseIcon = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
 
-				// SCENARIO 1: Interacting with the currently active message
-				if (window.currentPlayingText === text) {
-					
-					if (ttsStatus === 'PAUSED') {
-						// EXPERT RESUME: We slice the text and start a new utterance
-						ttsStatus = 'PLAYING';
-						btnElement.innerHTML = pauseIcon; // Optimistic UI
-						
-						synth.cancel(); // Clear any hung states in the OS
-						
-						setTimeout(() => {
-							// Slice the original text from the exact character we stopped at
-							const remainingText = text.substring(lastSpokenIndex);
-							startNewUtterance(remainingText, text, btnElement, lastSpokenIndex);
-						}, 50);
-						return;
-						
-					} else if (ttsStatus === 'PLAYING') {
-						// EXPERT PAUSE: We kill the audio entirely to avoid the resume bug
-						ttsStatus = 'PAUSED';
-						btnElement.innerHTML = playIcon; // Optimistic UI
-						synth.cancel(); // Instantly halts audio and is 100% reliable
-						return;
-					}
-				}
+            // SCENARIO 1: Interacting with the currently active message
+            if (window.currentPlayingText === text) {
+                
+                if (ttsStatus === 'PAUSED') {
+                    // EXPERT RESUME: We slice the text and start a new utterance
+                    ttsStatus = 'PLAYING';
+                    btnElement.innerHTML = pauseIcon; // Optimistic UI
+                    
+                    synth.cancel(); // Clear any hung states in the OS
+                    
+                    setTimeout(() => {
+                        // Slice the original text from the exact character we stopped at
+                        const remainingText = text.substring(lastSpokenIndex);
+                        startNewUtterance(remainingText, text, btnElement, lastSpokenIndex);
+                    }, 50);
+                    return;
+                    
+                } else if (ttsStatus === 'PLAYING') {
+                    // EXPERT PAUSE: We kill the audio entirely to avoid the resume bug
+                    ttsStatus = 'PAUSED';
+                    btnElement.innerHTML = playIcon; // Optimistic UI
+                    synth.cancel(); // Instantly halts audio and is 100% reliable
+                    return;
+                }
+            }
 
-				// SCENARIO 2: Starting a brand new message from the beginning
-				synth.cancel(); 
-				resetAllPlayButtons();
-				
-				window.currentPlayingText = text;
-				ttsStatus = 'PLAYING';
-				lastSpokenIndex = 0;
-				btnElement.innerHTML = pauseIcon; 
+            // SCENARIO 2: Starting a brand new message from the beginning
+            synth.cancel(); 
+            resetAllPlayButtons();
+            
+            window.currentPlayingText = text;
+            ttsStatus = 'PLAYING';
+            lastSpokenIndex = 0;
+            btnElement.innerHTML = pauseIcon; 
 
-				setTimeout(() => {
-					startNewUtterance(text, text, btnElement, 0);
-				}, 50);
-			}
+            setTimeout(() => {
+                startNewUtterance(text, text, btnElement, 0);
+            }, 50);
+        }
 
-			// --- HELPER FUNCTION: Handles the actual speaking logic ---
-			function startNewUtterance(textToSpeak, fullOriginalText, btnElement, offsetIndex) {
-				if (!textToSpeak.trim()) {
-					// Fallback if we accidentally try to read empty space at the end
-					btnElement.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
-					ttsStatus = 'STOPPED';
-					return;
-				}
+        function startNewUtterance(textToSpeak, fullOriginalText, btnElement, offsetIndex) {
+            if (!textToSpeak.trim()) {
+                btnElement.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+                ttsStatus = 'STOPPED';
+                return;
+            }
 
-				const utterance = new SpeechSynthesisUtterance(textToSpeak);
-				window.currentUtterance = utterance; // Prevents aggressive garbage collection
-				
-				utterance.lang = UI.selMedium.value === 'Marathi' ? 'mr-IN' : 'en-IN';
-				
-				const isTeacher = UI.role.value === 'Teacher';
-				const std = parseInt(UI.selStd.value);
-				
-				if (isTeacher) {
-					utterance.rate = 1.0;
-					utterance.pitch = 1.0;
-				} else if (std <= 5) {
-					utterance.rate = 0.75; 
-					utterance.pitch = 1.15; 
-				} else {
-					utterance.rate = 0.9;
-					utterance.pitch = 1.05;
-				}
-				
-				// THE MAGIC: Track exactly where the AI is in the sentence natively
-				utterance.onboundary = (event) => {
-					// event.charIndex is relative to the chunk being spoken. 
-					// We add the offset to track the position in the full original text.
-					lastSpokenIndex = offsetIndex + event.charIndex;
-				};
-				
-				utterance.onend = () => {
-					// Only reset the UI if it finished naturally (not if we manually cancelled it to pause)
-					if (ttsStatus === 'PLAYING') {
-						btnElement.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
-						ttsStatus = 'STOPPED';
-						window.currentPlayingText = "";
-						lastSpokenIndex = 0;
-					}
-				};
+            const utterance = new SpeechSynthesisUtterance(textToSpeak);
+            window.currentUtterance = utterance; // Prevents aggressive garbage collection
+            
+            utterance.lang = UI.selMedium.value === 'Marathi' ? 'mr-IN' : 'en-IN';
+            
+            const isTeacher = UI.role.value === 'Teacher';
+            const std = parseInt(UI.selStd.value);
+            
+            if (isTeacher) {
+                utterance.rate = 1.0;
+                utterance.pitch = 1.0;
+            } else if (std <= 5) {
+                utterance.rate = 0.75; 
+                utterance.pitch = 1.15; 
+            } else {
+                utterance.rate = 0.9;
+                utterance.pitch = 1.05;
+            }
+            
+            // Track exactly where the AI is in the sentence natively
+            utterance.onboundary = (event) => {
+                lastSpokenIndex = offsetIndex + event.charIndex;
+            };
+            
+            utterance.onend = () => {
+                // Only reset the UI if it finished naturally
+                if (ttsStatus === 'PLAYING') {
+                    btnElement.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+                    ttsStatus = 'STOPPED';
+                    window.currentPlayingText = "";
+                    lastSpokenIndex = 0;
+                }
+            };
 
-				utterance.onerror = (e) => {
-					// Ignore "canceled" errors, as we trigger those intentionally to pause
-					if (e.error !== 'canceled' && e.error !== 'interrupted') {
-						btnElement.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
-						ttsStatus = 'STOPPED';
-					}
-				};
+            utterance.onerror = (e) => {
+                // Ignore intentionally canceled errors
+                if (e.error !== 'canceled' && e.error !== 'interrupted') {
+                    btnElement.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+                    ttsStatus = 'STOPPED';
+                }
+            };
 
-				synth.resume(); // Flushes any ghost pauses left in the engine queue
-				synth.speak(utterance);
-			}
+            synth.resume(); // Flushes any ghost pauses
+            synth.speak(utterance);
+        }
 
-        // Modifies the renderer to return the generated play button for auto-play logic
+        // --- RENDER UI ---
         function renderMessage(sender, text, isModel, isNewMessage = true) {
             const div = document.createElement('div');
             div.className = `p-4 rounded-2xl ${isModel ? 'bg-[#0f172a]/90 border border-slate-700/50 shadow-lg ml-2 mr-8' : 'bg-sky-900/40 text-right mr-2 ml-8'} mb-4`;
@@ -961,7 +1020,6 @@
             div.innerHTML = htmlContent;
 
             if (isModel) {
-                // Cache the element to return for AI auto-play
                 playBtnElement = div.querySelector('.msg-play-btn');
 
                 // PDF Logic
@@ -1023,7 +1081,7 @@
             UI.log.appendChild(div);
             setTimeout(() => { UI.log.scrollTop = UI.log.scrollHeight; }, 50);
 
-            return playBtnElement; // Required so the AI can automatically hit "Play" on new responses.
+            return playBtnElement;
         }
     </script>
 </body>
