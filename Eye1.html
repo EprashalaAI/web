@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eye Exercise & Lazy Eye Therapy</title>
+
+<style>
+html, body {
+    margin: 0;
+    padding: 0;
+    background: #020617;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+    user-select: none;
+}
+
+#menu {
+    height: 100vh;
+    text-align: center;
+    padding: 30px;
+    background: radial-gradient(circle, #0f172a, #020617);
+    color: white;
+}
+
+button, select {
+    font-size: 18px;
+    padding: 12px 18px;
+    margin: 8px;
+    border-radius: 12px;
+    border: none;
+}
+
+.eye-btn {
+    background: #1e293b;
+    color: white;
+}
+.eye-btn.active {
+    background: #22c55e;
+    color: black;
+}
+
+.note {
+    font-size: 14px;
+    color: #a5f3fc;
+    margin-top: 4px;
+}
+
+/* Therapy screen */
+#therapy {
+    display: none;
+    width: 100vw;
+    height: 100vh;
+    background: black;
+}
+
+.half {
+    position: absolute;
+    width: 50vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+#left { left: 0; }
+#right { right: 0; }
+
+.object {
+    position: absolute;
+    width: 36px;
+    height: 36px;
+    transform-origin: center;
+    will-change: transform, left, top;
+}
+
+/* Subtle close button */
+#closeBtn {
+    position: fixed;
+    top: 10px;
+    right: 12px;
+    font-size: 20px;
+    color: rgba(200,200,200,0.55);
+    background: transparent;
+    border: none;
+    z-index: 999;
+    cursor: pointer;
+}
+
+/* Popup */
+#popup {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.92);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    color: white;
+    text-align: center;
+    padding: 20px;
+}
+
+#fullscreenBtn {
+    background: #22c55e;
+    color: black;
+    font-size: 20px;
+    padding: 14px 22px;
+    border-radius: 14px;
+    margin-top: 16px;
+}
+
+#count {
+    margin-top: 16px;
+    font-size: 22px;
+}
+</style>
+</head>
+
+<body oncontextmenu="return false" onload="requestWakeLock()">
+
+<!-- MENU -->
+<div id="menu">
+<h2>👁️ Eye Exercise & Lazy Eye Therapy 👁️</h2>
+<p style="color:#fde68a">Consult an Eye Specialist to identify the lazy eye</p>
+
+<h3>Select Eye</h3>
+<button class="eye-btn" id="btnLeft" onclick="selectEye('left')">Left Eye</button>
+<button class="eye-btn" id="btnRight" onclick="selectEye('right')">Right Eye</button>
+<button class="eye-btn" id="btnBoth" onclick="selectEye('both')">Both Eyes</button>
+
+<div class="note">
+Click on <b>Both Eyes</b> to act as a normal Eye Exerciser. 
+</div>
+
+<div class="note">
+For best results use a good VR set that suits your mobile screen size 
+</div>
+
+<br><br>
+
+<select id="mode">
+<option value="random">Random</option>
+<option value="white">White Dancing Ball</option>
+<option value="color">Colourful Dancing Ball</option>
+<option value="shape">Dancing Shapes</option>
+<option value="line">Dancing Lines</option>
+<option value="fruit">Dancing Fruits</option>
+<option value="flower">Dancing Flowers</option>
+</select>
+
+<br><br>
+<button onclick="showPopup()">Start</button>
+</div>
+
+<!-- VR SETUP POPUP -->
+<div id="popup">
+<p>
+Click <b>Enter Fullscreen</b><br>
+Rotate phone to <b>Landscape</b><br>
+Place phone in <b>VR Headset</b>
+</p>
+<button id="fullscreenBtn" onclick="enterFullscreen()">Enter Fullscreen</button>
+<div id="count"></div>
+</div>
+
+<!-- THERAPY -->
+<div id="therapy">
+<button id="closeBtn" onclick="exitTherapy()">✕</button>
+<div id="left" class="half"></div>
+<div id="right" class="half"></div>
+</div>
+
+<audio id="bgm" loop>
+<source src="https://cdn.pixabay.com/audio/2022/10/25/audio_9467a82fa0.mp3">
+</audio>
+
+<script>
+/* ================== SCREEN WAKE LOCK ================== */
+let wakeLock = null;
+
+async function requestWakeLock() {
+    try {
+        if ('wakeLock' in navigator) {
+            wakeLock = await navigator.wakeLock.request('screen');
+            console.log("Wake lock active");
+        }
+    } catch (e) {
+        console.warn("Wake lock failed:", e);
+    }
+}
+
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+        requestWakeLock();
+    }
+});
+
+/* ================== STATE ================== */
+let eyeMode = "left";
+let objLeft = null;
+let objRight = null;
+let t = 0;
+let currentVisual = null;
+
+/* ================== DATA ================== */
+const colors = ["red","blue","green","yellow","orange","pink","brown"];
+const shapes = ["circle","square","rectangle","triangle","oval"];
+const fruits = ["🍎","🍌","🍊","🍉","🍓"];
+const flowers = ["🌸","🌼","🌻","🌹"];
+
+/* Speech */
+const speech = new SpeechSynthesisUtterance();
+speech.rate = 0.7;
+speech.pitch = 1.4;
+
+/* ================== UI ================== */
+function selectEye(mode) {
+    eyeMode = mode;
+    document.querySelectorAll(".eye-btn").forEach(b=>b.classList.remove("active"));
+    document.getElementById("btn"+mode.charAt(0).toUpperCase()+mode.slice(1)).classList.add("active");
+}
+
+function showPopup() {
+    document.getElementById("popup").style.display="flex";
+}
+
+/* ================== FULLSCREEN + COUNTDOWN ================== */
+async function enterFullscreen() {
+    document.getElementById("fullscreenBtn").style.display="none";
+
+    /* Prime audio (Android requirement) */
+    speech.text = "Let's begin";
+    speechSynthesis.speak(speech);
+
+    const bgm = document.getElementById("bgm");
+    bgm.volume = 0.12;
+    bgm.play();
+
+    try {
+        await document.documentElement.requestFullscreen();
+        if (screen.orientation?.lock) {
+            await screen.orientation.lock("landscape");
+        }
+    } catch(e){}
+
+    let c = 10;
+    const count = document.getElementById("count");
+    count.innerText = "Starting in " + c;
+
+    const timer = setInterval(()=>{
+        c--;
+        count.innerText = "Starting in " + c;
+        if(c < 0){
+            clearInterval(timer);
+            document.getElementById("popup").style.display="none";
+            launch();
+        }
+    },1000);
+}
+
+/* ================== LAUNCH ================== */
+function launch() {
+    document.getElementById("menu").style.display="none";
+    document.getElementById("therapy").style.display="block";
+
+    if (eyeMode === "left" || eyeMode === "both") {
+        objLeft = createObject("left");
+    }
+    if (eyeMode === "right" || eyeMode === "both") {
+        objRight = createObject("right");
+    }
+
+    applyVisual();                  
+    setInterval(applyVisual, 5000);
+    animate();
+}
+
+/* ================== OBJECT ================== */
+function createObject(side) {
+    const o = document.createElement("div");
+    o.className = "object";
+    document.getElementById(side).appendChild(o);
+    return o;
+}
+
+/* ================== VISUAL (SINGLE SOURCE) ================== */
+function applyVisual() {
+    const sel = document.getElementById("mode").value;
+    const mode = sel === "random"
+        ? ["white","color","shape","line","fruit","flower"][Math.floor(Math.random()*6)]
+        : sel;
+
+    currentVisual = { mode };
+
+    if (mode !== "white") {
+        currentVisual.color = colors[Math.floor(Math.random()*colors.length)];
+        currentVisual.shape = shapes[Math.floor(Math.random()*shapes.length)];
+        currentVisual.content =
+            mode === "fruit" ? fruits[Math.floor(Math.random()*fruits.length)] :
+            mode === "flower" ? flowers[Math.floor(Math.random()*flowers.length)] :
+            null;
+
+        speak(
+            mode === "color" ? "Can you tell me the colour?" :
+            mode === "shape" ? "Can you tell me the shape?" :
+            mode === "line"  ? "Can you tell me the line?" :
+            mode === "fruit" ? "Which fruit is this?" :
+            mode === "flower"? "Which flower is this?" : ""
+        );
+    }
+
+    render(objLeft);
+    render(objRight);
+}
+
+function render(obj) {
+    if (!obj || !currentVisual) return;
+
+    const v = currentVisual;
+    obj.innerHTML="";
+    obj.style = "";
+    obj.style.width="36px";
+    obj.style.height="36px";
+
+    if (v.mode === "white") {
+        obj.style.background="white";
+        obj.style.borderRadius="50%";
+        return;
+    }
+
+    if (v.mode === "color") {
+        obj.style.background=v.color;
+        obj.style.borderRadius="50%";
+    }
+
+    if (v.mode === "shape") {
+        obj.style.background=v.color;
+        if (v.shape==="circle") obj.style.borderRadius="50%";
+        if (v.shape==="rectangle") obj.style.width="60px";
+        if (v.shape==="triangle") {
+            obj.style.background="transparent";
+            obj.style.borderLeft="18px solid transparent";
+            obj.style.borderRight="18px solid transparent";
+            obj.style.borderBottom="36px solid "+v.color;
+        }
+    }
+
+    if (v.mode === "line") {
+        obj.style.width="4px";
+        obj.style.height="60px";
+        obj.style.background=v.color;
+    }
+
+    if (v.mode === "fruit" || v.mode === "flower") {
+        obj.style.fontSize="40px";
+        obj.innerHTML=v.content;
+    }
+}
+
+/* ================== MOTION + DEPTH ================== */
+function animate() {
+    t += 0.006;
+
+    if (eyeMode === "both") {
+        /* SAME direction for both eyes (VR-comfort mode) */
+        move(objLeft, 1);
+        move(objRight, 1);
+    } else if (eyeMode === "left") {
+        move(objLeft, 1);
+    } else if (eyeMode === "right") {
+        move(objRight, 1);
+    }
+
+    requestAnimationFrame(animate);
+}
+s
+
+function move(obj, dir) {
+    if (!obj) return;
+    const area = obj.parentElement;
+    const r = area.getBoundingClientRect();
+
+    const mx = r.width * 0.15;
+    const my = r.height * 0.18;
+
+    let x = mx + (Math.sin(t*dir)+1)/2*(r.width-2*mx);
+    let y = my + (Math.sin(t*0.9)+1)/2*(r.height-2*my);
+
+    /* 🔑 VR FUSION OFFSET (CRITICAL FIX) */
+    if (eyeMode === "both") {
+        const fusionOffset = r.width * 0.08; // ~6–10 mm in VR
+        if (area.id === "left") {
+            x += fusionOffset;   // move right eye-image inward
+        } else if (area.id === "right") {
+            x -= fusionOffset;   // move left eye-image inward
+        }
+    }
+
+    const scale = eyeMode === "both"
+        ? 0.6 + (Math.sin(t)+1)/2 * 0.9
+        : 0.7 + (Math.sin(t)+1)/2 * 0.6;
+
+    obj.style.left = x + "px";
+    obj.style.top  = y + "px";
+    obj.style.transform = `scale(${scale})`;
+}
+
+/* ================== EXIT ================== */
+function exitTherapy() {
+    if (wakeLock) {
+        wakeLock.release();
+        wakeLock = null;
+    }
+    location.reload();
+}
+
+/* ================== SPEAK ================== */
+function speak(text) {
+    if (!text) return;
+    speech.text = text;
+    speechSynthesis.cancel();
+    speechSynthesis.speak(speech);
+}
+</script>
+
+</body>
+</html>

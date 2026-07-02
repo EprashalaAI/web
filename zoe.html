@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yoga Zoetrope Configurator (With Trim)</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #f4f7f6;
+            color: #333;
+        }
+        .panel {
+            background: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            border-top: 4px solid #007BFF;
+        }
+        h2 { margin-top: 0; color: #2c3e50; font-size: 1.4em; }
+        .input-group { margin-bottom: 20px; }
+        label { font-weight: 600; display: block; margin-bottom: 4px; color: #2c3e50; }
+        .description { font-size: 0.85em; color: #666; margin-bottom: 8px; line-height: 1.4; }
+        
+        input[type="file"], input[type="number"] {
+            padding: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1em;
+        }
+        
+        .results-box {
+            background: #e9f2fe; padding: 15px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #b6d4fe;
+        }
+        .results-box p { margin: 8px 0; font-size: 1.1em; }
+        .highlight { font-weight: bold; color: #0056b3; }
+        
+        button.primary {
+            background-color: #007BFF; color: white; border: none; padding: 12px 24px;
+            font-size: 16px; font-weight: bold; border-radius: 4px; cursor: pointer;
+            transition: background 0.2s; width: 100%;
+        }
+        button.primary:hover { background-color: #0056b3; }
+        button.primary:disabled { background-color: #aaa; cursor: not-allowed; }
+        
+        /* Video Preview Styles */
+        .video-container {
+            display: none; /* Hidden until video is uploaded */
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        video {
+            width: 100%;
+            max-height: 400px;
+            background: #000;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+        .trim-controls {
+            display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px;
+        }
+        .trim-box {
+            flex: 1; min-width: 200px; background: #f8f9fa; padding: 15px;
+            border-radius: 6px; border: 1px solid #dee2e6;
+        }
+        button.secondary {
+            background-color: #6c757d; color: white; border: none; padding: 8px 15px;
+            font-size: 14px; border-radius: 4px; cursor: pointer; margin-top: 10px; width: 100%;
+        }
+        button.secondary:hover { background-color: #5a6268; }
+
+        #status { font-weight: bold; margin-top: 15px; color: #d9534f; }
+        
+        /* Gallery Styles */
+        .gallery { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 20px; }
+        .frame-container {
+            background: #fff; padding: 8px; border: 1px solid #ddd;
+            border-radius: 6px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .gallery img { max-width: 180px; height: auto; display: block; border-radius: 4px; }
+        .frame-label { font-size: 0.85em; color: #555; margin-top: 8px; font-weight: 500; }
+    </style>
+</head>
+<body>
+
+    <h1>Yoga Zoetrope Configurator</h1>
+    
+    <div class="panel">
+        <h2>1. Physics & Dimensions Calculator</h2>
+        
+        <div class="input-group">
+            <label>Average Train Speed (km/h)</label>
+            <input type="number" id="speedInput" value="80" min="1">
+        </div>
+
+        <div class="input-group">
+            <label>Available Physical Space (meters)</label>
+            <input type="number" id="distanceInput" value="100" min="1">
+        </div>
+
+        <div class="input-group">
+            <label>Target Frame Rate (FPS)</label>
+            <input type="number" id="fpsInput" value="15" min="1" max="60">
+        </div>
+
+        <div class="results-box">
+            <p>Poster Spacing: <span id="calcSpacing" class="highlight">0.00</span> meters between each image</p>
+            <p>Maximum Video Length: <span id="calcMaxTime" class="highlight">0.00</span> seconds</p>
+            <p>Total Posters Needed: <span id="calcTotalFrames" class="highlight">0</span> frames</p>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2>2. Video Selection & Extraction</h2>
+        <div class="input-group">
+            <label>Upload Yoga Video</label>
+            <input type="file" id="videoUpload" accept="video/mp4,video/webm,video/ogg">
+        </div>
+
+        <div class="video-container" id="videoContainer">
+            <video id="videoPreview" controls playsinline></video>
+            
+            <div class="trim-controls">
+                <div class="trim-box">
+                    <label>Mark In (Start Time)</label>
+                    <input type="number" id="startTimeInput" value="0.00" step="0.01" min="0">
+                    <button class="secondary" id="setStartBtn">Set to Current Player Time</button>
+                </div>
+                <div class="trim-box">
+                    <label>Mark Out (End Time)</label>
+                    <input type="number" id="endTimeInput" value="0.00" step="0.01" min="0">
+                    <button class="secondary" id="setEndBtn">Set to Current Player Time</button>
+                </div>
+            </div>
+
+            <button id="extractBtn" class="primary">Extract Frames</button>
+            <div id="status">Waiting to extract...</div>
+        </div>
+    </div>
+
+    <div class="gallery" id="outputGallery"></div>
+
+    <script>
+        // DOM Elements
+        const speedInput = document.getElementById('speedInput');
+        const distanceInput = document.getElementById('distanceInput');
+        const fpsInput = document.getElementById('fpsInput');
+        
+        const calcSpacing = document.getElementById('calcSpacing');
+        const calcMaxTime = document.getElementById('calcMaxTime');
+        const calcTotalFrames = document.getElementById('calcTotalFrames');
+        
+        const fileInput = document.getElementById('videoUpload');
+        const videoContainer = document.getElementById('videoContainer');
+        const videoPreview = document.getElementById('videoPreview');
+        const startTimeInput = document.getElementById('startTimeInput');
+        const endTimeInput = document.getElementById('endTimeInput');
+        const setStartBtn = document.getElementById('setStartBtn');
+        const setEndBtn = document.getElementById('setEndBtn');
+        
+        const extractBtn = document.getElementById('extractBtn');
+        const statusText = document.getElementById('status');
+        const outputGallery = document.getElementById('outputGallery');
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+        // Physics Calculation Logic
+        let currentMaxDuration = 0;
+        let currentFps = 15;
+
+        function updateCalculator() {
+            const speedKmh = parseFloat(speedInput.value) || 0;
+            const distance = parseFloat(distanceInput.value) || 0;
+            currentFps = parseFloat(fpsInput.value) || 1;
+
+            if (speedKmh > 0 && distance > 0 && currentFps > 0) {
+                const speedMs = speedKmh * (1000 / 3600);
+                const spacing = speedMs / currentFps;
+                currentMaxDuration = distance / speedMs;
+                const totalFrames = Math.floor(currentMaxDuration * currentFps);
+
+                calcSpacing.innerText = spacing.toFixed(2);
+                calcMaxTime.innerText = currentMaxDuration.toFixed(2);
+                calcTotalFrames.innerText = totalFrames;
+            }
+        }
+
+        speedInput.addEventListener('input', updateCalculator);
+        distanceInput.addEventListener('input', updateCalculator);
+        fpsInput.addEventListener('input', updateCalculator);
+        updateCalculator();
+
+        // Video Upload & Preview Logic
+        fileInput.addEventListener('change', () => {
+            const file = fileInput.files[0];
+            if (file) {
+                const fileURL = URL.createObjectURL(file);
+                videoPreview.src = fileURL;
+                videoContainer.style.display = 'block';
+                
+                videoPreview.onloadedmetadata = () => {
+                    startTimeInput.value = "0.00";
+                    endTimeInput.value = videoPreview.duration.toFixed(2);
+                    startTimeInput.max = videoPreview.duration;
+                    endTimeInput.max = videoPreview.duration;
+                };
+            }
+        });
+
+        // Trim Controls
+        setStartBtn.addEventListener('click', () => {
+            startTimeInput.value = videoPreview.currentTime.toFixed(2);
+        });
+
+        setEndBtn.addEventListener('click', () => {
+            endTimeInput.value = videoPreview.currentTime.toFixed(2);
+        });
+
+        // Extraction Logic
+        extractBtn.addEventListener('click', async () => {
+            let startT = parseFloat(startTimeInput.value);
+            let endT = parseFloat(endTimeInput.value);
+
+            // Validation
+            if (startT >= endT) {
+                alert("Start time must be before end time.");
+                return;
+            }
+
+            // Lock UI
+            extractBtn.disabled = true;
+            videoPreview.controls = false; // Disable user scrubbing during extraction
+            outputGallery.innerHTML = '';
+            statusText.style.color = '#f0ad4e';
+
+            canvas.width = videoPreview.videoWidth;
+            canvas.height = videoPreview.videoHeight;
+            
+            // Calculate actual end time based on user trim AND physics limit
+            const physicalEndTime = startT + currentMaxDuration;
+            const finalEndTime = Math.min(endT, physicalEndTime);
+            
+            const timeInterval = 1 / currentFps;
+            let currentTime = startT;
+            let frameCount = 1;
+
+            statusText.innerText = `Extracting from ${startT.toFixed(2)}s to ${finalEndTime.toFixed(2)}s...`;
+
+            videoPreview.pause(); // Ensure it isn't playing naturally
+
+            while (currentTime <= finalEndTime) {
+                videoPreview.currentTime = currentTime;
+                
+                // Wait for the video player to seek to the frame
+                await new Promise((resolve) => {
+                    // onseeked fires when the player has jumped to the requested time
+                    videoPreview.addEventListener('seeked', function handler() {
+                        videoPreview.removeEventListener('seeked', handler);
+                        resolve();
+                    });
+                });
+
+                ctx.drawImage(videoPreview, 0, 0, canvas.width, canvas.height);
+                const imgDataURL = canvas.toDataURL('image/jpeg', 0.9);
+
+                const container = document.createElement('div');
+                container.className = 'frame-container';
+
+                const img = document.createElement('img');
+                img.src = imgDataURL;
+
+                const label = document.createElement('div');
+                label.className = 'frame-label';
+                label.innerText = `Poster ${frameCount}\n(${currentTime.toFixed(2)}s)`;
+
+                container.appendChild(img);
+                container.appendChild(label);
+                outputGallery.appendChild(container);
+
+                currentTime += timeInterval;
+                frameCount++;
+            }
+
+            // Restore UI
+            videoPreview.controls = true;
+            statusText.style.color = '#198754';
+            let msg = `Done! Extracted ${frameCount - 1} posters. `;
+            if (endT > physicalEndTime) {
+                msg += `(Stopped early at ${finalEndTime.toFixed(2)}s to fit the physical space limit).`;
+            }
+            statusText.innerText = msg;
+            extractBtn.disabled = false;
+        });
+    </script>
+</body>
+</html>

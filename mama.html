@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>महाराष्ट्र वाहतूक नियम - पोलीस दादा AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* ॲनिमेशन - ट्रॅफिक अलर्ट/पोलीस थीम (#E2CE1D) */
+        .listening-pulse { animation: pulse 1.5s infinite ease-in-out; }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(226, 206, 29, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(226, 206, 29, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(226, 206, 29, 0); }
+        }
+
+        .icon-btn {
+            @apply p-3 rounded-full text-black transition-all duration-200
+                   bg-gray-700 hover:bg-[#E2CE1D] shadow-lg
+                   focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-[#E2CE1D]
+                   disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none;
+        }
+        
+        .utility-btn {
+            @apply w-full py-3 px-2 rounded-lg text-sm font-semibold transition-colors
+                   bg-gray-700 text-white
+                   hover:bg-[#E2CE1D] hover:text-black
+                   focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-[#E2CE1D]
+                   disabled:bg-gray-800 disabled:text-gray-600 disabled:cursor-not-allowed;
+        }
+
+        .custom-checkbox {
+            @apply w-4 h-4 text-[#E2CE1D] bg-gray-700 border-gray-600 rounded focus:ring-[#E2CE1D] focus:ring-2 ring-offset-gray-800;
+        }
+        
+        .custom-input {
+            @apply block w-3/4 mx-auto text-center border border-gray-500 rounded-lg p-3 outline-none transition-all;
+            background-color: #000000 !important; 
+            color: #ffffff !important;             
+            caret-color: #E2CE1D !important;       
+        }
+        .custom-input::placeholder {
+            color: #9ca3af !important;
+            opacity: 1 !important;
+        }
+        
+        /* Custom scrollbar for log */
+        #conversation-log::-webkit-scrollbar { width: 6px; }
+        #conversation-log::-webkit-scrollbar-thumb { background-color: #555; release-border-radius: 4px; }
+        #conversation-log::-webkit-scrollbar-track { background-color: #222; }
+    </style>
+</head>
+
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen p-4" oncontextmenu="return false;">
+
+    <div class="bg-gray-800 rounded-2xl shadow-2xl p-6 md:p-8 w-full max-w-2xl flex flex-col h-[95vh] md:h-auto border-t-4 border-[#E2CE1D] border-b-4 border-gray-600">
+        
+        <div class="flex items-center justify-between mb-4 shrink-0">
+            <h1 class="text-2xl md:text-3xl font-bold text-white">
+                <span class="text-[#E2CE1D]">महाराष्ट्र</span> वाहतूक <span class="text-gray-400">पोलीस</span>
+            </h1>
+            <div id="status-indicator" class="w-4 h-4 rounded-full bg-gray-500 transition-colors" title="बंद आहे"></div>
+        </div>
+        <div class="text-center mb-2">
+             <span class="text-xs text-[#E2CE1D] uppercase tracking-widest">सुरक्षित प्रवास, आमचा ध्यास</span>
+        </div>
+
+        <div id="conversation-log" class="flex-grow overflow-y-auto bg-gray-900 rounded-lg p-4 mb-4 border border-gray-700 space-y-4 shadow-inner min-h-[200px]">
+            <div class="text-gray-400 text-center mt-10">
+                सुरू करण्यासाठी "पोलीस दादा" किंवा "दादा" म्हणा.<br>
+                <span class="text-sm opacity-70 text-[#E2CE1D]">मी तुमचा 'पोलीस दादा' आहे. मी तुम्हाला वाहतुकीचे नियम, दंड आणि सुरक्षिततेचे ज्ञान देईन.</span>
+            </div>
+        </div>
+
+        <div class="flex justify-center gap-8 mb-4 shrink-0 bg-gray-800/50 p-2 rounded-xl">
+            <button id="pause-resume-button" class="icon-btn bg-[#E2CE1D]/20 text-[#E2CE1D] hover:bg-[#E2CE1D] hover:text-black" title="थांबवा/पुन्हा सुरू करा" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" />
+                </svg>
+            </button>
+            
+            <button id="stop-speech-button" class="icon-btn bg-red-900/30 hover:bg-red-800 text-white" title="बोलणे थांबवा" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 7.5A2.25 2.25 0 017.5 5.25h9a2.25 2.25 0 012.25 2.25v9a2.25 2.25 0 01-2.25 2.25h-9a2.25 2.25 0 01-2.25-2.25v-9z" />
+                </svg>
+            </button>
+
+            <button id="replay-button" class="icon-btn bg-green-900/30 hover:bg-green-800 text-white" title="पुन्हा ऐका" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                </svg>
+            </button>
+        </div>
+
+        <div class="flex flex-col gap-4 mb-4 shrink-0 w-full text-center">
+            <div class="w-full">
+                <label class="text-xs text-gray-400 mb-1 block">नाव</label>
+                <input type="text" id="manual-name" class="custom-input" placeholder="तुमचे नाव येथे लिहा">
+            </div>
+            <div class="w-full">
+                <label class="text-xs text-gray-400 mb-1 block">वय (वर्षे)</label>
+                <input type="number" id="manual-age" class="custom-input" placeholder="उदा. २५">
+            </div>
+        </div>
+
+        <div class="flex items-center justify-center gap-2 mb-2 shrink-0">
+            <input type="checkbox" id="remember-me-checkbox" class="custom-checkbox">
+            <label for="remember-me-checkbox" class="text-sm text-gray-300 cursor-pointer select-none">
+                माहिती लक्षात ठेवा
+            </label>
+        </div>
+
+        <div class="w-full flex flex-col items-center justify-center mb-4 shrink-0">
+            <button id="advance-toggle-btn" class="text-xs text-[#E2CE1D] hover:text-yellow-200 underline mb-2 focus:outline-none">
+                ▼ प्रगत सेटिंग्ज (API Key)
+            </button>
+
+            <div id="advance-container" class="hidden w-full bg-gray-800/80 border border-gray-700 rounded-lg p-4 flex flex-col gap-3 transition-all">
+                
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="use-custom-key-checkbox" class="custom-checkbox">
+                    <label for="use-custom-key-checkbox" class="text-sm text-gray-300 cursor-pointer select-none">
+                        तुमची स्वतःची API Key वापरा
+                    </label>
+                </div>
+
+                <input type="text" id="custom-api-key-input" class="custom-input text-xs w-full !w-full" placeholder="API Key येथे पेस्ट करा" disabled>
+                
+                <button id="paste-key-btn" type="button" disabled class="w-full py-2 px-4 bg-gray-600 hover:bg-gray-500 text-white text-xs rounded transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
+                    </svg>
+                    पेस्ट करा
+                </button>
+
+                <a href="https://ai.google.dev/gemini-api/docs/api-key" target="_blank" class="text-center w-full py-2 bg-gray-700 hover:bg-gray-600 text-xs text-[#E2CE1D] rounded transition-colors border border-gray-600">
+                    मोफत Google Gemini API Key मिळवा ↗
+                </a>
+            </div>
+        </div>
+
+        <button id="talk-button" class="w-full py-4 px-6 rounded-lg text-lg font-semibold transition-all duration-300 ease-in-out shrink-0
+                       bg-[#E2CE1D] text-black shadow-lg shadow-yellow-900/50
+                       hover:bg-yellow-400 hover:shadow-yellow-500/50 hover:-translate-y-0.5
+                       focus:outline-none focus:ring-4 focus:ring-[#E2CE1D] focus:ring-opacity-50
+                       disabled:bg-gray-600 disabled:cursor-not-allowed disabled:shadow-none disabled:translate-y-0">
+            संवाद सुरू करा
+        </button>
+
+        <div class="mt-4 grid grid-cols-3 gap-3 shrink-0">
+            <button id="restart-chat-button" class="utility-btn" disabled>पुन्हा सुरू करा</button>
+            <button id="share-button" class="utility-btn bg-indigo-700 hover:bg-indigo-600">शेअर करा</button>
+            <button id="end-chat-button" class="utility-btn text-red-200 hover:bg-red-900/40" disabled>थांबवा</button>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('contextmenu', event => event.preventDefault());
+
+        function enterFullScreen() {
+            const elem = document.documentElement;
+            if (elem.requestFullscreen) { elem.requestFullscreen(); } 
+            else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); } 
+            else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); }
+        }
+
+        const talkButton = document.getElementById('talk-button');
+        const statusIndicator = document.getElementById('status-indicator');
+        const conversationLog = document.getElementById('conversation-log');
+        const rememberMeCheckbox = document.getElementById('remember-me-checkbox');
+        const manualNameInput = document.getElementById('manual-name');
+        const manualAgeInput = document.getElementById('manual-age');
+        const pauseResumeButton = document.getElementById('pause-resume-button');
+        const stopSpeechButton = document.getElementById('stop-speech-button');
+        const replayButton = document.getElementById('replay-button');
+        const shareButton = document.getElementById('share-button');
+        const endChatButton = document.getElementById('end-chat-button');
+        const restartChatButton = document.getElementById('restart-chat-button');
+        
+        const advanceToggleBtn = document.getElementById('advance-toggle-btn');
+        const advanceContainer = document.getElementById('advance-container');
+        const useCustomKeyCheckbox = document.getElementById('use-custom-key-checkbox');
+        const customApiKeyInput = document.getElementById('custom-api-key-input');
+        const pasteKeyBtn = document.getElementById('paste-key-btn');
+
+        const DEFAULT_API_KEY = "AIzaSyB41xzsLyqQizurma_sHuBPd18wpJvoJro"; 
+        let appState = 'IDLE'; 
+        let userName = '';
+        let userAge = 18; 
+        let chatHistory = [];
+        let systemInstruction = '';
+        let recognition;
+        let lastSpokenText = ''; 
+        let speechManuallyStopped = false; 
+        const synth = window.speechSynthesis;
+        let voices = [];
+        let wakeLock = null;
+
+        window.onload = () => {
+            if (synth.speaking) synth.cancel();
+            loadUserData(); 
+            loadVoices();   
+        };
+
+        advanceToggleBtn.addEventListener('click', () => {
+            advanceContainer.classList.toggle('hidden');
+            advanceContainer.classList.toggle('flex');
+        });
+
+        useCustomKeyCheckbox.addEventListener('change', () => {
+            const isChecked = useCustomKeyCheckbox.checked;
+            customApiKeyInput.disabled = !isChecked;
+            pasteKeyBtn.disabled = !isChecked;
+            saveUserData(); 
+            if (isChecked) customApiKeyInput.focus();
+        });
+
+        customApiKeyInput.addEventListener('input', saveUserData);
+
+        pasteKeyBtn.addEventListener('click', async () => {
+            try {
+                const text = await navigator.clipboard.readText();
+                if(text) {
+                    customApiKeyInput.value = text;
+                    saveUserData();
+                    const originalText = pasteKeyBtn.innerHTML;
+                    pasteKeyBtn.textContent = "पेस्ट झाले!";
+                    setTimeout(() => { pasteKeyBtn.innerHTML = originalText; }, 1000);
+                }
+            } catch (err) { alert('पेस्ट करता आले नाही. कृपया टाईप करा.'); }
+        });
+
+        function getEffectiveApiKey() {
+            if (useCustomKeyCheckbox.checked && customApiKeyInput.value.trim().length > 10) {
+                return customApiKeyInput.value.trim();
+            }
+            return DEFAULT_API_KEY;
+        }
+
+        function loadUserData() {
+            try {
+                const savedName = localStorage.getItem('acharya_userName');
+                const savedAge = localStorage.getItem('acharya_userAge');
+                const savedRemember = localStorage.getItem('acharya_remember');
+
+                if (savedRemember === 'true') {
+                    rememberMeCheckbox.checked = true;
+                    if (savedName) manualNameInput.value = savedName;
+                    if (savedAge) { manualAgeInput.value = savedAge; userAge = parseInt(savedAge) || 18; }
+                    if (savedName) talkButton.textContent = `${savedName} म्हणून सुरू करा`;
+                }
+
+                const savedUseKey = localStorage.getItem('acharya_useCustomKey');
+                const savedKey = localStorage.getItem('acharya_customKey');
+
+                if (savedUseKey === 'true') {
+                    useCustomKeyCheckbox.checked = true;
+                    customApiKeyInput.disabled = false;
+                    pasteKeyBtn.disabled = false;
+                    if (savedKey) customApiKeyInput.value = savedKey;
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function saveUserData() {
+            try {
+                if (rememberMeCheckbox.checked) {
+                    localStorage.setItem('acharya_remember', 'true');
+                    localStorage.setItem('acharya_userName', manualNameInput.value.trim());
+                    localStorage.setItem('acharya_userAge', manualAgeInput.value.trim());
+                } else {
+                    localStorage.removeItem('acharya_remember');
+                    localStorage.removeItem('acharya_userName');
+                    localStorage.removeItem('acharya_userAge');
+                }
+                localStorage.setItem('acharya_useCustomKey', useCustomKeyCheckbox.checked);
+                if (customApiKeyInput.value) {
+                    localStorage.setItem('acharya_customKey', customApiKeyInput.value.trim());
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function loadChatContext(name) {
+            const key = `acharya_history_${name.toLowerCase()}`;
+            const savedHistory = localStorage.getItem(key);
+            try { return savedHistory ? JSON.parse(savedHistory) : []; } catch (e) { return []; }
+        }
+
+        function saveChatContext() {
+            if (!userName) return;
+            const key = `acharya_history_${userName.toLowerCase()}`;
+            const limitedHistory = chatHistory.slice(-20); 
+            localStorage.setItem(key, JSON.stringify(limitedHistory));
+        }
+
+        manualNameInput.addEventListener('input', () => { if(rememberMeCheckbox.checked) saveUserData(); });
+        manualAgeInput.addEventListener('input', () => { 
+            if(rememberMeCheckbox.checked) saveUserData(); 
+            userAge = parseInt(manualAgeInput.value) || 18; 
+        });
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        
+        if (!SpeechRecognition) {
+            logMessage('त्रुटी', 'हा ब्राउझर सपोर्ट करत नाही. कृपया Google Chrome वापरा.');
+            talkButton.disabled = true;
+        } else {
+            try {
+                recognition = new SpeechRecognition();
+                recognition.continuous = false; 
+                recognition.interimResults = false;
+                recognition.lang = 'mr-IN'; 
+
+                recognition.onresult = handleSpeechResult;
+                recognition.onend = handleSpeechEnd;
+                
+                recognition.onerror = (event) => {
+                    if (event.error === 'no-speech' && appState !== 'IDLE' && appState !== 'BUSY') {
+                        startRecognitionSafe();
+                    } else if (event.error === 'not-allowed') {
+                        setState('IDLE');
+                    }
+                };
+            } catch (e) { alert("माईक त्रुटी: " + e.message); }
+        }
+
+        function startRecognitionSafe() {
+            if (!recognition) return;
+            try { recognition.start(); } catch (e) {}
+        }
+
+        talkButton.addEventListener('click', toggleListening);
+        pauseResumeButton.addEventListener('click', togglePauseResume);
+        stopSpeechButton.addEventListener('click', stopSpeech);
+        replayButton.addEventListener('click', replaySpeech);
+        shareButton.addEventListener('click', shareChat);
+        endChatButton.addEventListener('click', endChat);
+        restartChatButton.addEventListener('click', restartChat);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        async function toggleListening() {
+            if (appState === 'IDLE') {
+                try { enterFullScreen(); } catch(e) {}
+            }
+
+            try {
+                if (appState === 'IDLE') {
+                    talkButton.textContent = "ऐकत आहे...";
+                    talkButton.disabled = true;
+                    await acquireWakeLock(); 
+                    
+                    const inputName = manualNameInput.value.trim();
+                    const inputAge = manualAgeInput.value.trim();
+
+                    if (inputName && inputAge) {
+                        userName = inputName;
+                        userAge = parseInt(inputAge) || 18;
+                        saveUserData(); 
+                        buildSystemPrompt(); 
+
+                        const previousHistory = loadChatContext(userName);
+                        
+                        if (previousHistory.length > 0) {
+                            chatHistory = previousHistory;
+                            logMessage('सिस्टम', 'पोलीस दादा तुम्हाला ओळखत आहेत...');
+                            
+                            setState('BUSY');
+                            const welcomeBackPrompt = "जुना नागरिक परत आला आहे. म्हणा 'राम राम दादा, पुन्हा आलो.'";
+                            
+                            const tempHistory = [...chatHistory, { role: 'user', parts: [{ text: welcomeBackPrompt }] }];
+                            const welcomeText = await getAIResponse(tempHistory);
+                            
+                            logMessage('पोलीस दादा', welcomeText);
+                            await speakText(welcomeText, 'mr-IN');
+                            setState('CONVERSATION');
+                            startRecognitionSafe();
+
+                        } else {
+                            if (chatHistory.length === 0) {
+                                chatHistory.push({ role: 'user', parts: [{ text: "Start session." }] });
+                                chatHistory.push({ role: 'model', parts: [{ text: `राम राम ${userName}.` }] });
+                            }
+                            
+                            const welcomeText = `राम राम ${userName}, मी तुमचा 'पोलीस दादा' आहे. मी तुम्हाला महाराष्ट्रातील वाहतूक नियम आणि सुरक्षिततेबद्दल मार्गदर्शन करीन. बोला, काय मदत हवी आहे?`;
+                            logMessage('पोलीस दादा', welcomeText);
+                            
+                            setState('BUSY'); 
+                            await speakText(welcomeText, 'mr-IN');
+                            setState('CONVERSATION');
+                            startRecognitionSafe();
+                        }
+
+                    } else {
+                        setState('LISTENING_FOR_WAKEWORD');
+                        startRecognitionSafe();
+                        if (conversationLog.childElementCount < 3) logMessage('माहिती', '"पोलीस दादा" किंवा "दादा" म्हणा.');
+                    }
+
+                } else {
+                    setState('IDLE');
+                    recognition.stop();
+                    if (synth.speaking) synth.cancel();
+                    await releaseWakeLock();
+                }
+            } catch (error) {
+                setState('IDLE');
+            }
+        }
+
+        function setState(newState) {
+            appState = newState;
+            switch (newState) {
+                case 'IDLE':
+                    talkButton.textContent = 'संवाद सुरू करा';
+                    talkButton.disabled = false;
+                    statusIndicator.className = 'w-4 h-4 rounded-full bg-gray-500 transition-colors';
+                    endChatButton.disabled = true;
+                    talkButton.classList.remove('bg-red-600', 'hover:bg-red-700');
+                    talkButton.classList.add('bg-[#E2CE1D]', 'hover:bg-yellow-400', 'text-black');
+                    talkButton.classList.remove('text-white');
+                    manualNameInput.disabled = false;
+                    manualAgeInput.disabled = false;
+                    break;
+                case 'BUSY':
+                    talkButton.textContent = 'माहिती घेत आहे...';
+                    talkButton.disabled = true;
+                    statusIndicator.className = 'w-4 h-4 rounded-full bg-yellow-400 transition-colors';
+                    endChatButton.disabled = false;
+                    break;
+                default:
+                    talkButton.textContent = 'ऐकणे थांबवा';
+                    talkButton.disabled = false;
+                    statusIndicator.className = 'w-4 h-4 rounded-full bg-[#E2CE1D] listening-pulse transition-colors';
+                    endChatButton.disabled = false;
+                    talkButton.classList.remove('bg-[#E2CE1D]', 'hover:bg-yellow-400', 'text-black');
+                    talkButton.classList.add('bg-red-600', 'hover:bg-red-700', 'text-white');
+                    manualNameInput.disabled = true;
+                    manualAgeInput.disabled = true;
+                    break;
+            }
+        }
+
+        function handleSpeechEnd() {
+            if (appState !== 'IDLE' && appState !== 'BUSY') startRecognitionSafe();
+            else if (appState === 'IDLE') setState('IDLE'); 
+        }
+        
+        async function handleSpeechResult(event) {
+            const transcript = event.results[event.results.length - 1][0].transcript.trim();
+            if (!transcript) return;
+            console.log(`Heard: ${transcript}`);
+            
+            const currentState = appState;
+            recognition.stop();
+            setState('BUSY');
+
+            try {
+                switch (currentState) {
+                    case 'LISTENING_FOR_WAKEWORD':
+                        const t = transcript.toLowerCase();
+                        if (t.includes('police dada') || t.includes('dada') || t.includes('पोलीस दादा') || t.includes('दादा')) {
+                            const greeting = "राम राम, मी पोलीस दादा आहे. तुमचे नाव काय आहे?";
+                            logMessage('पोलीस दादा', greeting);
+                            await speakText(greeting, 'mr-IN');
+                            setState('LISTENING_FOR_NAME');
+                            startRecognitionSafe(); 
+                        } else {
+                            setState('LISTENING_FOR_WAKEWORD');
+                            startRecognitionSafe();
+                        }
+                        break;
+
+                    case 'LISTENING_FOR_NAME':
+                        logMessage('तुम्ही', transcript);
+                        userName = await extractNameFromTranscript(transcript);
+                        manualNameInput.value = userName; 
+                        
+                        const agePrompt = `बरं ${userName}, तुझे वय काय आहे?`;
+                        logMessage('पोलीस दादा', agePrompt);
+                        await speakText(agePrompt, 'mr-IN');
+                        setState('LISTENING_FOR_AGE');
+                        startRecognitionSafe();
+                        break;
+
+                    case 'LISTENING_FOR_AGE':
+                        logMessage('तुम्ही', transcript);
+                        userAge = await extractAgeFromTranscript(transcript);
+                        manualAgeInput.value = userAge; 
+                        
+                        saveUserData();
+                        buildSystemPrompt(); 
+
+                        const history = loadChatContext(userName);
+                        if(history.length > 0) chatHistory = history;
+
+                        const startPrompt = `छान. मी तुला वाहतुकीचे नियम आणि सुरक्षिततेबद्दल माहिती देईन. विचार तुला काय विचारायचे आहे?`;
+                        logMessage('पोलीस दादा', startPrompt);
+                        await speakText(startPrompt, 'mr-IN');
+                        setState('CONVERSATION');
+                        startRecognitionSafe();
+                        break;
+
+                    case 'CONVERSATION':
+                        logMessage(userName || 'तुम्ही', transcript);
+                        chatHistory.push({ role: 'user', parts: [{ text: transcript }] });
+                        saveChatContext();
+
+                        const aiResponseText = await generateTextResponseFromChat();
+                        
+                        const noBracketText = cleanBrackets(aiResponseText);
+                        const cleanedResponseText = cleanTextForTTS(noBracketText);
+
+                        chatHistory.push({ role: 'model', parts: [{ text: cleanedResponseText }] });
+                        saveChatContext();
+
+                        logMessage('पोलीस दादा', cleanedResponseText);
+                        
+                        try {
+                            await speakText(cleanedResponseText, 'mr-IN');
+                        } catch (error) {
+                            if (error.message === "Speech manually stopped") return;
+                            throw error;
+                        }
+                        
+                        setState('CONVERSATION');
+                        startRecognitionSafe();
+                        break;
+                }
+            } catch (error) {
+                if (systemInstruction) { setState('CONVERSATION'); startRecognitionSafe(); }
+                else { setState('LISTENING_FOR_WAKEWORD'); startRecognitionSafe(); }
+            }
+        }
+
+        // --- मुख्य लॉजिक (Brain) ---
+        function buildSystemPrompt() {
+            
+            let ageToneInstruction = "";
+            let conceptsToFocus = "";
+            let targetAge = parseInt(userAge);
+            if (isNaN(targetAge) || targetAge <= 0) targetAge = 25;
+
+            if (targetAge <= 16) {
+                ageToneInstruction = `User is a CHILD/TEEN (${targetAge} years old). Speak like a caring elder brother (Dada). Use simple Marathi. Focus on bicycle safety, crossing roads, and telling parents to drive safely.`;
+                conceptsToFocus = "Focus on: Zebra crossing, Traffic lights (Red/Green/Yellow), Helmet for parents, Seatbelt.";
+            } else if (targetAge > 16 && targetAge < 25) {
+                ageToneInstruction = `User is a YOUNG DRIVER/STUDENT (${targetAge} years old). Speak strictly but friendly. Warn against speeding, stunts, and drink & drive.`;
+                conceptsToFocus = "Focus on: License requirements, Helmet importance, No speeding (Section 184), Drunk driving (Section 185) fines.";
+            } else {
+                ageToneInstruction = `User is an ADULT (${targetAge} years old). Speak respectfully. Discuss fines, documents, rights when stopped by police, and duty towards society.`;
+                conceptsToFocus = "Focus on: Full documents (RC, Insurance, PUC), E-challan, Rights of citizens, Lane discipline, Section 177 (General fines).";
+            }
+
+            systemInstruction = `
+                You are "Police Dada" (पोलीस दादा), an expert Traffic Police officer in Maharashtra.
+                User: ${userName}, Age: ${targetAge}. 
+                
+                REFERENCE WEBSITES: https://trafficpolicemumbai.maharashtra.gov.in/, https://gr.maharashtra.gov.in, https://highwaypolice.maharashtra.gov.in/, https://home.maharashtra.gov.in
+                
+                STRICT RULES:
+                1. OUTPUT MUST BE IN PURE MARATHI LANGUAGE ONLY.
+                2. **DO NOT USE PARENTHESES ( ), BRACKETS [ ], ANGLE BRACKETS < >, OR ASTERISKS *.** Do not output any text inside these characters. Do not use Markdown formatting like bold or lists with *.
+                3. **ONLY ANSWER QUESTIONS RELATED TO TRAFFIC RULES, ROAD SAFETY, AND MOTOR VEHICLES ACT IN MAHARASHTRA.**
+                4. Quote specific fines (e.g., विना हेल्मेट ५०० रुपये) as per latest Maharashtra notifications.
+                5. Explain the *reason* for the rule (Safety first).
+                6. Educate the user about their RIGHTS (e.g., asking for ID) and DUTIES.
+                
+                AGE CONTEXT: ${ageToneInstruction}
+                THEMES: ${conceptsToFocus}
+
+                YOUR TASK:
+                1. Answer the user's traffic/safety question.
+                2. Cite the relevant fine or rule section if applicable.
+                3. Encourage safe driving and responsible behavior.
+                
+                STRUCTURE:
+                1. Direct Answer.
+                2. "पोलीस दादा सांगतात:"
+                3. The Rule/Fine.
+                4. Advice in Marathi plain text.
+            `;
+            restartChatButton.disabled = false;
+        }
+
+        async function getAIResponse(historyData) {
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${getEffectiveApiKey()}`;
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: historyData,
+                        systemInstruction: { parts: [{ text: systemInstruction }] }
+                    })
+                });
+                const result = await response.json();
+                
+                if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts.length > 0) {
+                    return result.candidates[0].content.parts[0].text.trim();
+                } else if (result.error) {
+                    throw new Error(result.error.message);
+                } else {
+                     return "माहिती मिळाली नाही. कृपया प्रश्न पुन्हा विचारा.";
+                }
+
+            } catch (error) { 
+                console.error("API Error:", error);
+                return "माहिती मिळाली नाही. कृपया इंटरनेट तपासा किंवा API Key योग्य असल्याची खात्री करा."; 
+            }
+        }
+
+        async function generateTextResponseFromChat() { return await getAIResponse(chatHistory); }
+
+        async function extractNameFromTranscript(transcript) {
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${getEffectiveApiKey()}`;
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: `Extract First Name from audio: "${transcript}". Return ONLY the name in Marathi script. If unclear return "नागरिक".` }] }] })
+                });
+                const result = await response.json();
+                let name = result.candidates[0].content.parts[0].text.trim();
+                return (name.length < 2) ? "नागरिक" : name.replace(/['".]/g, '');
+            } catch (error) { return "नागरिक"; }
+        }
+
+        async function extractAgeFromTranscript(transcript) {
+             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${getEffectiveApiKey()}`;
+             try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: `Extract age number from: "${transcript}". Return ONLY digits. Default 25.` }] }] })
+                });
+                const result = await response.json();
+                let age = parseInt(result.candidates[0].content.parts[0].text.trim());
+                return isNaN(age) || age <= 0 ? 25 : age;
+            } catch (e) { return 25; }
+        }
+        
+        function cleanBrackets(text) {
+             return text.replace(/[\*\[\]\(\)<>]/g, '')
+                        .replace(/\(.*?\)/g, '')
+                        .replace(/\[.*?\]/g, '')
+                        .replace(/<.*?>/g, '');
+        }
+
+        function cleanTextForTTS(text) {
+            let cleaned = text.replace(/[\*#`<>]/g, '').trim();
+            return cleaned;
+        }
+
+        function loadVoices() {
+            voices = synth.getVoices();
+            if (synth.onvoiceschanged !== undefined) synth.onvoiceschanged = () => { voices = synth.getVoices(); };
+        }
+
+        function togglePauseResume() {
+            if (synth.paused) synth.resume();
+            else if (synth.speaking) { synth.pause(); recognition.stop(); setState('BUSY'); }
+        }
+
+        function stopSpeech() {
+            if (!synth.speaking) return;
+            speechManuallyStopped = true; 
+            synth.cancel(); 
+            recognition.stop(); 
+            toggleMediaButtons(true);
+            logMessage('माहिती', 'थांबले.');
+            setTimeout(() => {
+                speechManuallyStopped = false;
+                if (appState !== 'IDLE') {
+                    if (systemInstruction) { setState('CONVERSATION'); startRecognitionSafe(); }
+                    else { setState('LISTENING_FOR_WAKEWORD'); startRecognitionSafe(); }
+                }
+            }, 1500);
+        }
+
+        function replaySpeech() {
+            if (lastSpokenText) { recognition.stop(); setState('BUSY'); speakText(lastSpokenText); }
+        }
+        
+        async function speakText(text, lang = 'mr-IN') {
+            if (synth.speaking) synth.cancel();
+            lastSpokenText = text;
+            speechManuallyStopped = false;
+            if (voices.length === 0) voices = synth.getVoices();
+
+            return new Promise((resolve, reject) => {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.onstart = () => { toggleMediaButtons(false); };
+                utterance.onend = () => {
+                    toggleMediaButtons(true);
+                    if (speechManuallyStopped) reject(new Error("Speech manually stopped"));
+                    else resolve();
+                };
+                utterance.onerror = (e) => { 
+                    toggleMediaButtons(true);
+                    if (e.error === 'interrupted') resolve(); else reject(e.error); 
+                };
+
+                let marathiVoice = voices.find(voice => voice.lang === 'mr-IN') || 
+                                 voices.find(voice => voice.lang === 'hi-IN');
+                                 
+                if (marathiVoice) utterance.voice = marathiVoice;
+                utterance.lang = 'mr-IN'; 
+                utterance.rate = 0.9; 
+                utterance.pitch = 0.9; 
+                
+                synth.speak(utterance);
+            });
+        }
+
+        function toggleMediaButtons(disabled) {
+            pauseResumeButton.disabled = disabled;
+            stopSpeechButton.disabled = disabled;
+            replayButton.disabled = disabled;
+        }
+        
+        function logMessage(sender, message) {
+            const div = document.createElement('div');
+            let senderClass = 'text-blue-300 font-semibold';
+            let messageClass = 'text-white';
+
+            if (sender === 'पोलीस दादा') { senderClass = 'text-[#E2CE1D] font-bold'; messageClass = 'text-yellow-50'; }
+            else if (sender === 'तुम्ही') { senderClass = 'text-green-300 font-semibold'; }
+
+            let formattedMessage = message.replace(/\n/g, '<br>');
+            
+            div.innerHTML = `<strong class="${senderClass}">${sender}:</strong> <span class="${messageClass}">${formattedMessage}</span>`;
+            conversationLog.appendChild(div);
+            conversationLog.scrollTop = conversationLog.scrollHeight;
+        }
+
+        function getChatLogAsText() {
+            const messages = [];
+            conversationLog.querySelectorAll('div').forEach(div => { if (div.textContent) messages.push(div.textContent); });
+            return messages.join('\n');
+        }
+
+        async function shareChat() {
+            const chatText = getChatLogAsText();
+            if (!chatText.trim()) return;
+            try { await navigator.share({ title: 'वाहतूक संवाद', text: chatText }); } 
+            catch (err) { try { await navigator.clipboard.writeText(chatText); logMessage('माहिती', 'कॉपी केले'); } catch (e) {} }
+        }
+
+        async function acquireWakeLock() {
+            if ('wakeLock' in navigator) { 
+                try { 
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    wakeLock.addEventListener('release', () => {
+                        if (appState !== 'IDLE' && document.visibilityState === 'visible') acquireWakeLock();
+                    });
+                } catch (e) {} 
+            }
+        }
+
+        async function releaseWakeLock() {
+            if (wakeLock) { try { await wakeLock.release(); wakeLock = null; } catch (e) {} }
+        }
+
+        async function handleVisibilityChange() {
+            if (appState !== 'IDLE' && document.visibilityState === 'visible') await acquireWakeLock();
+        }
+
+        async function endChat() {
+            appState = 'IDLE'; setState('IDLE');
+            speechManuallyStopped = true;
+            if (synth.speaking) synth.cancel();
+            if (recognition) try { recognition.stop(); } catch (e) {}
+            await releaseWakeLock();
+            userName = ''; userAge = 25; chatHistory = []; systemInstruction = '';
+            conversationLog.innerHTML = '<div class="text-gray-400 text-center">संवाद समाप्त. सुरक्षित रहा.</div>';
+            restartChatButton.disabled = true;
+        }
+
+        async function restartChat() {
+            if (!systemInstruction) return;
+            if (synth.speaking) synth.cancel();
+            if (recognition) try { recognition.stop(); } catch(e){}
+            appState = 'IDLE'; setState('IDLE');
+            await releaseWakeLock();
+            conversationLog.innerHTML = '';
+            if(userName) {
+                localStorage.removeItem(`acharya_history_${userName.toLowerCase()}`);
+                chatHistory = [];
+            }
+            logMessage('माहिती', `संवाद पुन्हा सुरू झाला.`);
+        }
+    </script>
+</body>
+</html>

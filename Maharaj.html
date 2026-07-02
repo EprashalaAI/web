@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shiv-Kavi Samvad | AI Maratha History</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Gotu&family=Yatra+One&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .marathi-font { font-family: 'Gotu', sans-serif; } /* Gotu looks more like historical calligraphy */
+        .royal-font { font-family: 'Yatra One', cursive; }
+        
+        /* Pulse Animation - Saffron when waiting, Red when processing */
+        .listening-pulse { animation: pulseSaffron 1.5s infinite ease-in-out; }
+        @keyframes pulseSaffron {
+            0% { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.7); } /* Orange-600 */
+            70% { box-shadow: 0 0 0 15px rgba(234, 88, 12, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0); }
+        }
+
+        .processing-pulse { animation: pulseRed 1.5s infinite ease-in-out; }
+        @keyframes pulseRed {
+            0% { box-shadow: 0 0 0 0 rgba(185, 28, 28, 0.7); } /* Red-700 */
+            70% { box-shadow: 0 0 0 15px rgba(185, 28, 28, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(185, 28, 28, 0); }
+        }
+
+        /* UI: Icon Button Styles */
+        .icon-btn {
+            @apply p-3 rounded-full text-white transition-all duration-200
+                   bg-stone-700 hover:bg-orange-600 shadow-lg
+                   focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-stone-800 focus:ring-orange-500
+                   disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none;
+        }
+        
+        /* UI: General Buttons */
+        .utility-btn {
+            @apply w-full py-3 px-2 rounded-lg text-sm font-semibold transition-colors
+                   bg-stone-700 text-white
+                   hover:bg-orange-700
+                   focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-stone-800 focus:ring-orange-500
+                   disabled:bg-stone-800 disabled:text-stone-600 disabled:cursor-not-allowed;
+        }
+
+        /* UI: Custom Checkbox */
+        .custom-checkbox {
+            @apply w-4 h-4 text-orange-600 bg-stone-700 border-stone-600 rounded focus:ring-orange-600 focus:ring-2 ring-offset-stone-800;
+        }
+        
+        /* UI: High Contrast Inputs */
+        .custom-input {
+            @apply block w-3/4 mx-auto text-center border border-stone-500 rounded-lg p-3 outline-none transition-all;
+            background-color: #1c1917 !important; /* Stone-900 */
+            color: #ffffff !important;             
+            caret-color: #f97316 !important; /* Orange-500 */      
+        }
+
+        /* Scrollbar customization */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1c1917; }
+        ::-webkit-scrollbar-thumb { background: #ea580c; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #c2410c; }
+
+        .saffron-gradient {
+            background: linear-gradient(135deg, #431407 0%, #1c1917 100%);
+        }
+    </style>
+</head>
+
+<body class="bg-stone-950 text-white flex items-center justify-center min-h-screen p-4" oncontextmenu="return false;">
+
+    <div class="saffron-gradient rounded-2xl shadow-2xl p-6 md:p-8 w-full max-w-2xl flex flex-col h-[95vh] md:h-auto border-t-4 border-orange-600">
+        
+        <div class="flex items-center justify-between mb-4 shrink-0">
+            <h1 class="text-2xl md:text-3xl font-bold text-white flex items-center gap-2 royal-font tracking-wide">
+                <span class="text-orange-500 text-4xl">🚩</span>
+                <span>शिव-कवी <span class="text-orange-500">संवाद</span></span>
+            </h1>
+            <div id="status-indicator" class="w-4 h-4 rounded-full bg-stone-600 transition-colors" title="Offline"></div>
+        </div>
+
+        <div id="conversation-log" class="flex-grow overflow-y-auto bg-stone-900/80 rounded-lg p-4 mb-4 border border-stone-700 space-y-4 shadow-inner min-h-[200px] marathi-font text-lg">
+            <div class="text-stone-400 text-center mt-10 font-sans">
+                To Start, Say: <br>
+                <span class="text-2xl text-orange-500 font-bold royal-font mt-2 block">"जय शिवराय"</span><br>
+                <span class="text-sm opacity-70 text-orange-200/50 mt-2 block">Microphone must be active.</span>
+            </div>
+        </div>
+
+        <div class="flex justify-center gap-8 mb-4 shrink-0 bg-stone-800/50 p-2 rounded-xl">
+            <button id="pause-resume-button" class="icon-btn bg-blue-900/30 hover:bg-blue-800" title="Pause/Resume" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" />
+                </svg>
+            </button>
+            
+            <button id="stop-speech-button" class="icon-btn bg-red-900/30 hover:bg-red-800" title="Stop Speaking" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 7.5A2.25 2.25 0 017.5 5.25h9a2.25 2.25 0 012.25 2.25v9a2.25 2.25 0 01-2.25 2.25h-9a2.25 2.25 0 01-2.25-2.25v-9z" />
+                </svg>
+            </button>
+
+            <button id="replay-button" class="icon-btn bg-green-900/30 hover:bg-green-800" title="Replay Last Message" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                </svg>
+            </button>
+        </div>
+
+        <div class="flex flex-col gap-4 mb-4 shrink-0 w-full text-center">
+            <div class="w-full">
+                <label class="text-xs text-stone-400 mb-1 block">Mavala Name (मावळ्याचे नाव)</label>
+                <input type="text" id="manual-name" class="custom-input" placeholder="Enter Name">
+            </div>
+            <input type="hidden" id="manual-age" value="25">
+        </div>
+
+        <div class="flex items-center justify-center gap-2 mb-2 shrink-0">
+            <input type="checkbox" id="remember-me-checkbox" class="custom-checkbox">
+            <label for="remember-me-checkbox" class="text-sm text-stone-300 cursor-pointer select-none">
+                Remember Me
+            </label>
+        </div>
+
+        <div class="w-full flex flex-col items-center justify-center mb-4 shrink-0">
+            <button id="advance-toggle-btn" class="text-xs text-orange-500 hover:text-orange-400 underline mb-2 focus:outline-none">
+                ▼ Advance Settings (API Key)
+            </button>
+
+            <div id="advance-container" class="hidden w-full bg-stone-800/80 border border-stone-700 rounded-lg p-4 flex flex-col gap-3 transition-all">
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="use-custom-key-checkbox" class="custom-checkbox">
+                    <label for="use-custom-key-checkbox" class="text-sm text-stone-300 cursor-pointer select-none">Use Custom API Key</label>
+                </div>
+                <input type="text" id="custom-api-key-input" class="custom-input text-xs w-full !w-full" placeholder="Paste API Key" disabled>
+                <button id="paste-key-btn" type="button" disabled class="w-full py-2 bg-stone-600 text-white text-xs rounded">Paste</button>
+            </div>
+        </div>
+
+        <button id="talk-button" class="w-full py-4 px-6 rounded-lg text-lg font-bold tracking-wide transition-all duration-300 ease-in-out shrink-0
+                       bg-orange-700 text-white shadow-lg shadow-orange-900/50
+                       hover:bg-orange-600 hover:shadow-orange-500/50 hover:-translate-y-0.5
+                       focus:outline-none focus:ring-4 focus:ring-orange-500 focus:ring-opacity-50 royal-font">
+            Start - जय शिवराय
+        </button>
+
+        <div class="mt-4 grid grid-cols-3 gap-3 shrink-0">
+            <button id="restart-chat-button" class="utility-btn" disabled>Restart</button>
+            <button id="share-button" class="utility-btn bg-indigo-900 hover:bg-indigo-800">Share</button>
+            <button id="end-chat-button" class="utility-btn text-red-200 hover:bg-red-900/40" disabled>End</button>
+        </div>
+
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        // REPLACE WITH YOUR VALID API KEY IF NEEDED
+        const DEFAULT_API_KEY = "AIzaSyB41xzsLyqQizurma_sHuBPd18wpJvoJro"; 
+        
+        // --- STATE VARIABLES ---
+	    let appState = 'IDLE'; 
+        let userName = '';
+        let chatHistory = [];
+        let systemInstruction = '';
+        let recognition;
+        const synth = window.speechSynthesis;
+        let voices = [];
+        let wakeLock = null;
+
+        // --- DOM ELEMENTS ---
+        const talkButton = document.getElementById('talk-button');
+        const statusIndicator = document.getElementById('status-indicator');
+        const conversationLog = document.getElementById('conversation-log');
+        const manualNameInput = document.getElementById('manual-name');
+        
+        // --- INITIALIZATION ---
+        window.onload = () => {
+            if (synth.speaking) synth.cancel();
+            loadUserData(); 
+            loadVoices();   
+        };
+
+        // --- SPEECH RECOGNITION SETUP ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        
+        if (!SpeechRecognition) {
+            logMessage('Error', 'Use Chrome browser for Speech features.');
+            talkButton.disabled = true;
+        } else {
+            recognition = new SpeechRecognition();
+            recognition.continuous = false; 
+            recognition.interimResults = false;
+            // CRITICAL: Marathi Language
+            recognition.lang = 'mr-IN'; 
+
+            recognition.onresult = handleSpeechResult;
+            recognition.onend = handleSpeechEnd;
+            recognition.onerror = (event) => {
+                console.log("Mic Error:", event.error);
+                if (event.error === 'not-allowed') setState('IDLE');
+            };
+        }
+
+        function startRecognitionSafe() {
+            if (!recognition) return;
+            setTimeout(() => {
+                if (appState !== 'IDLE' && appState !== 'BUSY') {
+                    try { recognition.start(); } catch (e) { console.log("Restarting mic..."); }
+                }
+            }, 100);
+        }
+
+        // --- MAIN BUTTON LOGIC ---
+        talkButton.addEventListener('click', async () => {
+            if (appState === 'IDLE') {
+                // STARTING
+                await acquireWakeLock();
+                const inputName = manualNameInput.value.trim();
+
+                if (inputName) {
+                    userName = inputName;
+                    saveUserData();
+                    buildSystemPrompt();
+                    
+                    const history = loadChatContext(userName);
+                    if (history.length > 0) {
+                        chatHistory = history;
+                        logMessage('System', 'Welcome back, brave Mavala.');
+                    }
+                    
+                    setState('LISTENING_FOR_WAKEWORD');
+                    startRecognitionSafe();
+                    logMessage('Info', 'Listening... Say "जय शिवराय" (Jay Shivrai)');
+                } else {
+                    alert("Please enter your Name first.");
+                }
+            } else {
+                // STOPPING
+                setState('IDLE');
+                recognition.stop();
+                if (synth.speaking) synth.cancel();
+                releaseWakeLock();
+            }
+        });
+
+        // --- STATE MANAGEMENT ---
+        function setState(newState) {
+            appState = newState;
+            switch (newState) {
+                case 'IDLE':
+                    talkButton.textContent = 'Start - जय शिवराय';
+                    statusIndicator.className = 'w-4 h-4 rounded-full bg-stone-500';
+                    talkButton.classList.replace('bg-red-700', 'bg-orange-700');
+                    manualNameInput.disabled = false;
+                    break;
+                case 'LISTENING_FOR_WAKEWORD':
+                    talkButton.textContent = 'Waiting for "जय शिवराय"...';
+                    statusIndicator.className = 'w-4 h-4 rounded-full bg-orange-500 listening-pulse';
+                    talkButton.classList.replace('bg-orange-700', 'bg-stone-600');
+                    manualNameInput.disabled = true;
+                    break;
+                case 'CONVERSATION':
+                    talkButton.textContent = 'Listening...';
+                    statusIndicator.className = 'w-4 h-4 rounded-full bg-orange-500 listening-pulse';
+                    talkButton.classList.replace('bg-stone-600', 'bg-orange-700'); // Active state
+                    break;
+                case 'BUSY':
+                    talkButton.textContent = 'Poet is Reciting...';
+                    statusIndicator.className = 'w-4 h-4 rounded-full bg-red-600 processing-pulse';
+                    talkButton.classList.replace('bg-orange-700', 'bg-stone-600');
+                    break;
+            }
+        }
+
+        // --- SPEECH HANDLING ---
+        function handleSpeechEnd() {
+            if (appState === 'LISTENING_FOR_WAKEWORD' || appState === 'CONVERSATION') {
+                startRecognitionSafe();
+            }
+        }
+
+        async function handleSpeechResult(event) {
+            const transcript = event.results[event.results.length - 1][0].transcript.trim();
+            if (!transcript) return;
+            console.log(`Heard: ${transcript}`);
+
+            recognition.stop();
+
+            if (appState === 'LISTENING_FOR_WAKEWORD') {
+                // *** WAKE WORD LOGIC ***
+                const t = transcript.toLowerCase(); 
+                
+                // Matches: Jay Shivrai, Jay Bhavani, Jai Shivaji
+                if (t.includes('शिवराय') || t.includes('शिवाजी') || t.includes('भवानी')) {
+                    
+                    setState('BUSY');
+                    const greeting = `जय भवानी, जय शिवाजी! ये मावळ्या ${userName}, आज तुला राजांच्या कोणत्या पराक्रमाची गाथा ऐकायची आहे?`;
+                    logMessage('Kavi', greeting);
+                    await speakText(greeting);
+                    setState('CONVERSATION'); 
+                    startRecognitionSafe();
+                    
+                } else {
+                    console.log("Ignored: Not wake word");
+                }
+            } 
+            else if (appState === 'CONVERSATION') {
+                // MAIN CHAT LOGIC
+                setState('BUSY');
+                logMessage('You', transcript);
+                
+                chatHistory.push({ role: 'user', parts: [{ text: transcript }] });
+                saveChatContext();
+
+                const responseText = await getAIResponse(chatHistory);
+                // Remove formatting for TTS reading
+                const cleanText = cleanTextForTTS(responseText);
+
+                chatHistory.push({ role: 'model', parts: [{ text: responseText }] }); // Save formatted text to history
+                saveChatContext();
+
+                // Display formatting in UI
+                logMessage('Kavi', responseText, true); 
+                
+                await speakText(cleanText);
+                
+                setState('CONVERSATION');
+                startRecognitionSafe();
+            }
+        }
+
+        // --- GEMINI AI INTEGRATION (HISTORIAN LOGIC) ---
+        function buildSystemPrompt() {
+            systemInstruction = `
+                You are a fusion of the great poets Kavi Bhushan and Kavi Paramanand from the court of Chhatrapati Shivaji Maharaj.
+                
+                **Your Goal:** Answer user questions about Shivaji Maharaj's history by quoting relevant poems and then explaining them.
+                
+                **Sources to Use:**
+                1. 'Shivbavani' (by Kavi Bhushan - Braj Bhasha/Hindi)
+                2. 'Shivraj Bhushan' (by Kavi Bhushan)
+                3. 'Shivabharat' (by Kavi Paramanand - Sanskrit)
+                
+                **Response Structure (Strictly follow this):**
+                1. Start with a relevant verse/stanza from the poems in Devanagari script.
+                2. Explicitly state the source. Use phrases like:
+                   - "ह्या प्रसंगावर कवी भूषण 'शिवबावनी' मध्ये म्हणतात..." 
+                   - "कवी परमानंद 'शिवभारत' ग्रंथात लिहितात..."
+                3. Provide the explanation/meaning in clear **Marathi**.
+                4. End with "जय शिवराय".
+
+                **Tone:** - Veer Ras (Heroic), Energetic, Devotional toward Maharaj.
+                - Address the user as 'Mavala' (मावळ्या).
+                
+                **Language:**
+                - Input: Marathi (User).
+                - Output: Verse (Braj/Sanskrit) + Explanation (Marathi).
+                
+                Keep answers concise (max 3-4 sentences of explanation) to keep the conversation flowing naturally.
+            `;
+        }
+
+        function getEffectiveApiKey() {
+            const useCustom = document.getElementById('use-custom-key-checkbox').checked;
+            const customKey = document.getElementById('custom-api-key-input').value.trim();
+            return (useCustom && customKey) ? customKey : DEFAULT_API_KEY;
+        }
+
+        async function getAIResponse(history) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${getEffectiveApiKey()}`;
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: history,
+                        systemInstruction: { parts: [{ text: systemInstruction }] }
+                    })
+                });
+                const data = await res.json();
+                return data.candidates[0].content.parts[0].text;
+            } catch (e) { return "मावळ्या, संपर्कात अडथळा आला आहे. पुन्हा प्रयत्न कर. (API Error)"; }
+        }
+
+        // --- TTS (TEXT TO SPEECH) ---
+        function loadVoices() { voices = synth.getVoices(); if (synth.onvoiceschanged !== undefined) synth.onvoiceschanged = () => { voices = synth.getVoices(); }; }
+
+        async function speakText(text) {
+            if (synth.speaking) synth.cancel();
+            return new Promise((resolve) => {
+                const utter = new SpeechSynthesisUtterance(text);
+                utter.onend = resolve;
+                utter.onerror = resolve; 
+                
+                // Try to find Marathi/Hindi voice
+                let voice = voices.find(v => v.lang === 'mr-IN') || voices.find(v => v.lang === 'hi-IN');
+                if (voice) utter.voice = voice;
+                
+                utter.lang = 'mr-IN';
+                utter.rate = 1.0; // Normal speed (Energetic/Veer Ras)
+                utter.pitch = 1.0; // Strong pitch
+                
+                synth.speak(utter);
+            });
+        }
+
+        function cleanTextForTTS(text) {
+            // Remove markdown symbols for smoother speech
+            return text.replace(/[*#_`]/g, '').trim();
+        }
+
+        // --- UTILITIES ---
+        function logMessage(sender, text, isMarkdown = false) {
+            const div = document.createElement('div');
+            // Colors: Kavi = Orange, User = White, System = Gray
+            const color = sender === 'Kavi' ? 'text-orange-400' : (sender === 'You' ? 'text-white' : 'text-stone-500');
+            
+            // formatting for poem display
+            let content = text;
+            if(isMarkdown) {
+                // simple bold replacement for display
+                content = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
+            }
+
+            div.innerHTML = `<strong class="${color} font-bold">${sender}:</strong> <span class="text-stone-200">${content}</span>`;
+            conversationLog.appendChild(div);
+            conversationLog.scrollTop = conversationLog.scrollHeight;
+        }
+        
+        // --- STORAGE & SETTINGS ---
+        const rememberMeCheckbox = document.getElementById('remember-me-checkbox');
+        const useCustomKeyCheckbox = document.getElementById('use-custom-key-checkbox');
+        const customApiKeyInput = document.getElementById('custom-api-key-input');
+        
+        function loadUserData() {
+            if (localStorage.getItem('shivkavi_remember') === 'true') {
+                rememberMeCheckbox.checked = true;
+                manualNameInput.value = localStorage.getItem('shivkavi_userName') || '';
+            }
+        }
+        function saveUserData() {
+            if (rememberMeCheckbox.checked) {
+                localStorage.setItem('shivkavi_remember', 'true');
+                localStorage.setItem('shivkavi_userName', userName);
+            }
+        }
+        function loadChatContext(name) {
+            try { return JSON.parse(localStorage.getItem(`shivkavi_chat_${name}`)) || []; } catch(e){ return []; }
+        }
+        function saveChatContext() {
+            localStorage.setItem(`shivkavi_chat_${userName}`, JSON.stringify(chatHistory.slice(-15)));
+        }
+
+        // Settings Toggle
+        document.getElementById('advance-toggle-btn').onclick = () => {
+            document.getElementById('advance-container').classList.toggle('hidden');
+        };
+        useCustomKeyCheckbox.onchange = () => {
+            customApiKeyInput.disabled = !useCustomKeyCheckbox.checked;
+            document.getElementById('paste-key-btn').disabled = !useCustomKeyCheckbox.checked;
+        };
+        document.getElementById('paste-key-btn').onclick = async () => {
+            try { customApiKeyInput.value = await navigator.clipboard.readText(); } catch(e){}
+        };
+
+        // --- WAKE LOCK ---
+        async function acquireWakeLock() { if ('wakeLock' in navigator) { try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {} } }
+        async function releaseWakeLock() { if (wakeLock) { await wakeLock.release(); wakeLock = null; } }
+        
+        // Control Buttons
+        document.getElementById('stop-speech-button').onclick = () => { synth.cancel(); };
+        document.getElementById('restart-chat-button').onclick = () => { chatHistory = []; conversationLog.innerHTML = ''; logMessage('System', 'Chat Reset.'); };
+    </script>
+</body>
+</html>

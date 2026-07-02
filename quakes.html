@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jyotish Seismic Correlation Engine - Deep Dataset</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #34495e;
+            --accent: #e67e22;
+            --light: #ecf0f1;
+            --border: #bdc3c7;
+            --hover: #e8f4f8;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f9f9f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: var(--primary);
+            text-align: center;
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 10px;
+        }
+
+        .add-form {
+            background: var(--light);
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .add-form h3 { margin-top: 0; font-size: 1.1em; color: var(--primary); }
+        
+        .form-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .form-row input {
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            background: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        button:hover { background-color: var(--accent); transform: translateY(-1px); }
+        .btn-add { background-color: #8e44ad; }
+
+        .table-wrapper {
+            max-height: 600px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid var(--border); padding: 12px 10px; text-align: left; }
+        
+        /* Main Table Headers */
+        #earthquake-table > thead > tr > th {
+            background-color: var(--secondary);
+            color: white;
+            position: sticky;
+            top: 0;
+            cursor: pointer;
+            user-select: none;
+            z-index: 10;
+        }
+        #earthquake-table > thead > tr > th:hover { background-color: #2c3e50; }
+
+        .sort-arrow { font-size: 0.8em; margin-left: 5px; color: #f1c40f; }
+
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        tr:hover { background-color: var(--hover); }
+
+        /* Inner Table Styles */
+        .details-table {
+            font-size: 0.9em;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            width: 100%;
+            background: #fff;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.1);
+        }
+
+        .details-table th { 
+            background-color: #7f8c8d; 
+            top: auto; 
+            position: static; 
+            cursor: pointer; 
+            color: white;
+        }
+        .details-table th:hover { background-color: #95a5a6; }
+        
+        .loader { display: none; font-weight: bold; color: var(--accent); margin-left: 15px; }
+
+        #ai-prompt-container {
+            display: none; margin-top: 30px; background: var(--light);
+            padding: 20px; border-radius: 8px; border-left: 4px solid var(--accent);
+        }
+
+        textarea {
+            width: 100%; height: 300px; padding: 15px; font-family: 'Courier New', monospace;
+            font-size: 14px; border: 1px solid var(--border); border-radius: 4px;
+            resize: vertical; background: #2b2b2b; color: #a9b7c6;
+        }
+
+        .status { font-size: 0.85em; color: #27ae60; font-weight: bold; }
+        .error { font-size: 0.85em; color: #c0392b; font-weight: bold; }
+        .btn-toggle { font-size: 0.8em; padding: 6px 10px; background-color: #3498db; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Maharishi Varahamihira Seismic AI Engine</h1>
+    
+    <div class="add-form">
+        <h3>Add Custom Seismic Event</h3>
+        <div class="form-row">
+            <input type="text" id="new-loc" placeholder="Location (e.g., San Andreas)">
+            <input type="number" id="new-mag" placeholder="Magnitude" step="0.1">
+            <input type="date" id="new-date">
+            <input type="time" id="new-time" step="1">
+            <input type="number" id="new-lat" placeholder="Latitude" step="0.0001">
+            <input type="number" id="new-lon" placeholder="Longitude" step="0.0001">
+            <button onclick="addCustomEq()" class="btn-add">Add to List</button>
+        </div>
+    </div>
+
+    <div class="controls">
+        <div>
+            <button onclick="calculateSelected()">1. Calculate Astronomical Positions</button>
+            <span id="loading" class="loader">⚙️ Connecting to Swisseph Server...</span>
+        </div>
+        <div>
+            <button onclick="generatePrompt()" style="background-color: #27ae60;">2. Generate AI Evaluation Prompt</button>
+        </div>
+    </div>
+
+    <div class="table-wrapper">
+        <table id="earthquake-table">
+            <thead>
+                <tr>
+                    <th style="width: 40px; cursor: default;"><input type="checkbox" id="select-all" onclick="toggleAll(this)"></th>
+                    <th onclick="sortTable('location')">Location <span id="arrow-location" class="sort-arrow"></span></th>
+                    <th onclick="sortTable('mag')">Magnitude <span id="arrow-mag" class="sort-arrow">▼</span></th>
+                    <th onclick="sortTable('date')">Date <span id="arrow-date" class="sort-arrow"></span></th>
+                    <th onclick="sortTable('time')">Time (UTC) <span id="arrow-time" class="sort-arrow"></span></th>
+                    <th onclick="sortTable('lat')">Latitude <span id="arrow-lat" class="sort-arrow"></span></th>
+                    <th onclick="sortTable('lon')">Longitude <span id="arrow-lon" class="sort-arrow"></span></th>
+                    <th style="cursor: default;">Status</th>
+                    <th style="cursor: default;">Data</th>
+                </tr>
+            </thead>
+            <tbody id="eq-body">
+                </tbody>
+        </table>
+    </div>
+
+    <div id="ai-prompt-container">
+        <h3 style="margin-top: 0;">AI Pattern Recognition Prompt</h3>
+        <p>Copy this prompt into Gemini. It contains all exact degrees, Rashis, and Nakshatras for the selected earthquakes.</p>
+        <textarea id="ai-prompt-text"></textarea>
+        <br><br>
+        <button onclick="copyPrompt()">Copy to Clipboard</button>
+        <span id="copy-status" style="margin-left:15px; color: #27ae60; font-weight:bold;"></span>
+    </div>
+</div>
+
+<script>
+// Massive Historical Earthquake Dataset (100+ Years, Mag 7.0+ & Notable)
+    let earthquakes = [
+        { id: 1, location: "Valdivia, Chile", mag: 9.5, date: "1960-05-22", time: "19:11:14", lat: -38.143, lon: -73.025 },
+        { id: 2, location: "Alaska, USA", mag: 9.2, date: "1964-03-28", time: "03:36:14", lat: 61.017, lon: -147.648 },
+        { id: 3, location: "Sumatra, Indonesia", mag: 9.1, date: "2004-12-26", time: "00:58:53", lat: 3.295, lon: 95.982 },
+        { id: 4, location: "Tohoku, Japan", mag: 9.1, date: "2011-03-11", time: "05:46:24", lat: 38.297, lon: 142.373 },
+        { id: 5, location: "Kamchatka, Russia", mag: 9.0, date: "1952-11-04", time: "16:58:30", lat: 52.623, lon: 159.779 },
+        { id: 6, location: "Maule, Chile", mag: 8.8, date: "2010-02-27", time: "06:34:11", lat: -36.122, lon: -72.898 },
+        { id: 7, location: "Ecuador-Colombia", mag: 8.8, date: "1906-01-31", time: "15:36:00", lat: 1.0, lon: -81.5 },
+        { id: 8, location: "Rat Islands, Alaska", mag: 8.7, date: "1965-02-04", time: "05:01:22", lat: 51.251, lon: 178.715 },
+        { id: 9, location: "Assam-Tibet", mag: 8.6, date: "1950-08-15", time: "14:09:30", lat: 28.5, lon: 96.5 },
+        { id: 10, location: "Northern Sumatra", mag: 8.6, date: "2005-03-28", time: "16:09:36", lat: 2.085, lon: 97.108 },
+        { id: 11, location: "Northern Sumatra", mag: 8.6, date: "2012-04-11", time: "08:38:36", lat: 2.327, lon: 93.063 },
+        { id: 12, location: "Aleutian Islands", mag: 8.6, date: "1946-04-01", time: "12:28:58", lat: 53.3, lon: -163.0 },
+        { id: 13, location: "Haiyuan, China", mag: 8.5, date: "1920-12-16", time: "12:05:54", lat: 36.5, lon: 105.32 },
+        { id: 14, location: "Banda Sea, Indonesia", mag: 8.5, date: "1938-02-01", time: "19:04:20", lat: -5.05, lon: 131.62 },
+        { id: 15, location: "Kuril Islands", mag: 8.5, date: "1963-10-13", time: "05:17:57", lat: 44.9, lon: 149.6 },
+        { id: 16, location: "Sanriku, Japan", mag: 8.4, date: "1933-03-02", time: "17:31:00", lat: 39.22, lon: 144.62 },
+        { id: 17, location: "Arequipa, Peru", mag: 8.4, date: "2001-06-23", time: "20:33:14", lat: -16.265, lon: -73.641 },
+        { id: 18, location: "Southern Sumatra", mag: 8.4, date: "2007-09-12", time: "11:10:26", lat: -4.438, lon: 101.367 },
+        { id: 19, location: "Kamchatka", mag: 8.4, date: "1923-02-03", time: "16:01:46", lat: 54.0, lon: 161.0 },
+        { id: 20, location: "Chignik, USA", mag: 8.2, date: "2021-07-29", time: "06:15:49", lat: 55.364, lon: -157.888 },
+        { id: 21, location: "Kermadec Islands", mag: 8.1, date: "2021-03-04", time: "19:28:31", lat: -29.723, lon: -177.279 },
+        { id: 22, location: "Michoacan, Mexico", mag: 8.0, date: "1985-09-19", time: "13:17:47", lat: 18.19, lon: -102.533 },
+        { id: 23, location: "Samoa Islands", mag: 8.1, date: "2009-09-29", time: "17:48:10", lat: -15.509, lon: -172.034 },
+        { id: 24, location: "Peru (Pisco)", mag: 8.0, date: "2007-08-15", time: "23:40:57", lat: -13.386, lon: -76.509 },
+        { id: 25, location: "Solomon Islands", mag: 8.1, date: "2007-04-01", time: "20:39:56", lat: -8.453, lon: 156.957 },
+        { id: 26, location: "Wenchuan, China", mag: 7.9, date: "2008-05-12", time: "06:28:01", lat: 31.002, lon: 103.322 },
+        { id: 27, location: "Kanto, Japan", mag: 7.9, date: "1923-09-01", time: "02:58:00", lat: 35.1, lon: 139.5 },
+        { id: 28, location: "Tangshan, China", mag: 7.8, date: "1976-07-27", time: "19:42:00", lat: 39.57, lon: 118.18 },
+        { id: 29, location: "Nepal (Gorkha)", mag: 7.8, date: "2015-04-25", time: "06:11:26", lat: 28.147, lon: 84.708 },
+        { id: 30, location: "Kahramanmaras, Turkey", mag: 7.8, date: "2023-02-06", time: "01:17:35", lat: 37.174, lon: 37.032 },
+        { id: 31, location: "Gujarat, India", mag: 7.7, date: "2001-01-26", time: "03:16:40", lat: 23.419, lon: 70.232 },
+        { id: 32, location: "Luzon, Philippines", mag: 7.7, date: "1990-07-16", time: "07:26:34", lat: 15.679, lon: 121.172 },
+        { id: 33, location: "Kashmir, India", mag: 7.6, date: "2005-10-08", time: "03:50:40", lat: 34.493, lon: 73.629 },
+        { id: 34, location: "Izmit, Turkey", mag: 7.6, date: "1999-08-17", time: "00:01:39", lat: 40.748, lon: 29.864 },
+        { id: 35, location: "Chi-Chi, Taiwan", mag: 7.6, date: "1999-09-20", time: "17:47:18", lat: 23.772, lon: 120.982 },
+        { id: 36, location: "Noto, Japan", mag: 7.5, date: "2024-01-01", time: "07:10:09", lat: 37.498, lon: 137.242 },
+        { id: 37, location: "Hualien, Taiwan", mag: 7.4, date: "2024-04-02", time: "23:58:11", lat: 23.819, lon: 121.562 },
+        { id: 38, location: "Port-au-Prince, Haiti", mag: 7.0, date: "2010-01-12", time: "21:53:10", lat: 18.443, lon: -72.571 },
+        { id: 39, location: "Loma Prieta, USA", mag: 6.9, date: "1989-10-18", time: "00:04:15", lat: 37.04, lon: -121.88 },
+        { id: 40, location: "Kobe, Japan", mag: 6.9, date: "1995-01-16", time: "20:46:53", lat: 34.575, lon: 135.03 },
+        { id: 41, location: "Morocco (Al Haouz)", mag: 6.8, date: "2023-09-08", time: "22:11:01", lat: 31.056, lon: -8.391 },
+        { id: 42, location: "Spitak, Armenia", mag: 6.8, date: "1988-12-07", time: "07:41:24", lat: 40.987, lon: 44.185 },
+        { id: 43, location: "Northridge, USA", mag: 6.7, date: "1994-01-17", time: "12:30:55", lat: 34.213, lon: -118.537 },
+        { id: 44, location: "Bam, Iran", mag: 6.6, date: "2003-12-26", time: "01:56:52", lat: 29.004, lon: 58.314 },
+        { id: 45, location: "L'Aquila, Italy", mag: 6.3, date: "2009-04-06", time: "01:32:39", lat: 42.334, lon: 13.334 },
+        { id: 46, location: "Christchurch, NZ", mag: 6.2, date: "2011-02-21", time: "23:51:42", lat: -43.582, lon: 172.684 },
+        { id: 47, location: "Latur, India", mag: 6.2, date: "1993-09-29", time: "22:25:48", lat: 18.08, lon: 76.52 },
+        { id: 48, location: "Assam, India", mag: 8.1, date: "1897-06-12", time: "11:06:00", lat: 26.0, lon: 91.0 },
+        { id: 49, location: "San Francisco, USA", mag: 7.9, date: "1906-04-18", time: "13:12:00", lat: 37.75, lon: -122.55 },
+        { id: 50, location: "Messina, Italy", mag: 7.1, date: "1908-12-28", time: "04:20:00", lat: 38.15, lon: 15.68 },
+        { id: 51, location: "Avezzano, Italy", mag: 6.7, date: "1915-01-13", time: "06:52:00", lat: 42.04, lon: 13.44 },
+        { id: 52, location: "Chillan, Chile", mag: 8.3, date: "1939-01-25", time: "03:32:00", lat: -36.2, lon: -72.2 },
+        { id: 53, location: "Erzincan, Turkey", mag: 7.8, date: "1939-12-26", time: "23:57:23", lat: 39.77, lon: 39.53 },
+        { id: 54, location: "Ashgabat, Turkmenistan", mag: 7.3, date: "1948-10-05", time: "20:12:00", lat: 37.95, lon: 58.32 },
+        { id: 55, location: "Kern County, USA", mag: 7.3, date: "1952-07-21", time: "11:52:14", lat: 34.95, lon: -119.05 },
+        { id: 56, location: "Agadir, Morocco", mag: 5.8, date: "1960-02-29", time: "23:40:00", lat: 30.42, lon: -9.62 },
+        { id: 57, location: "Skopje, Macedonia", mag: 6.1, date: "1963-07-26", time: "04:17:11", lat: 42.16, lon: 21.39 },
+        { id: 58, location: "Caracas, Venezuela", mag: 6.5, date: "1967-07-29", time: "00:00:00", lat: 10.56, lon: -67.33 },
+        { id: 59, location: "Ancash, Peru", mag: 7.9, date: "1970-05-31", time: "20:23:27", lat: -9.28, lon: -78.83 },
+        { id: 60, location: "Sylmar, USA", mag: 6.6, date: "1971-02-09", time: "14:00:41", lat: 34.41, lon: -118.4 },
+        { id: 61, location: "Managua, Nicaragua", mag: 6.2, date: "1972-12-23", time: "06:29:42", lat: 12.35, lon: -86.12 },
+        { id: 62, location: "Guatemala", mag: 7.5, date: "1976-02-04", time: "09:01:43", lat: 15.32, lon: -89.1 },
+        { id: 63, location: "Vrancea, Romania", mag: 7.2, date: "1977-03-04", time: "19:21:54", lat: 45.77, lon: 26.76 },
+        { id: 64, location: "Tabas, Iran", mag: 7.4, date: "1978-09-16", time: "15:35:56", lat: 33.38, lon: 57.43 },
+        { id: 65, location: "Campania, Italy", mag: 6.9, date: "1980-11-23", time: "18:34:53", lat: 40.91, lon: 15.36 },
+        { id: 66, location: "San Salvador", mag: 5.7, date: "1986-10-10", time: "17:49:25", lat: 13.67, lon: -89.19 },
+        { id: 67, location: "Manjil-Rudbar, Iran", mag: 7.4, date: "1990-06-20", time: "21:00:09", lat: 36.96, lon: 49.41 },
+        { id: 68, location: "Sakhalin, Russia", mag: 7.0, date: "1995-05-27", time: "13:03:52", lat: 52.63, lon: 142.83 },
+        { id: 69, location: "Bengkulu, Indonesia", mag: 7.9, date: "2000-06-04", time: "16:28:26", lat: -4.72, lon: 102.08 },
+        { id: 70, location: "Boumerdes, Algeria", mag: 6.8, date: "2003-05-21", time: "18:44:19", lat: 36.96, lon: 3.63 },
+        { id: 71, location: "Java, Indonesia", mag: 7.7, date: "2006-07-17", time: "08:19:28", lat: -9.22, lon: 107.32 },
+        { id: 72, location: "Ica, Peru", mag: 8.0, date: "2007-08-15", time: "23:40:57", lat: -13.35, lon: -76.51 },
+        { id: 73, location: "Van, Turkey", mag: 7.1, date: "2011-10-23", time: "10:41:21", lat: 38.62, lon: 43.48 },
+        { id: 74, location: "Bohol, Philippines", mag: 7.2, date: "2013-10-15", time: "00:12:31", lat: 9.88, lon: 124.11 },
+        { id: 75, location: "Iquique, Chile", mag: 8.2, date: "2014-04-01", time: "23:46:47", lat: -19.61, lon: -70.77 },
+        { id: 76, location: "Illapel, Chile", mag: 8.3, date: "2015-09-16", time: "22:54:32", lat: -31.57, lon: -71.67 },
+        { id: 77, location: "Kaïkoura, NZ", mag: 7.8, date: "2016-11-13", time: "11:02:56", lat: -42.74, lon: 173.05 },
+        { id: 78, location: "Chiapas, Mexico", mag: 8.2, date: "2017-09-08", time: "04:49:19", lat: 15.02, lon: -93.9 },
+        { id: 79, location: "Puebla, Mexico", mag: 7.1, date: "2017-09-19", time: "18:14:38", lat: 18.58, lon: -98.4 },
+        { id: 80, location: "Palu, Indonesia", mag: 7.5, date: "2018-09-28", time: "10:02:45", lat: -0.26, lon: 119.85 },
+        { id: 81, location: "Alaska, USA", mag: 7.1, date: "2018-11-30", time: "17:29:29", lat: 61.35, lon: -149.94 },
+        { id: 82, location: "Ridgecrest, USA", mag: 7.1, date: "2019-07-06", time: "03:19:53", lat: 35.77, lon: -117.61 },
+        { id: 83, location: "Aegean Sea", mag: 7.0, date: "2020-10-30", time: "11:51:26", lat: 37.9, lon: 26.79 },
+        { id: 84, location: "Sand Point, USA", mag: 7.8, date: "2020-07-22", time: "06:12:44", lat: 55.03, lon: -158.52 },
+        { id: 85, location: "Fukushima, Japan", mag: 7.1, date: "2021-02-13", time: "14:07:50", lat: 37.68, lon: 141.99 },
+        { id: 86, location: "Nippes, Haiti", mag: 7.2, date: "2021-08-14", time: "12:29:08", lat: 18.35, lon: -73.48 },
+        { id: 87, location: "Michoacan, Mexico", mag: 7.6, date: "2022-09-19", time: "18:05:06", lat: 18.37, lon: -103.25 },
+        { id: 88, location: "Jajarkot, Nepal", mag: 5.7, date: "2023-11-03", time: "18:02:54", lat: 28.89, lon: 82.19 },
+        { id: 89, location: "Suoto, Japan", mag: 6.5, date: "2023-05-05", time: "05:42:04", lat: 37.54, lon: 137.31 },
+        { id: 90, location: "Herat, Afghanistan", mag: 6.3, date: "2023-10-07", time: "06:41:03", lat: 34.61, lon: 61.92 },
+        { id: 91, location: "Herat, Afghanistan", mag: 6.3, date: "2023-10-11", time: "00:41:56", lat: 34.56, lon: 61.9 },
+        { id: 92, location: "Herat, Afghanistan", mag: 6.3, date: "2023-10-15", time: "03:36:00", lat: 34.61, lon: 62.05 },
+        { id: 93, location: "Mindanao, Philippines", mag: 7.6, date: "2023-12-02", time: "14:37:03", lat: 8.53, lon: 126.45 },
+        { id: 94, location: "Uqturpan, China", mag: 7.0, date: "2024-01-22", time: "18:09:10", lat: 41.26, lon: 78.63 },
+        { id: 95, location: "Hindu Kush, Afghan", mag: 6.5, date: "2023-03-21", time: "16:47:23", lat: 36.52, lon: 70.98 },
+        { id: 96, location: "Oaxaca, Mexico", mag: 7.4, date: "2020-06-23", time: "15:29:05", lat: 15.8, lon: -95.94 },
+        { id: 97, location: "Vanuatu", mag: 7.0, date: "2023-01-08", time: "12:32:43", lat: -14.94, lon: 166.88 },
+        { id: 98, location: "Kermadec Islands", mag: 7.1, date: "2023-03-16", time: "00:56:19", lat: -30.13, lon: -176.11 },
+        { id: 99, location: "Banda Sea", mag: 7.1, date: "2023-11-08", time: "04:52:53", lat: -6.31, lon: 129.58 },
+        { id: 100, location: "Gansu, China", mag: 5.9, date: "2023-12-18", time: "15:59:30", lat: 35.74, lon: 102.79 }
+    ];
+
+    const rashis = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"];
+    const nakshatras = ["Ashvini", "Bharani", "Krittika", "Rohini", "Mrigashirsha", "Ardra", "Punarvasu", "Pushya", "Ashlesha", "Magha", "Purva Phalguni", "Uttara Phalguni", "Hasta", "Chitra", "Svati", "Vishakha", "Anuradha", "Jyeshtha", "Mula", "Purva Ashadha", "Uttara Ashadha", "Shravana", "Dhanishta", "Shatabhisha", "Purva Bhadrapada", "Uttara Bhadrapada", "Revati"];
+
+    let calculatedData = {};
+    let sortCol = 'mag'; 
+    let sortAsc = false;
+
+    // Inner Table Sorting State mapping
+    let innerSortState = {}; 
+
+    // --- ADD CUSTOM EVENT LOGIC ---
+    function addCustomEq() {
+        const loc = document.getElementById('new-loc').value;
+        const mag = parseFloat(document.getElementById('new-mag').value);
+        const date = document.getElementById('new-date').value;
+        let time = document.getElementById('new-time').value;
+        const lat = parseFloat(document.getElementById('new-lat').value);
+        const lon = parseFloat(document.getElementById('new-lon').value);
+
+        if(!loc || isNaN(mag) || !date || !time || isNaN(lat) || isNaN(lon)) {
+            alert("Please fill out all fields correctly to add a new event.");
+            return;
+        }
+
+        // Ensure time has seconds for API
+        if(time.split(':').length === 2) time += ":00";
+
+        const newId = earthquakes.length > 0 ? Math.max(...earthquakes.map(e => e.id)) + 1 : 1;
+
+        earthquakes.push({
+            id: newId, location: loc, mag: mag, date: date, time: time, lat: lat, lon: lon
+        });
+
+        // Clear Form
+        document.getElementById('new-loc').value = '';
+        document.getElementById('new-mag').value = '';
+        document.getElementById('new-date').value = '';
+        document.getElementById('new-time').value = '';
+        document.getElementById('new-lat').value = '';
+        document.getElementById('new-lon').value = '';
+
+        // Re-sort and Render
+        const oldSortAsc = sortAsc;
+        sortAsc = !sortAsc; 
+        sortTable(sortCol);
+    }
+
+    // --- MAIN TABLE SORTING ---
+    function sortTable(col) {
+        if (sortCol === col) {
+            sortAsc = !sortAsc;
+        } else {
+            sortCol = col;
+            sortAsc = (col === 'mag' || col === 'date') ? false : true; 
+        }
+
+        earthquakes.sort((a, b) => {
+            let valA = a[col], valB = b[col];
+            if (col === 'date' || col === 'time') {
+                valA = new Date(a.date + 'T' + a.time).getTime();
+                valB = new Date(b.date + 'T' + b.time).getTime();
+            } else if (typeof valA === 'string') {
+                valA = valA.toLowerCase(); valB = valB.toLowerCase();
+            }
+            if (valA < valB) return sortAsc ? -1 : 1;
+            if (valA > valB) return sortAsc ? 1 : -1;
+            return 0;
+        });
+
+        document.querySelectorAll('#earthquake-table > thead .sort-arrow').forEach(el => el.innerHTML = '');
+        document.getElementById(`arrow-${sortCol}`).innerText = sortAsc ? '▲' : '▼';
+        renderTable();
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById('eq-body');
+        tbody.innerHTML = ''; 
+
+        earthquakes.forEach(eq => {
+            const isChecked = document.querySelector(`.eq-checkbox[value="${eq.id}"]`)?.checked ? 'checked' : '';
+            const statusObj = calculatedData[eq.id] 
+                ? { text: "Success ✓", class: "status", btnDisplay: "inline-block" }
+                : { text: "Pending", class: "", btnDisplay: "none" };
+
+            // Initialize inner sort state if not exists
+            if(!innerSortState[eq.id]) {
+                innerSortState[eq.id] = { col: 'name', asc: true };
+            }
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="checkbox" class="eq-checkbox" value="${eq.id}" ${isChecked}></td>
+                <td><strong>${eq.location}</strong></td>
+                <td style="font-weight:bold; color: #c0392b;">${eq.mag.toFixed(1)}</td>
+                <td>${eq.date}</td>
+                <td>${eq.time}</td>
+                <td style="font-size:0.9em;">${eq.lat}</td>
+                <td style="font-size:0.9em;">${eq.lon}</td>
+                <td id="status-${eq.id}" class="${statusObj.class}">${statusObj.text}</td>
+                <td>
+                    <button onclick="toggleDetails(${eq.id})" id="btn-show-${eq.id}" class="btn-toggle" style="display:${statusObj.btnDisplay};">Show Data</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+
+            const detailTr = document.createElement('tr');
+            detailTr.id = `detail-row-${eq.id}`;
+            detailTr.style.display = 'none';
+            detailTr.innerHTML = `
+                <td colspan="9" style="padding: 0;">
+                    <table class="details-table" id="details-table-${eq.id}">
+                        <thead>
+                            <tr>
+                                <th onclick="sortInnerTable(${eq.id}, 'name')">Graha/Upagraha <span id="inner-arrow-${eq.id}-name" class="sort-arrow"></span></th>
+                                <th onclick="sortInnerTable(${eq.id}, 'abs_deg')">Absolute Degree <span id="inner-arrow-${eq.id}-abs_deg" class="sort-arrow"></span></th>
+                                <th onclick="sortInnerTable(${eq.id}, 'rashi')">Rashi (Sign) <span id="inner-arrow-${eq.id}-rashi" class="sort-arrow"></span></th>
+                                <th onclick="sortInnerTable(${eq.id}, 'nakshatra')">Nakshatra <span id="inner-arrow-${eq.id}-nakshatra" class="sort-arrow"></span></th>
+                            </tr>
+                        </thead>
+                        <tbody id="details-body-${eq.id}"></tbody>
+                    </table>
+                </td>
+            `;
+            tbody.appendChild(detailTr);
+
+            if (calculatedData[eq.id]) populateDetailsTable(eq.id);
+        });
+    }
+
+    function toggleAll(source) {
+        document.querySelectorAll('.eq-checkbox').forEach(cb => cb.checked = source.checked);
+    }
+
+    function toggleDetails(id) {
+        const row = document.getElementById(`detail-row-${id}`);
+        const btn = document.getElementById(`btn-show-${id}`);
+        if (row.style.display === 'none') {
+            row.style.display = 'table-row';
+            btn.innerText = 'Hide Data';
+            btn.style.backgroundColor = '#e74c3c'; 
+        } else {
+            row.style.display = 'none';
+            btn.innerText = 'Show Data';
+            btn.style.backgroundColor = '#3498db'; 
+        }
+    }
+
+    function getAstroInfo(absDeg) {
+        const rashiIndex = Math.floor(absDeg / 30) % 12;
+        const nakshatraIndex = Math.floor(absDeg / (360/27)) % 27;
+        return { rashi: rashis[rashiIndex], nakshatra: nakshatras[nakshatraIndex] };
+    }
+
+    // --- API CALL & DATA PROCESSING ---
+    async function calculateSelected() {
+        const checkboxes = document.querySelectorAll('.eq-checkbox:checked');
+        if (checkboxes.length === 0) return alert("Select at least one earthquake.");
+
+        document.getElementById('loading').style.display = 'inline-block';
+
+        for (let checkbox of checkboxes) {
+            const eqId = parseInt(checkbox.value);
+            const eq = earthquakes.find(e => e.id === eqId);
+            const statusCell = document.getElementById(`status-${eqId}`);
+
+            statusCell.innerHTML = "Fetching...";
+            statusCell.className = "";
+
+            try {
+                const response = await fetch('https://eprashala.pythonanywhere.com/calculate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ date: eq.date, time: eq.time, lat: eq.lat, lon: eq.lon })
+                });
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    statusCell.innerHTML = "Success ✓";
+                    statusCell.className = "status";
+                    
+                    let entities = [];
+                    data.houses.forEach(houseArray => houseArray.forEach(ent => {
+                        // Pre-calculate Rashi and Nakshatra for easy sorting later
+                        const info = getAstroInfo(ent.abs_deg);
+                        ent.rashi = info.rashi;
+                        ent.nakshatra = info.nakshatra;
+                        entities.push(ent);
+                    }));
+
+                    calculatedData[eqId] = entities;
+                    
+                    // Trigger a default sort by Name and render
+                    sortInnerTable(eqId, 'name', true);
+                    
+                    const btn = document.getElementById(`btn-show-${eqId}`);
+                    btn.style.display = 'inline-block';
+
+                } else {
+                    statusCell.innerHTML = "API Error";
+                    statusCell.className = "error";
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                statusCell.innerHTML = "Net Error";
+                statusCell.className = "error";
+            }
+        }
+        document.getElementById('loading').style.display = 'none';
+    }
+
+    // --- INNER TABLE SORTING ---
+    function sortInnerTable(eqId, col, forceAsc = false) {
+        let state = innerSortState[eqId];
+        
+        if (forceAsc) {
+            state.col = col; state.asc = true;
+        } else if (state.col === col) {
+            state.asc = !state.asc;
+        } else {
+            state.col = col; state.asc = true;
+        }
+
+        calculatedData[eqId].sort((a, b) => {
+            let valA = a[col], valB = b[col];
+            if (typeof valA === 'string') { valA = valA.toLowerCase(); valB = valB.toLowerCase(); }
+            if (valA < valB) return state.asc ? -1 : 1;
+            if (valA > valB) return state.asc ? 1 : -1;
+            return 0;
+        });
+
+        populateDetailsTable(eqId);
+        
+        // Update Inner Arrows
+        const headerRow = document.getElementById(`details-table-${eqId}`).querySelector('thead tr');
+        headerRow.querySelectorAll('.sort-arrow').forEach(el => el.innerHTML = '');
+        document.getElementById(`inner-arrow-${eqId}-${col}`).innerText = state.asc ? '▲' : '▼';
+    }
+
+    function populateDetailsTable(id) {
+        const tbody = document.getElementById(`details-body-${id}`);
+        tbody.innerHTML = '';
+        
+        calculatedData[id].forEach(ent => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${ent.name}</strong> <span style="font-size:0.8em; color:#7f8c8d;">(${ent.type})</span></td>
+                <td>${ent.abs_deg.toFixed(4)}°</td>
+                <td>${ent.rashi}</td>
+                <td>${ent.nakshatra}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // --- PROMPT GENERATOR ---
+    function generatePrompt() {
+        const checkboxes = document.querySelectorAll('.eq-checkbox:checked');
+        if (checkboxes.length === 0) return alert("Please select at least one earthquake.");
+
+        let promptText = "I am mapping ancient Jyotish principles (specifically Varahamihira's Bhukampa Lakshana) to modern geological events. Below is the exact Lahiri Ayanamsa sidereal data calculated via Swiss Ephemeris.\n\n";
+        promptText += "=== SEISMIC ASTRONOMICAL DATA ===\n\n";
+
+        let count = 0;
+        checkboxes.forEach(cb => {
+            const eqId = parseInt(cb.value);
+            if (calculatedData[eqId]) {
+                count++;
+                const eq = earthquakes.find(e => e.id === eqId);
+                promptText += `[EVENT ${count}] Location: ${eq.location} | Mag: ${eq.mag} | Date: ${eq.date} ${eq.time} UTC\n`;
+                
+                const keyPlanets = ['Surya', 'Chandra', 'Mangal', 'Budh', 'Guru', 'Shukra', 'Shani', 'Rahu', 'Ketu'];
+                keyPlanets.forEach(kp => {
+                    const ent = calculatedData[eqId].find(e => e.name === kp);
+                    if (ent) {
+                        promptText += `- ${kp.padEnd(8)}: ${ent.abs_deg.toFixed(2)}° (${ent.rashi}, ${ent.nakshatra})\n`;
+                    }
+                });
+                promptText += "\n";
+            }
+        });
+
+        if (count === 0) return alert("No Swisseph data found. Please calculate first.");
+
+        promptText += "=== END DATA ===\n\nWhat specific astrological anomaly or 'Yoga' do these major quakes share? Please provide a highly analytical response.";
+
+        document.getElementById('ai-prompt-text').value = promptText;
+        document.getElementById('ai-prompt-container').style.display = 'block';
+        document.getElementById('ai-prompt-container').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function copyPrompt() {
+        const copyText = document.getElementById("ai-prompt-text");
+        copyText.select(); document.execCommand("copy");
+        const status = document.getElementById('copy-status');
+        status.innerText = "Prompt Copied!";
+        setTimeout(() => status.innerText = "", 3000);
+    }
+
+    window.onload = () => sortTable('mag');
+</script>
+</body>
+</html>

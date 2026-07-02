@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eprashala AI Studio (Ultimate V5)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    
+    <style>
+        :root { --primary: #FF9800; --dark: #333; --bg: #f0f2f5; --accent: #2196F3; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        
+        /* HEADER */
+        header { height: 50px; background: white; padding: 0 20px; border-bottom: 1px solid #ddd; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+        h1 { margin: 0; color: var(--primary); font-size: 1.2em; }
+
+        /* MAIN LAYOUT */
+        .main-wrapper { display: flex; flex: 1; height: calc(100vh - 50px); }
+        
+        /* LEFT PANEL (50%) */
+        .controls-panel { width: 50%; background: white; padding: 25px; overflow-y: auto; border-right: 2px solid #ddd; box-sizing: border-box; display: flex; flex-direction: column; }
+        
+        /* RIGHT PANEL (50%) */
+        .preview-panel { width: 50%; background: #525659; display: flex; flex-direction: column; position: relative; box-sizing: border-box; }
+        
+        /* PDF TOOLBAR */
+        .pdf-toolbar { background: #323639; color: white; padding: 8px; display: flex; align-items: center; justify-content: center; gap: 10px; border-bottom: 1px solid #000; flex-shrink: 0; }
+        .pdf-toolbar button { background: #444; border: 1px solid #555; color: white; padding: 5px 12px; border-radius: 4px; cursor: pointer; }
+        .pdf-toolbar button:hover { background: #555; }
+        
+        /* PDF CONTAINER */
+        #pdfContainer { flex: 1; overflow-y: auto; padding: 20px; text-align: center; background: #525659; }
+        canvas { box-shadow: 0 5px 15px rgba(0,0,0,0.5); max-width: 100%; display: block; margin: 0 auto; }
+
+        /* FORM ELEMENTS */
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; font-size: 0.9em; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        
+        .api-group { display: flex; gap: 5px; }
+        .btn-paste { background: var(--dark); color: white; border: none; padding: 0 15px; border-radius: 5px; cursor: pointer; }
+
+        /* ACTION BUTTONS */
+        .btn-action { width: 100%; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 1em; transition: 0.2s; margin-top: 10px; }
+        .btn-preview { background: var(--accent); color: white; }
+        .btn-generate { background: var(--primary); color: white; }
+        .btn-generate:hover { background: #e68900; }
+
+        /* DOWNLOAD SECTION */
+        #downloadSection { display: none; margin-top: 20px; border-top: 2px solid #eee; padding-top: 20px; }
+        .btn-download { display: block; width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 6px; font-weight: bold; color: white; cursor: pointer; border: none; text-align: center; font-size: 0.95em; }
+        
+        .btn-dl-qa { background: #4CAF50; } /* Green */
+        .btn-dl-qa:hover { background: #388E3C; }
+        
+        .btn-dl-ex { background: #9C27B0; } /* Purple */
+        .btn-dl-ex:hover { background: #7B1FA2; }
+        
+        .btn-dl-pdf { background: #F44336; } /* Red */
+        .btn-dl-pdf:hover { background: #D32F2F; }
+
+        /* STATUS */
+        #statusArea { margin-top: 15px; padding: 10px; border-radius: 8px; text-align: center; display: none; }
+        .status-loading { background: #e3f2fd; color: #0d47a1; }
+        .status-error { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+        .status-success { background: #e8f5e9; color: #1b5e20; border: 1px solid #c8e6c9; }
+        .loader { display: inline-block; width: 15px; height: 15px; border: 2px solid currentColor; border-radius: 50%; border-top-color: transparent; animation: spin 1s linear infinite; margin-right: 5px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Eprashala Question bank generator</h1>
+    <div style="font-size: 0.9em; color: #666;">Ultimate V5 (India Edition)</div>
+</header>
+
+<div class="main-wrapper">
+    <div class="controls-panel">
+        <div class="form-group">
+            <label>1. Select Textbook (PDF)</label>
+            <input type="file" id="pdfFile" accept="application/pdf">
+            <button class="btn-action btn-preview" onclick="loadPdfPreview()">👁️ Load & Preview PDF</button>
+        </div>
+        
+        <div style="border-top: 1px solid #eee; margin: 15px 0;"></div>
+
+        <div class="form-group" style="background: #e1f5fe; padding: 10px; border-radius: 5px; border: 1px solid #b3e5fc;">
+            <label style="color: #0277bd;">Select AI Model</label>
+            <select id="modelSelect">
+                <option value="gemini-3-flash-preview">Gemini 2.5 Flash Lite (Experimental/Future)</option>
+                <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash (Experimental)</option>
+                <option value="gemini-1.5-flash">Gemini 1.5 Flash (Standard)</option>
+                <option value="gemini-1.5-flash-8b">Gemini 1.5 Flash-8B (Fastest)</option>
+                <option value="gemini-1.5-pro">Gemini 1.5 Pro (Best Reasoning)</option>
+                <option value="gemini-1.0-pro">Gemini 1.0 Pro (Legacy Stable)</option>
+            </select>
+            <small style="display:block; margin-top:5px; color:#555;">Note: 'Gemini 2.5 Flash Lite' is recommended for your region.</small>
+        </div>
+
+        <div class="form-group">
+            <label>2. Chapter Name (File Name)</label>
+            <input type="text" id="fileName" placeholder="e.g. History_Chp1">
+        </div>
+
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div>
+                <label>Grade</label>
+                <input type="text" id="grade" placeholder="e.g. 5">
+            </div>
+            <div>
+                <label>Language</label>
+                <select id="language">
+                    <option value="English">English</option>
+                    <option value="Marathi">Marathi</option>
+                    <option value="Hindi">Hindi</option>
+                    <option value="Sanskrit">Sanskrit</option>
+                    <option value="Gujarati">Gujarati</option>
+                    <option value="Tamil">Tamil</option>
+                    <option value="Kannada">Kannada</option>
+                    <option value="French">French</option>
+                    <option value="German">German</option>
+                    <option value="Spanish">Spanish</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Questions per Category (5 - 50)</label>
+            <select id="qCount">
+                <option value="5">5 Questions</option>
+                <option value="10">10 Questions</option>
+                <option value="15">15 Questions</option>
+                <option value="20" selected>20 Questions</option>
+                <option value="25">25 Questions</option>
+                <option value="30">30 Questions</option>
+                <option value="35">35 Questions</option>
+                <option value="40">40 Questions</option>
+                <option value="45">45 Questions</option>
+                <option value="50">50 Questions</option>
+            </select>
+        </div>
+
+        <div class="form-group" style="background: #fff3e0; padding: 10px; border-radius: 5px; border: 1px solid #ffe0b2;">
+            <label>3. Page Range (for AI & PDF Cut)</label>
+            <input type="text" id="pageRange" placeholder="e.g. 10-14">
+        </div>
+
+        <div class="form-group">
+            <label>Gemini API Key</label>
+            <div class="api-group">
+                <input type="password" id="apiKey" placeholder="Paste Key Here">
+                <button class="btn-paste" onclick="pasteApiKey()">📋 Paste</button>
+            </div>
+        </div>
+
+        <button class="btn-action btn-generate" onclick="processEverything()">🚀 Generate Database</button>
+        
+        <div id="statusArea"></div>
+
+        <div id="downloadSection">
+            <h3 style="margin-top:0; text-align:center; color:#333;">Files Ready</h3>
+            <button class="btn-download btn-dl-qa" onclick="downloadQA()">📂 Download Q&A File (.qa)</button>
+            <button class="btn-download btn-dl-ex" onclick="downloadExam()">📝 Download Exam File (.ex)</button>
+            <button class="btn-download btn-dl-pdf" onclick="sliceAndDownloadPDF()">📄 Download Chapter PDF (Selected Pages Only)</button>
+        </div>
+    </div>
+
+    <div class="preview-panel">
+        <div class="pdf-toolbar">
+            <button onclick="changePage(-1)">◀ Prev</button>
+            <span style="color:#ddd; margin:0 10px;">Page <span id="pageNum">0</span>/<span id="pageCount">0</span></span>
+            <button onclick="changePage(1)">Next ▶</button>
+            <span style="border-left:1px solid #555; height:20px; margin:0 5px;"></span>
+            <button onclick="zoomDoc(0.2)">➕</button>
+            <button onclick="zoomDoc(-0.2)">➖</button>
+        </div>
+        <div id="pdfContainer">
+            <div id="emptyState" style="color: #ccc; margin-top: 150px;"><h3>No PDF Loaded</h3></div>
+            <canvas id="the-canvas" style="display:none;"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- SETUP ---
+    // Using PDF.js for text extraction and preview
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+    
+    // VARIABLES
+    let pdfDoc = null; 
+    let pageNum = 1; 
+    let scale = 1.2; 
+    let pageRendering = false; 
+    let pageNumPending = null;
+    
+    // DATA STORAGE
+    let generatedQAData = null;
+    let generatedExamData = null;
+
+    const canvas = document.getElementById('the-canvas');
+    const ctx = canvas.getContext('2d');
+    const container = document.getElementById('pdfContainer');
+
+    // --- INIT ---
+    window.onload = function() {
+        const savedKey = localStorage.getItem('eprashala_gemini_key');
+        if (savedKey) document.getElementById('apiKey').value = savedKey;
+        container.addEventListener('wheel', handleWheelScroll);
+    };
+
+    function saveApiKey(key) { if(key) localStorage.setItem('eprashala_gemini_key', key); }
+    async function pasteApiKey() {
+        try { document.getElementById('apiKey').value = await navigator.clipboard.readText(); saveApiKey(document.getElementById('apiKey').value); } 
+        catch (err) { alert('Paste manually (Ctrl+V)'); }
+    }
+
+    // --- PDF PREVIEW ---
+    async function loadPdfPreview() {
+        const file = document.getElementById('pdfFile').files[0];
+        if (!file) return alert("Select a PDF file first.");
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const typedarray = new Uint8Array(e.target.result);
+            pdfjsLib.getDocument(typedarray).promise.then(pdf => {
+                pdfDoc = pdf;
+                document.getElementById('pageCount').textContent = pdf.numPages;
+                document.getElementById('emptyState').style.display = 'none';
+                canvas.style.display = 'block';
+                pageNum = 1; renderPage(pageNum);
+            });
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function renderPage(num) {
+        pageRendering = true;
+        pdfDoc.getPage(num).then(page => {
+            const viewport = page.getViewport({scale: scale});
+            canvas.height = viewport.height; canvas.width = viewport.width;
+            page.render({ canvasContext: ctx, viewport: viewport }).promise.then(() => {
+                pageRendering = false;
+                if (pageNumPending !== null) { renderPage(pageNumPending); pageNumPending = null; }
+                container.scrollTop = 0; 
+            });
+        });
+        document.getElementById('pageNum').textContent = num;
+    }
+    
+    function changePage(offset) {
+        if (!pdfDoc) return;
+        if (pageNum + offset >= 1 && pageNum + offset <= pdfDoc.numPages) {
+            pageNum += offset;
+            if(pageRendering) pageNumPending = pageNum; else renderPage(pageNum);
+        }
+    }
+    
+    function zoomDoc(delta) { 
+        if (!pdfDoc) return; 
+        scale = Math.max(0.5, scale + delta); 
+        renderPage(pageNum); 
+    }
+
+    // --- SCROLL LOGIC ---
+    let lastScrollTime = 0;
+    function handleWheelScroll(e) {
+        if (!pdfDoc) return;
+        const now = Date.now();
+        if (now - lastScrollTime < 250) return; // Optimize smoothness for better UX
+
+        if (e.deltaY > 0 && (container.scrollTop + container.clientHeight >= container.scrollHeight - 5)) {
+            if (pageNum < pdfDoc.numPages) { changePage(1); lastScrollTime = now; }
+        } else if (e.deltaY < 0 && container.scrollTop <= 0) {
+            if (pageNum > 1) { changePage(-1); lastScrollTime = now; }
+        }
+    }
+
+    // --- AI PROCESSING ---
+    async function processEverything() {
+        const file = document.getElementById('pdfFile').files[0];
+        const apiKey = document.getElementById('apiKey').value.trim();
+        const pageRange = document.getElementById('pageRange').value;
+        const fileName = document.getElementById('fileName').value;
+        const selectedModel = document.getElementById('modelSelect').value;
+        const statusArea = document.getElementById('statusArea');
+        const dlSection = document.getElementById('downloadSection');
+
+        if (!file || !apiKey || !pageRange || !fileName) return alert("Please fill all fields!");
+        saveApiKey(apiKey);
+
+        dlSection.style.display = 'none';
+        statusArea.style.display = 'block';
+        statusArea.className = 'status-loading';
+        statusArea.innerHTML = `<div class="loader"></div> Asking ${selectedModel}...`;
+
+        try {
+            const text = await extractText(file, pageRange);
+            // This calls the exact logic from the second file
+            const data = await callGeminiAI(apiKey, text, selectedModel);
+            
+            generatedQAData = JSON.stringify(data.qa_module, null, 2);
+            generatedExamData = JSON.stringify(data.exam_module, null, 2);
+
+            statusArea.className = 'status-success';
+            statusArea.innerHTML = "✅ Generation Complete!";
+            dlSection.style.display = 'block';
+
+        } catch (err) {
+            console.error(err);
+            statusArea.className = 'status-error';
+            statusArea.innerHTML = "❌ " + err.message;
+        }
+    }
+
+    async function extractText(file, range) {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+        const [start, end] = range.split('-').map(Number);
+        if (!start || !end || start > end) throw new Error("Invalid Page Range");
+        
+        let fullText = "";
+        for (let i = start; i <= Math.min(end, pdf.numPages); i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            fullText += content.items.map(item => item.str).join(" ");
+        }
+        return fullText;
+    }
+
+    async function callGeminiAI(key, text, modelName) {
+        const grade = document.getElementById('grade').value;
+        const lang = document.getElementById('language').value;
+        const count = document.getElementById('qCount').value;
+        const title = document.getElementById('fileName').value;
+
+        // Strict JSON prompt
+        const prompt = `
+            Task: Create study database for Grade ${grade}, Language ${lang}.
+            Source: "${text.substring(0, 30000)}".
+            Requirements: Exactly ${count} questions per category.
+            Output: JSON Only.
+            Structure:
+            {
+                "qa_module": { "chapterTitle": "${title}", "oneSentence": [{"q":"","a":""}], "fillBlanks": [{"q":"","a":""}], "matchFollowing": [{"pair1":"","pair2":""}], "shortAnswer": [{"q":"","a":""}], "briefAnswer": [{"q":"","a":""}] },
+                "exam_module": { "chapterTitle": "${title}", "mcq": [{"q":"","options":["","","",""],"correct":0}] }
+            }
+        `;
+
+        // DYNAMIC MODEL URL: This supports the specific Gemini 2.5 Flash Lite logic
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`;
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(`API Error (${response.status}): ${errData.error?.message || response.statusText}`);
+        }
+        
+        const resData = await response.json();
+        if (!resData.candidates || resData.candidates.length === 0) throw new Error("No response from AI.");
+
+        let rawJson = resData.candidates[0].content.parts[0].text;
+        // Clean markdown if AI adds it
+        rawJson = rawJson.replace(/```json/g, "").replace(/```/g, "").trim();
+        
+        return JSON.parse(rawJson);
+    }
+
+    // --- DOWNLOADS ---
+    function triggerDownload(filename, content, isBinary = false) {
+        const blob = new Blob([content], { type: isBinary ? 'application/pdf' : 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        a.click();
+    }
+
+    function downloadQA() { triggerDownload((document.getElementById('fileName').value || "chapter") + ".qa", generatedQAData); }
+    function downloadExam() { triggerDownload((document.getElementById('fileName').value || "chapter") + ".ex", generatedExamData); }
+
+    // --- PDF SLICING LOGIC (Using PDF-Lib) ---
+    async function sliceAndDownloadPDF() {
+        const fileInput = document.getElementById('pdfFile');
+        const rangeVal = document.getElementById('pageRange').value;
+        const fileName = document.getElementById('fileName').value || "chapter";
+
+        if (!fileInput.files[0] || !rangeVal) return alert("Need PDF file and Page Range");
+
+        const statusArea = document.getElementById('statusArea');
+        statusArea.style.display = 'block';
+        statusArea.className = 'status-loading';
+        statusArea.innerHTML = '<div class="loader"></div> Cutting PDF...';
+
+        try {
+            // 1. Load the original PDF
+            const existingPdfBytes = await fileInput.files[0].arrayBuffer();
+            const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
+
+            // 2. Create a new PDF
+            const newPdf = await PDFLib.PDFDocument.create();
+
+            // 3. Parse range (e.g. "10-12") -> Convert to 0-based indices
+            const [start, end] = rangeVal.split('-').map(n => parseInt(n));
+            const pageIndices = [];
+            for (let i = start; i <= end; i++) {
+                // Subtract 1 because PDF pages are 0-indexed in code
+                if (i > 0 && i <= pdfDoc.getPageCount()) {
+                    pageIndices.push(i - 1);
+                }
+            }
+
+            if (pageIndices.length === 0) throw new Error("Invalid Page Range");
+
+            // 4. Copy pages
+            const copiedPages = await newPdf.copyPages(pdfDoc, pageIndices);
+            copiedPages.forEach((page) => newPdf.addPage(page));
+
+            // 5. Save and Download
+            const pdfBytes = await newPdf.save();
+            triggerDownload(fileName + ".pdf", pdfBytes, true);
+            
+            statusArea.className = 'status-success';
+            statusArea.innerHTML = "✅ PDF Downloaded!";
+
+        } catch (err) {
+            console.error(err);
+            statusArea.className = 'status-error';
+            statusArea.innerHTML = "❌ PDF Error: " + err.message;
+        }
+    }
+</script>
+
+</body>
+</html>

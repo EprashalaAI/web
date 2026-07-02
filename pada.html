@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pada Samudrika Scanner v1.3</title>
+    <style>
+        :root {
+            --primary: #d4af37; 
+            --bg-color: #1a0b2e; 
+            --text-color: #f4e8c1;
+            --error-color: #ff4c4c;
+            --panel-bg: rgba(0, 0, 0, 0.5);
+            --paper-guide: rgba(255, 255, 255, 0.6);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-bottom: 80px; 
+        }
+
+        /* Top Bar & Modals */
+        .top-btn-group { position: absolute; top: 15px; right: 15px; display: flex; gap: 15px; z-index: 1000; }
+        .icon-btn { background: transparent; border: none; color: var(--primary); font-size: 24px; cursor: pointer; transition: transform 0.2s; }
+        .icon-btn:hover { transform: scale(1.1); text-shadow: 0 0 10px var(--primary); }
+        
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85); z-index: 2000; display: none;
+            justify-content: center; align-items: center; backdrop-filter: blur(3px);
+        }
+        .modal-content {
+            background: var(--bg-color); border: 2px solid var(--primary); padding: 20px;
+            border-radius: 10px; width: 90%; max-width: 400px; text-align: center;
+        }
+
+        h1 { color: var(--primary); text-align: center; text-shadow: 0 0 10px rgba(212, 175, 55, 0.3); margin-top: 20px; }
+
+        /* Inputs */
+        .setup-container { margin-top: 20px; text-align: center; width: 100%; max-width: 400px; }
+        input[type="text"], input[type="password"], select, textarea {
+            width: 80%; padding: 10px; border: 2px solid var(--primary);
+            background: rgba(0, 0, 0, 0.3); color: white; font-size: 16px;
+            border-radius: 5px; margin-bottom: 15px; text-align: center;
+        }
+        .flex-row { display: flex; justify-content: space-evenly; width: 85%; margin: 0 auto 15px auto; gap: 10px; }
+        .flex-row select { width: 100%; margin-bottom: 0; }
+
+        button {
+            background-color: var(--primary); color: #000; border: none; padding: 12px 24px;
+            font-size: 18px; font-weight: bold; border-radius: 5px; cursor: pointer;
+            transition: transform 0.2s; width: 80%; margin-top: 10px;
+        }
+        button:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 0 15px var(--primary); }
+        button:disabled { background-color: #555; color: #888; cursor: not-allowed; }
+        .small-btn { background-color: transparent; border: 1px solid var(--primary); color: var(--primary); width: auto; padding: 5px 15px; font-size: 14px; margin-top: 0; cursor: pointer; }
+
+        /* Camera UI */
+        #footInstruction { font-weight: bold; color: var(--primary); margin-bottom: 15px; font-size: 1.1em; text-align: center; }
+        
+        .camera-container {
+            position: relative; width: 100%; max-width: 400px; aspect-ratio: 3/4;
+            background-color: #000; border: 3px solid var(--primary); border-radius: 10px;
+            overflow: hidden; display: none; 
+        }
+        video { width: 100%; height: 100%; object-fit: cover; }
+
+        /* A4 & Foot Guide SVG */
+        .foot-guide-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; display: flex; justify-content: center; align-items: center;
+            opacity: 0.7;
+        }
+        
+        #footGraphics { transform-origin: 50px center; transition: transform 0.5s ease; }
+        #footGraphics.left-foot { transform: scaleX(-1); }
+
+        .scanner-line {
+            position: absolute; top: 0; left: 0; width: 100%; height: 4px;
+            background-color: #00ffcc; box-shadow: 0 0 15px #00ffcc, 0 0 30px #00ffcc;
+            display: none; animation: scanAnimation 1.5s linear;
+        }
+        @keyframes scanAnimation { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+
+        /* Results UI */
+        .results-container { margin-top: 20px; width: 100%; max-width: 600px; display: none; flex-direction: column; gap: 15px; }
+        .foot-result-card { background: var(--panel-bg); border: 1px solid var(--primary); padding: 20px; border-radius: 10px; display: none; }
+        .reading-section { background: rgba(212, 175, 55, 0.05); border-left: 3px solid var(--primary); padding: 10px 15px; margin-bottom: 15px; text-align: left; }
+        .reading-section h4 { margin: 0 0 8px 0; color: var(--primary); font-size: 1.1em; text-transform: uppercase; }
+        .reading-section p { margin: 0; font-size: 0.95em; line-height: 1.5; }
+        
+        /* Floating Action Button for Sharing */
+        .floating-action {
+            position: fixed; bottom: 20px; right: 20px;
+            background-color: var(--primary); color: black;
+            border-radius: 50px; padding: 15px 25px;
+            font-size: 16px; font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); cursor: pointer;
+            z-index: 1000; display: none; width: auto; margin: 0;
+        }
+
+        canvas { display: none; }
+        .pulsing-text { animation: pulse 1.5s infinite; color: #888; font-style: italic; }
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+    </style>
+</head>
+<body>
+
+    <div class="top-btn-group">
+        <button id="settingsBtn" class="icon-btn" title="API Settings">⚙️</button>
+    </div>
+
+    <div id="settingsModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="color: var(--primary); margin-top: 0;">System Configuration</h3>
+            <p style="font-size: 14px; margin-bottom: 15px;">Enter Gemini 3.1 API key to bypass proxy.</p>
+            <input type="password" id="customApiInput" placeholder="AIzaSy..." style="width: 100%; box-sizing: border-box; text-align: left;">
+            <div class="flex-row" style="margin-top: 15px; width: 100%;">
+                <button id="saveSettingsBtn" style="margin-top: 0; width: 45%; font-size: 16px;">Save</button>
+                <button onclick="document.getElementById('settingsModal').style.display='none'" class="small-btn" style="width: 45%; border-color:#555; color:#fff;">Close</button>
+            </div>
+            <p id="settingsMsg" style="font-size: 12px; color: #4cff4c; margin-top: 10px; display: none;"></p>
+        </div>
+    </div>
+
+    <h1>Pada Darshan<br><span style="font-size: 16px; font-weight: normal;">Samudrika Shastra Foot Morphology</span></h1>
+
+    <div class="setup-container" id="setupSection">
+        <input type="text" id="userName" placeholder="Enter your full name..." autocomplete="off">
+        
+        <select id="userLang" style="width: 85%; margin-bottom: 15px;">
+            <option value="English">English</option>
+            <option value="Marathi" selected>Marathi (मराठी)</option>
+            <option value="Hindi">Hindi (हिन्दी)</option>
+        </select>
+
+        <div class="flex-row">
+            <select id="userSex">
+                <option value="" disabled selected>Select Sex</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+            </select>
+            <select id="userAge"></select>
+        </div>
+        <button id="initBtn">Initialize Scanner</button>
+    </div>
+
+    <div id="footInstruction" style="display: none;"></div>
+
+    <div class="camera-container" id="cameraContainer">
+        <video id="videoFeed" autoplay playsinline></video>
+        <div class="foot-guide-overlay" id="footGuide">
+            <svg viewBox="0 0 100 141" preserveAspectRatio="xMidYMid meet">
+                <rect x="5" y="5" width="90" height="131" fill="none" stroke="var(--paper-guide)" stroke-width="2" stroke-dasharray="4,4" />
+                <text x="50" y="15" fill="var(--paper-guide)" font-size="6" text-anchor="middle" font-family="sans-serif">Align A4 Paper Inside Dashed Box</text>
+                
+                <g id="footGraphics">
+                    <path d="M 60,35 C 50,25 40,25 35,35 C 30,50 35,70 40,90 C 45,110 40,120 45,125 C 50,130 60,130 65,125 C 70,115 65,90 70,70 C 75,50 70,45 60,35 Z" fill="none" stroke="var(--primary)" stroke-width="1.8"/>
+                    <circle cx="35" cy="28" r="4" fill="none" stroke="var(--primary)" stroke-width="1.5"/>
+                    <circle cx="45" cy="24" r="3" fill="none" stroke="var(--primary)" stroke-width="1.5"/>
+                    <circle cx="53" cy="25" r="2.5" fill="none" stroke="var(--primary)" stroke-width="1.5"/>
+                    <circle cx="60" cy="28" r="2" fill="none" stroke="var(--primary)" stroke-width="1.5"/>
+                    <circle cx="66" cy="32" r="1.5" fill="none" stroke="var(--primary)" stroke-width="1.5"/>
+                </g>
+            </svg>
+        </div>
+        <div class="scanner-line" id="scannerLine"></div>
+    </div>
+
+    <button id="actionBtn" style="display: none; margin-top: 15px;"></button>
+
+    <div class="results-container" id="resultsSection">
+        <div class="foot-result-card" id="stage1Card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin:0; color: var(--primary);"><span id="stage1Title">Foot 1</span> Analysis</h3>
+                <button class="small-btn audio-btn" id="audioBtn1" style="display: none;">🔊 Listen</button>
+            </div>
+            <div id="stage1Status" class="pulsing-text">Calculating ratios against A4 baseline...</div>
+            
+            <div id="stage1Data" style="display: none;">
+                <div class="reading-section"><h4>Padanguli (Toe Proportions)</h4><p id="stg1_toes"></p></div>
+                <div class="reading-section"><h4>Pada Tala & Rekha (Sole/Arch)</h4><p id="stg1_arch"></p></div>
+                <div class="reading-section"><h4>Gati Sambhavana (Movement/Groundedness)</h4><p id="stg1_gait"></p></div>
+                <div class="reading-section"><h4>Remedies</h4><p id="stg1_remedies"></p></div>
+            </div>
+            <button class="small-btn" id="retakeBtn1" style="display:none; background: var(--error-color); color:white; width:100%; margin-top:15px;">Retake Image</button>
+        </div>
+
+        <div class="foot-result-card" id="stage2Card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin:0; color: var(--primary);"><span id="stage2Title">Foot 2</span> Analysis</h3>
+                <button class="small-btn audio-btn" id="audioBtn2" style="display: none;">🔊 Listen</button>
+            </div>
+            <div id="stage2Status" class="pulsing-text">Awaiting scan...</div>
+            
+            <div id="stage2Data" style="display: none;">
+                <div class="reading-section"><h4>Padanguli (Toe Proportions)</h4><p id="stg2_toes"></p></div>
+                <div class="reading-section"><h4>Pada Tala & Rekha (Sole/Arch)</h4><p id="stg2_arch"></p></div>
+                <div class="reading-section"><h4>Gati Sambhavana (Movement/Groundedness)</h4><p id="stg2_gait"></p></div>
+                <div class="reading-section"><h4>Remedies</h4><p id="stg2_remedies"></p></div>
+            </div>
+            <button class="small-btn" id="retakeBtn2" style="display:none; background: var(--error-color); color:white; width:100%; margin-top:15px;">Retake Image</button>
+        </div>
+    </div>
+
+    <button id="shareTxtBtn" class="floating-action">📋 Copy Report</button>
+    <canvas id="captureCanvas"></canvas>
+
+    <script>
+        const PROXY_API_ENDPOINT = "https://eprashala.pythonanywhere.com/api/chat";
+        let customApiKey = localStorage.getItem('padasamudrika_api_key') || "";
+
+        document.getElementById('settingsBtn').addEventListener('click', () => {
+            document.getElementById('customApiInput').value = customApiKey;
+            document.getElementById('settingsModal').style.display = 'flex';
+        });
+
+        document.getElementById('saveSettingsBtn').addEventListener('click', () => {
+            const val = document.getElementById('customApiInput').value.trim();
+            if (val) {
+                localStorage.setItem('padasamudrika_api_key', val); customApiKey = val;
+            } else {
+                localStorage.removeItem('padasamudrika_api_key'); customApiKey = "";
+            }
+            document.getElementById('settingsModal').style.display = 'none';
+        });
+
+        function getActiveEndpoint() {
+            return customApiKey ? `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash:generateContent?key=${customApiKey}` : PROXY_API_ENDPOINT;
+        }
+
+        let stream = null, scanStage = 0, firstFoot = "Left", secondFoot = "Right";
+        let foot1JSON = null, foot2JSON = null; 
+
+        const userSex = document.getElementById('userSex');
+        const userNameInput = document.getElementById('userName');
+        const userLang = document.getElementById('userLang');
+        const userAge = document.getElementById('userAge');
+        
+        for (let i = 1; i <= 100; i++) {
+            let opt = document.createElement('option'); opt.value = i; opt.text = i + " years old";
+            if (i === 25) opt.selected = true; userAge.appendChild(opt);
+        }
+
+        document.getElementById('initBtn').addEventListener('click', async () => {
+            if (!userNameInput.value.trim() || !userSex.value) return alert("Please enter name and sex.");
+            if (userSex.value === 'Male') { firstFoot = "Right"; secondFoot = "Left"; } 
+            else { firstFoot = "Left"; secondFoot = "Right"; }
+            startCameraFlow();
+        });
+
+        async function startCameraFlow() {
+            try {
+                const constraints = {
+                    video: { facingMode: { exact: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+                    audio: false
+                };
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+                document.getElementById('videoFeed').srcObject = stream;
+                
+                document.getElementById('setupSection').style.display = 'none';
+                document.getElementById('cameraContainer').style.display = 'block';
+                document.getElementById('resultsSection').style.display = 'flex';
+                setupStage1();
+            } catch (err) { alert("Rear camera access required. Ensure you are on a mobile device or have a rear-facing webcam."); }
+        }
+
+        function setupStage1() {
+            scanStage = 1;
+            document.getElementById('footInstruction').style.display = 'block';
+            document.getElementById('footInstruction').innerText = `Step 1: Place ${firstFoot} foot on A4 paper. Align with guide.`;
+            document.getElementById('stage1Title').innerText = firstFoot;
+            document.getElementById('stage2Title').innerText = secondFoot;
+            
+            const footShape = document.getElementById('footGraphics');
+            if (firstFoot === 'Left') { footShape.classList.add('left-foot'); } 
+            else { footShape.classList.remove('left-foot'); }
+            
+            const btn = document.getElementById('actionBtn');
+            btn.style.display = 'block'; btn.disabled = false; btn.innerText = `Scan ${firstFoot} Foot`;
+        }
+
+        function setupStage2() {
+            scanStage = 2;
+            document.getElementById('footInstruction').innerText = `Step 2: Place ${secondFoot} foot on A4 paper. Align with guide.`;
+            
+            const footShape = document.getElementById('footGraphics');
+            if (secondFoot === 'Left') { footShape.classList.add('left-foot'); } 
+            else { footShape.classList.remove('left-foot'); }
+            
+            const btn = document.getElementById('actionBtn');
+            btn.style.display = 'block'; btn.disabled = false; btn.innerText = `Scan ${secondFoot} Foot`;
+            document.getElementById('cameraContainer').style.display = 'block';
+        }
+
+        document.getElementById('actionBtn').addEventListener('click', () => {
+            const btn = document.getElementById('actionBtn'); btn.disabled = true;
+            const line = document.getElementById('scannerLine');
+            line.style.display = 'block'; line.style.animation = 'none'; void line.offsetWidth; line.style.animation = 'scanAnimation 1.5s linear';
+
+            setTimeout(() => {
+                line.style.display = 'none';
+                const cvs = document.getElementById('captureCanvas');
+                const vid = document.getElementById('videoFeed');
+                cvs.width = vid.videoWidth; cvs.height = vid.videoHeight;
+                cvs.getContext('2d').drawImage(vid, 0, 0, cvs.width, cvs.height);
+                const b64 = cvs.toDataURL('image/jpeg', 0.85).split(',')[1];
+
+                if (scanStage === 1) {
+                    document.getElementById('stage1Card').style.display = 'block';
+                    processFootAsync(firstFoot, b64, 1);
+                    setupStage2();
+                } else {
+                    document.getElementById('stage2Card').style.display = 'block';
+                    document.getElementById('cameraContainer').style.display = 'none';
+                    btn.style.display = 'none';
+                    processFootAsync(secondFoot, b64, 2);
+                }
+            }, 1500);
+        });
+
+        async function processFootAsync(foot, base64Image, stageNum) {
+            const statusEl = document.getElementById(`stage${stageNum}Status`);
+            const dataEl = document.getElementById(`stage${stageNum}Data`);
+            const retakeBtn = document.getElementById(`retakeBtn${stageNum}`);
+            const audioBtn = document.getElementById(`audioBtn${stageNum}`);
+
+            const prompt = `Act as an expert in Pada Samudrika (Vedic Foot Morphology).
+            The user (${userSex.value}) has placed their ${foot} foot on a standard A4 paper (210x297mm). Use the paper edges to estimate the structural ratios of the foot.
+            
+            CRITICAL INSTRUCTION: You MUST respond ONLY with a valid, raw JSON object. Do not use markdown wrappers.
+            
+            SCHEMA:
+            {
+              "validImage": boolean (false if blurry, no foot visible, or A4 paper not identifiable),
+              "errorMessage": string (reason if validImage is false),
+              "toeProportions": string (Analyze Padanguli: relative length of the big toe vs second toe, spacing, in ${userLang.value}),
+              "archAnalysis": string (Analyze Pada Tala: flatness, heel shape, and visible texture in ${userLang.value}),
+              "groundedness": string (Deduce Gati/Groundedness traits based on foot width/structure in ${userLang.value}),
+              "remedies": string (Authentic lifestyle/astrological remedies in ${userLang.value})
+            }`;
+
+            try {
+                const response = await fetch(getActiveEndpoint(), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ "contents": [{ "parts": [ { "text": prompt }, { "inline_data": { "mime_type": "image/jpeg", "data": base64Image } } ] }] })
+                });
+
+                if(response.status === 504) throw new Error("Gateway Timeout.");
+                const data = await response.json();
+                if (data.error) throw new Error(data.error.message);
+
+                let textResp = data.candidates[0].content.parts[0].text;
+                textResp = textResp.replace(/```json/gi, '').replace(/```/g, '').trim(); 
+                const parsed = JSON.parse(textResp);
+
+                if(!parsed.validImage) {
+                    statusEl.classList.remove('pulsing-text');
+                    statusEl.innerHTML = `<span style="color:var(--error-color);">Error: ${parsed.errorMessage}</span>`;
+                    retakeBtn.style.display = 'block'; return;
+                }
+
+                document.getElementById(`stg${stageNum}_toes`).innerText = parsed.toeProportions;
+                document.getElementById(`stg${stageNum}_arch`).innerText = parsed.archAnalysis;
+                document.getElementById(`stg${stageNum}_gait`).innerText = parsed.groundedness;
+                document.getElementById(`stg${stageNum}_remedies`).innerText = parsed.remedies;
+
+                if (stageNum === 1) foot1JSON = parsed; else foot2JSON = parsed;
+                
+                statusEl.style.display = 'none';
+                dataEl.style.display = 'block';
+                audioBtn.style.display = 'block'; 
+
+                if(stageNum === 2 && stream) { 
+                    stream.getTracks().forEach(t => t.stop()); 
+                    document.getElementById('footInstruction').innerText = "Pada Diagnostics Complete."; 
+                    document.getElementById('shareTxtBtn').style.display = 'block'; // Show Share Button
+                }
+
+            } catch (err) {
+                statusEl.classList.remove('pulsing-text');
+                statusEl.innerHTML = `<span style="color:var(--error-color);">Interface Error: ${err.message}</span>`;
+                retakeBtn.style.display = 'block';
+            }
+        }
+
+        document.getElementById('retakeBtn1').addEventListener('click', () => resetStage(1));
+        document.getElementById('retakeBtn2').addEventListener('click', () => resetStage(2));
+
+        function resetStage(stageNum) {
+            if(!stream || !stream.active) startCameraFlow();
+            document.getElementById(`stage${stageNum}Data`).style.display = 'none';
+            document.getElementById(`audioBtn${stageNum}`).style.display = 'none';
+            document.getElementById(`stage${stageNum}Status`).style.display = 'block';
+            document.getElementById(`stage${stageNum}Status`).innerText = "Awaiting scan...";
+            document.getElementById(`retakeBtn${stageNum}`).style.display = 'none';
+            
+            document.getElementById('shareTxtBtn').style.display = 'none'; // Hide share button on retake
+            
+            if(stageNum === 1) setupStage1(); else setupStage2();
+        }
+
+        // ==========================================
+        // TEXT-TO-SPEECH (TTS) ENGINE
+        // ==========================================
+        function generateSpeechText(jsonObj) {
+            if (!jsonObj) return "";
+            return `${jsonObj.toeProportions}. ${jsonObj.archAnalysis}. ${jsonObj.groundedness}. Remedies: ${jsonObj.remedies}`;
+        }
+
+        let currentSynth = null, currentAudioBtn = null;
+        
+        function toggleSpeech(text, langName, btnElement) {
+            const synth = window.speechSynthesis;
+            if (synth.speaking && currentAudioBtn === btnElement) {
+                if (synth.paused) { synth.resume(); btnElement.innerHTML = "⏸️ Pause"; } 
+                else { synth.pause(); btnElement.innerHTML = "▶️ Resume"; } return;
+            }
+            synth.cancel();
+            if(currentAudioBtn) currentAudioBtn.innerHTML = "🔊 Listen";
+            
+            currentAudioBtn = btnElement;
+            const ut = new SpeechSynthesisUtterance(text);
+            const langMap = {"English":"en-IN", "Hindi":"hi-IN", "Marathi":"mr-IN"};
+            ut.lang = langMap[langName] || 'en-IN';
+            
+            ut.onstart = () => btnElement.innerHTML = "⏸️ Pause";
+            ut.onend = ut.onerror = () => { btnElement.innerHTML = "🔊 Listen"; currentAudioBtn = null; };
+            synth.speak(ut);
+        }
+
+        document.getElementById('audioBtn1').addEventListener('click', function() { toggleSpeech(generateSpeechText(foot1JSON), userLang.value, this); });
+        document.getElementById('audioBtn2').addEventListener('click', function() { toggleSpeech(generateSpeechText(foot2JSON), userLang.value, this); });
+
+        // ==========================================
+        // SHARE TO CLIPBOARD LOGIC
+        // ==========================================
+        document.getElementById('shareTxtBtn').addEventListener('click', () => {
+            if (!foot1JSON || !foot2JSON) return;
+
+            const name = userNameInput.value.trim() || "User";
+            const reportText = `PADA DARSHAN - VEDIC FOOT MORPHOLOGY REPORT
+Prepared for: ${name}
+
+--- ${firstFoot} Foot ---
+Padanguli (Toes): ${foot1JSON.toeProportions}
+Pada Tala (Arch/Sole): ${foot1JSON.archAnalysis}
+Gati (Groundedness): ${foot1JSON.groundedness}
+Remedies: ${foot1JSON.remedies}
+
+--- ${secondFoot} Foot ---
+Padanguli (Toes): ${foot2JSON.toeProportions}
+Pada Tala (Arch/Sole): ${foot2JSON.archAnalysis}
+Gati (Groundedness): ${foot2JSON.groundedness}
+Remedies: ${foot2JSON.remedies}
+
+Generated by Pada Samudrika Scanner`;
+
+            navigator.clipboard.writeText(reportText).then(() => {
+                const btn = document.getElementById('shareTxtBtn');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = "✅ Copied!";
+                btn.style.backgroundColor = "#4cff4c"; // Flash green
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.style.backgroundColor = "var(--primary)";
+                }, 2000);
+            }).catch(err => {
+                alert("Failed to copy report to clipboard. Please check browser permissions.");
+            });
+        });
+
+    </script>
+</body>
+</html>

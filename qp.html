@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Astrological Seismic Tension Explorer</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        .control-panel {
+            background: white; padding: 20px; border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px;
+        }
+        select, button {
+            padding: 10px 15px; font-size: 16px; border: 1px solid #ccc;
+            border-radius: 4px; margin-right: 10px;
+        }
+        button {
+            background-color: #e74c3c; color: white; border: none;
+            cursor: pointer; font-weight: bold; transition: 0.3s;
+        }
+        button:hover { background-color: #c0392b; }
+        .disclaimer {
+            background-color: #fff3cd; color: #856404; padding: 10px;
+            border-left: 5px solid #ffeeba; margin-bottom: 20px; font-size: 14px;
+        }
+        .window-card {
+            background: white; padding: 15px 20px; margin-bottom: 15px;
+            border-radius: 8px; border-left: 6px solid #e74c3c;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .window-card h3 { margin-top: 0; color: #c0392b; }
+        .degrees { font-family: monospace; background: #eee; padding: 5px; border-radius: 3px; }
+        .no-results {
+            background: #d4edda; color: #155724; padding: 15px;
+            border-radius: 8px; border-left: 6px solid #c3e6cb;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Seismic Tension Predictor (Astrological Model)</h1>
+    
+    <div class="disclaimer">
+        <strong>Important Note:</strong> This tool calculates astronomical alignments (Syzygy and Mars/Saturn hard aspects) correlated with historical seismic data in Mundane Jyotisha. While useful for observing planetary stress patterns, it cannot predict the exact physical location or magnitude of geological earthquakes.
+    </div>
+
+    <div class="control-panel">
+        <label for="yearSelect"><strong>Select Year to Analyze:</strong></label>
+        <select id="yearSelect"></select>
+        <button onclick="analyzeYear()">Calculate Tension Windows</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        // Populate the dropdown with years from 2024 to 2124
+        const yearSelect = document.getElementById('yearSelect');
+        for (let i = 2024; i <= 2124; i++) {
+            let option = document.createElement('option');
+            option.value = i;
+            option.text = i;
+            yearSelect.appendChild(option);
+        }
+
+        // Helper function: Normalize degrees to 0-360
+        function normalize(degree) {
+            let res = degree % 360;
+            if (res < 0) res += 360;
+            return res;
+        }
+
+        // Calculate approximate planetary longitude based on Julian days since J2000.0
+        // These are mean orbital elements, providing a strong approximation for our aspect logic.
+        function getPlanetaryPositions(year, month, day) {
+            // Calculate days since J2000.0 epoch (Jan 1.5, 2000)
+            const date = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+            const epoch = new Date(Date.UTC(2000, 0, 1, 12, 0, 0));
+            const d = (date - epoch) / 86400000;
+
+            const sun = normalize(280.460 + 0.9856474 * d);
+            const moon = normalize(218.316 + 13.1763965 * d);
+            const mars = normalize(355.433 + 0.52402078 * d);
+            const saturn = normalize(50.077 + 0.03345964 * d);
+
+            return { sun, moon, mars, saturn };
+        }
+
+        function analyzeYear() {
+            const year = parseInt(document.getElementById('yearSelect').value);
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = "<em>Calculating orbital alignments...</em>";
+            
+            let tensionWindows = [];
+            const orb = 6; // Allow a 6-degree margin of error (orb) for aspects to ensure we catch building tension
+
+            // Loop through every day of the selected year
+            for (let dayOfYear = 1; dayOfYear <= Math.floor((new Date(year, 11, 31) - new Date(year, 0, 0)) / 86400000); dayOfYear++) {
+                let current = new Date(year, 0, dayOfYear);
+                let pos = getPlanetaryPositions(current.getFullYear(), current.getMonth() + 1, current.getDate());
+                
+                // RULE 1: Syzygy (Sun and Moon conjunct or opposite)
+                let sunMoonDiff = Math.abs(pos.sun - pos.moon);
+                let isSyzygy = (sunMoonDiff <= orb) || (Math.abs(sunMoonDiff - 180) <= orb) || (sunMoonDiff >= 360 - orb);
+
+                // RULE 2: Mars and Saturn Hard Aspect (Conjunct, Square, or Opposite)
+                let marsSatDiff = Math.abs(pos.mars - pos.saturn);
+                let isMarsSaturnAspect = 
+                    (marsSatDiff <= orb) || 
+                    (Math.abs(marsSatDiff - 90) <= orb) || 
+                    (Math.abs(marsSatDiff - 180) <= orb) || 
+                    (Math.abs(marsSatDiff - 270) <= orb) || 
+                    (marsSatDiff >= 360 - orb);
+
+                // If both alignments happen on the same day, log it.
+                if (isSyzygy && isMarsSaturnAspect) {
+                    tensionWindows.push({
+                        date: current.toDateString(),
+                        pos: pos,
+                        aspect: marsSatDiff <= orb || marsSatDiff >= 360-orb ? "Conjunction" : 
+                                Math.abs(marsSatDiff - 180) <= orb ? "Opposition" : "Square"
+                    });
+                }
+            }
+
+            // Display Results
+            resultsDiv.innerHTML = "";
+            if (tensionWindows.length === 0) {
+                resultsDiv.innerHTML = `<div class="no-results"><strong>Quiet Period:</strong> No major overlapping Sun/Moon and Mars/Saturn tension alignments calculated for ${year} based on mean orbital elements.</div>`;
+                return;
+            }
+
+            // Filter out consecutive days to show distinct windows instead of a log for every single day
+            let filteredWindows = [tensionWindows[0]];
+            for (let i = 1; i < tensionWindows.length; i++) {
+                let prevDate = new Date(filteredWindows[filteredWindows.length - 1].date);
+                let currDate = new Date(tensionWindows[i].date);
+                // If the next alert is more than 3 days away, treat it as a new window
+                if ((currDate - prevDate) / 86400000 > 3) {
+                    filteredWindows.push(tensionWindows[i]);
+                }
+            }
+
+            filteredWindows.forEach(window => {
+                resultsDiv.innerHTML += `
+                    <div class="window-card">
+                        <h3>Critical Alignment Trigger: ${window.date}</h3>
+                        <p><strong>Condition:</strong> Syzygy (New/Full Moon) combined with a Mars-Saturn <strong>${window.aspect}</strong>.</p>
+                        <p><strong>Calculated Longitudes:</strong></p>
+                        <span class="degrees">Sun: ${window.pos.sun.toFixed(1)}° | Moon: ${window.pos.moon.toFixed(1)}° | Mars: ${window.pos.mars.toFixed(1)}° | Saturn: ${window.pos.saturn.toFixed(1)}°</span>
+                    </div>
+                `;
+            });
+        }
+    </script>
+</body>
+</html>

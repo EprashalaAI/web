@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dhwani AI - Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+
+        /* Custom Scrollbar */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Glassmorphism Classes */
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .mode-active {
+            background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .push-btn {
+            transition: all 0.1s ease-in-out;
+            transform: scale(1);
+        }
+        .push-btn:active, .push-btn.pressed {
+            transform: scale(0.95);
+            filter: brightness(1.1);
+        }
+
+        /* Input styling */
+        textarea {
+            field-sizing: content;
+            min-height: 150px;
+        }
+
+        * { -webkit-tap-highlight-color: transparent; }
+    </style>
+</head>
+<body class="bg-slate-950 h-[100dvh] w-full flex flex-col overflow-hidden text-slate-100">
+
+    <header class="glass-panel z-50 shrink-0 px-4 py-3 pb-4 rounded-b-2xl shadow-lg relative">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg shadow-glow">D</div>
+                <span class="font-bold text-lg tracking-tight">Dhwani Studio</span>
+            </div>
+            <div class="flex bg-slate-800 rounded-lg p-1 border border-slate-700">
+                <button onclick="setMode('tts')" id="tab-tts" class="mode-active px-3 py-1.5 rounded-md text-xs font-bold transition-all">Text to Speech</button>
+                <button onclick="setMode('stt')" id="tab-stt" class="text-slate-400 px-3 py-1.5 rounded-md text-xs font-bold transition-all hover:text-white">Speech to Text</button>
+            </div>
+        </div>
+
+        <div class="flex gap-3">
+            <div class="flex-1">
+                <label class="text-[10px] font-bold text-purple-400 uppercase block mb-1 pl-1">Native (Input)</label>
+                <select id="lang-native" class="w-full text-xs p-2.5 rounded-lg border border-slate-600 bg-slate-800 text-white outline-none focus:border-purple-500 transition-colors appearance-none"></select>
+            </div>
+            
+            <div class="flex flex-col justify-center pt-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+            </div>
+
+            <div class="flex-1">
+                <label class="text-[10px] font-bold text-pink-400 uppercase block mb-1 pl-1">Guest (Output)</label>
+                <select id="lang-guest" class="w-full text-xs p-2.5 rounded-lg border border-slate-600 bg-slate-800 text-white outline-none focus:border-pink-500 transition-colors appearance-none"></select>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow flex flex-col p-4 overflow-y-auto no-scrollbar relative z-0">
+        
+        <div id="view-tts" class="flex flex-col h-full">
+            <label class="text-xs text-slate-400 font-bold mb-2 ml-1">Type text below:</label>
+            <textarea id="tts-input" class="w-full flex-grow bg-slate-900/50 border border-slate-700 rounded-xl p-4 text-sm leading-relaxed focus:outline-none focus:ring-1 focus:ring-purple-500 resize-none placeholder-slate-600" placeholder="Type here what you want to say..."></textarea>
+            
+            <div id="tts-status" class="h-6 mt-2 text-xs text-right text-purple-400 font-medium italic opacity-0 transition-opacity">Translating...</div>
+        </div>
+
+        <div id="view-stt" class="hidden flex-col h-full gap-4">
+            <div class="flex-1 flex flex-col">
+                <div class="flex justify-between items-end mb-1 px-1">
+                    <label class="text-xs text-purple-400 font-bold">Heard (Native):</label>
+                    <button onclick="clearStt()" class="text-[10px] text-slate-500 hover:text-white uppercase">Clear</button>
+                </div>
+                <div id="stt-console" class="flex-grow bg-slate-900/50 border border-slate-700 rounded-xl p-4 text-sm text-slate-200 overflow-y-auto whitespace-pre-wrap"></div>
+            </div>
+
+            <div class="flex-1 flex flex-col">
+                <div class="flex justify-between items-end mb-1 px-1">
+                    <label class="text-xs text-pink-400 font-bold">Translation (Guest):</label>
+                </div>
+                <div id="stt-result" class="flex-grow bg-slate-800/50 border border-slate-700 border-dashed rounded-xl p-4 text-sm text-pink-100 overflow-y-auto italic">
+                    <span class="text-slate-600 not-italic">Translation will appear here...</span>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <div class="glass-panel mt-auto pb-safe pt-3 px-4 pb-6 rounded-t-2xl shadow-[0_-5px_20px_rgba(0,0,0,0.3)] shrink-0 z-50">
+        
+        <div id="controls-tts" class="flex flex-col gap-3">
+            <button id="btn-speak" class="push-btn w-full bg-gradient-to-r from-purple-600 to-indigo-600 py-3.5 rounded-xl font-bold text-white shadow-lg flex justify-center items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
+                SPEAK
+            </button>
+            
+            <a id="btn-download" href="#" target="_blank" class="hidden push-btn w-full bg-slate-800 border border-slate-600 py-3 rounded-xl font-bold text-slate-300 text-sm flex justify-center items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                Save MP3 (Last Spoken)
+            </a>
+        </div>
+
+        <div id="controls-stt" class="hidden grid grid-cols-4 gap-3">
+            <button id="btn-listen" class="push-btn col-span-2 bg-gradient-to-r from-purple-600 to-pink-600 py-3 rounded-xl font-bold text-white shadow-lg flex flex-col items-center justify-center h-16">
+                <span class="text-sm tracking-widest">LISTEN</span>
+                <span class="text-[9px] text-purple-200 uppercase opacity-80">Hold to Speak</span>
+            </button>
+
+            <button id="btn-translate" class="push-btn col-span-1 bg-slate-700 border border-slate-600 rounded-xl flex flex-col items-center justify-center text-slate-200 h-16">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" /></svg>
+                <span class="text-[9px] font-bold">TRANS</span>
+            </button>
+
+            <button id="btn-copy" class="push-btn col-span-1 bg-slate-800 border border-slate-700 rounded-xl flex flex-col items-center justify-center text-slate-400 hover:text-white h-16">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
+                <span class="text-[9px] font-bold">COPY</span>
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // --- CONFIG & DATA ---
+        const LANGUAGES = [
+            { code: 'en-IN', name: 'English (India)' },
+            { code: 'hi-IN', name: 'Hindi (हिंदी)' },
+            { code: 'mr-IN', name: 'Marathi (मराठी)' },
+            { code: 'gu-IN', name: 'Gujarati (ગુજરાતી)' },
+            { code: 'ta-IN', name: 'Tamil (தமிழ்)' },
+            { code: 'te-IN', name: 'Telugu (తెలుగు)' },
+            { code: 'pa-IN', name: 'Punjabi (ਪੰਜਾਬੀ)' },
+            { code: 'bn-IN', name: 'Bengali (বাংলা)' },
+            { code: 'ml-IN', name: 'Malayalam (മലയാളം)' },
+            { code: 'kn-IN', name: 'Kannada (ಕನ್ನಡ)' },
+            { code: 'en-US', name: 'English (US)' },
+            { code: 'en-GB', name: 'English (UK)' },
+            { code: 'zh-CN', name: 'Chinese (Mandarin)' },
+            { code: 'ja-JP', name: 'Japanese (日本語)' },
+            { code: 'ko-KR', name: 'Korean (한국어)' },
+            { code: 'fr-FR', name: 'French' },
+            { code: 'es-ES', name: 'Spanish' },
+            { code: 'de-DE', name: 'German' },
+            { code: 'ru-RU', name: 'Russian' },
+            { code: 'ar-SA', name: 'Arabic' },
+            { code: 'pt-PT', name: 'Portuguese' },
+            { code: 'it-IT', name: 'Italian' }
+        ];
+
+        let synth = window.speechSynthesis;
+        let recognition = null;
+        let currentMode = 'tts'; // 'tts' or 'stt'
+        let finalTranscript = '';
+        let isListening = false;
+        let lastAudioUrl = '';
+
+        // --- DOM ELEMENTS ---
+        const langNative = document.getElementById('lang-native');
+        const langGuest = document.getElementById('lang-guest');
+        
+        // Mode Views
+        const viewTts = document.getElementById('view-tts');
+        const viewStt = document.getElementById('view-stt');
+        const controlsTts = document.getElementById('controls-tts');
+        const controlsStt = document.getElementById('controls-stt');
+        const tabTts = document.getElementById('tab-tts');
+        const tabStt = document.getElementById('tab-stt');
+
+        // TTS Elements
+        const ttsInput = document.getElementById('tts-input');
+        const btnSpeak = document.getElementById('btn-speak');
+        const btnDownload = document.getElementById('btn-download');
+        const ttsStatus = document.getElementById('tts-status');
+
+        // STT Elements
+        const sttConsole = document.getElementById('stt-console');
+        const sttResult = document.getElementById('stt-result');
+        const btnListen = document.getElementById('btn-listen');
+        const btnTranslate = document.getElementById('btn-translate');
+        const btnCopy = document.getElementById('btn-copy');
+
+        // --- INITIALIZATION ---
+        function init() {
+            // Populate Dropdowns
+            LANGUAGES.forEach(l => {
+                langNative.add(new Option(l.name, l.code));
+                langGuest.add(new Option(l.name, l.code));
+            });
+            langNative.value = 'en-IN';
+            langGuest.value = 'hi-IN';
+
+            // Setup Speech Recognition
+            if (window.SpeechRecognition || window.webkitSpeechRecognition) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                
+                // --- FIX: SET CONTINUOUS FALSE ---
+                recognition.continuous = false; 
+                recognition.interimResults = true;
+
+                recognition.onresult = (event) => {
+                    const result = event.results[event.results.length - 1];
+                    const text = result[0].transcript;
+                    
+                    // Show immediate preview
+                    sttConsole.innerText = finalTranscript + text;
+                    sttConsole.scrollTop = sttConsole.scrollHeight;
+
+                    if (result.isFinal) {
+                        finalTranscript += text + " ";
+                    }
+                };
+
+                // --- FIX: RESTART LOGIC ON END ---
+                recognition.onend = () => {
+                    if (isListening) {
+                        // User is still holding button, restart immediately
+                        try { recognition.start(); } catch(e) {}
+                    }
+                    // Else, natural stop, do nothing.
+                };
+
+                recognition.onerror = (e) => console.error(e);
+            } else {
+                alert("Speech features not fully supported on this browser.");
+            }
+
+            // Button Listeners
+            setupTtsListeners();
+            setupSttListeners();
+        }
+
+        // --- MODE SWITCHING ---
+        function setMode(mode) {
+            currentMode = mode;
+            
+            if (mode === 'tts') {
+                viewTts.classList.remove('hidden');
+                viewTts.classList.add('flex');
+                viewStt.classList.add('hidden');
+                viewStt.classList.remove('flex');
+
+                controlsTts.classList.remove('hidden');
+                controlsStt.classList.add('hidden');
+
+                tabTts.classList.add('mode-active', 'text-white');
+                tabTts.classList.remove('text-slate-400');
+                tabStt.classList.remove('mode-active', 'text-white');
+                tabStt.classList.add('text-slate-400');
+            } else {
+                viewTts.classList.add('hidden');
+                viewTts.classList.remove('flex');
+                viewStt.classList.remove('hidden');
+                viewStt.classList.add('flex');
+
+                controlsTts.classList.add('hidden');
+                controlsStt.classList.remove('hidden');
+                controlsStt.classList.add('grid'); // Restore grid layout
+
+                tabStt.classList.add('mode-active', 'text-white');
+                tabStt.classList.remove('text-slate-400');
+                tabTts.classList.remove('mode-active', 'text-white');
+                tabTts.classList.add('text-slate-400');
+            }
+        }
+        window.setMode = setMode; // Make global
+
+        // --- TTS LOGIC ---
+        function setupTtsListeners() {
+            btnSpeak.onclick = async () => {
+                const text = ttsInput.value.trim();
+                if (!text) return;
+
+                const sourceLang = langNative.value;
+                const targetLang = langGuest.value;
+
+                // Stop any current audio
+                if (synth.speaking) synth.cancel();
+
+                let textToSpeak = text;
+                
+                // Translate if languages differ
+                if (sourceLang !== targetLang) {
+                    showTtsStatus("Translating...", 1);
+                    try {
+                        textToSpeak = await translateText(text, sourceLang, targetLang);
+                        showTtsStatus("Speaking...", 1);
+                    } catch (e) {
+                        showTtsStatus("Translation Error", 0);
+                        textToSpeak = text; // Fallback
+                    }
+                } else {
+                    showTtsStatus("Speaking...", 1);
+                }
+
+                // Speak
+                speak(textToSpeak, targetLang);
+                
+                // Prepare Download
+                prepareDownload(textToSpeak, targetLang);
+            };
+        }
+
+        function prepareDownload(text, langCode) {
+            const cleanLang = langCode.split('-')[0]; // 'en-IN' -> 'en'
+            const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${cleanLang}&client=tw-ob`;
+            
+            btnDownload.href = url;
+            btnDownload.classList.remove('hidden');
+            btnDownload.classList.add('flex');
+        }
+
+        function showTtsStatus(msg, active) {
+            ttsStatus.innerText = msg;
+            ttsStatus.style.opacity = active ? 1 : 0;
+            if(!active) setTimeout(() => ttsStatus.style.opacity = 0, 2000);
+        }
+
+        // --- STT LOGIC ---
+        function setupSttListeners() {
+            // Hold to Listen
+            const startListen = (e) => {
+                e.preventDefault();
+                if (isListening) return;
+                isListening = true;
+                
+                // NOTE: We do NOT clear finalTranscript here if we want to append.
+                // If you want to clear on every new press, uncomment below:
+                // finalTranscript = ''; sttConsole.innerText = '';
+
+                recognition.lang = langNative.value;
+                try { recognition.start(); } catch(e){}
+                btnListen.classList.add('pressed', 'ring-2', 'ring-purple-400');
+                btnListen.querySelector('span').innerText = "LISTENING...";
+            };
+
+            const stopListen = (e) => {
+                e.preventDefault();
+                if (!isListening) return;
+                isListening = false;
+                
+                // recognition.stop() will trigger onend, which will see isListening=false and stop the loop
+                recognition.stop();
+                
+                btnListen.classList.remove('pressed', 'ring-2', 'ring-purple-400');
+                btnListen.querySelector('span').innerText = "LISTEN";
+            };
+
+            btnListen.addEventListener('mousedown', startListen);
+            btnListen.addEventListener('touchstart', startListen);
+            btnListen.addEventListener('mouseup', stopListen);
+            btnListen.addEventListener('touchend', stopListen);
+            btnListen.addEventListener('mouseleave', stopListen);
+
+            // Translate Button
+            btnTranslate.onclick = async () => {
+                const text = sttConsole.innerText.trim();
+                if(!text) return;
+                
+                const sourceLang = langNative.value;
+                const targetLang = langGuest.value;
+
+                if(sourceLang === targetLang) {
+                    sttResult.innerHTML = `<span class="not-italic text-white">${text}</span>`;
+                    return;
+                }
+
+                sttResult.innerHTML = `<span class="animate-pulse">Translating...</span>`;
+                try {
+                    const translated = await translateText(text, sourceLang, targetLang);
+                    sttResult.innerHTML = `<span class="not-italic text-white font-medium">${translated}</span>`;
+                } catch(e) {
+                    sttResult.innerText = "Error translating.";
+                }
+            };
+
+            // Copy Button
+            btnCopy.onclick = () => {
+                const text = sttResult.innerText;
+                if(text && text !== "Translation will appear here...") {
+                    navigator.clipboard.writeText(text);
+                    const originalHTML = btnCopy.innerHTML;
+                    btnCopy.innerHTML = `<span class="text-[9px] font-bold text-green-400">COPIED</span>`;
+                    setTimeout(() => btnCopy.innerHTML = originalHTML, 1500);
+                }
+            };
+            
+            window.clearStt = () => {
+                finalTranscript = '';
+                sttConsole.innerText = '';
+                sttResult.innerHTML = '<span class="text-slate-600 not-italic">Translation will appear here...</span>';
+            };
+        }
+
+        // --- SHARED UTILS ---
+
+        async function translateText(text, sLang, tLang) {
+            // Using MyMemory API
+            const pair = `${sLang}|${tLang}`;
+            const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${pair}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            
+            if(data.responseStatus === 200) {
+                 // Decode entities
+                 const txt = document.createElement("textarea");
+                 txt.innerHTML = data.responseData.translatedText;
+                 return txt.value;
+            } else {
+                throw new Error("API Limit or Error");
+            }
+        }
+
+        function speak(text, lang) {
+            const ut = new SpeechSynthesisUtterance(text);
+            ut.lang = lang;
+            
+            // Try to select a good voice
+            const voices = synth.getVoices();
+            const perfectMatch = voices.find(v => v.lang === lang);
+            const closeMatch = voices.find(v => v.lang.startsWith(lang.split('-')[0]));
+            if (perfectMatch) ut.voice = perfectMatch;
+            else if (closeMatch) ut.voice = closeMatch;
+
+            synth.speak(ut);
+            
+            ut.onend = () => showTtsStatus("", 0);
+        }
+
+        // Initialize
+        window.onload = init;
+
+    </script>
+</body>
+</html>

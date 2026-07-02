@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Psychometric Profiler</title>
+    <style>
+        :root {
+            --bg-primary: #f8fafc;
+            --surface: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --radius: 12px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: var(--bg-primary); color: var(--text-main); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        
+        .app-container {
+            width: 100%; max-width: 680px; background: var(--surface); border-radius: var(--radius);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.03);
+            border: 1px solid var(--border); padding: 40px; transition: all 0.3s ease;
+        }
+
+        .screen { display: none; }
+        .screen.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        h2 { font-size: 24px; font-weight: 700; margin-bottom: 8px; color: var(--text-main); }
+        p.subtitle { color: var(--text-muted); font-size: 15px; margin-bottom: 24px; }
+        
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: 600; font-size: 14px; margin-bottom: 8px; }
+        input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 15px; outline: none; transition: border-color 0.2s; }
+        input:focus, select:focus { border-color: var(--accent); }
+        
+        button { background-color: var(--accent); color: white; border: none; padding: 14px 24px; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; transition: background-color 0.2s; }
+        button:hover { background-color: var(--accent-hover); }
+        button:disabled { background-color: var(--border); color: var(--text-muted); cursor: not-allowed; }
+
+        .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; font-size: 13px; font-weight: 600; color: var(--text-muted); }
+        .progress-bar-container { width: 100%; height: 6px; background-color: var(--border); border-radius: 3px; margin-bottom: 32px; overflow: hidden; }
+        .progress-bar { height: 100%; background-color: var(--accent); width: 0%; transition: width 0.3s ease; }
+
+        .question-text { font-size: 20px; font-weight: 600; line-height: 1.5; margin-bottom: 32px; min-height: 80px; }
+        .options-container { display: none; gap: 12px; } 
+        .option-btn { background: var(--surface); color: var(--text-main); border: 1px solid var(--border); text-align: left; padding: 16px; border-radius: 8px; font-size: 15px; font-weight: 500; }
+        .option-btn:hover { border-color: var(--accent); background-color: rgba(37, 99, 235, 0.02); }
+
+        .audio-status { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--accent); margin-bottom: 16px; font-weight: 500; }
+        .audio-pulse { width: 8px; height: 8px; background-color: var(--accent); border-radius: 50%; animation: pulse 1.2s infinite; }
+        @keyframes pulse { 0% { transform: scale(0.8); opacity: 0.5; } 50% { transform: scale(1.3); opacity: 1; } 100% { transform: scale(0.8); opacity: 0.5; } }
+
+        .phase-card { text-align: center; padding: 20px 0; }
+        .success-icon { font-size: 48px; color: var(--success); margin-bottom: 16px; }
+
+        .dashboard-container { background: var(--bg-primary); padding: 24px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 24px; }
+        .trait-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .trait-row:last-child { margin-bottom: 0; }
+        .trait-label { font-size: 14px; font-weight: 600; width: 120px; color: var(--text-main); }
+        .trait-label.right { text-align: right; }
+        .trait-bar-wrap { flex: 1; height: 8px; background-color: var(--border); border-radius: 4px; margin: 0 16px; position: relative; overflow: hidden; }
+        .trait-bar-fill { height: 100%; background-color: var(--accent); border-radius: 4px; transition: width 1s ease-in-out; }
+        
+        .local-description-box { background: var(--surface); padding: 20px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 24px; font-size: 15px; line-height: 1.6; color: var(--text-main); }
+        .local-description-box h4 { font-size: 18px; margin-bottom: 12px; color: var(--accent); }
+
+        /* Enhanced Report Styles */
+        .full-report-grid { display: grid; grid-template-columns: 1fr; gap: 20px; margin-top: 20px; text-align: left; }
+        .report-section { background: var(--bg-primary); padding: 20px; border-radius: 8px; border: 1px solid var(--border); }
+        .report-section h4 { color: var(--accent); margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px; font-size: 16px; }
+        .report-section ul { padding-left: 20px; margin-top: 8px; }
+        .report-section li { margin-bottom: 6px; font-size: 14px; color: var(--text-main); }
+        .highlight-box { background-color: #f0fdf4; border-left: 4px solid var(--success); padding: 16px; margin-top: 20px; border-radius: 4px; font-size: 14px; }
+        .ai-prompt-box { background-color: #eff6ff; border: 1px solid #bfdbfe; padding: 20px; margin-top: 24px; border-radius: 8px; text-align: center; }
+
+        .utility-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+        .secondary-btn { background-color: var(--surface); color: var(--text-main); border: 1px solid var(--border); }
+        .secondary-btn:hover { background-color: var(--bg-primary); }
+        .divider { height: 1px; background-color: var(--border); margin: 24px 0; }
+        
+        /* New AI Button Style */
+        .ai-btn { background: linear-gradient(135deg, #6366f1, #a855f7); color: white; border: none; font-weight: bold; margin-top: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .ai-btn:hover { background: linear-gradient(135deg, #4f46e5, #9333ea); transform: translateY(-1px); box-shadow: 0 6px 8px rgba(0,0,0,0.15); }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    
+    <!-- 1. ONBOARDING SCREEN -->
+    <div id="screen-onboarding" class="screen active">
+        <h2>Psychometric Profiling System</h2>
+        <p class="subtitle">Enter your details to generate your randomized assessment.</p>
+        
+        <div class="form-group">
+            <label for="input-lang">Language / भाषा</label>
+            <select id="input-lang">
+                <option value="en-US">English</option>
+                <option value="hi-IN">Hindi (हिंदी)</option>
+                <option value="mr-IN">Marathi (मराठी)</option>
+            </select>
+        </div>
+        <div class="form-group"><label for="input-name">Full Name</label><input type="text" id="input-name" placeholder="Enter your name"></div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+            <div class="form-group"><label for="input-age">Age</label><input type="number" id="input-age" min="1" max="120" placeholder="Age"></div>
+            <div class="form-group"><label for="input-sex">Sex</label>
+                <select id="input-sex"><option value="" disabled selected>Select</option><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option></select>
+            </div>
+        </div>
+        <button id="btn-start" style="margin-top:12px;">Initialize Assessment</button>
+        
+        <div class="divider"></div>
+        <button id="btn-import-initial" class="secondary-btn">Import Previous Session</button>
+    </div>
+
+    <!-- 2. ASSESSMENT SCREEN -->
+    <div id="screen-assessment" class="screen">
+        <div class="progress-header"><span id="txt-phase-num">Phase 1 / 10</span><span id="txt-question-num">Question 1 / 10</span></div>
+        <div class="progress-bar-container"><div id="ui-progress-bar" class="progress-bar"></div></div>
+        
+        <div id="audio-indicator" class="audio-status" style="display:none;"><div class="audio-pulse"></div><span id="audio-text">Narrating question...</span></div>
+        <div id="ui-question" class="question-text">Loading...</div>
+        
+        <div id="ui-options" class="options-container"></div>
+        
+        <div style="margin-top: 24px; text-align: right;">
+            <span id="btn-skip-audio" style="font-size:12px; color:var(--text-muted); cursor:pointer; text-decoration:underline; display:none;">Skip Narration</span>
+        </div>
+    </div>
+
+    <!-- 3. PHASE COMPLETE SCREEN -->
+    <div id="screen-phase-end" class="screen">
+        <div class="phase-card">
+            <div class="success-icon">✓</div>
+            <h2 id="txt-phase-complete-title">Phase 1 Completed</h2>
+            <p class="subtitle" style="margin-bottom:32px;">Data securely logged. Ready for the next phase.</p>
+            <button id="btn-next-phase">Proceed to Next Phase</button>
+        </div>
+    </div>
+
+    <!-- 4. RESULTS SCREEN -->
+    <div id="screen-results" class="screen">
+        <h2>Cognitive Profile Established</h2>
+        <p class="subtitle">Independent local analysis completed successfully.</p>
+        
+        <div id="ui-mbti-tag" style="font-size:36px; font-weight:800; color:var(--accent); text-align:center; margin-bottom:8px;">----</div>
+        
+        <!-- Local Analytical Dashboard -->
+        <div class="dashboard-container" id="ui-dashboard"></div>
+
+        <!-- Local Personality Description Panel -->
+        <div id="ui-local-description" class="local-description-box"></div>
+
+        <div class="ai-prompt-box">
+            <h3 style="margin-bottom: 8px; font-size: 18px; color:#1e3a8a;">Deep Dive AI Interpretation</h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+                Ready to explore deeper? Click the button below. We will automatically generate a highly optimized prompt containing your exact test metrics, copy it to your clipboard, and launch Gemini. Just hit 'Paste' (Ctrl+V / Cmd+V) to get your in-depth psychological analysis!
+            </p>
+            <button id="btn-copy-prompt" class="ai-btn">📋 Copy Prompt & Open Gemini</button>
+        </div>
+
+        <div class="divider"></div>
+        
+        <div class="utility-grid">
+            <button id="btn-export" class="secondary-btn">Export Raw Data</button>
+            <button id="btn-import-final" class="secondary-btn">Import Data</button>
+        </div>
+    </div>
+
+</div>
+
+<input type="file" id="hidden-file-input" accept=".json" style="display:none;">
+
+<script>
+    // --- COMPREHENSIVE LOCAL DATABASE ---
+    const LOCAL_PROFILES = {
+        "ISTJ": { 
+            title: "The Inspector", 
+            desc: "Practical and fact-minded individuals whose reliability cannot be doubted. You value tradition, organization, and clear standards.",
+            strengths: ["Highly responsible and reliable", "Strong willed and dutiful", "Excellent at creating and enforcing order"],
+            workplace: "Prefers clear hierarchies and well-defined rules. Works methodically to ensure projects are completed systematically.",
+            careers: ["Supply Chain Manager", "Financial Auditor", "Systems Engineer", "Database Administrator"],
+            advice: "Try to be more open to unconventional ideas. Not every problem can be solved with past procedures."
+        },
+        "ISFJ": { 
+            title: "The Protector", 
+            desc: "Very dedicated and warm protectors, always ready to defend their loved ones. Highly observant of others' feelings.",
+            strengths: ["Supportive and highly empathetic", "Reliable and patient", "Excellent memory for details involving people"],
+            workplace: "A stabilizing force in any team. Prefers behind-the-scenes roles where they can ensure group harmony.",
+            careers: ["HR Manager", "Healthcare Administrator", "Educational Counselor", "Operations Manager"],
+            advice: "Remember to set boundaries. Your tendency to put others first can lead to burnout if you don't prioritize your own needs."
+        },
+        "INFJ": { 
+            title: "The Counselor", 
+            desc: "Quiet and mystical, yet very inspiring and tireless idealists. Guided by a deep internal vision and strong integrity.",
+            strengths: ["Insightful and persuasive", "Highly creative and principled", "Passionate about helping others grow"],
+            workplace: "Works best in environments that align with their core values. Needs quiet time to process complex intuitive insights.",
+            careers: ["Organizational Psychologist", "User Experience (UX) Researcher", "Writer/Author", "Strategic Advisor"],
+            advice: "Your perfectionism is a double-edged sword. Learn to accept 'good enough' so you don't stall on execution."
+        },
+        "INTJ": { 
+            title: "The Mastermind", 
+            desc: "Imaginative and strategic thinkers with a plan for everything. Natural ability to see complex patterns.",
+            strengths: ["High self-confidence", "Independent and decisive", "Brilliant at strategic long-term planning"],
+            workplace: "Thrives when given autonomy to solve complex, systemic problems. Dislikes inefficiency and office politics.",
+            careers: ["Software Architect", "Investment Banker", "Systems Analyst", "Project Management Director"],
+            advice: "Don't dismiss the emotional element of team dynamics. Social harmony has practical value in getting your strategies executed."
+        },
+        "ISTP": { 
+            title: "The Craftsman", 
+            desc: "Bold and practical experimenters, masters of all kinds of tools. Highly adaptable and action-oriented.",
+            strengths: ["Optimistic and energetic", "Excellent in a crisis", "Relaxed and naturally adaptable"],
+            workplace: "Dislikes rigid corporate structures. Works best when allowed to troubleshoot hands-on problems independently.",
+            careers: ["Mechanical Engineer", "Cybersecurity Analyst", "Data Scientist", "Aviation Pilot"],
+            advice: "Your spontaneous nature can sometimes look like unreliability to structured team members. Try to communicate your timeline clearly."
+        },
+        "ISFP": { 
+            title: "The Composer", 
+            desc: "Flexible and charming artists, always ready to explore and experience something new.",
+            strengths: ["Charming and highly observant", "Imaginative and passionate", "Excellent aesthetic sense"],
+            workplace: "Seeks harmony and personal freedom. Dislikes highly competitive or cutthroat corporate environments.",
+            careers: ["UI/UX Designer", "Brand Manager", "Environmental Scientist", "Creative Director"],
+            advice: "Focusing strictly on the present moment can limit your future. Try to set long-term financial and career goals."
+        },
+        "INFP": { 
+            title: "The Healer", 
+            desc: "Poetic, kind and altruistic people, always eager to help a good cause. Driven by core values.",
+            strengths: ["Idealistic and open-minded", "Highly creative and deeply caring", "Driven by a profound sense of purpose"],
+            workplace: "Needs their work to mean something beyond a paycheck. Excels in independent, creative, or deeply human-centric roles.",
+            careers: ["Content Strategist", "Non-Profit Director", "Psychotherapist", "Instructional Designer"],
+            advice: "You tend to take criticism highly personally. Try to separate your deep personal identity from your professional output."
+        },
+        "INTP": { 
+            title: "The Architect", 
+            desc: "Innovative inventors with an unquenchable thirst for knowledge. Excels at theoretical problem-solving.",
+            strengths: ["Great analysts and abstract thinkers", "Imaginative and original", "Objective and straightforward"],
+            workplace: "Requires intellectual freedom. Excellent at spotting logical flaws in systems, but may struggle with mundane implementation.",
+            careers: ["Machine Learning Engineer", "Mathematician", "Financial Analyst", "Research Scientist"],
+            advice: "You risk over-analyzing a problem to the point of paralysis. Sometimes acting on 80% of the data is better than waiting for 100%."
+        },
+        "ESTP": { 
+            title: "The Dynamo", 
+            desc: "Smart, energetic and very perceptive people, who truly enjoy living on the edge.",
+            strengths: ["Bold and practical", "Highly observant of immediate facts", "Excellent networking and negotiation skills"],
+            workplace: "Thrives in fast-paced, high-stakes environments. Learns by doing rather than by reading theoretical manuals.",
+            careers: ["Sales Director", "Entrepreneur", "Emergency Responder", "Marketing Manager"],
+            advice: "Your desire for immediate action can cause you to miss the long-term consequences. Slow down and calculate risks."
+        },
+        "ESFP": { 
+            title: "The Performer", 
+            desc: "Spontaneous, energetic and enthusiastic people—life is never boring around you.",
+            strengths: ["Excellent interpersonal skills", "Highly observant and practical", "Creates a positive, dynamic team culture"],
+            workplace: "Works best in collaborative environments. Needs direct interaction with clients or team members to stay stimulated.",
+            careers: ["Event Planner", "Corporate Trainer", "Public Relations Specialist", "Real Estate Broker"],
+            advice: "Be careful not to avoid conflict just to keep the peace. Sometimes hard truths are necessary for growth."
+        },
+        "ENFP": { 
+            title: "The Champion", 
+            desc: "Enthusiastic, creative and sociable free spirits. Sees life as a complex puzzle where everything is connected.",
+            strengths: ["Curious and highly observant", "Excellent communicators", "Knows how to relax and inspire others"],
+            workplace: "A catalyst for innovation. Excels at brainstorming and kicking off projects, but may struggle to finish them.",
+            careers: ["Product Manager", "Advertising Executive", "Journalist", "HR Talent Acquisition"],
+            advice: "Your biggest challenge is follow-through. Partner with highly organized individuals who can help execute your grand visions."
+        },
+        "ENTP": { 
+            title: "The Visionary", 
+            desc: "Smart and curious thinkers who cannot resist an intellectual challenge. Natural innovators.",
+            strengths: ["Knowledgeable and quick thinkers", "Excellent brainstormers", "Charismatic and energetic"],
+            workplace: "Loves to debate and test the limits of existing systems. Highly valuable for pivoting companies out of stagnation.",
+            careers: ["Management Consultant", "Software Entrepreneur", "Legal Counsel", "Venture Capitalist"],
+            advice: "Playing devil's advocate can exhaust your colleagues. Learn when to stop debating and start supporting the final decision."
+        },
+        "ESTJ": { 
+            title: "The Supervisor", 
+            desc: "Excellent administrators, unsurpassed at managing things—or people. Values order and structure.",
+            strengths: ["Dedicated and strong-willed", "Direct and honest", "Excellent organizers who ensure efficiency"],
+            workplace: "A natural leader who thrives on bringing order to chaos. Expects punctuality, loyalty, and strict adherence to rules.",
+            careers: ["Corporate Executive", "Project Manager", "Logistics Director", "Financial Controller"],
+            advice: "Your strict focus on tradition and the 'right way' can stifle innovation. Be more receptive to unconventional ideas from subordinates."
+        },
+        "ESFJ": { 
+            title: "The Provider", 
+            desc: "Extraordinarily caring, social and popular people, always eager to help. Places high value on community.",
+            strengths: ["Strong practical skills", "Highly loyal and reliable", "Sensitive and warm communicators"],
+            workplace: "The glue that holds teams together. Excels in administrative and supportive roles, ensuring everyone has what they need to succeed.",
+            careers: ["Office Manager", "Healthcare Administrator", "Public Relations Manager", "Educator"],
+            advice: "Your self-worth is often tied too closely to others' approval. Practice making decisions that benefit you, even if they are unpopular."
+        },
+        "ENFJ": { 
+            title: "The Teacher", 
+            desc: "Charismatic and inspiring leaders, able to mesmerize their listeners. Profound understanding of people.",
+            strengths: ["Tolerant and reliable", "Natural leaders and facilitators", "Highly altruistic and passionate"],
+            workplace: "Driven to help their team reach their full potential. Excellent at managing complex interpersonal dynamics in large organizations.",
+            careers: ["Corporate Coach", "HR Director", "Sales Manager", "Non-Profit Executive"],
+            advice: "You can become overly involved in other people's problems. Remember that you cannot 'fix' everyone."
+        },
+        "ENTJ": { 
+            title: "The Commander", 
+            desc: "Bold, imaginative and strong-willed leaders, always finding a way—or making one.",
+            strengths: ["Highly efficient and energetic", "Self-confident and strong-willed", "Strategic and inspiring thinkers"],
+            workplace: "Focuses strictly on long-term goals and maximum efficiency. Quickly identifies and eliminates systemic flaws.",
+            careers: ["Chief Executive Officer (CEO)", "Management Consultant", "Corporate Lawyer", "Business Strategist"],
+            advice: "Your drive for efficiency can sometimes steamroll over others' feelings. Cultivating emotional intelligence will make you a much stronger leader."
+        }
+    };
+
+    // --- FULL 100 QUESTION BANK ---
+    const RAW_QUESTION_POOL = [
+        // Extraversion (E) vs Introversion (I)
+        { type: "EI", dir: 1, text: { "en-US": "You regularly make new friends.", "hi-IN": "आप नियमित रूप से नए दोस्त बनाते हैं।", "mr-IN": "तुम्ही नियमितपणे नवीन मित्र बनवता." }},
+        { type: "EI", dir: -1, text: { "en-US": "You spend a lot of your free time exploring various random topics that pique your interest.", "hi-IN": "आप अपना बहुत सारा खाली समय अपनी रुचि के विभिन्न विषयों की खोज में बिताते हैं।", "mr-IN": "तुम्ही तुमचा मोकळा वेळ तुमच्या आवडीच्या विविध विषयांचा शोध घेण्यात घालवता." }},
+        { type: "EI", dir: 1, text: { "en-US": "At social events, you rarely try to introduce yourself to new people and mostly talk to the ones you already know.", "hi-IN": "सामाजिक आयोजनों में, आप शायद ही कभी नए लोगों से अपना परिचय देने की कोशिश करते हैं और ज्यादातर उन्हीं से बात करते हैं जिन्हें आप पहले से जानते हैं।", "mr-IN": "सामाजिक कार्यक्रमांमध्ये, तुम्ही क्वचितच नवीन लोकांशी ओळख करून घेण्याचा प्रयत्न करता आणि बहुधा आधीच ओळखीच्या लोकांशी बोलता." }},
+        { type: "EI", dir: -1, text: { "en-US": "You prefer one-on-one conversations over group activities.", "hi-IN": "आप समूह गतिविधियों के बजाय एक-पर-एक बातचीत पसंद करते हैं।", "mr-IN": "तुम्ही गट क्रियाकलापांपेक्षा एकास-एक संभाषणांना पसंती देता." }},
+        { type: "EI", dir: 1, text: { "en-US": "You feel energized after spending time with a large group of people.", "hi-IN": "लोगों के एक बड़े समूह के साथ समय बिताने के बाद आप ऊर्जावान महसूस करते हैं।", "mr-IN": "लोकांच्या मोठ्या गटासोबत वेळ घालवल्यानंतर तुम्हाला उत्साही वाटते." }},
+        { type: "EI", dir: -1, text: { "en-US": "You often feel drained after socializing and need time alone to recharge.", "hi-IN": "आप अक्सर सामाजिक मेलजोल के बाद थका हुआ महसूस करते हैं और रिचार्ज होने के लिए अकेले समय की आवश्यकता होती है।", "mr-IN": "तुम्ही अनेकदा सामाजिकरणानंतर थकल्यासारखे अनुभवता आणि स्वतःला रिचार्ज करण्यासाठी एकांत वेळ हवा असतो." }},
+        { type: "EI", dir: 1, text: { "en-US": "You enjoy being the center of attention.", "hi-IN": "आप ध्यान का केंद्र बनना पसंद करते हैं।", "mr-IN": "तुम्हाला लक्षवेधी केंद्र राहायला आवडते." }},
+        { type: "EI", dir: -1, text: { "en-US": "You prefer reading a book over attending a party.", "hi-IN": "आप पार्टी में जाने के बजाय किताब पढ़ना पसंद करते हैं।", "mr-IN": "पार्टीला जाण्यापेक्षा तुम्ही पुस्तक वाचणे पसंत करता." }},
+        { type: "EI", dir: 1, text: { "en-US": "You tend to think out loud.", "hi-IN": "आप जोर से सोचना पसंद करते हैं।", "mr-IN": "तुम्हाला मोठ्याने विचार मांडायला आवडते." }},
+        { type: "EI", dir: -1, text: { "en-US": "You prefer to process your thoughts internally before speaking.", "hi-IN": "बोलने से पहले आप अपने विचारों को आंतरिक रूप से संसाधित करना पसंद करते हैं।", "mr-IN": "बोलण्यापूर्वी तुम्ही तुमच्या विचारांवर मनातल्या मनात प्रक्रिया करणे पसंत करता." }},
+        { type: "EI", dir: 1, text: { "en-US": "You are usually the first to strike up a conversation with a stranger.", "hi-IN": "आप आमतौर पर किसी अजनबी से बातचीत शुरू करने वाले पहले व्यक्ति होते हैं।", "mr-IN": "अनोळखी व्यक्तीशी संभाषण सुरू करणारे तुम्ही सहसा पहिले असता." }},
+        { type: "EI", dir: -1, text: { "en-US": "You enjoy working independently rather than in a team.", "hi-IN": "आप टीम में काम करने के बजाय स्वतंत्र रूप से काम करना पसंद करते हैं।", "mr-IN": "तुम्ही टीममध्ये काम करण्याऐवजी स्वतंत्रपणे काम करणे पसंत करता." }},
+        { type: "EI", dir: 1, text: { "en-US": "You find it easy to mingle in a crowd.", "hi-IN": "आपको भीड़ में घुलना-मिलना आसान लगता है।", "mr-IN": "गर्दीत मिसळणे तुम्हाला सोपे वाटते." }},
+        { type: "EI", dir: -1, text: { "en-US": "You feel overwhelmed in highly stimulating environments.", "hi-IN": "अत्यधिक उत्तेजक वातावरण में आप अभिभूत महसूस करते हैं।", "mr-IN": "अतिशय उत्तेजक वातावरणात तुम्हाला भारावून गेल्यासारखे वाटते." }},
+        { type: "EI", dir: 1, text: { "en-US": "You have a large circle of acquaintances.", "hi-IN": "आपके परिचितों का एक बड़ा दायरा है।", "mr-IN": "तुमच्या ओळखीचे मोठे वर्तुळ आहे." }},
+        { type: "EI", dir: -1, text: { "en-US": "You keep your circle of friends small and intimate.", "hi-IN": "आप अपने दोस्तों का दायरा छोटा और घनिष्ठ रखते हैं।", "mr-IN": "तुम्ही तुमच्या मित्रांचे वर्तुळ लहान आणि जिव्हाळ्याचे ठेवता." }},
+        { type: "EI", dir: 1, text: { "en-US": "You express your feelings openly.", "hi-IN": "आप अपनी भावनाओं को खुले तौर पर व्यक्त करते हैं।", "mr-IN": "तुम्ही तुमच्या भावना उघडपणे व्यक्त करता." }},
+        { type: "EI", dir: -1, text: { "en-US": "You keep your emotions private.", "hi-IN": "आप अपनी भावनाओं को निजी रखते हैं।", "mr-IN": "तुम्ही तुमच्या भावना खाजगी ठेवता." }},
+        { type: "EI", dir: 1, text: { "en-US": "You prefer action-oriented environments.", "hi-IN": "आप कार्य-उन्मुख वातावरण पसंद करते हैं।", "mr-IN": "तुम्ही कृती-केंद्रित वातावरणाला पसंती देता." }},
+        { type: "EI", dir: -1, text: { "en-US": "You enjoy quiet spaces for contemplation.", "hi-IN": "आप चिंतन के लिए शांत स्थान पसंद करते हैं।", "mr-IN": "तुम्हाला चिंतनासाठी शांत जागा आवडते." }},
+        { type: "EI", dir: 1, text: { "en-US": "You are highly talkative in group settings.", "hi-IN": "समूह सेटिंग्स में आप बहुत बातूनी हैं।", "mr-IN": "गट वातावरणात तुम्ही खूप बोलके आहात." }},
+        { type: "EI", dir: -1, text: { "en-US": "You observe before you participate.", "hi-IN": "भाग लेने से पहले आप निरीक्षण करते हैं।", "mr-IN": "सहभागी होण्यापूर्वी तुम्ही निरीक्षण करता." }},
+        { type: "EI", dir: 1, text: { "en-US": "You get bored easily when alone.", "hi-IN": "अकेले होने पर आप आसानी से ऊब जाते हैं।", "mr-IN": "एकटे असताना तुम्हाला कंटाळा येतो." }},
+        { type: "EI", dir: -1, text: { "en-US": "You cherish your alone time.", "hi-IN": "आप अपने अकेले समय को महत्व देते हैं।", "mr-IN": "तुम्ही तुमच्या एकांत वेळेची कदर करता." }},
+        { type: "EI", dir: 1, text: { "en-US": "You seek out external stimuli.", "hi-IN": "आप बाहरी उत्तेजनाओं की तलाश करते हैं।", "mr-IN": "तुम्ही बाह्य उत्तेजना शोधता." }},
+
+        // Intuition (N) vs Sensing (S)
+        { type: "NS", dir: 1, text: { "en-US": "You often spend time exploring unrealistic yet intriguing ideas.", "hi-IN": "आप अक्सर अवास्तविक लेकिन दिलचस्प विचारों की खोज में समय बिताते हैं।", "mr-IN": "तुम्ही अनेकदा अवास्तव परंतु वेधक कल्पनांचा शोध घेण्यात वेळ घालवता." }},
+        { type: "NS", dir: -1, text: { "en-US": "You prefer concrete facts over abstract theories.", "hi-IN": "आप अमूर्त सिद्धांतों पर ठोस तथ्यों को प्राथमिकता देते हैं।", "mr-IN": "तुम्ही अमूर्त सिद्धांतांपेक्षा ठोस तथ्यांना प्राधान्य देता." }},
+        { type: "NS", dir: 1, text: { "en-US": "You focus more on the future possibilities than the present reality.", "hi-IN": "आप वर्तमान वास्तविकता की तुलना में भविष्य की संभावनाओं पर अधिक ध्यान केंद्रित करते हैं।", "mr-IN": "तुम्ही सध्याच्या वास्तवापेक्षा भविष्यातील शक्यतांवर अधिक लक्ष केंद्रित करता." }},
+        { type: "NS", dir: -1, text: { "en-US": "You rely on past experiences to guide your current decisions.", "hi-IN": "अपने वर्तमान निर्णयों का मार्गदर्शन करने के लिए आप पिछले अनुभवों पर भरोसा करते हैं।", "mr-IN": "तुमच्या सध्याच्या निर्णयांना मार्गदर्शन करण्यासाठी तुम्ही भूतकाळातील अनुभवांवर अवलंबून असता." }},
+        { type: "NS", dir: 1, text: { "en-US": "You enjoy finding hidden meanings in things.", "hi-IN": "आप चीजों में छिपे अर्थ खोजने का आनंद लेते हैं।", "mr-IN": "गोष्टींमध्ये लपलेले अर्थ शोधायला तुम्हाला आवडते." }},
+        { type: "NS", dir: -1, text: { "en-US": "You prefer straightforward, direct communication.", "hi-IN": "आप स्पष्ट, सीधा संचार पसंद करते हैं।", "mr-IN": "तुम्ही स्पष्ट, थेट संवादाला प्राधान्य देता." }},
+        { type: "NS", dir: 1, text: { "en-US": "You are more of a visionary than a pragmatist.", "hi-IN": "आप एक यथार्थवादी की तुलना में अधिक दूरदर्शी हैं।", "mr-IN": "तुम्ही वास्तववाद्यापेक्षा अधिक दूरदर्शी आहात." }},
+        { type: "NS", dir: -1, text: { "en-US": "You notice the small details that others miss.", "hi-IN": "आप उन छोटे विवरणों पर ध्यान देते हैं जिन्हें दूसरे याद करते हैं।", "mr-IN": "इतरांकडून सुटलेल्या लहान तपशीलांकडे तुमचे लक्ष जाते." }},
+        { type: "NS", dir: 1, text: { "en-US": "You trust your gut instincts over logical data.", "hi-IN": "आप तार्किक डेटा पर अपनी आंत की वृत्ति पर भरोसा करते हैं।", "mr-IN": "तुम्ही तार्किक डेटापेक्षा तुमच्या अंतःप्रेरणेवर विश्वास ठेवता." }},
+        { type: "NS", dir: -1, text: { "en-US": "You prefer to follow established procedures.", "hi-IN": "आप स्थापित प्रक्रियाओं का पालन करना पसंद करते हैं।", "mr-IN": "तुम्ही प्रस्थापित कार्यपद्धतींचे पालन करणे पसंत करता." }},
+        { type: "NS", dir: 1, text: { "en-US": "You like to brainstorm new, innovative concepts.", "hi-IN": "आप नई, नवीन अवधारणाओं पर विचार-मंथन करना पसंद करते हैं।", "mr-IN": "तुम्हाला नवीन, नाविन्यपूर्ण संकल्पनांवर विचारमंथन करायला आवडते." }},
+        { type: "NS", dir: -1, text: { "en-US": "You are practical and realistic.", "hi-IN": "आप व्यावहारिक और यथार्थवादी हैं।", "mr-IN": "तुम्ही व्यावहारिक आणि वास्तववादी आहात." }},
+        { type: "NS", dir: 1, text: { "en-US": "You enjoy thinking about philosophical questions.", "hi-IN": "आप दार्शनिक प्रश्नों के बारे में सोचने का आनंद लेते हैं।", "mr-IN": "तुम्हाला तात्विक प्रश्नांचा विचार करायला आवडते." }},
+        { type: "NS", dir: -1, text: { "en-US": "You prefer hands-on experience over reading instructions.", "hi-IN": "आप निर्देशों को पढ़ने पर व्यावहारिक अनुभव पसंद करते हैं।", "mr-IN": "सूचना वाचण्यापेक्षा तुम्हाला प्रत्यक्ष कामाचा अनुभव आवडतो." }},
+        { type: "NS", dir: 1, text: { "en-US": "You tend to see the big picture rather than the individual parts.", "hi-IN": "आप व्यक्तिगत भागों के बजाय बड़ी तस्वीर देखने की प्रवृत्ति रखते हैं।", "mr-IN": "तुम्ही वैयक्तिक भागांऐवजी मोठे चित्र पाहण्याकडे कल ठेवता." }},
+        { type: "NS", dir: -1, text: { "en-US": "You are highly observant of your immediate surroundings.", "hi-IN": "आप अपने आस-पास के वातावरण के प्रति अत्यधिक चौकस हैं।", "mr-IN": "तुम्ही तुमच्या सभोवतालच्या परिसराचे अत्यंत बारकाईने निरीक्षण करता." }},
+        { type: "NS", dir: 1, text: { "en-US": "You enjoy metaphors and symbolic language.", "hi-IN": "आप रूपकों और प्रतीकात्मक भाषा का आनंद लेते हैं।", "mr-IN": "तुम्हाला रूपक आणि प्रतिकात्मक भाषा आवडते." }},
+        { type: "NS", dir: -1, text: { "en-US": "You prefer exact facts and figures.", "hi-IN": "आप सटीक तथ्यों और आंकड़ों को प्राथमिकता देते हैं।", "mr-IN": "तुम्ही अचूक तथ्ये आणि आकडेवारीला प्राधान्य देता." }},
+        { type: "NS", dir: 1, text: { "en-US": "You get excited by potential and what 'could be'.", "hi-IN": "आप क्षमता और 'क्या हो सकता है' से उत्साहित होते हैं।", "mr-IN": "तुम्ही क्षमता आणि 'काय होऊ शकते' या विचाराने रोमांचित होता." }},
+        { type: "NS", dir: -1, text: { "en-US": "You focus on what 'is' right now.", "hi-IN": "आप अभी 'क्या है' पर ध्यान केंद्रित करते हैं।", "mr-IN": "तुम्ही सध्या 'काय आहे' यावर लक्ष केंद्रित करता." }},
+        { type: "NS", dir: 1, text: { "en-US": "You like to innovate and create new methods.", "hi-IN": "आप नया करना और नए तरीके बनाना पसंद करते हैं।", "mr-IN": "तुम्हाला नाविन्यपूर्ण काम करायला आणि नवीन पद्धती शोधायला आवडते." }},
+        { type: "NS", dir: -1, text: { "en-US": "You prefer maintaining and improving existing systems.", "hi-IN": "आप मौजूदा प्रणालियों को बनाए रखने और सुधारना पसंद करते हैं।", "mr-IN": "तुम्ही सध्याच्या प्रणाली राखण्यास आणि सुधारण्यास प्राधान्य देता." }},
+        { type: "NS", dir: 1, text: { "en-US": "You trust inspiration and imagination.", "hi-IN": "आप प्रेरणा और कल्पना पर भरोसा करते हैं।", "mr-IN": "तुम्ही प्रेरणा आणि कल्पनेवर विश्वास ठेवता." }},
+        { type: "NS", dir: -1, text: { "en-US": "You trust tangible evidence.", "hi-IN": "आप ठोस सबूतों पर भरोसा करते हैं।", "mr-IN": "तुम्ही मूर्त पुराव्यांवर विश्वास ठेवता." }},
+        { type: "NS", dir: 1, text: { "en-US": "You are a creative problem solver.", "hi-IN": "आप एक रचनात्मक समस्या समाधानकर्ता हैं।", "mr-IN": "तुम्ही एक सर्जनशील समस्या सोडवणारे आहात." }},
+
+        // Thinking (T) vs Feeling (F)
+        { type: "TF", dir: 1, text: { "en-US": "You prioritize logic and objective truth over preserving social harmony.", "hi-IN": "आप सामाजिक सद्भाव को बनाए रखने के लिए तर्क और वस्तुनिष्ठ सत्य को प्राथमिकता देते हैं।", "mr-IN": "सामाजिक सलोखा राखण्यापेक्षा तुम्ही तर्कशास्त्र आणि वस्तुनिष्ठ सत्याला प्राधान्य देता." }},
+        { type: "TF", dir: -1, text: { "en-US": "You consider people's feelings to be the most important factor in decision-making.", "hi-IN": "आप लोगों की भावनाओं को निर्णय लेने में सबसे महत्वपूर्ण कारक मानते हैं।", "mr-IN": "तुम्ही लोकांच्या भावनांना निर्णय घेण्यातील सर्वात महत्त्वाचा घटक मानता." }},
+        { type: "TF", dir: 1, text: { "en-US": "You are naturally critical and analytical in discussions.", "hi-IN": "चर्चा में आप स्वाभाविक रूप से आलोचनात्मक और विश्लेषणात्मक हैं।", "mr-IN": "चर्चांमध्ये तुम्ही साहजिकच टीकात्मक आणि विश्लेषणात्मक असता." }},
+        { type: "TF", dir: -1, text: { "en-US": "You strive to ensure everyone in a group feels included and valued.", "hi-IN": "आप यह सुनिश्चित करने का प्रयास करते हैं कि समूह में हर कोई शामिल और मूल्यवान महसूस करे।", "mr-IN": "गटातील प्रत्येक व्यक्तीला सामावून घेतल्यासारखे आणि मौल्यवान वाटेल यासाठी तुम्ही प्रयत्न करता." }},
+        { type: "TF", dir: 1, text: { "en-US": "You value justice and fairness over mercy.", "hi-IN": "आप दया पर न्याय और निष्पक्षता को महत्व देते हैं।", "mr-IN": "तुम्ही दयेपेक्षा न्याय आणि निष्पक्षतेला महत्त्व देता." }},
+        { type: "TF", dir: -1, text: { "en-US": "You value compassion and empathy over strict rules.", "hi-IN": "आप सख्त नियमों पर करुणा और सहानुभूति को महत्व देते हैं।", "mr-IN": "कठोर नियमांपेक्षा तुम्ही करुणा आणि सहानुभूतीला महत्त्व देता." }},
+        { type: "TF", dir: 1, text: { "en-US": "You find it easy to deliver bad news honestly.", "hi-IN": "बुरी खबर को ईमानदारी से देना आपको आसान लगता है।", "mr-IN": "वाईट बातमी प्रामाणिकपणे देणे तुम्हाला सोपे वाटते." }},
+        { type: "TF", dir: -1, text: { "en-US": "You often sugarcoat the truth to avoid hurting feelings.", "hi-IN": "भावनाओं को आहत करने से बचने के लिए आप अक्सर सच को छिपा देते हैं।", "mr-IN": "भावना दुखावू नयेत म्हणून तुम्ही अनेकदा सत्य सौम्य करून सांगता." }},
+        { type: "TF", dir: 1, text: { "en-US": "You believe emotions cloud good judgment.", "hi-IN": "आपका मानना ​​है कि भावनाएं अच्छे निर्णय को धुंधला कर देती हैं।", "mr-IN": "तुमचा असा विश्वास आहे की भावना चांगल्या निर्णयावर परिणाम करतात." }},
+        { type: "TF", dir: -1, text: { "en-US": "You believe logic without emotion is cold and inhuman.", "hi-IN": "आपका मानना ​​है कि बिना भावनाओं के तर्क ठंडा और अमानवीय है।", "mr-IN": "तुमचा विश्वास आहे की भावनेशिवाय तर्कशास्त्र थंड आणि अमानवीय आहे." }},
+        { type: "TF", dir: 1, text: { "en-US": "You are convinced by strong arguments and data.", "hi-IN": "आप मजबूत तर्कों और डेटा से आश्वस्त हैं।", "mr-IN": "तुम्ही भक्कम युक्तिवाद आणि डेटाने पटवता." }},
+        { type: "TF", dir: -1, text: { "en-US": "You are moved by personal stories and testimonials.", "hi-IN": "आप व्यक्तिगत कहानियों और प्रशंसापत्रों से प्रेरित हैं।", "mr-IN": "तुम्ही वैयक्तिक कथा आणि अनुभवांनी प्रभावित होता." }},
+        { type: "TF", dir: 1, text: { "en-US": "You remain calm and detached during conflicts.", "hi-IN": "आप संघर्ष के दौरान शांत और अलग रहते हैं।", "mr-IN": "संघर्षादरम्यान तुम्ही शांत आणि अलिप्त राहता." }},
+        { type: "TF", dir: -1, text: { "en-US": "You take conflicts very personally and feel them deeply.", "hi-IN": "आप संघर्षों को बहुत व्यक्तिगत रूप से लेते हैं और उन्हें गहराई से महसूस करते हैं।", "mr-IN": "तुम्ही संघर्ष अतिशय वैयक्तिकरित्या घेता आणि ते मनापासून जाणवता." }},
+        { type: "TF", dir: 1, text: { "en-US": "You praise others for their competence and achievements.", "hi-IN": "आप दूसरों की उनकी क्षमता और उपलब्धियों के लिए प्रशंसा करते हैं।", "mr-IN": "तुम्ही इतरांची त्यांच्या क्षमतेसाठी आणि कामगिरीसाठी स्तुती करता." }},
+        { type: "TF", dir: -1, text: { "en-US": "You praise others for their effort and kindness.", "hi-IN": "आप दूसरों के प्रयास और दयालुता के लिए उनकी प्रशंसा करते हैं।", "mr-IN": "तुम्ही इतरांची त्यांच्या प्रयत्नांसाठी आणि दयाळूपणासाठी स्तुती करता." }},
+        { type: "TF", dir: 1, text: { "en-US": "You decide based on principles and consistency.", "hi-IN": "आप सिद्धांतों और निरंतरता के आधार पर निर्णय लेते हैं।", "mr-IN": "तुम्ही तत्त्वे आणि सातत्यावर आधारित निर्णय घेता." }},
+        { type: "TF", dir: -1, text: { "en-US": "You decide based on individual circumstances and contexts.", "hi-IN": "आप व्यक्तिगत परिस्थितियों और संदर्भों के आधार पर निर्णय लेते हैं।", "mr-IN": "तुम्ही वैयक्तिक परिस्थिती आणि संदर्भांवर आधारित निर्णय घेता." }},
+        { type: "TF", dir: 1, text: { "en-US": "You prefer to analyze why things happen.", "hi-IN": "आप विश्लेषण करना पसंद करते हैं कि चीजें क्यों होती हैं।", "mr-IN": "गोष्टी का घडतात याचे विश्लेषण करायला तुम्हाला आवडते." }},
+        { type: "TF", dir: -1, text: { "en-US": "You prefer to appreciate how things affect people.", "hi-IN": "आप सराहना करना पसंद करते हैं कि चीजें लोगों को कैसे प्रभावित करती हैं।", "mr-IN": "गोष्टी लोकांवर कसा परिणाम करतात याचे कौतुक करायला तुम्हाला आवडते." }},
+        { type: "TF", dir: 1, text: { "en-US": "You are seen as objective and level-headed.", "hi-IN": "आपको वस्तुनिष्ठ और स्तर-प्रधान के रूप में देखा जाता है।", "mr-IN": "तुम्हाला वस्तुनिष्ठ आणि समतोल विचारांचे मानले जाते." }},
+        { type: "TF", dir: -1, text: { "en-US": "You are seen as warm and caring.", "hi-IN": "आपको गर्मजोशी और देखभाल करने वाला माना जाता है।", "mr-IN": "तुम्हाला प्रेमळ आणि काळजी घेणारे मानले जाते." }},
+        { type: "TF", dir: 1, text: { "en-US": "You ask 'Is it right?' before acting.", "hi-IN": "कार्य करने से पहले आप 'क्या यह सही है?' पूछते हैं।", "mr-IN": "कृती करण्यापूर्वी तुम्ही विचारता 'हे बरोबर आहे का?'." }},
+        { type: "TF", dir: -1, text: { "en-US": "You ask 'How will this affect others?' before acting.", "hi-IN": "कार्य करने से पहले आप 'यह दूसरों को कैसे प्रभावित करेगा?' पूछते हैं।", "mr-IN": "कृती करण्यापूर्वी तुम्ही विचारता 'याचा इतरांवर काय परिणाम होईल?'." }},
+        { type: "TF", dir: 1, text: { "en-US": "You value efficiency over tact.", "hi-IN": "आप व्यवहारकुशलता पर दक्षता को महत्व देते हैं।", "mr-IN": "युक्तीपेक्षा तुम्ही कार्यक्षमतेला महत्त्व देता." }},
+
+        // Judging (J) vs Perceiving (P)
+        { type: "JP", dir: 1, text: { "en-US": "You prefer to have a strict daily schedule rather than going with the flow.", "hi-IN": "आप प्रवाह के साथ जाने के बजाय सख्त दैनिक कार्यक्रम रखना पसंद करते हैं।", "mr-IN": "प्रवाहाच्या विरुद्ध जाण्याऐवजी तुम्ही कडक दैनंदिन वेळापत्रक राखण्यास प्राधान्य देता." }},
+        { type: "JP", dir: -1, text: { "en-US": "You feel more comfortable keeping your options open rather than committing to a final decision.", "hi-IN": "अंतिम निर्णय लेने के बजाय अपने विकल्पों को खुला रखने में आपको अधिक सहज महसूस होता है।", "mr-IN": "अंतिम निर्णयावर ठाम राहण्यापेक्षा पर्याय खुले ठेवण्यात तुम्हाला अधिक सोयीस्कर वाटते." }},
+        { type: "JP", dir: 1, text: { "en-US": "You like to finish your work well before deadlines.", "hi-IN": "आप समय सीमा से पहले अपना काम खत्म करना पसंद करते हैं।", "mr-IN": "डेडलाइनच्या खूप आधी तुमचे काम पूर्ण करायला तुम्हाला आवडते." }},
+        { type: "JP", dir: -1, text: { "en-US": "You tend to procrastinate and perform best under last-minute pressure.", "hi-IN": "आप टालमटोल करते हैं और अंतिम समय के दबाव में सबसे अच्छा प्रदर्शन करते हैं।", "mr-IN": "तुम्ही टाळाटाळ करता आणि शेवटच्या क्षणी असलेल्या दबावाखाली सर्वोत्तम कामगिरी करता." }},
+        { type: "JP", dir: 1, text: { "en-US": "You always use a to-do list.", "hi-IN": "आप हमेशा टू-डू सूची का उपयोग करते हैं।", "mr-IN": "तुम्ही नेहमी टू-डू लिस्ट वापरता." }},
+        { type: "JP", dir: -1, text: { "en-US": "You prefer to approach tasks spontaneously.", "hi-IN": "आप कार्यों को स्वतःस्फूर्त रूप से करना पसंद करते हैं।", "mr-IN": "तुम्ही कामे उत्स्फूर्तपणे पूर्ण करण्यास प्राधान्य देता." }},
+        { type: "JP", dir: 1, text: { "en-US": "You find unexpected changes to your plans very stressful.", "hi-IN": "आप अपनी योजनाओं में अप्रत्याशित बदलावों को बहुत तनावपूर्ण पाते हैं।", "mr-IN": "तुमच्या योजनांमधील अनपेक्षित बदल तुम्हाला खूप तणावपूर्ण वाटतात." }},
+        { type: "JP", dir: -1, text: { "en-US": "You adapt easily to changing circumstances.", "hi-IN": "आप बदलती परिस्थितियों के आसानी से अनुकूल हो जाते हैं।", "mr-IN": "तुम्ही बदलत्या परिस्थितीशी सहज जुळवून घेता." }},
+        { type: "JP", dir: 1, text: { "en-US": "You prefer a clean, highly organized workspace.", "hi-IN": "आप एक साफ, अत्यधिक संगठित कार्यक्षेत्र पसंद करते हैं।", "mr-IN": "तुम्ही स्वच्छ, अत्यंत संघटित कार्यक्षेत्राला पसंती देता." }},
+        { type: "JP", dir: -1, text: { "en-US": "Your workspace is often messy, but you know where everything is.", "hi-IN": "आपका कार्यक्षेत्र अक्सर गंदा होता है, लेकिन आप जानते हैं कि सब कुछ कहाँ है।", "mr-IN": "तुमची कामाची जागा अनेकदा अस्ताव्यस्त असते, पण कोणती गोष्ट कुठे आहे हे तुम्हाला माहीत असते." }},
+        { type: "JP", dir: 1, text: { "en-US": "You like rules and clear expectations.", "hi-IN": "आप नियम और स्पष्ट अपेक्षाएं पसंद करते हैं।", "mr-IN": "तुम्हाला नियम आणि स्पष्ट अपेक्षा आवडतात." }},
+        { type: "JP", dir: -1, text: { "en-US": "You prefer flexibility and loose guidelines.", "hi-IN": "आप लचीलापन और ढीले दिशानिर्देश पसंद करते हैं।", "mr-IN": "तुम्ही लवचिकता आणि सैल मार्गदर्शक तत्त्वांना प्राधान्य देता." }},
+        { type: "JP", dir: 1, text: { "en-US": "You plan your vacations meticulously in advance.", "hi-IN": "आप अपनी छुट्टियों की योजना पहले से ही सावधानीपूर्वक बनाते हैं।", "mr-IN": "तुम्ही तुमच्या सुट्ट्यांचे नियोजन आगाऊ अत्यंत काळजीपूर्वक करता." }},
+        { type: "JP", dir: -1, text: { "en-US": "You prefer spontaneous road trips with no set destination.", "hi-IN": "आप बिना किसी निर्धारित गंतव्य के स्वतःस्फूर्त सड़क यात्राएं पसंद करते हैं।", "mr-IN": "निश्चित गंतव्यस्थान नसलेल्या उत्स्फूर्त रोड ट्रिप तुम्हाला आवडतात." }},
+        { type: "JP", dir: 1, text: { "en-US": "You find it hard to relax until all chores are done.", "hi-IN": "सभी काम पूरे होने तक आपको आराम करना मुश्किल लगता है।", "mr-IN": "सर्व कामे पूर्ण होईपर्यंत तुम्हाला आराम करणे कठीण जाते." }},
+        { type: "JP", dir: -1, text: { "en-US": "You can easily ignore chores to have fun.", "hi-IN": "मौज-मस्ती करने के लिए आप आसानी से कामों को नज़रअंदाज़ कर सकते हैं।", "mr-IN": "मजा करण्यासाठी तुम्ही घरकामाकडे सहज दुर्लक्ष करू शकता." }},
+        { type: "JP", dir: 1, text: { "en-US": "You focus on bringing tasks to closure.", "hi-IN": "आप कार्यों को पूरा करने पर ध्यान केंद्रित करते हैं।", "mr-IN": "कामे पूर्ण करण्यावर तुमचा भर असतो." }},
+        { type: "JP", dir: -1, text: { "en-US": "You enjoy starting new projects more than finishing them.", "hi-IN": "आप नए प्रोजेक्ट शुरू करने का अधिक आनंद लेते हैं।", "mr-IN": "तुम्हाला प्रकल्प पूर्ण करण्यापेक्षा नवीन प्रकल्प सुरू करण्यात अधिक आनंद मिळतो." }},
+        { type: "JP", dir: 1, text: { "en-US": "You respect schedules and punctuality.", "hi-IN": "आप कार्यक्रम और समय की पाबंदी का सम्मान करते हैं।", "mr-IN": "तुम्ही वेळापत्रक आणि वक्तशीरपणाचा आदर करता." }},
+        { type: "JP", dir: -1, text: { "en-US": "You view time as flexible and subjective.", "hi-IN": "आप समय को लचीला और व्यक्तिपरक मानते हैं।", "mr-IN": "तुम्ही वेळेकडे लवचिक आणि व्यक्तिनिष्ठ दृष्टिकोनातून पाहता." }},
+        { type: "JP", dir: 1, text: { "en-US": "You make decisions quickly to move forward.", "hi-IN": "आप आगे बढ़ने के लिए जल्दी निर्णय लेते हैं।", "mr-IN": "पुढे जाण्यासाठी तुम्ही त्वरित निर्णय घेता." }},
+        { type: "JP", dir: -1, text: { "en-US": "You delay decisions to gather more information.", "hi-IN": "आप अधिक जानकारी इकट्ठा करने के लिए निर्णयों में देरी करते हैं।", "mr-IN": "अधिक माहिती गोळा करण्यासाठी तुम्ही निर्णय पुढे ढकलता." }},
+        { type: "JP", dir: 1, text: { "en-US": "You appreciate routine and predictability.", "hi-IN": "आप दिनचर्या और पूर्वानुमान की सराहना करते हैं।", "mr-IN": "नियमित दिनचर्या आणि अंदाजेपणा तुम्हाला आवडतो." }},
+        { type: "JP", dir: -1, text: { "en-US": "You crave novelty and surprises.", "hi-IN": "आप नवीनता और आश्चर्य के लिए तरसते हैं।", "mr-IN": "तुम्हाला नाविन्य आणि आश्चर्यकारक गोष्टींची ओढ असते." }},
+        { type: "JP", dir: 1, text: { "en-US": "You feel satisfied after making a final choice.", "hi-IN": "अंतिम चुनाव करने के बाद आप संतुष्ट महसूस करते हैं।", "mr-IN": "अंतिम निवड केल्यानंतर तुम्हाला समाधान वाटते." }}
+    ];
+
+    // Global Application State
+    let state = {
+        user: { name: "", age: "", sex: "", lang: "en-US" },
+        currentPhase: 1,
+        currentQuestionIndex: 0,
+        responses: [],
+        questionStartTime: 0,
+        phasedQuestions: [],
+        computedMetrics: null // Will store final calculated percentages for the prompt generator
+    };
+
+    function shuffleArray(array) {
+        let currentIndex = array.length, randomIndex;
+        while (currentIndex !== 0) {
+            randomIndex = Math.floor(Math.random() * currentIndex);
+            currentIndex--;
+            [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+        }
+        return array;
+    }
+
+    function navigateTo(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+        window.speechSynthesis.cancel();
+    }
+
+    document.getElementById('btn-start').addEventListener('click', () => {
+        const name = document.getElementById('input-name').value.trim();
+        const age = document.getElementById('input-age').value.trim();
+        const sex = document.getElementById('input-sex').value;
+        const lang = document.getElementById('input-lang').value;
+
+        if (!name || !age || !sex) { alert("Please fill out all details to initialize the assessment."); return; }
+
+        state.user = { name, age, sex, lang };
+        state.currentPhase = 1;
+        state.currentQuestionIndex = 0;
+        state.responses = [];
+        
+        let mixedPool = shuffleArray([...RAW_QUESTION_POOL]);
+        state.phasedQuestions = [];
+        for(let i=0; i<10; i++) {
+            state.phasedQuestions.push(mixedPool.slice(i*10, (i+1)*10));
+        }
+        
+        navigateTo('screen-assessment');
+        renderQuestion();
+    });
+
+    function renderQuestion() {
+        const currentPhaseData = state.phasedQuestions[state.currentPhase - 1];
+        if (state.currentQuestionIndex >= currentPhaseData.length) {
+            handlePhaseCompletion();
+            return;
+        }
+
+        const qData = currentPhaseData[state.currentQuestionIndex];
+        document.getElementById('txt-phase-num').innerText = `Phase ${state.currentPhase} / 10`;
+        document.getElementById('txt-question-num').innerText = `Question ${state.currentQuestionIndex + 1} / 10`;
+        const absoluteProgress = ((state.currentPhase - 1) * 10 + state.currentQuestionIndex) / 100 * 100;
+        document.getElementById('ui-progress-bar').style.width = `${absoluteProgress}%`;
+
+        const txtDisplay = qData.text[state.user.lang] || qData.text["en-US"];
+        document.getElementById('ui-question').innerText = txtDisplay;
+
+        const optionsUI = document.getElementById('ui-options');
+        optionsUI.style.display = 'none'; 
+        optionsUI.innerHTML = '';
+
+        const weights = [
+            { label: `${state.user.lang === 'hi-IN' ? 'सहमत' : state.user.lang === 'mr-IN' ? 'सहमत' : 'Agree'}`, val: 2 },
+            { label: `${state.user.lang === 'hi-IN' ? 'आंशिक सहमत' : state.user.lang === 'mr-IN' ? 'अंशत: सहमत' : 'Somewhat Agree'}`, val: 1 },
+            { label: `${state.user.lang === 'hi-IN' ? 'उदासीन' : state.user.lang === 'mr-IN' ? 'तटस्थ' : 'Neutral'}`, val: 0 },
+            { label: `${state.user.lang === 'hi-IN' ? 'आंशिक असहमत' : state.user.lang === 'mr-IN' ? 'अंशत: असमत' : 'Somewhat Disagree'}`, val: -1 },
+            { label: `${state.user.lang === 'hi-IN' ? 'असहमत' : state.user.lang === 'mr-IN' ? 'असहमत' : 'Disagree'}`, val: -2 }
+        ];
+
+        weights.forEach(w => {
+            const btn = document.createElement('button');
+            btn.className = "option-btn";
+            btn.innerText = w.label;
+            btn.addEventListener('click', () => handleAnswer(w.val, qData));
+            optionsUI.appendChild(btn);
+        });
+
+        executeTextToSpeech(txtDisplay);
+    }
+
+    function executeTextToSpeech(text) {
+        window.speechSynthesis.cancel();
+        
+        const audioIndicator = document.getElementById('audio-indicator');
+        const skipBtn = document.getElementById('btn-skip-audio');
+        
+        audioIndicator.style.display = 'flex';
+        skipBtn.style.display = 'inline';
+
+        let speechInstance = new SpeechSynthesisUtterance(text);
+        speechInstance.lang = state.user.lang;
+        
+        let fallbackTimer = setTimeout(() => { unlockOptions(); }, 8000); 
+
+        speechInstance.onend = () => { clearTimeout(fallbackTimer); unlockOptions(); };
+        speechInstance.onerror = () => { clearTimeout(fallbackTimer); unlockOptions(); };
+
+        skipBtn.onclick = () => {
+            window.speechSynthesis.cancel();
+            clearTimeout(fallbackTimer);
+            unlockOptions();
+        };
+
+        window.speechSynthesis.speak(speechInstance);
+    }
+
+    function unlockOptions() {
+        document.getElementById('audio-indicator').style.display = 'none';
+        document.getElementById('btn-skip-audio').style.display = 'none';
+        const optionsUI = document.getElementById('ui-options');
+        optionsUI.style.display = 'grid';
+        state.questionStartTime = performance.now();
+    }
+
+    function handleAnswer(weightValue, questionData) {
+        state.responses.push({
+            type: questionData.type,
+            direction: questionData.dir,
+            chosenWeight: weightValue,
+            responseTimeMs: Math.round(performance.now() - state.questionStartTime)
+        });
+        state.currentQuestionIndex++;
+        renderQuestion();
+    }
+
+    function handlePhaseCompletion() {
+        window.speechSynthesis.cancel();
+        document.getElementById('txt-phase-complete-title').innerText = `Phase ${state.currentPhase} Complete`;
+        navigateTo('screen-phase-end');
+    }
+
+    document.getElementById('btn-next-phase').addEventListener('click', () => {
+        state.currentPhase++;
+        state.currentQuestionIndex = 0;
+        if (state.currentPhase > 10) {
+            processFinalResults();
+        } else {
+            navigateTo('screen-assessment');
+            renderQuestion();
+        }
+    });
+
+    // Generate Comprehensive Local Report
+    function processFinalResults() {
+        navigateTo('screen-results');
+        
+        let scores = { EI: 0, NS: 0, TF: 0, JP: 0 };
+        let totalTime = 0;
+        
+        state.responses.forEach(r => {
+            scores[r.type] += (r.chosenWeight * r.direction);
+            totalTime += r.responseTimeMs;
+        });
+
+        // 1. Calculate MBTI Type
+        const E_I = scores["EI"] >= 0 ? "E" : "I";
+        const N_S = scores["NS"] >= 0 ? "N" : "S";
+        const T_F = scores["TF"] >= 0 ? "T" : "F";
+        const J_P = scores["JP"] >= 0 ? "J" : "P";
+        const finalMBTI = `${E_I}${N_S}${T_F}${J_P}`;
+        
+        document.getElementById('ui-mbti-tag').innerText = finalMBTI;
+
+        // 2. Calculate Timing Metric
+        const averageTimeSec = ((totalTime / Math.max(state.responses.length, 1)) / 1000).toFixed(2);
+        let timingInsight = "";
+        if(averageTimeSec < 2.5) {
+            timingInsight = `Cognitive Velocity: Rapid. Your average decision latency of <b>${averageTimeSec}s</b> indicates highly instinctual, gut-driven processing. You rely on immediate intuition rather than prolonged deliberation.`;
+        } else if (averageTimeSec < 5.0) {
+            timingInsight = `Cognitive Velocity: Balanced. Your average decision latency of <b>${averageTimeSec}s</b> indicates a healthy mix of initial intuition followed by brief logical verification before committing to a path.`;
+        } else {
+            timingInsight = `Cognitive Velocity: Deliberate. Your average decision latency of <b>${averageTimeSec}s</b> indicates highly analytical, deep-processing behavior. You carefully weigh options and verify context before executing a decision.`;
+        }
+
+        // 3. Inject Local Deep Data
+        const profileData = LOCAL_PROFILES[finalMBTI] || {
+            title: "The Strategist", desc: "A unique balance of cognitive traits.", strengths: ["Adaptable"], workplace: "Highly dynamic.", careers: ["Consultant"], advice: "Stay balanced."
+        };
+        
+        let strengthsHTML = profileData.strengths.map(s => `<li>${s}</li>`).join('');
+        let careersHTML = profileData.careers.map(c => `<li>${c}</li>`).join('');
+
+        document.getElementById('ui-local-description').innerHTML = `
+            <h4>${finalMBTI} - ${profileData.title}</h4>
+            <p style="margin-bottom: 16px;">${profileData.desc}</p>
+            
+            <div class="full-report-grid">
+                <div class="report-section">
+                    <h4>Workplace Dynamics</h4>
+                    <p>${profileData.workplace}</p>
+                </div>
+                <div class="report-section">
+                    <h4>Core Strengths</h4>
+                    <ul>${strengthsHTML}</ul>
+                </div>
+                <div class="report-section">
+                    <h4>Optimal Career Trajectories</h4>
+                    <ul>${careersHTML}</ul>
+                </div>
+                <div class="report-section">
+                    <h4>Actionable Growth Advice</h4>
+                    <p>${profileData.advice}</p>
+                </div>
+            </div>
+
+            <div class="highlight-box">
+                ${timingInsight}
+            </div>
+        `;
+
+        // 4. Calculate Bar Percentages
+        const percEI = Math.round(((scores.EI + 50) / 100) * 100);
+        const percNS = Math.round(((scores.NS + 50) / 100) * 100);
+        const percTF = Math.round(((scores.TF + 50) / 100) * 100);
+        const percJP = Math.round(((scores.JP + 50) / 100) * 100);
+
+        // Store metrics globally for the Gemini Prompt Generator
+        state.computedMetrics = {
+            finalMBTI, percEI, percNS, percTF, percJP, averageTimeSec
+        };
+
+        const dashHTML = `
+            ${buildTraitRow("Introversion (I)", 100 - percEI, "Extraversion (E)", percEI)}
+            ${buildTraitRow("Sensing (S)", 100 - percNS, "Intuition (N)", percNS)}
+            ${buildTraitRow("Feeling (F)", 100 - percTF, "Thinking (T)", percTF)}
+            ${buildTraitRow("Perceiving (P)", 100 - percJP, "Judging (J)", percJP)}
+        `;
+        document.getElementById('ui-dashboard').innerHTML = dashHTML;
+        
+        setTimeout(() => {
+            document.getElementById('bar-EI').style.width = `${percEI}%`;
+            document.getElementById('bar-NS').style.width = `${percNS}%`;
+            document.getElementById('bar-TF').style.width = `${percTF}%`;
+            document.getElementById('bar-JP').style.width = `${percJP}%`;
+        }, 100);
+    }
+
+    function buildTraitRow(labelLeft, percLeft, labelRight, percRight) {
+        const idMap = { "Extraversion (E)": "EI", "Intuition (N)": "NS", "Thinking (T)": "TF", "Judging (J)": "JP" };
+        const barId = idMap[labelRight];
+        return `
+            <div class="trait-row">
+                <span class="trait-label">${labelLeft} (${percLeft}%)</span>
+                <div class="trait-bar-wrap">
+                    <div id="bar-${barId}" class="trait-bar-fill" style="width: 50%"></div>
+                </div>
+                <span class="trait-label right">${labelRight} (${percRight}%)</span>
+            </div>
+        `;
+    }
+
+    // --- NEW GEMINI PROMPT GENERATOR ---
+    document.getElementById('btn-copy-prompt').addEventListener('click', async () => {
+        if (!state.computedMetrics) {
+            alert("Metrics not calculated yet.");
+            return;
+        }
+
+        const m = state.computedMetrics;
+        const promptText = `Act as an expert industrial-organizational psychologist and career strategist. I have just completed a rigorous, 100-question psychometric assessment.
+
+Here are my raw behavioral and cognitive metrics:
+- Demographics: Name: ${state.user.name}, Age: ${state.user.age}, Sex: ${state.user.sex}
+- Core Assigned Archetype: ${m.finalMBTI}
+
+Trait Breakdown Spectrum:
+- Energy Processing: ${m.percEI}% Extraverted (E) / ${100 - m.percEI}% Introverted (I)
+- Information Gathering: ${m.percNS}% Intuitive (N) / ${100 - m.percNS}% Sensing (S)
+- Decision Making: ${m.percTF}% Thinking (T) / ${100 - m.percTF}% Feeling (F)
+- Structural Organization: ${m.percJP}% Judging (J) / ${100 - m.percJP}% Perceiving (P)
+
+Cognitive Velocity Metric:
+- My average decision latency was exactly ${m.averageTimeSec} seconds per question node.
+
+Based on this precise, highly specific data profile, please provide a comprehensive, multi-section psychological evaluation. 
+
+Focus deeply on the following areas:
+1. Core behavioral processing and natural workplace interaction style.
+2. Optimal career paths, specific roles where I would thrive, and progression strategies.
+3. Blind spots, potential stressors, and conflict resolution style.
+4. How my specific "Cognitive Velocity" (decision speed) impacts my MBTI type. Does it suggest I am highly impulsive, well-balanced, or prone to over-analysis?
+
+Maintain a professional, highly analytical, constructive, and clear tone. Provide actionable advice for personal and professional growth.`;
+
+        try {
+            await navigator.clipboard.writeText(promptText);
+            alert("Success! Your exact assessment metrics and prompt have been copied to your clipboard.\n\nOpening Gemini now. Just press 'Paste' (Ctrl+V / Cmd+V) to get your deep-dive analysis!");
+            window.open('https://gemini.google.com', '_blank');
+        } catch (err) {
+            alert("Unable to copy to clipboard automatically. Your browser may be blocking clipboard access.");
+        }
+    });
+
+    // --- EXPORT / IMPORT LOGIC ---
+    document.getElementById('btn-export').addEventListener('click', () => {
+        const exp = JSON.stringify({ appSignature: "EPRASHALA_V3", timestamp: Date.now(), stateData: state, computedType: document.getElementById('ui-mbti-tag').innerText }, null, 2);
+        const blob = new Blob([exp], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `Psychometric_Profile_${state.user.name || 'Export'}.json`; a.click(); URL.revokeObjectURL(url);
+    });
+
+    function handleImport(ev) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (data.appSignature !== "EPRASHALA_V2" && data.appSignature !== "EPRASHALA_V3") throw new Error("Invalid or outdated file signature.");
+                state = data.stateData;
+                if(state.currentPhase > 10) {
+                    processFinalResults();
+                } else {
+                    navigateTo('screen-assessment');
+                    renderQuestion();
+                }
+            } catch (err) { alert(`Import failed: ${err.message}`); }
+        };
+        reader.readAsText(ev.target.files[0]);
+        document.getElementById('hidden-file-input').value = ""; 
+    }
+
+    document.getElementById('hidden-file-input').addEventListener('change', handleImport);
+    document.getElementById('btn-import-initial').addEventListener('click', () => document.getElementById('hidden-file-input').click());
+    document.getElementById('btn-import-final').addEventListener('click', () => document.getElementById('hidden-file-input').click());
+
+    if (typeof speechSynthesis !== 'undefined' && speechSynthesis.onvoiceschanged !== undefined) {
+        speechSynthesis.onvoiceschanged = () => {};
+    }
+</script>
+</body>
+</html>

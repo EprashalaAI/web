@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Eprashala Key Generator</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #222; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; user-select: none; }
+        
+        .card { background: #333; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 400px; text-align: center; border: 1px solid #444; margin-bottom: 20px; }
+        
+        h2 { color: #FF9800; margin-top: 0; }
+        
+        /* Input Groups */
+        .input-group { display: flex; gap: 5px; margin: 8px 0; }
+        
+        input, button { padding: 12px; border-radius: 5px; border: none; font-size: 16px; box-sizing: border-box; }
+        input { background: #444; color: white; border: 1px solid #555; text-align: center; width: 100%; margin-bottom: 10px; }
+        
+        .input-group input { flex-grow: 1; width: auto; margin-bottom: 0; }
+        
+        button { background: #FF9800; color: white; font-weight: bold; cursor: pointer; transition: 0.2s; width: 100%; }
+        .input-group button { width: 80px; flex-shrink: 0; background: #F57C00; }
+        button:hover { background: #ffad42; }
+        
+        .result-box { background: #111; padding: 15px; margin-top: 15px; border-radius: 5px; border: 1px dashed #555; display: none; }
+        label { display: block; text-align: left; font-size: 14px; color: #aaa; margin-top: 5px; margin-bottom: 2px; }
+
+        .btn-secondary { background: #444; margin-top: 10px; border: 1px solid #666; }
+        .btn-secondary:hover { background: #555; }
+
+        /* LOG VIEWER STYLES */
+        #logModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100; overflow-y: auto; }
+        .log-content { background: #222; margin: 50px auto; width: 95%; max-width: 900px; padding: 20px; border-radius: 10px; border: 1px solid #444; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; table-layout: fixed; }
+        th, td { border: 1px solid #444; padding: 10px; text-align: left; vertical-align: middle; }
+        th { background: #333; color: #FF9800; }
+        tr:nth-child(even) { background: #2a2a2a; }
+        tr:hover { background: #333; }
+
+        /* Column Widths */
+        th:nth-child(1) { width: 15%; } /* Date */
+        th:nth-child(2) { width: 15%; } /* Name */
+        th:nth-child(3) { width: 12%; } /* Contact */
+        th:nth-child(4) { width: 18%; } /* Device ID */
+        th:nth-child(5) { width: 40%; } /* Key */
+        
+        .close-btn { float: right; color: #FF9800; font-size: 24px; cursor: pointer; font-weight: bold; }
+        .search-bar { width: 100%; padding: 10px; margin-bottom: 10px; background: #111; border: 1px solid #FF9800; color: #fff; }
+
+        /* Small Copy Button inside Table */
+        .copy-btn-small {
+            background: #FF9800; color: white; border: none; padding: 5px 10px; 
+            border-radius: 4px; font-size: 11px; cursor: pointer; margin-left: 8px; 
+            width: auto; display: inline-block; white-space: nowrap;
+        }
+        .copy-btn-small:hover { background: #ffad42; transform: scale(1.05); }
+        
+        .key-cell-content {
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .key-text {
+            font-family: monospace; color: #0f0; font-size: 12px; word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loginScreen" class="card">
+        <h2>🔐 Admin Login</h2>
+        <input type="password" id="adminPass" placeholder="Enter Password">
+        <button onclick="login()" style="margin-top: 10px;">Login</button>
+    </div>
+
+    <div id="genScreen" class="card" style="display:none;">
+        <h2>🔑 Key Generator</h2>
+        
+        <label>Student Name:</label>
+        <input type="text" id="userName" placeholder="Enter Name">
+
+        <label>Contact Number:</label>
+        <input type="text" id="userContact" placeholder="Enter Mobile Number">
+
+        <label>Client Device ID:</label>
+        <div class="input-group">
+            <input type="text" id="deviceID" placeholder="e.g. A1B2C3D4E5F6" oninput="this.value = this.value.toUpperCase()">
+            <button onclick="pasteID()" title="Paste from Clipboard">Paste</button>
+        </div>
+        
+        <label>License Expiry Date:</label>
+        <input type="date" id="expiryDate">
+        <div style="font-size: 12px; color: #888; text-align: left; margin-bottom: 10px;">
+            * Default (Today) = <b>Lifetime License</b>
+        </div>
+
+        <button onclick="generateKey()">Generate & Save</button>
+        <button onclick="toggleLogs()" class="btn-secondary">View Logs</button>
+        
+        <div id="resultArea" class="result-box">
+            <div style="color:#FF9800; font-size:12px; margin-bottom:5px;">SEND THIS KEY TO STUDENT:</div>
+            
+            <div class="input-group">
+                <input type="text" id="finalKey" readonly style="color:#0f0; font-family: monospace; cursor: pointer;" onclick="copyKey()">
+                <button onclick="copyKey()">Copy</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="logModal">
+        <div class="log-content">
+            <span class="close-btn" onclick="toggleLogs()">&times;</span>
+            <h2 style="text-align:center;">📜 Key Generation Logs</h2>
+            
+            <input type="text" id="searchLog" class="search-bar" placeholder="🔍 Search by Name, Contact, Device ID..." onkeyup="renderLogs()">
+            
+            <div style="overflow-x:auto;">
+                <table id="logTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Name</th>
+                            <th>Contact</th>
+                            <th>Device ID</th>
+                            <th>Generated Key</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logBody">
+                        </tbody>
+                </table>
+            </div>
+            <button onclick="clearLogs()" class="btn-secondary" style="width: auto; margin-top: 20px; background: #d32f2f;">Clear All Logs</button>
+        </div>
+    </div>
+
+    <script>
+        const SECRET = "Eprashala_Secret_2026"; 
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('expiryDate').value = today;
+
+        // --- SECURITY ---
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        document.onkeydown = function(e) {
+            if(e.keyCode == 123) { return false; } 
+            if(e.ctrlKey && e.shiftKey && (e.keyCode == 'I'.charCodeAt(0) || e.keyCode == 'C'.charCodeAt(0) || e.keyCode == 'J'.charCodeAt(0))) { return false; }
+            if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) { return false; } 
+        }
+
+        function login() {
+            if(document.getElementById('adminPass').value === "Domarp@123") {
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('genScreen').style.display = 'block';
+            } else {
+                alert("Wrong Password");
+            }
+        }
+
+        async function pasteID() {
+            try {
+                const text = await navigator.clipboard.readText();
+                document.getElementById('deviceID').value = text.toUpperCase().trim();
+            } catch (err) {
+                alert('Clipboard access denied.');
+            }
+        }
+
+        async function generateKey() {
+            const name = document.getElementById('userName').value.trim();
+            const contact = document.getElementById('userContact').value.trim();
+            const id = document.getElementById('deviceID').value.trim().toUpperCase();
+            const dateInput = document.getElementById('expiryDate').value;
+            
+            if(!name || !contact) { alert("Please enter Name and Contact Number"); return; }
+            if(id.length < 5) { alert("Invalid Device ID"); return; }
+
+            let expiryPayload = (dateInput === today) ? "PERMANENT" : dateInput;
+
+            // Signature
+            const rawString = id + expiryPayload + SECRET;
+            const msgBuffer = new TextEncoder().encode(rawString);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 16).toUpperCase();
+
+            const rawKey = expiryPayload + "|" + signature;
+            const finalKey = btoa(rawKey);
+
+            document.getElementById('resultArea').style.display = 'block';
+            document.getElementById('finalKey').value = finalKey;
+
+            saveLog(name, contact, id, finalKey);
+        }
+
+        function copyKey() {
+            const copyText = document.getElementById("finalKey");
+            copyText.select();
+            copyText.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(copyText.value);
+            
+            const btn = document.querySelector("#resultArea button");
+            const originalText = btn.innerText;
+            btn.innerText = "Copied!";
+            setTimeout(() => btn.innerText = originalText, 2000);
+        }
+
+        // --- LOG SYSTEM ---
+        function saveLog(name, contact, deviceID, key) {
+            const entry = {
+                date: new Date().toLocaleString(),
+                name: name,
+                contact: contact,
+                deviceID: deviceID,
+                key: key
+            };
+            let logs = JSON.parse(localStorage.getItem('eprashala_logs')) || [];
+            logs.unshift(entry);
+            localStorage.setItem('eprashala_logs', JSON.stringify(logs));
+        }
+
+        function toggleLogs() {
+            const modal = document.getElementById('logModal');
+            if(modal.style.display === 'block') {
+                modal.style.display = 'none';
+            } else {
+                modal.style.display = 'block';
+                renderLogs();
+            }
+        }
+
+        function renderLogs() {
+            const query = document.getElementById('searchLog').value.toLowerCase();
+            const logs = JSON.parse(localStorage.getItem('eprashala_logs')) || [];
+            const tbody = document.getElementById('logBody');
+            tbody.innerHTML = "";
+
+            logs.forEach(log => {
+                const match = log.name.toLowerCase().includes(query) || 
+                              log.contact.includes(query) || 
+                              log.deviceID.toLowerCase().includes(query) || 
+                              log.key.toLowerCase().includes(query);
+                
+                if(match) {
+                    const row = `<tr>
+                        <td>${log.date}</td>
+                        <td>${log.name}</td>
+                        <td>${log.contact}</td>
+                        <td style="font-family:monospace">${log.deviceID}</td>
+                        <td>
+                            <div class="key-cell-content">
+                                <span class="key-text">${log.key}</span>
+                                <button class="copy-btn-small" onclick="copyLogKey('${log.key}', this)">Copy</button>
+                            </div>
+                        </td>
+                    </tr>`;
+                    tbody.innerHTML += row;
+                }
+            });
+
+            if(tbody.innerHTML === "") {
+                tbody.innerHTML = "<tr><td colspan='5' style='text-align:center'>No logs found.</td></tr>";
+            }
+        }
+
+        function copyLogKey(key, btn) {
+            navigator.clipboard.writeText(key).then(() => {
+                const originalText = btn.innerText;
+                btn.innerText = "✓"; 
+                btn.style.background = "#4CAF50"; // Green for success
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.style.background = "#FF9800"; // Revert color
+                }, 1500);
+            }).catch(err => {
+                alert("Failed to copy");
+            });
+        }
+
+        function clearLogs() {
+            if(confirm("Are you sure you want to delete all logs?")) {
+                localStorage.removeItem('eprashala_logs');
+                renderLogs();
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Precision AI Meal Analyzer</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #f39c12; 
+            --accent: #e74c3c;
+            --bg: #f8f9fa;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h2, p { text-align: center; }
+        
+        .api-config {
+            background: #fff; padding: 15px; border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; display: flex; gap: 10px;
+        }
+        .api-config input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+
+        .upload-section { display: flex; justify-content: center; margin: 20px 0; }
+        .btn-upload {
+            position: relative; overflow: hidden; background-color: var(--secondary);
+            color: white; padding: 16px 32px; border-radius: 8px; font-size: 18px;
+            font-weight: 600; cursor: pointer; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .btn-upload:hover { transform: translateY(-2px); }
+        .btn-upload input[type=file] {
+            position: absolute; left: 0; top: 0; right: 0; bottom: 0; opacity: 0; cursor: pointer;
+        }
+
+        .image-wrapper-center { text-align: center; width: 100%; }
+        .vision-container {
+            position: relative; display: inline-block; max-width: 100%; 
+            border-radius: 12px; overflow: hidden; box-shadow: 0 8px 16px rgba(0,0,0,0.1); 
+            display: none; margin: 0 auto 20px auto; 
+        }
+        #scannedImage { display: block; max-width: 100%; height: auto; }
+        
+        .vision-badge {
+            position: absolute; background-color: var(--accent); color: white;
+            width: 32px; height: 32px; border-radius: 50%; display: flex;
+            align-items: center; justify-content: center; font-weight: bold; font-size: 16px;
+            border: 3px solid white; box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+            transform: translate(-50%, -50%); z-index: 10;
+        }
+
+        .loading-state { display: none; text-align: center; padding: 30px; font-size: 1.1em; color: #666; font-style: italic; }
+        .data-panel { display: none; margin-top: 10px; }
+        
+        .component-row {
+            background: white; border-radius: 8px; padding: 20px; margin-bottom: 15px;
+            border-left: 5px solid var(--secondary); display: grid; grid-template-columns: auto 1fr; gap: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .row-id {
+            background: var(--accent); color: white; width: 35px; height: 35px; font-size: 1.2em;
+            display: flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: bold;
+        }
+        
+        .form-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+        input[type="text"], input[type="number"], select {
+            padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 15px; width: 100%; box-sizing: border-box;
+        }
+        
+        .nutrition-deep-dive { background: #f1f2f6; padding: 12px; border-radius: 6px; font-size: 0.9em; line-height: 1.5; color: #2f3640; }
+        .nutrition-deep-dive strong { color: var(--primary); }
+        
+        /* New Styles for the Grand Total Summary Card */
+        .summary-card {
+            background: var(--primary); color: white; padding: 25px; border-radius: 12px;
+            margin-top: 30px; box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        .summary-title { text-align: center; margin-top: 0; color: #f1c40f; border-bottom: 1px solid #7f8c8d; padding-bottom: 10px; }
+        .summary-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 1.1em; }
+        .summary-row:last-child { border-bottom: none; font-size: 1.2em; color: #f1c40f; }
+
+        .error-msg { color: white; background-color: #e74c3c; padding: 10px; border-radius: 6px; text-align: center; font-weight: bold; display: none; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <h2>⚡ Precision AI Meal Analyzer</h2>
+    <p>Powered by Groq & Llama 4 Scout Vision</p>
+    
+    <div class="api-config">
+        <input type="password" id="apiKey" placeholder="Enter your free Groq API Key (gsk_...) here..." />
+    </div>
+
+    <div class="upload-section">
+        <button class="btn-upload">
+            📸 Snap a Meal
+            <input type="file" id="imageInput" accept="image/*" capture="environment" onchange="processImage(event)" />
+        </button>
+    </div>
+
+    <div id="errorMsg" class="error-msg"></div>
+
+    <div class="image-wrapper-center">
+        <div id="visionWrapper" class="vision-container">
+            <img id="scannedImage" alt="Analyzed Meal" />
+            <div id="badgeLayer"></div>
+        </div>
+    </div>
+
+    <div id="loading" class="loading-state">
+        🔍 Scanning meal components & calculating total macros...
+    </div>
+
+    <div id="dataPanel" class="data-panel">
+        <h3 style="border-bottom: 2px solid #ddd; padding-bottom: 10px; color: var(--primary);">Identified Components</h3>
+        <div id="componentsList"></div>
+        <div id="summaryContainer"></div>
+    </div>
+
+    <script>
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result.split(',')[1]); 
+                reader.onerror = error => reject(error);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function processImage(event) {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const errorMsg = document.getElementById('errorMsg');
+            
+            if (!apiKey || !apiKey.startsWith('gsk_')) {
+                errorMsg.innerText = "Please enter a valid Groq API Key starting with 'gsk_'";
+                errorMsg.style.display = 'block';
+                return;
+            }
+            errorMsg.style.display = 'none';
+
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const imgElement = document.getElementById('scannedImage');
+            imgElement.src = URL.createObjectURL(file);
+            
+            imgElement.onload = async function() {
+                document.getElementById('visionWrapper').style.display = 'inline-block';
+                document.getElementById('badgeLayer').innerHTML = ''; 
+                document.getElementById('dataPanel').style.display = 'none';
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('summaryContainer').innerHTML = '';
+
+                try {
+                    const base64Image = await fileToBase64(file);
+                    const mimeType = file.type;
+
+                    // UPGRADED PROMPT: We now ask for cals, pro_g, fat_g, and carb_g as pure integers.
+                    const systemPrompt = `You are an expert Clinical Nutritionist and Computer Vision Engineer. Analyze this meal. Identify EVERY item on the plate. 
+                    Return a JSON object with a single key called "components" containing an array of objects. 
+                    Each object must have:
+                    "id" (integer starting at 1),
+                    "name" (string),
+                    "qty" (integer),
+                    "unit" (string like "grams", "pieces", "tbsp", "bowl"),
+                    "cals" (integer, estimated calories),
+                    "pro_g" (integer, protein in grams),
+                    "fat_g" (integer, fat in grams),
+                    "carb_g" (integer, carbs in grams),
+                    "vitamins" (string, list key vitamins/minerals like "High in Vitamin C, Iron"),
+                    "inferred" (string detailing hidden fats/ingredients or cooking methods),
+                    "centerPoint" (array of 2 numbers: [x_percentage, y_percentage]. Estimate the exact center bullseye of the item. x is left-to-right 0-100, y is top-to-bottom 0-100. e.g., [50, 50] is dead center).
+                    Output ONLY valid JSON.`;
+
+                    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${apiKey}`
+                        },
+                        body: JSON.stringify({
+                            model: "meta-llama/llama-4-scout-17b-16e-instruct", 
+                            response_format: { type: "json_object" }, 
+                            messages: [
+                                { role: "system", content: systemPrompt },
+                                { role: "user", content: [
+                                    { type: "image_url", image_url: { url: `data:${mimeType};base64,${base64Image}` } }
+                                ]}
+                            ]
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.error) {
+                        throw new Error(data.error.message);
+                    }
+
+                    const rawText = data.choices[0].message.content;
+                    const parsedData = JSON.parse(rawText);
+                    const apiResponse = parsedData.components; 
+
+                    renderResults(apiResponse);
+
+                } catch (error) {
+                    console.error(error);
+                    document.getElementById('loading').style.display = 'none';
+                    errorMsg.innerText = "API Error: " + error.message;
+                    errorMsg.style.display = 'block';
+                }
+            };
+        }
+
+        function renderResults(apiResponse) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('dataPanel').style.display = 'block';
+
+            const badgeLayer = document.getElementById('badgeLayer');
+            const componentsList = document.getElementById('componentsList');
+            const summaryContainer = document.getElementById('summaryContainer');
+            componentsList.innerHTML = '';
+
+            // Initialize Total Variables
+            let totalCals = 0;
+            let totalPro = 0;
+            let totalFat = 0;
+            let totalCarb = 0;
+            let allVitamins = [];
+
+            apiResponse.forEach(item => {
+                // Add to Grand Totals
+                totalCals += item.cals || 0;
+                totalPro += item.pro_g || 0;
+                totalFat += item.fat_g || 0;
+                totalCarb += item.carb_g || 0;
+                if(item.vitamins) allVitamins.push(`${item.name}: ${item.vitamins}`);
+
+                // Place the Badge
+                const centerX = item.centerPoint[0];
+                const centerY = item.centerPoint[1];
+
+                const badge = document.createElement('div');
+                badge.className = 'vision-badge';
+                badge.style.left = `${centerX}%`;
+                badge.style.top = `${centerY}%`;
+                badge.innerText = item.id;
+                badgeLayer.appendChild(badge);
+
+                // Build Individual Row
+                const row = document.createElement('div');
+                row.className = 'component-row';
+                row.innerHTML = `
+                    <div class="row-id">${item.id}</div>
+                    <div style="width: 100%;">
+                        <div class="form-grid">
+                            <input type="text" value="${item.name}" aria-label="Food Name">
+                            <input type="number" value="${item.qty}" aria-label="Quantity">
+                            <select aria-label="Unit">
+                                <option value="grams" ${item.unit === 'grams' ? 'selected' : ''}>grams</option>
+                                <option value="pieces" ${item.unit === 'pieces' ? 'selected' : ''}>pieces</option>
+                                <option value="tbsp" ${item.unit === 'tbsp' ? 'selected' : ''}>tbsp</option>
+                                <option value="bowl" ${item.unit === 'bowl' ? 'selected' : ''}>bowl</option>
+                                <option value="ml" ${item.unit === 'ml' ? 'selected' : ''}>ml</option>
+                            </select>
+                        </div>
+                        <div class="nutrition-deep-dive">
+                            <strong>Estimated Macros:</strong> <span style="color: #e74c3c; font-weight:bold;">Cals: ${item.cals} | Pro: ${item.pro_g}g | Fat: ${item.fat_g}g | Carb: ${item.carb_g}g</span><br>
+                            <strong>Vitamins/Minerals:</strong> ${item.vitamins}<br>
+                            <strong>Nutritionist Inference:</strong> ${item.inferred}
+                        </div>
+                    </div>
+                `;
+                componentsList.appendChild(row);
+            });
+
+            // Build and Append the Grand Total Summary Card
+            const summaryHtml = `
+                <div class="summary-card">
+                    <h3 class="summary-title">Total Plate Summary</h3>
+                    <div class="summary-row"><span>Total Protein</span><strong>${totalPro} g</strong></div>
+                    <div class="summary-row"><span>Total Fats</span><strong>${totalFat} g</strong></div>
+                    <div class="summary-row"><span>Total Carbohydrates</span><strong>${totalCarb} g</strong></div>
+                    <div class="summary-row" style="border-top: 1px solid rgba(255,255,255,0.3); padding-top: 15px; margin-top: 5px;">
+                        <span><strong>Total Calories</strong></span>
+                        <strong>${totalCals} kcal</strong>
+                    </div>
+                    <div style="margin-top: 15px; font-size: 0.9em; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
+                        <strong style="color: #f1c40f;">Micronutrient Summary:</strong><br>
+                        ${allVitamins.join('<br>')}
+                    </div>
+                </div>
+            `;
+            summaryContainer.innerHTML = summaryHtml;
+        }
+    </script>
+</body>
+</html>

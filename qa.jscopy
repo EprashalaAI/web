@@ -1,0 +1,55 @@
+// qa.js - Dhwani Eprashala Psychometric Database
+// Scale this array up to 500+ questions per stage simply by adding commas.
+
+const QUESTION_BANK = {
+    // Stage 0: Basics (MCQ - Gauging raw inclinations)
+    0: [
+        "If you have a completely free Sunday, do you prefer: A) Taking apart a broken gadget, B) Writing a short story, C) Organizing a game with friends, or D) Solving a complex math puzzle?",
+        "Which of these environments sounds best to you: A) A busy hospital, B) A quiet laboratory, C) A loud trading floor, or D) A creative art studio?",
+        "When choosing an extra-curricular activity, would you pick: A) Robotics club, B) Debate team, C) Sports captaincy, or D) Drama society?",
+        "Which subject do you score the highest marks in without trying too hard: Science, English, Mathematics, or History?",
+        "When working on a group project, do you usually: A) Do all the research, B) Present the final project to the class, C) Create the visual charts, or D) Just organize everyone else?"
+        // ... Add 495 more Stage 0 questions here
+    ],
+
+    // Stage 1: Quick Fire (Yes/No - Work habits and focus)
+    1: [
+        "Do you easily lose focus when a teacher explains a topic you already know? Answer yes or no.",
+        "Are you comfortable speaking on a stage in front of your entire school? Yes or no.",
+        "Do you prefer studying alone in a locked room rather than in a group? Yes or no.",
+        "Do you strictly follow a daily timetable that you created for yourself? Yes or no.",
+        "If a difficult math problem takes more than twenty minutes, do you usually give up? Yes or no.",
+        "Are you heavily influenced by which stream your best friends are choosing? Yes or no."
+        // ... Add 494 more Stage 1 questions here
+    ],
+
+    // Stage 2: Short Thoughts (1 Sentence - Practical problem solving)
+    2: [
+        "Describe exactly what you do when you lose your primary notes right before a major board exam.",
+        "If a classmate takes credit for a project you built, how do you handle it in one sentence?",
+        "What is the most complex physical thing you have built or fixed with your own hands?",
+        "Tell me about a time you had to convince your parents to let you do something they initially said no to.",
+        "What is one specific habit you have changed this year to get better marks?"
+        // ... Add 495 more Stage 2 questions here
+    ],
+
+    // Stage 3: Exploration (2-3 Sentences - Hypotheticals and career aspirations)
+    3: [
+        "Many students choose Engineering or Medical solely because of parental pressure. What is a career you genuinely want to pursue, and why do you think you'd actually be good at it?",
+        "Imagine you are given unlimited money to study anywhere in the world. Which exact degree would you choose and what would you do after graduating?",
+        "If you had to start a small business tomorrow in your city with zero capital, what service or product would you provide to make a profit?",
+        "Think of a time you completely failed at something important. What did that failure teach you about your own working style?",
+        "How do you usually balance your time between tuitions, self-study, and your hobbies without getting exhausted?"
+        // ... Add 495 more Stage 3 questions here
+    ],
+
+    // Stage 4: Stress Test (Intentionally frustrating, confrontational, testing resilience)
+    4: [
+        "Let's be brutally honest. The competition for the stream you want is fierce, and hundreds of students are working much harder than you right now. Why shouldn't you just give up and pick an easier path?",
+        "Imagine you study 14 hours a day for a year, sacrifice all your hobbies, and still fail your main entrance exam. What is your exact, step-by-step plan for the morning after the results?",
+        "Artificial Intelligence is rapidly replacing the entry-level jobs in the career you just mentioned. How do you plan to survive in a market where a machine can do your job faster and cheaper?",
+        "Your principal wrongly accuses you of cheating on a final exam and threatens to suspend you. Your parents believe the principal. How do you handle this immense pressure and prove your innocence?",
+        "Some people say following your passion is a terrible idea that leaves you broke. If your dream career pays very little money, how will you handle the financial stress of supporting your family in the future?"
+        // ... Add 495 more Stage 4 questions here
+    ]
+};

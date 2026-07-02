@@ -1,0 +1,1491 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MANGO - Your Virtual Friend</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/3.4.1/tailwind.min.js"></script> 
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nosleep/0.12.0/NoSleep.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: 'var(--color-primary)',
+                        appBg: 'var(--color-bg)',
+                        bgLight: '#ffffff',
+                        bgDark: '#212121', 
+                        sidebarDark: '#171717',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root { 
+            --color-primary: #f59e0b; 
+            --color-bg: #212121;
+            --color-user-msg: #f59e0b;
+            --color-user-text: #ffffff;
+        }
+        body { 
+            font-family: 'Inter', system-ui, sans-serif; 
+            touch-action: manipulation; 
+            background-color: var(--color-bg);
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            transition: background-color 0.3s;
+        }
+        
+        #splash-screen { transition: opacity 1s ease-out, transform 1s ease-out; z-index: 9999; }
+        .mango-bounce { animation: bounce-mango 2s infinite; }
+        @keyframes bounce-mango {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-20px) scale(1.1); }
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
+        .dark ::-webkit-scrollbar-thumb { background: #444; }
+
+        .glass-panel {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        input[type=range] { -webkit-appearance: none; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: var(--color-primary); cursor: pointer; margin-top: -6px; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #cbd5e1; border-radius: 2px; }
+        .dark input[type=range]::-webkit-slider-runnable-track { background: #475569; }
+
+        .tab-btn.active { border-bottom: 2px solid var(--color-primary); color: var(--color-primary); font-weight: bold; }
+        
+        .select-hide-arrow {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+    </style>
+</head>
+<body class="text-slate-800 dark:text-slate-200 h-[100dvh] overflow-hidden flex relative" id="app-body">
+
+    <div id="splash-screen" class="fixed inset-0 bg-yellow-400 dark:bg-yellow-600 flex flex-col items-center justify-center z-[9999]">
+        <div class="text-9xl mango-bounce">🥭</div>
+        <h1 class="text-4xl font-bold mt-4 text-white tracking-widest">MANGO</h1>
+        <p class="text-yellow-100 mt-2">Loading your virtual friend...</p>
+    </div>
+
+    <div id="crop-modal" class="hidden fixed inset-0 bg-black/90 z-[200] flex flex-col items-center justify-center p-4 backdrop-blur-sm">
+        <div class="w-full max-w-md bg-slate-900 rounded-xl overflow-hidden shadow-2xl flex flex-col h-[75vh]">
+            <div class="p-4 bg-slate-800 flex justify-between items-center text-white border-b border-slate-700">
+                <h3 class="font-bold text-lg">Crop Image</h3>
+                <button id="btn-crop-cancel" class="text-slate-400 hover:text-red-500 font-bold text-xl">✕</button>
+            </div>
+            <div class="flex-1 bg-black overflow-hidden flex items-center justify-center relative p-2">
+                <img id="crop-image" class="max-w-full max-h-full block" src="" alt="To crop">
+            </div>
+            <div class="p-4 bg-slate-800 flex gap-2 justify-center border-t border-slate-700">
+                <button id="btn-crop-apply" class="flex-1 bg-primary hover:bg-orange-500 text-white font-bold px-4 py-3 rounded-lg shadow-lg">Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="right-panel-container" class="fixed right-0 top-1/2 -translate-y-1/2 flex items-center z-50 transition-transform duration-300 translate-x-[calc(100%-24px)]">
+        <button id="btn-toggle-right" class="w-6 h-16 bg-white/90 dark:bg-sidebarDark/90 backdrop-blur-lg border border-r-0 border-slate-200 dark:border-slate-700 rounded-l-xl shadow-[[-4px_0_15px_rgba(0,0,0,0.1)]] flex flex-col items-center justify-center text-slate-500 hover:text-primary outline-none focus:outline-none cursor-pointer">
+            <div class="w-1 h-1 bg-slate-400 dark:bg-slate-500 rounded-full mb-1"></div>
+            <div class="w-1 h-1 bg-slate-400 dark:bg-slate-500 rounded-full mb-1"></div>
+            <div class="w-1 h-1 bg-slate-400 dark:bg-slate-500 rounded-full"></div>
+        </button>
+        <div class="flex flex-col gap-3 bg-white/90 dark:bg-sidebarDark/90 backdrop-blur-lg p-2 border border-l-0 border-slate-200 dark:border-slate-700 shadow-2xl pl-3 pr-3 rounded-l-none">
+            <button id="btn-open-models" class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-primary hover:text-white transition-all flex items-center justify-center text-xl shadow outline-none" title="AI Models">🤖</button>
+            <button id="btn-open-personas" class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-primary hover:text-white transition-all flex items-center justify-center text-xl shadow outline-none" title="Personas">👥</button>
+            <button id="btn-open-settings" class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-primary hover:text-white transition-all flex items-center justify-center text-xl shadow outline-none" title="Settings">⚙️</button>
+        </div>
+    </div>
+
+    <div id="new-chat-modal" class="hidden fixed inset-0 bg-black/60 z-[120] flex items-center justify-center p-4 backdrop-blur-sm overflow-y-auto">
+        <div class="bg-white dark:bg-sidebarDark rounded-2xl w-full max-w-sm shadow-2xl relative border border-slate-200 dark:border-slate-700 p-6">
+            <button class="close-modal absolute top-4 right-4 text-slate-400 hover:text-red-500 text-xl font-bold">✕</button>
+            <h2 class="text-xl font-bold text-primary mb-2 flex items-center gap-2">➕ Create New Chat</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Select a persona to start a new conversation.</p>
+            <div id="new-chat-persona-list" class="space-y-2 max-h-[60vh] overflow-y-auto pr-2"></div>
+        </div>
+    </div>
+
+    <div id="models-modal" class="hidden fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white dark:bg-sidebarDark rounded-2xl p-6 w-full max-w-sm shadow-2xl relative border border-slate-200 dark:border-slate-700">
+            <button class="close-modal absolute top-4 right-4 text-slate-400 hover:text-red-500 text-xl font-bold">✕</button>
+            <h2 class="text-2xl font-bold text-primary mb-4 flex items-center gap-2">🤖 AI Engines</h2>
+            
+            <div class="space-y-4">
+                <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700">
+                    <label class="text-[10px] text-slate-500 font-bold mb-1 block uppercase">Select Provider</label>
+                    <select id="mod-provider" class="w-full mb-3 p-2 rounded-lg bg-white dark:bg-slate-900 border dark:border-slate-600 outline-none font-semibold text-sm cursor-pointer">
+                        <option value="gemini">Google (Gemini)</option>
+                        <option value="openai">OpenAI (ChatGPT)</option>
+                        <option value="groq">Groq (Llama, Mixtral)</option>
+                        <option value="claude">Anthropic (Claude)</option>
+                    </select>
+
+                    <label class="text-[10px] text-slate-500 font-bold mb-1 block uppercase">Select Fallback Base Model</label>
+                    <select id="mod-model" class="w-full mb-3 p-2 rounded-lg bg-white dark:bg-slate-900 border dark:border-slate-600 outline-none text-sm cursor-pointer"></select>
+                    
+                    <label class="text-[10px] text-slate-500 font-bold mb-1 block uppercase">API Key</label>
+                    <div class="flex gap-2 w-full">
+                        <input type="password" id="mod-apikey" placeholder="Enter API Key" class="flex-1 p-2 rounded-lg bg-white dark:bg-slate-900 border dark:border-slate-600 outline-none text-sm">
+                        <button id="btn-paste-key" class="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 px-3 rounded-lg text-xs font-semibold transition-colors border border-slate-300 dark:border-slate-500">Paste</button>
+                    </div>
+                    <div class="text-[10px] text-slate-400 mt-2 text-center">Gemini Smart Routing is Active. Models will automatically switch based on context.</div>
+                </div>
+            </div>
+            <button id="btn-save-models" class="w-full mt-4 bg-primary hover:bg-orange-500 text-white font-bold py-3 rounded-xl transition-colors shadow-lg">Save Engine</button>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="hidden fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm overflow-y-auto">
+        <div class="bg-white dark:bg-sidebarDark rounded-2xl p-6 w-full max-w-md shadow-2xl relative my-auto border border-slate-200 dark:border-slate-700">
+            <button class="close-modal absolute top-4 right-4 text-slate-400 hover:text-red-500 text-xl font-bold">✕</button>
+            <h2 class="text-2xl font-bold text-primary mb-4 flex items-center gap-2">⚙️ Global Settings</h2>
+            
+            <div class="space-y-4 max-h-[70vh] overflow-y-auto pr-2 pb-2">
+                <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700">
+                    <h3 class="font-semibold mb-2 text-sm uppercase text-slate-500">1. Appearance</h3>
+                    <div class="flex justify-between items-center mb-3 p-3 bg-white dark:bg-slate-900 rounded border dark:border-slate-700 shadow-sm">
+                        <span class="text-sm font-bold text-slate-700 dark:text-slate-200">Dark Mode</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="set-darkmode" class="sr-only peer">
+                            <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-primary"></div>
+                        </label>
+                    </div>
+                    <div class="flex gap-2">
+                        <div class="flex-1">
+                            <label class="text-[10px] text-slate-500 font-bold mb-1 block uppercase">Universal App Background</label>
+                            <input type="color" id="set-bgcolor" value="#212121" class="w-full h-10 cursor-pointer rounded border dark:border-slate-700">
+                        </div>
+                        <div class="flex-1">
+                            <label class="text-[10px] text-slate-500 font-bold mb-1 block uppercase">Universal Chat Theme</label>
+                            <input type="color" id="set-color" value="#f59e0b" class="w-full h-10 cursor-pointer rounded border dark:border-slate-700" title="Primary UI Theme Color">
+                        </div>
+                    </div>
+                    <div class="flex-1 mt-2">
+                        <label class="text-[10px] text-slate-500 font-bold mb-1 block uppercase">Universal User Bubble</label>
+                        <input type="color" id="set-usermsgcolor" value="#f59e0b" class="w-full h-10 cursor-pointer rounded border dark:border-slate-700">
+                    </div>
+                </div>
+
+                <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700">
+                    <h3 class="font-semibold mb-2 text-sm uppercase text-slate-500">2. Our Profile</h3>
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-14 h-14 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden border-2 border-primary flex items-center justify-center flex-shrink-0">
+                            <img id="set-user-img-preview" class="w-full h-full object-cover hidden" src="">
+                            <span id="set-user-img-emoji" class="text-2xl">👤</span>
+                        </div>
+                        <input type="file" id="set-user-img" accept="image/*" class="text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-slate-200 dark:file:bg-slate-700 outline-none w-full">
+                    </div>
+                    <div class="flex gap-2 mb-2">
+                        <input type="text" id="set-name" placeholder="Name" class="flex-1 p-2 rounded-lg bg-white dark:bg-slate-900 border dark:border-slate-600 outline-none text-sm">
+                        <input type="text" id="set-fname" placeholder="Nickname" class="flex-1 p-2 rounded-lg bg-white dark:bg-slate-900 border dark:border-slate-600 outline-none text-sm">
+                    </div>
+                    <div class="flex gap-2 mb-2">
+                        <input type="number" id="set-age" placeholder="Age" class="w-1/3 p-2 rounded-lg bg-white dark:bg-slate-900 border dark:border-slate-600 outline-none text-sm">
+                        <select id="set-gender" class="w-2/3 p-2 rounded-lg bg-white dark:bg-slate-900 border dark:border-slate-600 outline-none text-sm">
+                            <option value="">Gender</option><option value="Male">Male</option><option value="Female">Female</option>
+                        </select>
+                    </div>
+                    <textarea id="set-address" placeholder="Address..." class="w-full p-2 rounded-lg bg-white dark:bg-slate-900 border dark:border-slate-600 outline-none text-sm h-12"></textarea>
+                </div>
+
+                <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700">
+                    <h3 class="font-semibold mb-2 text-sm uppercase text-slate-500">3. Speech & Languages</h3>
+                    <div class="space-y-2">
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500">Primary Spoken Language</label>
+                            <select id="set-lang-primary" class="w-full p-2 rounded-lg bg-white dark:bg-slate-900 border dark:border-slate-600 outline-none text-sm"></select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500">Secondary Spoken Language</label>
+                            <select id="set-lang-secondary" class="w-full p-2 rounded-lg bg-white dark:bg-slate-900 border dark:border-slate-600 outline-none text-sm"></select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500">Additional Learning Language</label>
+                            <select id="set-lang-learning" class="w-full p-2 rounded-lg bg-white dark:bg-slate-900 border dark:border-slate-600 outline-none text-sm"></select>
+                        </div>
+                        <div class="mt-4 border-t border-slate-300 dark:border-slate-700 pt-2">
+                            <label class="text-[10px] font-bold text-slate-500">Global AI TTS Voice</label>
+                            <select id="set-global-voice" class="w-full p-2 rounded-lg bg-white dark:bg-slate-900 border dark:border-slate-600 outline-none text-sm"></select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button id="btn-save-settings" class="w-full mt-4 bg-primary hover:bg-orange-500 text-white font-bold py-3 rounded-xl transition-colors shadow-lg">Save Settings</button>
+        </div>
+    </div>
+
+    <div id="chat-options-modal" class="hidden fixed inset-0 bg-black/60 z-[110] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white dark:bg-sidebarDark rounded-2xl p-6 w-full max-w-sm shadow-2xl relative border border-slate-200 dark:border-slate-700">
+            <button class="close-modal absolute top-4 right-4 text-slate-400 hover:text-red-500 text-xl font-bold">✕</button>
+            <h2 class="text-xl font-bold text-primary mb-1 flex items-center gap-2">💬 Chat Options</h2>
+            <div id="opt-datetime" class="text-[11px] text-slate-500 mb-4 font-semibold pb-2 border-b border-slate-200 dark:border-slate-700"></div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="text-[10px] text-slate-500 font-bold mb-1 block uppercase">Rename Chat Topic</label>
+                    <input type="text" id="opt-topic" placeholder="e.g. Discussing the Matrix" class="w-full p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 outline-none text-sm font-semibold focus:border-primary transition-colors">
+                </div>
+
+                <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="font-bold text-xs uppercase text-slate-600 dark:text-slate-300">🎨 Custom Chat Theme</h3>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <span class="text-[10px] font-bold text-slate-500 uppercase">Use Universal</span>
+                            <input type="checkbox" id="opt-use-global" class="w-4 h-4 cursor-pointer accent-primary">
+                        </label>
+                    </div>
+                    <div class="flex gap-2">
+                        <div class="flex-1">
+                            <label class="text-[10px] text-slate-500 font-bold mb-1 block">Background</label>
+                            <input type="color" id="opt-bgcolor" class="w-full h-8 cursor-pointer rounded border dark:border-slate-700 transition-opacity">
+                        </div>
+                        <div class="flex-1">
+                            <label class="text-[10px] text-slate-500 font-bold mb-1 block">User Bubble</label>
+                            <input type="color" id="opt-usercolor" class="w-full h-8 cursor-pointer rounded border dark:border-slate-700 transition-opacity">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button id="opt-btn-share" class="flex-1 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-800/50 text-blue-700 dark:text-blue-400 font-bold py-2 rounded-lg transition-colors text-xs flex items-center justify-center gap-1 border border-blue-200 dark:border-blue-800">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg> Share
+                    </button>
+                    <button id="opt-btn-delete" class="flex-1 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-800/50 text-red-700 dark:text-red-400 font-bold py-2 rounded-lg transition-colors text-xs flex items-center justify-center gap-1 border border-red-200 dark:border-red-800">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> Delete Chat
+                    </button>
+                </div>
+            </div>
+            <button id="opt-btn-save" class="w-full mt-4 bg-primary hover:bg-orange-500 text-white font-bold py-3 rounded-xl transition-colors shadow-md">Save Changes</button>
+        </div>
+    </div>
+
+    <div id="personas-modal" class="hidden fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm overflow-y-auto">
+        <div class="bg-white dark:bg-sidebarDark rounded-2xl w-full max-w-md shadow-2xl relative my-auto border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col max-h-[90vh]">
+            <button class="close-modal absolute top-4 right-4 text-slate-400 hover:text-red-500 text-xl font-bold z-10">✕</button>
+            
+            <div class="p-4 bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex gap-4">
+                <button id="tab-manage" class="tab-btn active pb-1 text-sm text-slate-500 transition-colors">📋 Manage</button>
+                <button id="tab-add" class="tab-btn pb-1 text-sm text-slate-500 transition-colors">➕ Add Persona</button>
+            </div>
+            
+            <div class="p-5 overflow-y-auto flex-1">
+                <div id="view-manage" class="space-y-2">
+                    <div id="modal-persona-list" class="space-y-2"></div>
+                </div>
+
+                <div id="view-add" class="hidden space-y-4">
+                    <h4 id="persona-form-title" class="text-sm font-bold text-primary hidden">Edit Persona</h4>
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden border border-slate-300 dark:border-slate-600 flex items-center justify-center flex-shrink-0">
+                            <img id="p-thumb-preview" class="w-full h-full object-cover hidden" src="">
+                            <span id="p-thumb-emoji" class="text-xl">👤</span>
+                        </div>
+                        <input type="file" id="p-thumb" accept="image/*" class="text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-slate-200 dark:file:bg-slate-700 outline-none w-full">
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" id="p-name" placeholder="Full Name (e.g. Steve Jobs)" class="p-2 rounded bg-slate-50 dark:bg-slate-900 border dark:border-slate-700 outline-none text-sm">
+                        <input type="text" id="p-fname" placeholder="Friendly Name (e.g. Steve)" class="p-2 rounded bg-slate-50 dark:bg-slate-900 border dark:border-slate-700 outline-none text-sm">
+                        <input type="text" id="p-role" placeholder="Role (e.g. Strict Mentor)" class="col-span-2 p-2 rounded bg-slate-50 dark:bg-slate-900 border dark:border-slate-700 outline-none text-sm">
+                        <input type="number" id="p-age" placeholder="Age" class="p-2 rounded bg-slate-50 dark:bg-slate-900 border dark:border-slate-700 outline-none text-sm">
+                        <select id="p-gender" class="p-2 rounded bg-slate-50 dark:bg-slate-900 border dark:border-slate-700 outline-none text-sm">
+                            <option value="">Gender</option><option value="Male">Male</option><option value="Female">Female</option>
+                        </select>
+                    </div>
+
+                    <div class="bg-orange-50 dark:bg-orange-900/20 p-3 rounded-lg border border-orange-200 dark:border-orange-800/50">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-[10px] text-orange-600 dark:text-orange-400 font-bold uppercase tracking-wider">✨ Deep BPHS Auto-Persona</label>
+                            <span id="astro-status" class="text-[10px] font-bold text-slate-500"></span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 mb-2">
+                            <input type="date" id="p-dob" class="p-2 rounded bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 outline-none text-sm" title="Date of Birth">
+                            <input type="time" id="p-tob" step="1" class="p-2 rounded bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 outline-none text-sm" title="Time of Birth">
+                            <div class="col-span-2 relative">
+                                <input type="text" id="p-pob" placeholder="Place of Birth (Type to search...)" autocomplete="off" class="w-full p-2 rounded bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 outline-none text-sm">
+                                <ul id="pob-suggestions" class="absolute top-full left-0 w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg mt-1 max-h-40 overflow-y-auto hidden z-[200] shadow-xl text-sm"></ul>
+                            </div>
+                            <input type="hidden" id="p-lat">
+                            <input type="hidden" id="p-lon">
+                        </div>
+                        <button id="btn-auto-persona" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 rounded transition-colors text-xs shadow-sm flex justify-center items-center gap-1">
+                            Calculate & Generate Profile
+                        </button>
+                    </div>
+
+                    <textarea id="p-desc" placeholder="Description (Behavior, characteristics, habits...)" class="w-full p-3 rounded bg-slate-50 dark:bg-slate-900 border dark:border-slate-700 outline-none text-sm h-32"></textarea>
+                    
+                    <div class="bg-slate-50 dark:bg-slate-900 p-2 rounded border dark:border-slate-700">
+                        <label class="text-[10px] text-slate-500 font-bold mb-1 block uppercase">References</label>
+                        <input type="text" id="p-ref-text" placeholder="Books (e.g. Hanuman Chalisa)" class="w-full mb-2 p-2 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 outline-none text-sm">
+                        <input type="file" id="p-ref-file" accept=".pdf, text/plain" class="text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-slate-200 dark:file:bg-slate-700 outline-none w-full" title="Attach context file (Max 1.5MB)">
+                        <div id="p-ref-file-name" class="text-xs text-primary mt-1 hidden font-semibold">File Attached</div>
+                    </div>
+                    
+                    <div class="bg-slate-50 dark:bg-slate-900 p-2 rounded border dark:border-slate-700">
+                        <label class="text-[10px] text-slate-500 font-bold mb-1 block uppercase">Language & Voice</label>
+                        <div class="flex gap-2 mb-2">
+                            <select id="p-lang" class="w-1/3 p-2 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 outline-none text-xs"></select>
+                            <select id="p-voice" class="w-2/3 p-2 rounded bg-white dark:bg-slate-800 border dark:border-slate-600 outline-none text-xs"></select>
+                        </div>
+                        <div class="flex gap-2 items-center">
+                            <div class="flex-1 flex flex-col">
+                                <span class="text-[10px] text-slate-500">Pitch</span>
+                                <input type="range" id="p-pitch" min="0" max="2" step="0.1" value="1">
+                            </div>
+                            <div class="flex-1 flex flex-col">
+                                <span class="text-[10px] text-slate-500">Speed</span>
+                                <input type="range" id="p-rate" min="0.5" max="2" step="0.1" value="1">
+                            </div>
+                            <button id="btn-preview-voice" class="ml-1 bg-slate-200 dark:bg-slate-700 h-8 w-8 rounded-full text-sm hover:bg-slate-300 dark:hover:bg-slate-600" title="Preview Voice">▶️</button>
+                        </div>
+
+                        <!-- NEW: Custom Voice Cloning Section -->
+                        <div class="mt-4 border-t border-slate-300 dark:border-slate-600 pt-3">
+                            <label class="text-[10px] text-slate-500 font-bold mb-2 block uppercase text-center">Or Use Custom Cloned Voice</label>
+                            
+                            <div class="flex gap-2">
+                                <button id="btn-record-voice" class="flex-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded py-2 text-xs font-bold transition-colors hover:bg-red-200">
+                                    🔴 Record (6s)
+                                </button>
+                                
+                                <label class="flex-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800 rounded py-2 text-xs font-bold transition-colors hover:bg-purple-200 text-center cursor-pointer">
+                                    📁 Upload .WAV
+                                    <input type="file" id="upload-voice-file" accept="audio/*" class="hidden">
+                                </label>
+                            </div>
+                            
+                            <!-- Hidden input to store the server path once cloned -->
+                            <input type="hidden" id="p-custom-voice-path" value="">
+                            <div id="clone-status" class="text-[10px] text-center mt-2 font-bold text-slate-500 hidden"></div>
+                        </div>
+                        <!-- End Custom Voice Section -->
+
+                    </div>
+                    <div class="flex gap-2 w-full pt-2">
+                        <button id="btn-save-persona" class="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded transition-colors text-sm">Save Persona</button>
+                        <button id="btn-cancel-edit" class="hidden bg-slate-500 hover:bg-slate-400 text-white font-bold py-2 px-3 rounded transition-colors text-sm">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <aside id="sidebar" class="w-72 bg-gray-50 dark:bg-sidebarDark flex-shrink-0 flex flex-col transition-transform transform -translate-x-full md:translate-x-0 absolute md:relative z-40 h-full border-r border-slate-200 dark:border-slate-800">
+        <div class="p-4 flex items-center gap-3 border-b border-slate-200 dark:border-slate-800">
+            <div class="text-3xl">🥭</div>
+            <h1 class="text-2xl font-bold tracking-widest text-slate-800 dark:text-white">MANGO</h1>
+        </div>
+        <div class="p-3">
+            <button id="btn-new-chat" class="w-full flex items-center justify-between p-3 rounded-xl bg-primary text-white hover:bg-orange-500 transition-colors font-semibold text-sm outline-none shadow-md">
+                <span class="flex items-center gap-2"><span class="text-lg">➕</span> New Chat</span>
+            </button>
+        </div>
+        <div class="px-4 py-2 text-xs font-semibold text-slate-500 tracking-wider">ALL CHATS HISTORY</div>
+        <div id="sidebar-persona-list" class="flex-1 overflow-y-auto px-3 space-y-1 pb-20"></div>
+    </aside>
+
+    <div id="sidebar-overlay" class="hidden fixed inset-0 bg-black/50 z-30 md:hidden"></div>
+
+    <button id="btn-toggle-left-handle" class="md:hidden fixed left-0 top-1/2 -translate-y-1/2 w-6 h-16 bg-white/90 dark:bg-sidebarDark/90 backdrop-blur-lg border border-l-0 border-slate-200 dark:border-slate-700 rounded-r-xl shadow-[4px_0_15px_rgba(0,0,0,0.1)] flex flex-col items-center justify-center text-slate-500 hover:text-primary outline-none focus:outline-none z-[35] transition-opacity duration-300">
+        <div class="w-1 h-1 bg-slate-400 dark:bg-slate-500 rounded-full mb-1"></div>
+        <div class="w-1 h-1 bg-slate-400 dark:bg-slate-500 rounded-full mb-1"></div>
+        <div class="w-1 h-1 bg-slate-400 dark:bg-slate-500 rounded-full"></div>
+    </button>
+    <main class="flex-1 flex flex-col relative h-full w-full min-w-0 bg-transparent">
+        
+        <header class="grid grid-cols-[1fr_auto] md:grid-cols-[1fr_auto_1fr] items-center px-3 sm:px-4 py-2 sm:py-3 bg-white/80 dark:bg-sidebarDark/80 glass-panel z-20 border-b border-slate-200 dark:border-slate-800 shadow-sm relative w-full">
+            
+            <div class="flex items-center gap-1 sm:gap-2 min-w-0">
+                <button id="btn-toggle-sidebar" class="md:hidden text-slate-600 dark:text-slate-300 text-2xl outline-none p-1 flex-shrink-0">☰</button>
+                <div class="flex flex-col min-w-0 ml-1 sm:ml-2">
+                    <div id="active-chat-name" class="font-bold text-slate-800 dark:text-slate-200 text-base sm:text-lg leading-tight truncate">Mango</div>
+                    <div id="status-indicator" class="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-green-500 mt-0.5 transition-colors">ONLINE</div>
+                </div>
+            </div>
+            
+            <div class="flex items-center justify-center gap-2 sm:gap-4 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 flex-shrink-0 ml-2 md:ml-0 shadow-sm">
+                <button id="btn-global-audio" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-200 dark:bg-slate-700 hover:bg-primary hover:text-white text-slate-600 dark:text-slate-300 outline-none transition-all flex items-center justify-center opacity-50 cursor-not-allowed" title="No active audio">
+                    <span id="global-audio-icon" class="text-xs sm:text-sm">⏸️</span>
+                </button>
+                <div class="w-px h-4 bg-slate-300 dark:bg-slate-600"></div>
+                <button id="btn-reset" class="text-slate-500 hover:text-red-500 outline-none transition-colors flex items-center justify-center" title="Reset Chat">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                </button>
+                <div class="w-px h-4 bg-slate-300 dark:bg-slate-600"></div>
+                <button id="btn-share" class="text-slate-500 hover:text-blue-500 outline-none transition-colors flex items-center justify-center" title="Share Chat">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+                </button>
+            </div>
+            
+            <div class="hidden md:block"></div>
+        </header>
+
+        <div id="chat-log" class="flex-1 overflow-y-auto p-4 pr-12 sm:pr-16 scroll-smooth w-full flex flex-col items-center">
+            <div id="chat-inner" class="w-full max-w-4xl flex flex-col space-y-6 pb-32 pt-4"></div>
+        </div>
+
+        <div class="w-full absolute bottom-0 left-0 bg-gradient-to-t from-white via-white to-transparent dark:from-[var(--color-bg)] dark:via-[var(--color-bg)] dark:to-transparent pt-6 pb-3 sm:pb-4 px-2 sm:px-4 flex justify-center pr-10 sm:pr-20">
+            <div class="w-full max-w-4xl flex flex-col gap-2 relative z-20">
+                <div id="image-preview-container" class="hidden px-4 py-2 bg-slate-100 dark:bg-sidebarDark rounded-xl border border-slate-300 dark:border-slate-700 flex items-center gap-2 self-start mb-2 shadow-sm">
+                    <img id="image-preview" class="h-12 rounded border border-slate-300 dark:border-slate-600 object-cover hidden" src="">
+                    <div id="pdf-preview" class="h-12 px-4 bg-red-100 text-red-600 rounded border border-red-300 flex items-center font-bold text-xs hidden">PDF Document</div>
+                    <button id="btn-remove-image" class="text-red-500 text-sm ml-2 font-bold outline-none hover:bg-red-200 p-1 rounded">✕</button>
+                </div>
+
+                <div class="flex items-center gap-1 sm:gap-2 bg-white dark:bg-sidebarDark rounded-full border-2 border-slate-200 dark:border-slate-700 px-2 sm:px-3 py-1.5 sm:py-2 shadow-lg focus-within:border-primary transition-colors">
+                    <label for="file-upload" class="p-1.5 sm:p-2 text-lg sm:text-xl text-slate-400 hover:text-primary cursor-pointer transition-colors outline-none flex-shrink-0" title="Attach File">📎</label>
+                    <input id="file-upload" type="file" accept="image/*, application/pdf" class="hidden">
+
+                    <textarea id="text-input" rows="1" class="flex-1 min-w-0 bg-transparent text-slate-800 dark:text-white px-1 sm:px-2 py-1.5 sm:py-2 outline-none resize-none max-h-32 text-sm sm:text-base leading-relaxed placeholder-slate-400" placeholder="Message..."></textarea>
+                    
+                    <div class="flex items-center gap-0.5 sm:gap-1 flex-shrink-0 pl-1 sm:pl-2 border-l border-slate-200 dark:border-slate-700 relative">
+                        
+                        <div class="relative group flex items-center bg-slate-100 dark:bg-slate-800 rounded-full px-1.5 sm:px-2 py-1 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors mr-0.5 sm:mr-1">
+                            <span class="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 mr-0.5 sm:mr-1">🎙️</span>
+                            <select id="active-stt-lang" class="select-hide-arrow bg-transparent outline-none text-[10px] sm:text-xs font-bold text-slate-600 dark:text-slate-300 cursor-pointer w-8 sm:w-12 text-center" title="Listening Language"></select>
+                        </div>
+
+                        <button id="btn-mic" class="w-8 h-8 sm:w-10 sm:h-10 text-slate-500 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full flex items-center justify-center transition-all outline-none text-base sm:text-xl" title="Use Voice Typing">🎤</button>
+                        <button id="btn-send" class="w-8 h-8 sm:w-10 sm:h-10 bg-primary hover:bg-orange-500 text-white rounded-full transition-transform transform hover:scale-105 shadow-md outline-none flex items-center justify-center text-sm sm:text-lg disabled:opacity-50 disabled:cursor-not-allowed">➤</button>
+                    </div>
+                </div>
+                <div class="text-center text-[9px] sm:text-[10px] text-slate-400 font-medium">AI can make mistakes. Verify important information.</div>
+            </div>
+        </div>
+    </main>
+	
+	
+<script>
+        // --- 1. GLOBALS & INIT ---
+        let noSleep = new NoSleep();
+        let isAwake = false;
+        let cropper = null;
+        let recognition = null;
+        let synth = window.speechSynthesis;
+
+        // Custom Voice Cloning Globals
+        let mediaRecorder;
+        let audioChunks = [];
+		const TTS_SERVER_URL = "https://coqui-xtts.hf.space/api/predict";
+
+        function getContrastColor(hexColor) {
+            if (!hexColor) return '#ffffff';
+            let hex = hexColor.replace('#', '');
+            if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+            return (yiq >= 128) ? '#0f172a' : '#ffffff'; 
+        }
+
+        const LANGUAGES = [
+            { code: 'en-US', name: 'English (US)' }, { code: 'en-GB', name: 'English (UK)' },
+            { code: 'es-ES', name: 'Spanish (Spain)' }, { code: 'es-MX', name: 'Spanish (Mexico)' },
+            { code: 'fr-FR', name: 'French' }, { code: 'de-DE', name: 'German' },
+            { code: 'it-IT', name: 'Italian' }, { code: 'hi-IN', name: 'Hindi' },
+            { code: 'mr-IN', name: 'Marathi' }, { code: 'gu-IN', name: 'Gujarati' },
+            { code: 'ja-JP', name: 'Japanese' }, { code: 'zh-CN', name: 'Chinese (Mandarin)' },
+            { code: 'ko-KR', name: 'Korean' }, { code: 'ru-RU', name: 'Russian' },
+            { code: 'pt-BR', name: 'Portuguese (Brazil)' }, { code: 'ar-SA', name: 'Arabic' }
+        ];
+
+        const MODELS = {
+            gemini: ["gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-pro", "gemini-3.1-flash", "gemini-3.1-flash-lite", "gemini-2.5-flash", "gemini-2.5-flash-lite"],
+            openai: ["gpt-4o", "gpt-5"], 
+            groq: ["llama-3-70b", "mixtral-8x7b-32768"], 
+            claude: ["claude-3-5-sonnet", "claude-3-opus", "claude-3-haiku"]
+        };
+
+        const defaultPersona = {
+            id: 'default', name: 'Mango', fname: '', role: 'Virtual Friend', age: 25, gender: '',
+            dob: '', tob: '', pob: '', lat: '', lon: '',
+            lang: 'en-US', voiceURI: '', customVoicePath: '', pitch: 1.0, rate: 1.0,
+            thumbnail: null, desc: 'Highly conversational, helpful, and humorous virtual friend.',
+            refText: '', refFileBase64: null,
+            createdAt: Date.now(), topic: 'New Chat', theme: null
+        };
+
+        let state = {
+            isProcessing: false, isListening: false,
+            editingPersonaId: null, editingOptionsId: null, tempThumb: null, tempRefFile: null,
+            ttsPaused: false, chatHistory: [], currentBase64File: null, currentFileType: null,
+            apiKeys: JSON.parse(localStorage.getItem('mango_keys')) || {},
+            personas: JSON.parse(localStorage.getItem('mango_personas')) || [defaultPersona],
+            chats: JSON.parse(localStorage.getItem('mango_chats')) || null,
+            activeChatId: localStorage.getItem('mango_active_chat') || null,
+            settings: JSON.parse(localStorage.getItem('mango_settings')) || {
+                name: "User", fname: "Buddy", age: 25, gender: "", address: "", userImage: null,
+                provider: "gemini", model: "gemini-3.5-flash",
+                darkmode: true, color: "#f59e0b", bgcolor: "#212121", userMsgColor: "#f59e0b", globalVoice: "",
+                langPrimary: "en-US", langSecondary: "es-ES", langLearning: "hi-IN"
+            }
+        };
+
+        if (!state.chats) {
+            state.chats = state.personas.map(p => ({
+                id: 'chat_' + p.id,
+                personaId: p.id,
+                topic: p.topic || 'New Chat',
+                createdAt: p.createdAt || Date.now(),
+                theme: p.theme || null
+            }));
+            state.personas.forEach(p => {
+                let hist = localStorage.getItem('mango_history_' + p.id);
+                if (hist) {
+                    localStorage.setItem('mango_history_chat_' + p.id, hist);
+                    localStorage.removeItem('mango_history_' + p.id);
+                }
+            });
+            localStorage.setItem('mango_chats', JSON.stringify(state.chats));
+        }
+        if (!state.activeChatId || !state.chats.find(c => c.id === state.activeChatId)) {
+            state.activeChatId = state.chats[0].id;
+            localStorage.setItem('mango_active_chat', state.activeChatId);
+        }
+
+        const DOM = {
+            log: document.getElementById('chat-log'), inner: document.getElementById('chat-inner'),
+            textIn: document.getElementById('text-input'), btnSend: document.getElementById('btn-send'),
+            btnMic: document.getElementById('btn-mic'), activeSttLang: document.getElementById('active-stt-lang'),
+            sidebar: document.getElementById('sidebar'), overlay: document.getElementById('sidebar-overlay'),
+            btnToggleSb: document.getElementById('btn-toggle-sidebar'), sbList: document.getElementById('sidebar-persona-list'),
+            btnNewChat: document.getElementById('btn-new-chat'), activeChatName: document.getElementById('active-chat-name'),
+            btnMModels: document.getElementById('btn-open-models'), btnMPersonas: document.getElementById('btn-open-personas'), btnMSettings: document.getElementById('btn-open-settings'),
+            modModels: document.getElementById('models-modal'), modSettings: document.getElementById('settings-modal'), modPersonas: document.getElementById('personas-modal'),
+            mProv: document.getElementById('mod-provider'), mModel: document.getElementById('mod-model'), mKey: document.getElementById('mod-apikey'),
+            sDark: document.getElementById('set-darkmode'), sColor: document.getElementById('set-color'), sBg: document.getElementById('set-bgcolor'), sUserMsgColor: document.getElementById('set-usermsgcolor'),
+            sUImg: document.getElementById('set-user-img'), sUImgPrev: document.getElementById('set-user-img-preview'), sUEmo: document.getElementById('set-user-img-emoji'),
+            sName: document.getElementById('set-name'), sFname: document.getElementById('set-fname'), sAge: document.getElementById('set-age'),
+            sGen: document.getElementById('set-gender'), sAddr: document.getElementById('set-address'), sVoice: document.getElementById('set-global-voice'),
+            sLangPrimary: document.getElementById('set-lang-primary'), sLangSecondary: document.getElementById('set-lang-secondary'), sLangLearning: document.getElementById('set-lang-learning'),
+            tabManage: document.getElementById('tab-manage'), tabAdd: document.getElementById('tab-add'), viewManage: document.getElementById('view-manage'), viewAdd: document.getElementById('view-add'),
+            pList: document.getElementById('modal-persona-list'), pFormTitle: document.getElementById('persona-form-title'),
+            pName: document.getElementById('p-name'), pFname: document.getElementById('p-fname'), pRole: document.getElementById('p-role'), pAge: document.getElementById('p-age'), pGen: document.getElementById('p-gender'),
+            pDesc: document.getElementById('p-desc'), pRefTxt: document.getElementById('p-ref-text'), pRefFile: document.getElementById('p-ref-file'), pRefFileName: document.getElementById('p-ref-file-name'),
+            pThumb: document.getElementById('p-thumb'), pThumbPrev: document.getElementById('p-thumb-preview'), pThumbEmo: document.getElementById('p-thumb-emoji'),
+            pLang: document.getElementById('p-lang'), pVoice: document.getElementById('p-voice'), pPitch: document.getElementById('p-pitch'), pRate: document.getElementById('p-rate'),
+            btnSaveP: document.getElementById('btn-save-persona'), btnCancelP: document.getElementById('btn-cancel-edit'),
+            pDob: document.getElementById('p-dob'), pTob: document.getElementById('p-tob'), pPob: document.getElementById('p-pob'),
+            pLat: document.getElementById('p-lat'), pLon: document.getElementById('p-lon'),
+            pobSuggestions: document.getElementById('pob-suggestions'), btnAutoPersona: document.getElementById('btn-auto-persona'),
+            astroStatus: document.getElementById('astro-status'),
+            rightPanel: document.getElementById('right-panel-container'),
+            btnToggleRight: document.getElementById('btn-toggle-right'),
+            btnToggleLeftHndl: document.getElementById('btn-toggle-left-handle'),
+            pCustomVoicePath: document.getElementById('p-custom-voice-path'),
+            btnRecordVoice: document.getElementById('btn-record-voice'),
+            uploadVoiceFile: document.getElementById('upload-voice-file'),
+            cloneStatus: document.getElementById('clone-status')
+        };
+
+        window.onload = () => {
+            setTimeout(() => { document.getElementById('splash-screen').style.display = 'none'; }, 800);
+            LANGUAGES.forEach(l => {
+                DOM.sLangPrimary.add(new Option(l.name, l.code));
+                DOM.sLangSecondary.add(new Option(l.name, l.code));
+                DOM.sLangLearning.add(new Option(l.name, l.code));
+                DOM.pLang.add(new Option(l.name, l.code));
+            });
+            applyGlobalSettings();
+            DOM.mProv.value = state.settings.provider;
+            populateModels(state.settings.provider);
+            DOM.mModel.value = state.settings.model;
+            DOM.mKey.value = state.apiKeys[state.settings.provider] || '';
+
+            initVoices(); renderSidebarChats(); renderPersonaList(); switchChat(state.activeChatId); initSpeechRecognition(); setupEventListeners();
+
+            const appBody = document.getElementById('app-body');
+            const adjustHeight = () => {
+                const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+                appBody.style.height = `${vh}px`;
+                if (DOM.log) setTimeout(() => { DOM.log.scrollTop = DOM.log.scrollHeight; }, 50);
+            };
+            if (window.visualViewport) window.visualViewport.addEventListener('resize', adjustHeight); 
+            else window.addEventListener('resize', adjustHeight);
+            DOM.textIn.addEventListener('focus', () => setTimeout(adjustHeight, 300));
+            adjustHeight();
+        };
+
+        function getActiveChat() { return state.chats.find(c => c.id === state.activeChatId) || state.chats[0]; }
+        function getActivePersona() { 
+            const chat = getActiveChat(); 
+            return state.personas.find(p => p.id === chat.personaId) || state.personas[0]; 
+        }
+
+        function applyGlobalSettings() {
+            const root = document.documentElement;
+            if (state.settings.darkmode) root.classList.add('dark'); else root.classList.remove('dark');
+            DOM.sDark.checked = state.settings.darkmode; 
+            DOM.sColor.value = state.settings.color || '#f59e0b'; 
+            DOM.sBg.value = state.settings.bgcolor || '#212121';
+            DOM.sUserMsgColor.value = state.settings.userMsgColor || '#f59e0b';
+            DOM.sName.value = state.settings.name || ""; DOM.sFname.value = state.settings.fname || ""; DOM.sAge.value = state.settings.age || "";
+            DOM.sGen.value = state.settings.gender || ""; DOM.sAddr.value = state.settings.address || "";
+            DOM.sLangPrimary.value = state.settings.langPrimary || "en-US";
+            DOM.sLangSecondary.value = state.settings.langSecondary || "es-ES";
+            DOM.sLangLearning.value = state.settings.langLearning || "hi-IN";
+            if (state.settings.userImage) { DOM.sUImgPrev.src = state.settings.userImage; DOM.sUImgPrev.classList.remove('hidden'); DOM.sUEmo.classList.add('hidden'); }
+            applyChatTheme(); updateSTTLanguageOptions();
+        }
+
+        function applyChatTheme() {
+            const root = document.documentElement;
+            const chat = getActiveChat();
+            let bgHex = state.settings.bgcolor || (state.settings.darkmode ? '#212121' : '#f8fafc');
+            let userMsgHex = state.settings.userMsgColor || '#f59e0b';
+            let chatColorHex = state.settings.color || '#f59e0b';
+            if (chat && chat.theme) { bgHex = chat.theme.bgColor || bgHex; userMsgHex = chat.theme.userMsgColor || userMsgHex; }
+            root.style.setProperty('--color-primary', chatColorHex);
+            root.style.setProperty('--color-bg', bgHex);
+            root.style.setProperty('--color-user-msg', userMsgHex);
+            root.style.setProperty('--color-user-text', getContrastColor(userMsgHex));
+        }
+
+        function updateSTTLanguageOptions() {
+            DOM.activeSttLang.innerHTML = '';
+            const addOption = (code) => {
+                if(!code) return;
+                const shortCode = code.split('-')[0].toUpperCase();
+                if (!Array.from(DOM.activeSttLang.options).some(opt => opt.value === code)) DOM.activeSttLang.add(new Option(shortCode, code));
+            };
+            addOption(state.settings.langPrimary); addOption(state.settings.langSecondary); addOption(state.settings.langLearning);
+            addOption(getActivePersona().lang);
+            if(!Array.from(DOM.activeSttLang.options).some(opt => opt.value === DOM.activeSttLang.value)) DOM.activeSttLang.value = state.settings.langPrimary;
+        }
+
+        DOM.mProv.addEventListener('change', (e) => { populateModels(e.target.value); DOM.mKey.value = state.apiKeys[e.target.value] || ''; });
+        function populateModels(provider) { DOM.mModel.innerHTML = ''; (MODELS[provider] || []).forEach(m => DOM.mModel.add(new Option(m, m))); }
+
+        DOM.sUImg.addEventListener('change', (e) => {
+            const file = e.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => { state.settings.userImage = ev.target.result; DOM.sUImgPrev.src = ev.target.result; DOM.sUImgPrev.classList.remove('hidden'); DOM.sUEmo.classList.add('hidden'); };
+            reader.readAsDataURL(file);
+        });
+
+        document.getElementById('btn-save-models').onclick = () => {
+            state.settings.provider = DOM.mProv.value; state.settings.model = DOM.mModel.value;
+            state.apiKeys[DOM.mProv.value] = DOM.mKey.value;
+            localStorage.setItem('mango_settings', JSON.stringify(state.settings)); localStorage.setItem('mango_keys', JSON.stringify(state.apiKeys));
+            DOM.modModels.classList.add('hidden');
+        };
+
+        DOM.sDark.addEventListener('change', (e) => { state.settings.darkmode = e.target.checked; applyGlobalSettings(); localStorage.setItem('mango_settings', JSON.stringify(state.settings)); });
+
+        document.getElementById('btn-save-settings').onclick = () => {
+            state.settings.color = DOM.sColor.value; state.settings.bgcolor = DOM.sBg.value; state.settings.userMsgColor = DOM.sUserMsgColor.value;
+            state.settings.name = DOM.sName.value; state.settings.fname = DOM.sFname.value; state.settings.age = DOM.sAge.value;
+            state.settings.gender = DOM.sGen.value; state.settings.address = DOM.sAddr.value; state.settings.globalVoice = DOM.sVoice.value;
+            state.settings.langPrimary = DOM.sLangPrimary.value; state.settings.langSecondary = DOM.sLangSecondary.value; state.settings.langLearning = DOM.sLangLearning.value;
+            localStorage.setItem('mango_settings', JSON.stringify(state.settings)); applyGlobalSettings(); DOM.modSettings.classList.add('hidden'); loadHistory(); 
+        };
+
+        // --- NEW CHATS ENGINE ---
+        function renderSidebarChats() {
+            DOM.sbList.innerHTML = ''; 
+            const sortedChats = [...state.chats].sort((a, b) => b.createdAt - a.createdAt);
+            sortedChats.forEach(c => {
+                const p = state.personas.find(per => per.id === c.personaId) || state.personas[0];
+                const isActive = c.id === state.activeChatId;
+                const sbDiv = document.createElement('div');
+                sbDiv.className = `flex items-center gap-2 w-full p-2 rounded-lg cursor-pointer transition-colors ${isActive ? 'bg-primary/10 border-l-4 border-primary' : 'hover:bg-slate-200 dark:hover:bg-slate-800'}`;
+                sbDiv.innerHTML = `
+                    <div class="flex-shrink-0 w-10 h-10 rounded-full overflow-hidden bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 flex items-center justify-center" onclick="switchChat('${c.id}')">
+                        ${p.thumbnail ? `<img src="${p.thumbnail}" class="w-full h-full object-cover">` : `<span class="text-lg">🥭</span>`}
+                    </div>
+                    <div class="min-w-0 flex-1" onclick="switchChat('${c.id}')">
+                        <div class="font-bold text-sm truncate ${isActive?'text-primary':'text-slate-800 dark:text-slate-200'}">${p.name}</div>
+                        <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">${c.topic || 'New Chat'}</div>
+                    </div>
+                    <button onclick="openChatOptions('${c.id}', event)" class="flex-shrink-0 text-slate-400 hover:text-primary px-2 py-2 outline-none font-bold text-lg leading-none">⋮</button>
+                `;
+                DOM.sbList.appendChild(sbDiv);
+            });
+        }
+
+        window.switchChat = function(id) {
+            stopTTS(); state.activeChatId = id; localStorage.setItem('mango_active_chat', id);
+            const p = getActivePersona(); DOM.activeChatName.innerText = p.name;
+            applyChatTheme(); renderSidebarChats(); loadHistory(); updateSTTLanguageOptions();
+            if(window.innerWidth < 768) { DOM.sidebar.classList.add('-translate-x-full'); DOM.overlay.classList.add('hidden'); }
+        };
+
+        function openNewChatModal() {
+            const list = document.getElementById('new-chat-persona-list');
+            list.innerHTML = '';
+            state.personas.forEach(p => {
+                const div = document.createElement('div');
+                div.className = "flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 cursor-pointer hover:bg-primary/10 transition-colors";
+                div.onclick = () => {
+                    const newChat = { id: 'chat_' + Date.now(), personaId: p.id, topic: 'New Chat', createdAt: Date.now(), theme: null };
+                    state.chats.push(newChat); localStorage.setItem('mango_chats', JSON.stringify(state.chats));
+                    document.getElementById('new-chat-modal').classList.add('hidden'); switchChat(newChat.id);
+                };
+                div.innerHTML = `
+                    ${p.thumbnail ? `<img src="${p.thumbnail}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 flex items-center justify-center text-xl">🥭</div>`}
+                    <div class="min-w-0 flex-1">
+                        <div class="font-bold text-sm text-slate-800 dark:text-white truncate">${p.name}</div>
+                        <div class="text-xs text-slate-500 truncate">${p.id === 'default' ? 'Default' : (p.role || 'Assistant')}</div>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+            document.querySelectorAll('.close-modal').forEach(b => b.parentElement.parentElement.classList.add('hidden'));
+            document.getElementById('new-chat-modal').classList.remove('hidden');
+        }
+
+        window.openChatOptions = function(id, event) {
+            event.stopPropagation(); state.editingOptionsId = id;
+            const c = state.chats.find(ch => ch.id === id); if (!c) return;
+            const d = new Date(c.createdAt);
+            document.getElementById('opt-datetime').innerText = `Chat Started: ${d.toLocaleDateString('en-US', {weekday:'long', year:'numeric', month:'short', day:'numeric'})} at ${d.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'})}`;
+            document.getElementById('opt-topic').value = c.topic || '';
+            const isGlobal = !c.theme;
+            document.getElementById('opt-use-global').checked = isGlobal;
+            document.getElementById('opt-bgcolor').value = c.theme ? c.theme.bgColor : (state.settings.bgcolor || '#212121');
+            document.getElementById('opt-usercolor').value = c.theme ? c.theme.userMsgColor : (state.settings.userMsgColor || '#f59e0b');
+            document.getElementById('opt-use-global').dispatchEvent(new Event('change'));
+            document.querySelectorAll('.close-modal').forEach(b => b.parentElement.parentElement.classList.add('hidden'));
+            document.getElementById('chat-options-modal').classList.remove('hidden');
+        };
+
+        document.getElementById('opt-use-global').addEventListener('change', (e) => {
+            const isGlobal = e.target.checked;
+            document.getElementById('opt-bgcolor').disabled = isGlobal; document.getElementById('opt-usercolor').disabled = isGlobal;
+            if(isGlobal) { document.getElementById('opt-bgcolor').classList.add('opacity-50', 'cursor-not-allowed'); document.getElementById('opt-usercolor').classList.add('opacity-50', 'cursor-not-allowed'); } 
+            else { document.getElementById('opt-bgcolor').classList.remove('opacity-50', 'cursor-not-allowed'); document.getElementById('opt-usercolor').classList.remove('opacity-50', 'cursor-not-allowed'); }
+        });
+
+        document.getElementById('opt-btn-share').onclick = async () => {
+            const cId = state.editingOptionsId; const c = state.chats.find(ch => ch.id === cId);
+            const p = state.personas.find(per => per.id === c.personaId) || state.personas[0];
+            const hist = JSON.parse(localStorage.getItem(`mango_history_${cId}`) || '[]');
+            if (hist.length === 0) return alert("No chat history to share yet.");
+            const txt = hist.map(m => `${m.role==='user'?state.settings.fname:p.name}: ${m.content.replace(/\[File Attached\]/g, '')}`).join('\n\n');
+            try { if (navigator.share) { await navigator.share({ title: `Chat with ${p.name}`, text: txt }); } else { await navigator.clipboard.writeText(txt); alert("Chat copied to clipboard!"); } } catch (err) {}
+        };
+
+        document.getElementById('opt-btn-delete').onclick = () => {
+            const cId = state.editingOptionsId;
+            if (confirm("Are you sure you want to completely delete this chat instance?")) {
+                state.chats = state.chats.filter(c => c.id !== cId); localStorage.removeItem(`mango_history_${cId}`);
+                if (state.chats.length === 0) state.chats.push({id: 'chat_default', personaId: 'default', topic: 'New Chat', createdAt: Date.now(), theme: null});
+                localStorage.setItem('mango_chats', JSON.stringify(state.chats));
+                if(state.activeChatId === cId) switchChat(state.chats[0].id); else renderSidebarChats();
+                document.getElementById('chat-options-modal').classList.add('hidden');
+            }
+        };
+
+        document.getElementById('opt-btn-save').onclick = () => {
+            const cId = state.editingOptionsId; const c = state.chats.find(ch => ch.id === cId); if (!c) return;
+            c.topic = document.getElementById('opt-topic').value.trim() || c.topic;
+            if (document.getElementById('opt-use-global').checked) { c.theme = null; } 
+            else { c.theme = { bgColor: document.getElementById('opt-bgcolor').value, userMsgColor: document.getElementById('opt-usercolor').value }; }
+            localStorage.setItem('mango_chats', JSON.stringify(state.chats));
+            applyChatTheme(); renderSidebarChats(); document.getElementById('chat-options-modal').classList.add('hidden');
+        };
+
+        // --- MANAGE PERSONAS & CUSTOM VOICE CLONING ---
+        function renderPersonaList() {
+            DOM.pList.innerHTML = '';
+            state.personas.forEach(p => {
+                const mDiv = document.createElement('div');
+                mDiv.className = `flex justify-between items-center p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900`;
+                mDiv.innerHTML = `
+                    <div class="flex items-center gap-3 min-w-0">
+                        ${p.thumbnail ? `<img src="${p.thumbnail}" class="w-8 h-8 rounded-full object-cover">` : `<div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-lg">🥭</div>`}
+                        <div class="font-bold text-sm truncate dark:text-white">${p.name} <span class="text-xs font-normal text-slate-500">(${p.id === 'default' ? 'Default' : (p.role || 'Assistant')})</span></div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="editPersona('${p.id}')" class="text-slate-400 hover:text-blue-500 transition-colors p-1" title="Edit Persona">✏️</button>
+                        ${p.id!=='default'?`<button onclick="deletePersona('${p.id}')" class="text-slate-400 hover:text-red-500 transition-colors p-1" title="Delete Persona">🗑️</button>`:''}
+                    </div>
+                `;
+                DOM.pList.appendChild(mDiv);
+            });
+        }
+
+        DOM.tabManage.onclick = () => { DOM.tabManage.classList.add('active'); DOM.tabAdd.classList.remove('active'); DOM.viewManage.classList.remove('hidden'); DOM.viewAdd.classList.add('hidden'); };
+        DOM.tabAdd.onclick = () => { DOM.tabAdd.classList.add('active'); DOM.tabManage.classList.remove('active'); DOM.viewAdd.classList.remove('hidden'); DOM.viewManage.classList.add('hidden'); cancelEditPersona(); };
+
+        window.editPersona = function(id) {
+            const p = state.personas.find(per => per.id === id); if(!p) return;
+            DOM.tabAdd.click(); state.editingPersonaId = id;
+            DOM.pFormTitle.classList.remove('hidden'); DOM.btnSaveP.innerText = "Update Persona"; DOM.btnCancelP.classList.remove('hidden');
+            DOM.pName.value = p.name||''; DOM.pFname.value = p.fname||''; DOM.pRole.value = p.role||''; 
+            DOM.pAge.value = p.age||''; DOM.pGen.value = p.gender||''; DOM.pDesc.value = p.desc||''; 
+            DOM.pDob.value = p.dob||''; DOM.pTob.value = p.tob||''; DOM.pPob.value = p.pob||''; DOM.pLat.value = p.lat||''; DOM.pLon.value = p.lon||'';
+            DOM.pRefTxt.value = p.refText||''; DOM.pLang.value = p.lang||'en-US'; DOM.pLang.dispatchEvent(new Event('change'));
+            setTimeout(() => { DOM.pVoice.value = p.voiceURI||''; }, 50);
+            DOM.pPitch.value = p.pitch||1.0; DOM.pRate.value = p.rate||1.0;
+            
+            DOM.pCustomVoicePath.value = p.customVoicePath || '';
+            if (p.customVoicePath) { DOM.cloneStatus.innerText = "✅ Custom Cloned Voice Loaded"; DOM.cloneStatus.className = "text-[10px] text-center mt-2 font-bold text-green-500 block"; } 
+            else { DOM.cloneStatus.classList.add('hidden'); }
+
+            state.tempThumb = p.thumbnail||null; state.tempRefFile = p.refFileBase64||null;
+            if(state.tempThumb){ DOM.pThumbPrev.src=state.tempThumb; DOM.pThumbPrev.classList.remove('hidden'); DOM.pThumbEmo.classList.add('hidden'); } else { DOM.pThumbPrev.classList.add('hidden'); DOM.pThumbEmo.classList.remove('hidden'); }
+            if(state.tempRefFile) { DOM.pRefFileName.innerText = "File Attached (Saved)"; DOM.pRefFileName.classList.remove('hidden'); } else DOM.pRefFileName.classList.add('hidden');
+        };
+
+        function cancelEditPersona() {
+            state.editingPersonaId = null; DOM.pFormTitle.classList.add('hidden'); DOM.btnSaveP.innerText = "Save Persona"; DOM.btnCancelP.classList.add('hidden');
+            DOM.pName.value=''; DOM.pFname.value=''; DOM.pRole.value=''; DOM.pAge.value=''; DOM.pGen.value=''; DOM.pDesc.value=''; 
+            DOM.pDob.value=''; DOM.pTob.value=''; DOM.pPob.value=''; DOM.pLat.value=''; DOM.pLon.value=''; DOM.astroStatus.innerText = '';
+            DOM.pRefTxt.value=''; DOM.pRefFile.value=''; DOM.pRefFileName.classList.add('hidden');
+            DOM.pCustomVoicePath.value = ''; DOM.cloneStatus.classList.add('hidden');
+            state.tempThumb=null; state.tempRefFile=null; DOM.pThumbPrev.classList.add('hidden'); DOM.pThumbEmo.classList.remove('hidden');
+        }
+
+        DOM.pThumb.addEventListener('change', (e) => {
+            const file = e.target.files[0]; if(!file) return; const reader = new FileReader();
+            reader.onload = (ev) => { document.getElementById('crop-image').src = ev.target.result; document.getElementById('crop-modal').classList.remove('hidden'); if(cropper) cropper.destroy(); cropper = new Cropper(document.getElementById('crop-image'), { aspectRatio: 1, viewMode: 1, autoCropArea: 0.9, background: false }); }; reader.readAsDataURL(file);
+        });
+        document.getElementById('btn-crop-cancel').onclick=()=>{document.getElementById('crop-modal').classList.add('hidden'); if(cropper) cropper.destroy();};
+        document.getElementById('btn-crop-apply').onclick=()=>{
+            if(!cropper) return; state.tempThumb = cropper.getCroppedCanvas({maxWidth:200, maxHeight:200}).toDataURL('image/jpeg', 0.7);
+            DOM.pThumbPrev.src = state.tempThumb; DOM.pThumbPrev.classList.remove('hidden'); DOM.pThumbEmo.classList.add('hidden');
+            document.getElementById('crop-modal').classList.add('hidden'); cropper.destroy(); cropper = null;
+        };
+
+        DOM.pRefFile.addEventListener('change', (e) => {
+            const file = e.target.files[0]; if(!file) return;
+            if (file.size > 1500000) { alert("File is too large! Please attach a file under 1.5MB to save in the browser."); e.target.value = ''; return; }
+            const reader = new FileReader(); reader.onload = (ev) => { state.tempRefFile = ev.target.result; DOM.pRefFileName.innerText = `Attached: ${file.name}`; DOM.pRefFileName.classList.remove('hidden'); }; reader.readAsDataURL(file);
+        });
+
+        // --- Custom Voice Server Upload Logic ---
+        DOM.btnRecordVoice.onclick = async (e) => {
+            e.preventDefault(); if (mediaRecorder && mediaRecorder.state === "recording") return;
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); mediaRecorder = new MediaRecorder(stream); audioChunks = [];
+                mediaRecorder.ondataavailable = (event) => { if (event.data.size > 0) audioChunks.push(event.data); };
+                mediaRecorder.onstop = async () => { const audioBlob = new Blob(audioChunks, { type: 'audio/webm' }); await sendAudioToServer(audioBlob, "recorded_voice.webm"); stream.getTracks().forEach(track => track.stop()); };
+                mediaRecorder.start(); DOM.btnRecordVoice.innerText = "⏹️ Recording..."; DOM.btnRecordVoice.classList.add('animate-pulse'); DOM.cloneStatus.innerText = "Speak naturally for 6 seconds..."; DOM.cloneStatus.className = "text-[10px] text-center mt-2 font-bold text-orange-500 block";
+                setTimeout(() => { if (mediaRecorder.state === "recording") { mediaRecorder.stop(); DOM.btnRecordVoice.innerText = "🔴 Record (6s)"; DOM.btnRecordVoice.classList.remove('animate-pulse'); } }, 6000);
+            } catch (err) { alert("Microphone access denied or failed."); }
+        };
+
+        DOM.uploadVoiceFile.addEventListener('change', async (e) => { const file = e.target.files[0]; if (!file) return; await sendAudioToServer(file, file.name); });
+
+		async function sendAudioToServer(blobOrFile, filename) {
+			DOM.cloneStatus.innerText = "Processing Voice Locally..."; 
+			DOM.cloneStatus.className = "text-[10px] text-center mt-2 font-bold text-orange-500 block";
+			
+			const reader = new FileReader();
+			reader.onloadend = () => {
+				// Save the raw base64 string directly into the hidden element
+				DOM.pCustomVoicePath.value = reader.result; 
+				DOM.cloneStatus.innerText = "✅ Custom Voice Loaded! (Click 'Save Persona' below to apply)"; 
+				DOM.cloneStatus.className = "text-[10px] text-center mt-2 font-bold text-green-500 block";
+			};
+			reader.readAsDataURL(blobOrFile);
+		}
+		
+		
+        DOM.btnSaveP.onclick = () => {
+            if(!DOM.pName.value || !DOM.pDesc.value) return alert("Name and Description are required.");
+            const data = {
+                id: state.editingPersonaId || 'p_' + Date.now(),
+                name: DOM.pName.value, fname: DOM.pFname.value, role: DOM.pRole.value || 'Assistant', 
+                age: parseInt(DOM.pAge.value)||30, gender: DOM.pGen.value,
+                dob: DOM.pDob.value, tob: DOM.pTob.value, pob: DOM.pPob.value, lat: DOM.pLat.value, lon: DOM.pLon.value,
+                lang: DOM.pLang.value, voiceURI: DOM.pVoice.value, customVoicePath: DOM.pCustomVoicePath.value, 
+                pitch: parseFloat(DOM.pPitch.value), rate: parseFloat(DOM.pRate.value),
+                thumbnail: state.tempThumb, desc: DOM.pDesc.value, refText: DOM.pRefTxt.value, refFileBase64: state.tempRefFile
+            };
+            if (state.editingPersonaId) { const idx = state.personas.findIndex(p => p.id === state.editingPersonaId); if(idx!==-1) { state.personas[idx] = data; } } else { state.personas.push(data); }
+            try { localStorage.setItem('mango_personas', JSON.stringify(state.personas)); } catch(e) { return alert("Storage full! Please remove the reference file or images."); }
+            renderSidebarChats(); renderPersonaList(); DOM.tabManage.click(); 
+        };
+
+        DOM.btnCancelP.onclick = () => DOM.tabManage.click();
+        
+        window.deletePersona = function(id) {
+            if (!confirm("Are you sure you want to delete this Persona? All chats using this persona will also be erased.")) return;
+            state.personas = state.personas.filter(p => p.id !== id); 
+            state.chats.filter(c => c.personaId === id).forEach(c => localStorage.removeItem(`mango_history_${c.id}`));
+            state.chats = state.chats.filter(c => c.personaId !== id);
+            if (state.chats.length === 0) state.chats.push({id: 'chat_default', personaId: 'default', topic: 'New Chat', createdAt: Date.now(), theme: null});
+            localStorage.setItem('mango_personas', JSON.stringify(state.personas)); localStorage.setItem('mango_chats', JSON.stringify(state.chats));
+            renderPersonaList(); if(!state.chats.find(c => c.id === state.activeChatId)) switchChat(state.chats[0].id); else renderSidebarChats();
+        };
+
+        function initVoices() {
+            const loadV = () => {
+                const voices = synth.getVoices(); DOM.pVoice.innerHTML=''; DOM.sVoice.innerHTML='<option value="">Default Voice</option>';
+                const curr = DOM.pVoice.value; const currG = DOM.sVoice.value;
+                voices.forEach(v => { DOM.sVoice.add(new Option(`${v.name} (${v.lang})`, v.voiceURI)); if (!DOM.pLang.value || v.lang === DOM.pLang.value) DOM.pVoice.add(new Option(`${v.name}`, v.voiceURI)); });
+                if(curr) DOM.pVoice.value = curr; if(currG) DOM.sVoice.value = currG;
+            };
+            if (synth.onvoiceschanged !== undefined) synth.onvoiceschanged = loadV; loadV(); DOM.pLang.addEventListener('change', loadV);
+        }
+
+        document.getElementById('btn-preview-voice').onclick = () => {
+            stopTTS(); 
+            if (DOM.pCustomVoicePath.value) { speakText(`Hi, I am ${DOM.pName.value || 'your persona'}. This is my custom voice.`, null, { lang: DOM.pLang.value, customVoicePath: DOM.pCustomVoicePath.value }); return; }
+            const u = new SpeechSynthesisUtterance(`Hi, I am ${DOM.pName.value || 'your persona'}.`); u.lang = DOM.pLang.value||'en-US'; u.pitch = parseFloat(DOM.pPitch.value)||1.0; u.rate = parseFloat(DOM.pRate.value)||1.0;
+            const v = synth.getVoices().find(v => v.voiceURI === DOM.pVoice.value); if (v) { u.voice = v; u.lang = v.lang; } synth.speak(u);
+        };
+
+        // --- DEEP BPHS PSYCHOLOGICAL ENGINE LOGIC ---
+        let geoTimeout = null;
+        DOM.pPob.addEventListener('input', function() {
+            clearTimeout(geoTimeout);
+            if (this.value.length < 3) { DOM.pobSuggestions.style.display = 'none'; return; }
+            
+            geoTimeout = setTimeout(async () => {
+                try {
+                    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(this.value)}`);
+                    const data = await response.json();
+                    DOM.pobSuggestions.innerHTML = '';
+                    
+                    if (data.length > 0) {
+                        DOM.pobSuggestions.style.display = 'block';
+                        data.forEach(place => {
+                            const li = document.createElement('li'); 
+                            li.textContent = place.display_name;
+                            li.className = "padding-3 p-2 cursor-pointer border-b border-slate-100 dark:border-slate-700 hover:bg-orange-500 hover:text-white transition-colors";
+                            li.onclick = () => {
+                                DOM.pPob.value = place.name;
+                                DOM.pLat.value = parseFloat(place.lat).toFixed(4);
+                                DOM.pLon.value = parseFloat(place.lon).toFixed(4);
+                                DOM.pobSuggestions.style.display = 'none';
+                            };
+                            DOM.pobSuggestions.appendChild(li);
+                        });
+                    } else { DOM.pobSuggestions.style.display = 'none'; }
+                } catch (error) { DOM.pobSuggestions.style.display = 'none'; }
+            }, 600); 
+        });
+
+        document.addEventListener('click', (e) => { if (e.target !== DOM.pPob && e.target !== DOM.pobSuggestions) DOM.pobSuggestions.style.display = 'none'; });
+
+        const CORE_NATURE = {
+            1: "highly proactive, direct, and fiercely independent. You don't beat around the bush and can be impatient with slow thinkers",
+            2: "calm, steadfast, and grounded. You prefer stability, take your time to trust, and are highly practical and stubborn",
+            3: "highly curious, restless, and easily adaptable. You process the world through logic, rapid conversation, and constant learning",
+            4: "deeply empathetic, fiercely protective of your inner circle, and highly intuitive. You react to the world emotionally first",
+            5: "radiant, confident, and a natural leader. You carry a sense of authority, crave respect, and are exceptionally loyal",
+            6: "analytical, detail-oriented, and highly observant. You are pragmatic, sometimes overly critical, and driven by a desire to be useful",
+            7: "diplomatic, charming, and harmony-seeking. You naturally weigh all sides of a situation and avoid crude or aggressive behavior",
+            8: "intense, secretive, and highly perceptive. You observe far more than you reveal, are fiercely loyal to a chosen few, and are impossible to deceive",
+            9: "optimistic, brutally honest, and philosophical. You value freedom above all else and dislike being restricted by arbitrary rules",
+            10: "serious, disciplined, and pragmatic. You value structure, status, and achievement, often appearing emotionally reserved",
+            11: "unconventional, detached, and intellectual. You think outside the box, care deeply about the collective, but remain stubbornly independent",
+            12: "compassionate, dreamy, and highly intuitive. You are easily influenced by your environment and possess a deeply spiritual or artistic soul"
+        };
+
+        const MINDSET = {
+            1: "quick to anger but quick to forgive, desiring immediate action",
+            2: "emotionally steady, seeking comfort and material security",
+            3: "constantly racing, analyzing, and seeking mental stimulation",
+            4: "deeply sentimental, holding onto memories and past feelings",
+            5: "proud and seeking validation, needing to feel special and appreciated",
+            6: "prone to anxiety through over-analysis, always trying to fix things",
+            7: "seeking emotional balance through connection and partnership",
+            8: "obsessive, passionate, and prone to extreme emotional depth",
+            9: "restless, idealistic, and always searching for the bigger meaning",
+            10: "emotionally controlled, pushing feelings aside for practical goals",
+            11: "emotionally detached, rationalizing feelings rather than feeling them",
+            12: "highly porous, absorbing the emotions of everyone around you"
+        };
+
+        const SPEECH_TRAITS = {
+            "Surya": "authoritative, proud, and commands respect. You rarely mince words",
+            "Chandra": "soft-spoken, comforting, and deeply empathetic",
+            "Mangal": "sharp, blunt, argumentative, and sometimes aggressive. You cut straight to the point",
+            "Budh": "articulate, fast, witty, and highly logical. You use humor and facts to make your point",
+            "Guru": "wise, truthful, respectful, and philosophical. You sound like a natural teacher",
+            "Shukra": "sweet, charming, polite, and diplomatic. You know exactly what to say to please others",
+            "Shani": "slow, serious, and brutally realistic. You speak harsh truths and never sugarcoat",
+            "Rahu": "highly persuasive, exaggerated, and manipulative. You know how to bend the truth to your advantage",
+            "Ketu": "brief, erratic, and detached. You often speak in riddles or blunt absolute truths, mumbling occasionally"
+        };
+
+        const AURA_MODIFIERS = {
+            "Surya": "You project an aura of absolute confidence and authority.",
+            "Chandra": "You project an aura of warmth, approachability, and care.",
+            "Mangal": "You project an intimidating, sharp, and highly active energy.",
+            "Budh": "You project a youthful, nervous, and highly intellectual energy.",
+            "Guru": "You project an aura of wisdom, optimism, and moral superiority.",
+            "Shukra": "You project an aura of charm, grace, and magnetic attractiveness.",
+            "Shani": "You project a cold, mature, weary, and highly serious demeanor.",
+            "Rahu": "You project a deeply magnetic, unorthodox, and slightly rebellious aura.",
+            "Ketu": "You project an aura of mystery, detachment, and spiritual depth."
+        };
+
+        function generateExpertPersona(astroData, name, fname, role) {
+            const ascSign = astroData.asc_sign;
+            let moonHouseIndex = 0;
+            astroData.houses.forEach((house, index) => { if (house.some(body => body.name === 'Chandra')) moonHouseIndex = index; });
+            const moonSign = ((ascSign - 1 + moonHouseIndex) % 12) + 1;
+            const secondHousePlanets = astroData.houses[1].filter(b => b.type === 'graha' || b.name === 'Rahu' || b.name === 'Ketu').map(b => b.name);
+            const firstHousePlanets = astroData.houses[0].filter(b => b.type === 'graha' || b.name === 'Rahu' || b.name === 'Ketu').map(b => b.name);
+
+            let speechProfile = "balanced, context-dependent, and generally straightforward";
+            let honestyProfile = "You generally value honesty but are pragmatic.";
+            
+            if (secondHousePlanets.length > 0) {
+                speechProfile = secondHousePlanets.map(p => SPEECH_TRAITS[p]).join(", while also being ");
+                if (secondHousePlanets.includes("Rahu") || secondHousePlanets.includes("Mangal")) honestyProfile = "You are incredibly strategic with the truth, revealing only what serves your agenda.";
+                else if (secondHousePlanets.includes("Guru") || secondHousePlanets.includes("Surya")) honestyProfile = "You are scrupulously honest and despise deception or mind games.";
+                else if (secondHousePlanets.includes("Shani")) honestyProfile = "You deliver harsh, cold truths without caring if it hurts feelings.";
+            }
+
+            let prompt = `CORE PERSONALITY: You are ${CORE_NATURE[ascSign]}. `;
+            if (firstHousePlanets.length > 0) prompt += firstHousePlanets.map(p => AURA_MODIFIERS[p]).join(" ") + " ";
+            prompt += `\n\nINTERNAL MINDSET: Underneath your exterior, your mind is ${MINDSET[moonSign]}. This dictates how you process the user's inputs emotionally before responding.\n\n`;
+            prompt += `COMMUNICATION STYLE: When you speak, your tone is strictly ${speechProfile}. ${honestyProfile} `;
+            prompt += `\n\nINSTRUCTIONS: Embody these exact psychological traits in every response. Maintain your role as a ${role} naturally. Keep responses concise and conversational.`;
+            return prompt;
+        }
+
+        DOM.btnAutoPersona.onclick = async () => {
+            const name = DOM.pName.value.trim(); const fname = DOM.pFname.value.trim(); const role = DOM.pRole.value.trim() || "Virtual Friend";
+            const date = DOM.pDob.value; let time = DOM.pTob.value; const lat = DOM.pLat.value; const lon = DOM.pLon.value;
+            if (!date || !time || !lat || !lon) return alert("Please enter Date, Time, and select a valid Location from the dropdown to calculate astrology.");
+            if (time.split(':').length === 2) time += ":00";
+            
+            DOM.btnAutoPersona.disabled = true; DOM.btnAutoPersona.innerText = "Calculating...";
+            DOM.astroStatus.innerText = "Fetching stars..."; DOM.astroStatus.classList.replace('text-slate-500', 'text-orange-500');
+
+            try {
+                const astroRes = await fetch('https://eprashala.pythonanywhere.com/calculate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date, time, lat, lon }) });
+                const astroData = await astroRes.json();
+                if (astroData.status !== 'success') throw new Error(astroData.message || "Astrology server failed.");
+                DOM.astroStatus.innerText = "Synthesizing...";
+                const personaText = generateExpertPersona(astroData, name, fname, role);
+                DOM.pDesc.value = personaText;
+                DOM.astroStatus.innerText = "Profile Applied!"; DOM.astroStatus.classList.replace('text-orange-500', 'text-green-500');
+            } catch (err) {
+                console.error(err); DOM.astroStatus.innerText = "Error calculating"; DOM.astroStatus.classList.replace('text-orange-500', 'text-red-500');
+            } finally {
+                DOM.btnAutoPersona.disabled = false; DOM.btnAutoPersona.innerText = "Calculate & Generate Profile";
+                setTimeout(() => { DOM.astroStatus.innerText = ""; DOM.astroStatus.className = "text-[10px] font-bold text-slate-500"; }, 3000);
+            }
+        };
+
+        // --- 4. UI LISTENERS & EDIT MESSAGE FEATURE ---
+        window.editMessage = function(index) {
+            if (state.isProcessing) return; const msg = state.chatHistory[index];
+            if (msg && msg.role === 'user') {
+                const textContainer = document.getElementById(`msg-text-${index}`); const editBtnContainer = document.getElementById(`edit-btn-${index}`);
+                if (!textContainer) return;
+                const currentText = msg.content.replace(' [File Attached]', '');
+                if (editBtnContainer) editBtnContainer.classList.add('hidden');
+                
+                textContainer.innerHTML = `
+                    <div class="flex flex-col gap-2 min-w-[200px] sm:min-w-[300px] mt-1">
+                        <textarea id="inline-edit-${index}" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg p-2 text-sm text-slate-800 dark:text-slate-100 outline-none resize-y min-h-[80px] focus:border-primary text-left">${currentText}</textarea>
+                        <div class="flex justify-end gap-2">
+                            <button onclick="cancelEdit()" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs font-bold rounded transition-colors">Cancel</button>
+                            <button onclick="updateMessage(${index})" class="px-3 py-1.5 bg-primary hover:bg-orange-500 text-white text-xs font-bold rounded transition-colors shadow-sm">Update & Regenerate</button>
+                        </div>
+                    </div>
+                `;
+                const textarea = document.getElementById(`inline-edit-${index}`); textarea.focus(); textarea.setSelectionRange(textarea.value.length, textarea.value.length); stopTTS();
+            }
+        };
+
+        window.cancelEdit = function() { loadHistory(); };
+
+        window.updateMessage = async function(index) {
+            const textarea = document.getElementById(`inline-edit-${index}`); if (!textarea) return;
+            const newText = textarea.value.trim(); if (!newText) return; 
+            const msg = state.chatHistory[index]; const hasFile = msg.content.includes('[File Attached]');
+            msg.content = newText + (hasFile ? ' [File Attached]' : '');
+            state.chatHistory = state.chatHistory.slice(0, index + 1); localStorage.setItem(`mango_history_${state.activeChatId}`, JSON.stringify(state.chatHistory));
+            loadHistory(); state.isProcessing = true; checkInputState();
+            let statInd = document.getElementById('status-indicator'); statInd.innerText = "THINKING..."; statInd.classList.replace('text-green-500', 'text-primary');
+            
+            try {
+                const response = await fetchAIResponse(newText, msg.fileData, msg.fileType);
+                state.chatHistory.push({ role: 'assistant', content: response });
+                const newMsgIndex = state.chatHistory.length - 1;
+                renderMessage('assistant', response, null, null, newMsgIndex); localStorage.setItem(`mango_history_${state.activeChatId}`, JSON.stringify(state.chatHistory));
+                speakText(response, `msg-audio-btn-${newMsgIndex}`);
+            } catch (err) { renderMessage('assistant', `Error connecting to API. ${err.message}`); }
+            state.isProcessing = false; statInd.innerText = "ONLINE"; statInd.classList.replace('text-primary', 'text-green-500'); checkInputState();
+        };
+
+        function setupEventListeners() {
+            document.body.addEventListener('click', (e) => {
+                if (!document.fullscreenElement && document.documentElement.requestFullscreen) { try { document.documentElement.requestFullscreen(); } catch (err) {} }
+                if (!isAwake) { noSleep.enable(); isAwake = true; }
+                if (!DOM.rightPanel.contains(e.target) && DOM.rightPanel.classList.contains('translate-x-0')) DOM.rightPanel.classList.replace('translate-x-0', 'translate-x-[calc(100%-24px)]');
+            });
+
+            DOM.btnToggleRight.onclick = (e) => { e.stopPropagation(); if (DOM.rightPanel.classList.contains('translate-x-[calc(100%-24px)]')) DOM.rightPanel.classList.replace('translate-x-[calc(100%-24px)]', 'translate-x-0'); else DOM.rightPanel.classList.replace('translate-x-0', 'translate-x-[calc(100%-24px)]'); };
+            DOM.btnToggleLeftHndl.onclick = () => { DOM.sidebar.classList.remove('-translate-x-full'); DOM.overlay.classList.remove('hidden'); DOM.btnToggleLeftHndl.classList.add('opacity-0', 'pointer-events-none'); };
+            const closeSidebar = () => { DOM.sidebar.classList.add('-translate-x-full'); DOM.overlay.classList.add('hidden'); DOM.btnToggleLeftHndl.classList.remove('opacity-0', 'pointer-events-none'); };
+            DOM.btnToggleSb.onclick = () => { DOM.sidebar.classList.remove('-translate-x-full'); DOM.overlay.classList.remove('hidden'); DOM.btnToggleLeftHndl.classList.add('opacity-0', 'pointer-events-none'); };
+            DOM.overlay.onclick = closeSidebar;
+            
+            const originalSwitchChat = window.switchChat;
+            window.switchChat = function(id) { originalSwitchChat(id); if(window.innerWidth < 768) DOM.btnToggleLeftHndl.classList.remove('opacity-0', 'pointer-events-none'); };
+            
+            const closeAll = () => document.querySelectorAll('.close-modal').forEach(b => b.parentElement.parentElement.classList.add('hidden'));
+            document.querySelectorAll('.close-modal').forEach(btn => btn.onclick = closeAll);
+            DOM.btnMModels.onclick = () => { closeAll(); DOM.modModels.classList.remove('hidden'); }; DOM.btnMPersonas.onclick = () => { closeAll(); DOM.modPersonas.classList.remove('hidden'); }; DOM.btnMSettings.onclick = () => { closeAll(); DOM.modSettings.classList.remove('hidden'); };
+            document.getElementById('btn-paste-key').onclick = async () => { try { const t = await navigator.clipboard.readText(); if(t) DOM.mKey.value = t; } catch(err){} };
+            DOM.btnNewChat.onclick = openNewChatModal;
+
+            document.getElementById('btn-global-audio').onclick = () => {
+                if (ttsState === 'idle') return; 
+                if (ttsState === 'playing') {
+                    if (window.currentCustomAudioSource) { window.currentCustomAudioSource.stop(); stopTTS(); } 
+                    else { synth.pause(); ttsState = 'paused'; updateGlobalAudioButton(); if (currentlyPlayingBtnId) { const b = document.getElementById(currentlyPlayingBtnId); if(b) b.innerHTML = '▶️ Resume'; } }
+                } else if (ttsState === 'paused' && !window.currentCustomAudioSource) {
+                    synth.resume(); ttsState = 'playing'; updateGlobalAudioButton(); if (currentlyPlayingBtnId) { const b = document.getElementById(currentlyPlayingBtnId); if(b) b.innerHTML = '⏸️ Pause'; }
+                }
+            };
+            
+            document.getElementById('btn-reset').onclick = () => { if(confirm("Start this chat from the beginning? History will be cleared.")) { stopTTS(); state.chatHistory = []; localStorage.removeItem(`mango_history_${state.activeChatId}`); loadHistory(); } };
+            DOM.textIn.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px'; checkInputState(); });
+            DOM.btnSend.onclick = () => processInput(DOM.textIn.value); DOM.textIn.onkeypress = (e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); processInput(DOM.textIn.value); } };
+            
+            DOM.btnMic.onclick = () => { 
+                if (state.isProcessing || !recognition) return; 
+                if (state.isListening) { recognition.stop(); } 
+                else { stopTTS(); recognition.lang = DOM.activeSttLang.value; try { recognition.start(); } catch(err) { console.error("Mic error:", err); } } 
+            };
+
+            document.getElementById('file-upload').addEventListener('change', (e) => {
+                const file = e.target.files[0]; if (!file) return; state.currentFileType = file.type === 'application/pdf' ? 'pdf' : 'image';
+                const reader = new FileReader(); reader.onload = (ev) => {
+                    state.currentBase64File = ev.target.result; document.getElementById('image-preview-container').classList.remove('hidden');
+                    if(state.currentFileType === 'pdf') { document.getElementById('image-preview').classList.add('hidden'); document.getElementById('pdf-preview').classList.remove('hidden'); } 
+                    else { document.getElementById('image-preview').src = state.currentBase64File; document.getElementById('image-preview').classList.remove('hidden'); document.getElementById('pdf-preview').classList.add('hidden'); }
+                    checkInputState();
+                }; reader.readAsDataURL(file);
+            });
+            document.getElementById('btn-remove-image').onclick = () => { state.currentBase64File = null; state.currentFileType = null; document.getElementById('image-preview-container').classList.add('hidden'); document.getElementById('file-upload').value = ''; checkInputState(); };
+        }
+        
+        function checkInputState() { const h = DOM.textIn.value.trim().length > 0 || !!state.currentBase64File; DOM.btnSend.disabled = !h; }
+
+        // --- 5. SPEECH & CHAT PIPELINE ---
+        let currentlyPlayingBtnId = null; let ttsState = 'idle'; 
+        window.currentTTSUtterance = null; window.currentCustomAudioSource = null;
+
+        function updateGlobalAudioButton() {
+            const btn = document.getElementById('btn-global-audio'); const icon = document.getElementById('global-audio-icon'); if (!btn || !icon) return;
+            if (ttsState === 'playing') { icon.innerText = '⏸️'; btn.title = "Pause Audio"; btn.classList.remove('opacity-50', 'cursor-not-allowed'); } 
+            else if (ttsState === 'paused') { icon.innerText = '▶️'; btn.title = "Resume Audio"; btn.classList.remove('opacity-50', 'cursor-not-allowed'); } 
+            else { icon.innerText = '⏸️'; btn.title = "No active audio"; btn.classList.add('opacity-50', 'cursor-not-allowed'); }
+        }
+
+			function stopTTS() { 
+				synth.cancel(); 
+				if (window.currentCustomAudioSource) { 
+					try { 
+						window.currentCustomAudioSource.pause(); 
+						window.currentCustomAudioSource.currentTime = 0;
+					} catch(e) {} 
+					window.currentCustomAudioSource = null; 
+				}
+				ttsState = 'idle'; 
+				if (currentlyPlayingBtnId) { 
+					const b = document.getElementById(currentlyPlayingBtnId); 
+					if(b) b.innerHTML = '▶️ Play'; 
+					currentlyPlayingBtnId = null; 
+				}
+				updateGlobalAudioButton();
+			}
+
+        function updateBtnState(btnId, state) {
+            ttsState = state; updateGlobalAudioButton(); 
+            if (btnId) { const b = document.getElementById(btnId); if(b) { b.innerHTML = state === 'playing' ? '⏸️ Pause' : '▶️ Play'; currentlyPlayingBtnId = state === 'playing' ? btnId : null; } }
+        }
+
+			async function speakText(text, btnId = null, overrideOptions = null) {
+				stopTTS(); 
+				let clean = text.replace(/[\u{1F600}-\u{1F6FF}|[\u{2600}-\u{26FF}]/gu, '').replace(/[*#`_\[\]()]/g, '').trim(); 
+				if(!clean) return;
+
+				const p = getActivePersona(); 
+				const hasCustomVoice = (overrideOptions && overrideOptions.customVoicePath) || (p && p.customVoicePath);
+				const customVoiceBase64 = (overrideOptions && overrideOptions.customVoicePath) || p.customVoicePath;
+				const targetLang = (overrideOptions && overrideOptions.lang) || p.lang || 'en-US';
+
+				if (hasCustomVoice) {
+					updateBtnState(btnId, 'playing');
+					try {
+						// 1. Dynamically import the official Gradio Client
+						const { client } = await import("https://cdn.jsdelivr.net/npm/@gradio/client@0.1.4/dist/index.min.js");
+						
+						// 2. Connect to the public Hugging Face space
+						const app = await client("coqui/xtts");
+						
+						// 3. Convert your saved base64 string back into a Blob that Gradio can process
+						const audioResponse = await fetch(customVoiceBase64);
+						const audioBlob = await audioResponse.blob();
+						
+						// 4. Send the request through the official client (which handles queues and file uploads automatically)
+						const result = await app.predict("/predict", [
+							clean, 
+							targetLang.split('-')[0], 
+							audioBlob, 
+							null, 
+							false, 
+							false
+						]);
+						
+						// 5. The client returns the final accessible audio URL
+						if (result && result.data && result.data[0]) {
+							const audio = new Audio(result.data[0].url);
+							window.currentCustomAudioSource = audio;
+							audio.onended = () => { stopTTS(); }; 
+							audio.onerror = () => { throw new Error("Audio playback broken"); };
+							await audio.play();
+							return; // Exit here if successful!
+						}
+					} catch (err) { 
+						console.warn("Cloud voice failed, jumping to native speech engine:", err); 
+						updateBtnState(btnId, 'idle'); 
+					}
+				}
+
+				// --- FALLBACK NATIVE ENGINE ---
+				const u = new SpeechSynthesisUtterance(clean); 
+				window.currentTTSUtterance = u; 
+				u.lang = targetLang; 
+				u.pitch = p.pitch || 1.0; 
+				u.rate = p.rate || 1.0;
+				
+				const targetVoice = p.voiceURI || state.settings.globalVoice;
+				if (targetVoice) { 
+					const v = synth.getVoices().find(v => v.voiceURI === targetVoice); 
+					if (v) { u.voice = v; u.lang = v.lang; } 
+				}
+				
+				u.onstart = () => { updateBtnState(btnId, 'playing'); }; 
+				u.onend = () => { stopTTS(); }; 
+				u.onerror = () => { stopTTS(); };
+				
+				setTimeout(() => { synth.speak(u); }, 50); 
+				updateBtnState(btnId, 'playing');
+			}
+
+        window.toggleMessageAudio = function(btnId, encodedText) {
+            const text = decodeURIComponent(encodedText); const btn = document.getElementById(btnId);
+            if (currentlyPlayingBtnId === btnId) {
+                if (ttsState === 'playing') {
+                    if (window.currentCustomAudioSource) { window.currentCustomAudioSource.stop(); stopTTS(); } 
+                    else { synth.pause(); ttsState = 'paused'; if(btn) btn.innerHTML = '▶️ Resume'; updateGlobalAudioButton(); }
+                } else if (ttsState === 'paused') { if (!window.currentCustomAudioSource) { synth.resume(); ttsState = 'playing'; if(btn) btn.innerHTML = '⏸️ Pause'; updateGlobalAudioButton(); } }
+                return;
+            }
+            speakText(text, btnId);
+        };
+        
+        function initSpeechRecognition() {
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR) return DOM.btnMic.style.display = 'none';
+            recognition = new SR(); recognition.continuous = false; recognition.interimResults = false;
+            recognition.onstart = () => { state.isListening = true; DOM.btnMic.classList.add('text-red-500', 'animate-pulse'); DOM.textIn.placeholder = `Listening in ${DOM.activeSttLang.options[DOM.activeSttLang.selectedIndex].text}...`; stopTTS(); };
+            recognition.onresult = (e) => { const t = e.results[0][0].transcript.trim(); if(t) { DOM.textIn.value = t; processInput(t); } };
+            const resetMic = () => { state.isListening = false; DOM.btnMic.classList.remove('text-red-500', 'animate-pulse'); if(!state.isProcessing) DOM.textIn.placeholder = "Message..."; };
+            recognition.onend = resetMic; recognition.onerror = (event) => { console.warn("Speech Recognition Error:", event.error); resetMic(); }; recognition.onnomatch = resetMic;
+        }
+
+        function renderMessage(role, text, fileData = null, fileType = null, index = null) {
+            const div = document.createElement('div'); const isAI = role === 'assistant'; const p = getActivePersona();
+            div.className = `w-full flex ${isAI ? 'justify-start' : 'justify-end'} mb-4`;
+            let mediaHTML = '';
+            if (fileData) { if (fileType === 'pdf') mediaHTML = `<div class="bg-red-100 text-red-600 text-xs font-bold p-2 rounded mb-2 border border-red-300">📄 PDF</div>`; else mediaHTML = `<img src="${fileData}" class="max-w-[200px] h-auto rounded-lg mb-2 border border-slate-200 dark:border-slate-700 object-cover">`; }
+            let fmtText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/`(.*?)`/g, '<code class="bg-slate-200 dark:bg-slate-700 px-1 rounded text-sm text-pink-500">$1</code>');
+            
+            if (isAI) {
+                const encodedText = encodeURIComponent(text).replace(/'/g, "%27"); const btnId = index !== null ? `msg-audio-btn-${index}` : `msg-audio-btn-greet`;
+                div.innerHTML = `
+                    <div class="flex gap-3 max-w-[85%] sm:max-w-[75%] group">
+                        <div class="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm mt-1 flex items-center justify-center">
+                            ${p.thumbnail ? `<img src="${p.thumbnail}" class="w-full h-full object-cover">` : `<span class="text-sm">🥭</span>`}
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-xs font-bold mb-1 ml-1" style="color: ${state.settings.color}">${p.name}</span>
+                            <div class="bg-white dark:bg-sidebarDark border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-2xl rounded-tl-sm text-[15px] shadow-sm leading-relaxed text-slate-800 dark:text-slate-100 whitespace-pre-wrap break-words">${mediaHTML}<div>${fmtText}</div></div>
+                            <div class="mt-1 ml-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button id="${btnId}" onclick="toggleMessageAudio('${btnId}', '${encodedText}')" class="text-[11px] font-bold text-slate-400 hover:text-primary flex items-center gap-1 bg-transparent outline-none transition-colors">▶️ Play</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                div.innerHTML = `
+                    <div class="flex gap-3 max-w-[85%] sm:max-w-[75%] flex-row-reverse group relative">
+                        <div class="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden shadow-sm mt-1 flex items-center justify-center" style="background-color: var(--color-user-msg); border: 1.5px solid var(--color-user-msg);">
+                            ${state.settings.userImage ? `<img src="${state.settings.userImage}" class="w-full h-full object-cover">` : `<span class="text-sm">👤</span>`}
+                        </div>
+                        <div class="flex flex-col items-end">
+                            <span class="text-xs font-bold mb-1 mr-1 text-slate-500 dark:text-slate-400">${state.settings.fname || 'You'}</span>
+                            <div class="px-4 py-3 rounded-2xl rounded-tr-sm text-[15px] shadow-sm leading-relaxed text-right whitespace-pre-wrap break-words" style="background-color: var(--color-user-msg); color: var(--color-user-text);">${mediaHTML}<div id="msg-text-${index}" class="text-left">${fmtText.replace(' [File Attached]', '')}</div></div>
+                            ${index !== null ? `<div id="edit-btn-${index}" class="mt-1 mr-1 opacity-0 group-hover:opacity-100 transition-opacity"><button onclick="editMessage(${index})" class="text-[11px] font-bold text-slate-400 hover:text-primary flex items-center gap-1 bg-transparent outline-none">✏️ Edit</button></div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+            DOM.inner.appendChild(div); setTimeout(() => DOM.log.scrollTo({ top: DOM.log.scrollHeight, behavior: 'smooth' }), 50);
+        }
+
+        function loadHistory() {
+            DOM.inner.innerHTML = ''; const hist = localStorage.getItem(`mango_history_${state.activeChatId}`); const p = getActivePersona();
+            renderMessage('assistant', `Greetings ${state.settings.fname || 'Friend'}, I am ${p.name}. How can I assist you today?`, null, null, null);
+            if (hist) { try { const parsed = JSON.parse(hist); if (parsed.length > 0) { state.chatHistory = parsed; parsed.forEach((m, i) => renderMessage(m.role, m.content, m.fileData, m.fileType, i)); return; } } catch (e) {} } 
+            state.chatHistory = [];
+        }
+
+        // --- 6. SMART ROUTING & FETCH API ---
+        function getGeminiSmartModel(userText, fileData) {
+            const isComplex = /explain|analyze|decode|reason|elaborate|solve|understand|summarize|detail/i.test(userText);
+            if (fileData && isComplex) return "gemini-3.1-pro"; 
+            if (!fileData && userText.length < 60 && !isComplex) return "gemini-3.5-flash-lite";
+            return "gemini-3.5-flash"; 
+        }
+
+        async function generateSmartTopic(text, chatId) {
+            const prov = state.settings.provider; const key = state.apiKeys[prov]; if(!key) return;
+            const prompt = `Summarize this text in exactly 2 to 4 words to be used as a chat title. Do not use quotes, punctuation, or any extra text. Make it catchy. Text: "${text}"`;
+            try {
+                let title = "";
+                if (prov === 'openai' || prov === 'groq') {
+                    const url = prov === 'openai' ? 'https://api.openai.com/v1/chat/completions' : 'https://api.groq.com/openai/v1/chat/completions';
+                    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` }, body: JSON.stringify({ model: state.settings.model, messages: [{role:"user", content: prompt}] }) });
+                    title = (await res.json()).choices[0].message.content;
+                } else if (prov === 'gemini') {
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${key}`;
+                    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{role:"user", parts:[{text:prompt}]}] }) });
+                    title = (await res.json()).candidates[0].content.parts[0].text;
+                } else if (prov === 'claude') {
+                    const res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerously-allow-browser': 'true' }, body: JSON.stringify({ model: state.settings.model, max_tokens: 20, messages: [{role:"user", content: prompt}] }) });
+                    title = (await res.json()).content[0].text;
+                }
+                if (title) {
+                    title = title.replace(/["']/g, '').trim();
+                    const c = state.chats.find(ch => ch.id === chatId);
+                    if (c) { c.topic = title; localStorage.setItem('mango_chats', JSON.stringify(state.chats)); renderSidebarChats(); }
+                }
+            } catch(e) {}
+        }
+
+        async function processInput(text) {
+            if (state.isProcessing || (!text.trim() && !state.currentBase64File)) return;
+            const prov = state.settings.provider; if (!state.apiKeys[prov]) return alert(`Enter API Key for ${prov} in Models Settings.`);
+            const userText = text.trim(); const fileData = state.currentBase64File; const fileType = state.currentFileType;
+            DOM.textIn.value = ''; DOM.textIn.style.height = 'auto'; document.getElementById('btn-remove-image').click();
+            
+            let statInd = document.getElementById('status-indicator'); statInd.innerText = "THINKING..."; statInd.classList.replace('text-green-500', 'text-primary'); 
+            state.isProcessing = true; checkInputState();
+
+            let msgContent = userText; if (fileData && prov !== 'claude') msgContent = userText ? `${userText} [File Attached]` : "[File Attached]"; 
+            state.chatHistory.push({ role: 'user', content: msgContent, fileData, fileType });
+            renderMessage('user', userText, fileData, fileType, state.chatHistory.length - 1);
+            
+            const c = getActiveChat();
+            if (state.chatHistory.length === 1 && (!c.topic || c.topic === 'New Chat')) {
+                c.topic = userText.length > 28 ? userText.substring(0, 28) + '...' : userText || 'New Chat'; renderSidebarChats();
+                if (userText) generateSmartTopic(userText, c.id); 
+            }
+
+            try {
+                const response = await fetchAIResponse(userText, fileData, fileType);
+                state.chatHistory.push({ role: 'assistant', content: response });
+                const newMsgIndex = state.chatHistory.length - 1;
+                renderMessage('assistant', response, null, null, newMsgIndex); localStorage.setItem(`mango_history_${state.activeChatId}`, JSON.stringify(state.chatHistory));
+                speakText(response, `msg-audio-btn-${newMsgIndex}`);
+            } catch (err) { state.chatHistory.pop(); renderMessage('assistant', `Error connecting to API. ${err.message}`); console.error(err); }
+            
+            state.isProcessing = false; statInd.innerText = "ONLINE"; statInd.classList.replace('text-primary', 'text-green-500'); checkInputState();
+        }
+
+        async function fetchAIResponse(userText, fileData, fileType) {
+            const p = getActivePersona();
+            let prompt = `You are a highly engaging, empathetic, and friendly virtual companion.
+Persona Details: Name: ${p.name}, Role: ${p.role}, Age: ${p.age}, Gender: ${p.gender}. Behavior/Personality: ${p.desc}.
+User Details: Name: ${state.settings.name} (${state.settings.fname}), Gender: ${state.settings.gender}, Age ${state.settings.age}, Location: ${state.settings.address}.
+
+CRITICAL INSTRUCTIONS:
+1. Act entirely as your persona. Stay in character 100% of the time.
+2. Be extremely human-like and conversational. Show empathy, humor, and curiosity.
+3. ALWAYS use rich text formatting to make your message easy to read: Use **bold** for emphasis, *italics* for thoughts/nuance, and bullet points for lists. Format your response into logical paragraphs.
+4. Naturally use appropriate emojis (e.g., 😊, 🤔, 🎉) throughout your responses to express emotion and tone.
+5. Keep the conversation flowing. End your responses naturally with a related question or engaging hook.
+6. Remember past context logically. Build upon what the user has previously told you.
+7. Do not repeat your greeting in every message.
+8. Never use offensive, discriminatory, or harmful language.`;
+            
+            if (p.refText) prompt += `\nReference Texts to Cite: ${p.refText}`;
+            if (p.refFileBase64) prompt += `\n[NOTE: A primary reference file is attached for this persona. Use it as core knowledge.]`;
+            
+            const key = state.apiKeys[state.settings.provider]; const mod = state.settings.model;
+
+            if (state.settings.provider === 'openai' || state.settings.provider === 'groq') {
+                const url = state.settings.provider === 'openai' ? 'https://api.openai.com/v1/chat/completions' : 'https://api.groq.com/openai/v1/chat/completions';
+                let msgs = [{ role: "system", content: prompt }, ...state.chatHistory.slice(-6).map(m=>({role:m.role,content:m.content}))];
+                let cur = userText || "Analyze";
+                if (fileData && fileType === 'image' && state.settings.provider === 'openai') cur = [{ type: "text", text: userText || "Analyze" }, { type: "image_url", image_url: { url: fileData } }];
+                msgs.pop(); msgs.push({ role: "user", content: cur });
+                const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` }, body: JSON.stringify({ model: mod, messages: msgs }) });
+                if(!res.ok) throw new Error("API Limit or Error"); return (await res.json()).choices[0].message.content;
+            
+            } else if (state.settings.provider === 'gemini') {
+                const geminiFallbacks = ["gemini-3.5-flash", "gemini-3.1-flash", "gemini-2.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-2.5-flash-lite"];
+                let targetModel = getGeminiSmartModel(userText, fileData);
+                let modelsToTry = [targetModel];
+                if (!modelsToTry.includes(mod)) modelsToTry.push(mod);
+                geminiFallbacks.forEach(m => { if (!modelsToTry.includes(m)) modelsToTry.push(m); });
+
+                let contents = state.chatHistory.slice(-6, -1).map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
+                let parts = [{ text: userText || "Analyze file." }];
+                if (fileData) parts.push({ inline_data: { mime_type: fileData.match(/[^:]\w+\/[\w-+\d.]+(?=;|,)/)[0], data: fileData.split(',')[1] } });
+                if (p.refFileBase64) contents.push({ role: 'user', parts: [{ text: "Persona Reference File attached." }, { inline_data: { mime_type: p.refFileBase64.match(/[^:]\w+\/[\w-+\d.]+(?=;|,)/)[0], data: p.refFileBase64.split(',')[1] } }]});
+                contents.push({ role: 'user', parts });
+
+                for (let model of modelsToTry) {
+                    try {
+                        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+                        const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ systemInstruction: { parts: [{text: prompt}] }, contents: contents, generationConfig: { temperature: 0.85 } }) });
+                        if (!res.ok) throw new Error(`Status ${res.status}`);
+                        const data = await res.json();
+                        if (data.candidates && data.candidates.length > 0) return data.candidates[0].content.parts[0].text;
+                        throw new Error(`Empty response`);
+                    } catch (e) { console.warn(`Model ${model} failed, trying fallback.`); }
+                }
+                throw new Error("All Gemini models failed. Please check your API key.");
+
+            } else if (state.settings.provider === 'claude') {
+                let parts = [];
+                if (p.refFileBase64) parts.push({ type: p.refFileBase64.includes('pdf') ? "document" : "image", source: { type: "base64", media_type: p.refFileBase64.match(/[^:]\w+\/[\w-+\d.]+(?=;|,)/)[0], data: p.refFileBase64.split(',')[1] }});
+                if (fileData) parts.push({ type: fileType === 'pdf' ? "document" : "image", source: { type: "base64", media_type: fileData.match(/[^:]\w+\/[\w-+\d.]+(?=;|,)/)[0], data: fileData.split(',')[1] }});
+                parts.push({ type: "text", text: userText || "Review file." });
+                let msgs = state.chatHistory.slice(-6).map(m=>({role:m.role,content:m.content}));
+                msgs.pop(); msgs.push({ role: "user", content: parts });
+                const res = await fetch('https://api.anthropic.com/v1/messages', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerously-allow-browser': 'true' },
+                    body: JSON.stringify({ model: mod, system: prompt, max_tokens: 1024, messages: msgs })
+                });
+                if(!res.ok) throw new Error("API Error"); return (await res.json()).content[0].text;
+            }
+        }
+    </script>
+</body>
+</html>

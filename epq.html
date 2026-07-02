@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Seismic Predictor (Deep Analysis Edition)</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0f172a; color: #f8fafc;
+            max-width: 1000px; margin: 0 auto; padding: 20px;
+        }
+        h1 { color: #38bdf8; border-bottom: 2px solid #0284c7; padding-bottom: 10px; }
+        .disclaimer {
+            background-color: #451a03; color: #fde047; padding: 15px;
+            border-left: 5px solid #eab308; margin-bottom: 20px; font-size: 14px; line-height: 1.5;
+        }
+        .control-panel {
+            background: #1e293b; padding: 20px; border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3); margin-bottom: 20px; display: flex; align-items: center; gap: 15px;
+        }
+        select, button {
+            padding: 10px 15px; font-size: 16px; border: 1px solid #334155;
+            border-radius: 4px; background: #0f172a; color: white;
+        }
+        button {
+            background-color: #0284c7; font-weight: bold; cursor: pointer; transition: 0.3s; border: none;
+        }
+        button:hover { background-color: #0369a1; }
+        
+        .window-card {
+            background: #1e293b; padding: 20px; border-radius: 8px; margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5); border-top: 6px solid;
+        }
+        .level-extreme { border-color: #c026d3; } 
+        .level-high { border-color: #ef4444; }   
+        .level-elevated { border-color: #f59e0b; }
+        
+        .date-title { margin-top: 0; font-size: 1.3em; margin-bottom: 10px; }
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+        .tag { padding: 5px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; color: white; }
+        
+        .tag-syzygy { background: #475569; }
+        .tag-eclipse { background: #9333ea; }
+        .tag-paksha { background: #dc2626; font-size: 13px; text-transform: uppercase; border: 1px solid white;}
+        .tag-perigee { background: #2563eb; }
+        .tag-mars { background: #b91c1c; }
+        .tag-war { background: #ea580c; }
+        .tag-outer { background: #0d9488; }
+        .tag-gandanta { background: #be123c; border: 1px dotted white; }
+        .tag-nak { background: #854d0e; }
+        
+        .zone-info {
+            background: #020617; border-left: 4px solid #38bdf8; padding: 15px;
+            margin-top: 15px; border-radius: 4px; font-size: 14px; color: #bae6fd; line-height: 1.6;
+        }
+        .zone-modern { color: #facc15; font-weight: bold; font-size: 15px; margin-top: 8px; display: block;}
+        
+        .planet-data {
+            font-family: monospace; background: #0f172a; padding: 12px;
+            border-radius: 5px; font-size: 13px; color: #a3e635; margin-top: 15px; border: 1px solid #334155;
+        }
+        .summary { font-size: 14px; margin-top: 15px; color: #cbd5e1; line-height: 1.6; background: #334155; padding: 15px; border-radius: 6px; }
+        .summary ul { margin: 5px 0 0 0; padding-left: 20px; }
+        .summary li { margin-bottom: 8px; }
+        
+        .no-results {
+            background: #064e3b; color: #a7f3d0; padding: 15px;
+            border-radius: 8px; border-left: 6px solid #34d399; margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Ultimate Vedic Seismic Predictor <br><small style="font-size: 0.6em; color:#94a3b8;">Deep Analysis & Modern Tectonic Integration</small></h1>
+    
+    <div class="disclaimer">
+        <strong>Scientific & Ethical Disclaimer:</strong> This tool translates ancient Astrological elements into modern geological fault types. Geophysics proves that planets do not trigger localized earthquakes. This tool visualizes historical theories and should <strong>never</strong> be used for actual disaster evacuation or public panic.
+    </div>
+
+    <div class="control-panel">
+        <label for="yearSelect"><strong>Select Year to Analyze:</strong></label>
+        <select id="yearSelect"></select>
+        <button onclick="analyzeYear()">Calculate Sidereal Tension Windows</button>
+    </div>
+
+    <h2 id="statusMessage" style="color: #38bdf8;">Awaiting input...</h2>
+    <div id="results"></div>
+
+    <script>
+        const yearSelect = document.getElementById('yearSelect');
+        for (let i = 2024; i <= 2100; i++) {
+            yearSelect.appendChild(new Option(i, i));
+        }
+
+        // Logic remains exactly the same
+        function normalize(deg) {
+            let res = deg % 360;
+            if (res < 0) res += 360;
+            return res;
+        }
+
+        function checkAspect(deg1, deg2, orb) {
+            let diff = Math.abs(deg1 - deg2);
+            if (diff <= orb || diff >= 360 - orb) return "Conjunct";
+            if (Math.abs(diff - 90) <= orb || Math.abs(diff - 270) <= orb) return "Square";
+            if (Math.abs(diff - 180) <= orb) return "Opposite";
+            return null;
+        }
+
+        function isGandanta(degree) {
+            let mod = degree % 120;
+            return (mod <= 2.5 || mod >= 117.5); 
+        }
+
+        function getVolatileNakshatra(degree) {
+            if (degree >= 26.66 && degree <= 40.00) return "Krittika (The Cutter)";
+            if (degree >= 173.33 && degree <= 186.66) return "Chitra (The Tremor)";
+            if (degree >= 186.66 && degree <= 200.00) return "Svati (The Wind)";
+            if (degree >= 226.66 && degree <= 240.00) return "Jyeshtha (Deep Earth)";
+            if (degree >= 240.00 && degree <= 253.33) return "Mula (The Root)";
+            return false;
+        }
+
+        function getVarahamihiraZone(moonDegree) {
+            const mandalas = [
+                "Vayavya", "Agneya", "Agneya", "Aindra", "Vayavya", 
+                "Varuna", "Vayavya", "Agneya", "Varuna", "Agneya", 
+                "Agneya", "Vayavya", "Vayavya", "Vayavya", "Vayavya", 
+                "Agneya", "Aindra", "Aindra", "Varuna", "Varuna", 
+                "Aindra", "Aindra", "Aindra", "Varuna", "Agneya", 
+                "Varuna", "Varuna"
+            ];
+            
+            let nakshatraIndex = Math.floor(moonDegree / 13.3333);
+            let mandala = mandalas[nakshatraIndex];
+
+            if (mandala === "Vayavya") {
+                return {
+                    name: "Vāyavya (Wind) - Strike-Slip & Transform Faults",
+                    geology: "Plates grinding laterally past one another.",
+                    modern: "San Andreas Fault (California), North Anatolian Fault (Turkey), Alpine Fault (New Zealand), Enriquillo Fault (Haiti), Chaman Fault (Pakistan)."
+                };
+            } else if (mandala === "Agneya") {
+                return {
+                    name: "Āgneya (Fire) - Volcanic Arcs & Geothermal Zones",
+                    geology: "Magma displacement, divergent boundaries, and highly active volcanic faults.",
+                    modern: "Indonesia, Philippines, Tonga/Fiji, Italy/Mediterranean, Iceland, Hawaii, East African Rift."
+                };
+            } else if (mandala === "Aindra") {
+                return {
+                    name: "Aindra (Earth) - Continental Collision Zones",
+                    geology: "Massive continental plates colliding, creating mountain ranges and deep thrust faults.",
+                    modern: "The Himalayas (Nepal, India, Tibet), Zagros Mountains (Iran), The Alps, Hindu Kush (Afghanistan), Andes (Peru/Chile high altitudes)."
+                };
+            } else {
+                return {
+                    name: "Vāruṇa (Water) - Oceanic Subduction Zones",
+                    geology: "Oceanic plates diving under continents, creating tsunamigenic mega-thrust earthquakes.",
+                    modern: "Japan Trench (Tohoku/Noto), Cascadia (US Pacific NW), Peru-Chile Coast, Mariana Trench, Alaska/Aleutian Islands, Sumatra/Andaman Sea."
+                };
+            }
+        }
+
+        function getPlanets(date) {
+            const epoch = new Date(Date.UTC(2000, 0, 1, 12, 0, 0));
+            const d = (date - epoch) / 86400000;
+            const year = date.getFullYear();
+            const ayanamsa = 23.85 + ((year - 2000) * (50.3 / 3600));
+
+            return {
+                Sun: normalize((280.460 + 0.9856474 * d) - ayanamsa),
+                Moon: normalize((218.316 + 13.1763965 * d) - ayanamsa),
+                MoonAnomaly: normalize(134.963 + 13.064993 * d),
+                Node: normalize((125.045 - 0.0529539 * d) - ayanamsa), 
+                Mercury: normalize((252.251 + 4.092339 * d) - ayanamsa),
+                Venus: normalize((181.979 + 1.602130 * d) - ayanamsa),
+                Mars: normalize((355.433 + 0.524021 * d) - ayanamsa),
+                Jupiter: normalize((34.351 + 0.083091 * d) - ayanamsa),
+                Saturn: normalize((50.077 + 0.033460 * d) - ayanamsa),
+                Uranus: normalize((314.055 + 0.011731 * d) - ayanamsa),
+                Pluto: normalize((238.929 + 0.00396 * d) - ayanamsa)
+            };
+        }
+
+        function analyzeYear() {
+            const year = parseInt(yearSelect.value);
+            const resultsDiv = document.getElementById('results');
+            document.getElementById('statusMessage').innerText = `Calculating sidereal dynamics and modern tectonic zones for ${year}...`;
+            resultsDiv.innerHTML = "";
+            
+            let dailyData = [];
+            const orb = 6; 
+            const warOrb = 2; 
+            
+            for (let day = 1; day <= Math.floor((new Date(year, 11, 31) - new Date(year, 0, 0)) / 86400000); day++) {
+                let current = new Date(year, 0, day);
+                let p = getPlanets(current);
+                let data = { date: current, p: p, score: 0, tags: [], summary: [], isEclipse: false };
+                
+                let syzygy = checkAspect(p.Sun, p.Moon, orb);
+                if (syzygy === "Conjunct" || syzygy === "Opposite") {
+                    data.score += 2;
+                    let phase = syzygy === "Conjunct" ? "New Moon" : "Full Moon";
+                    let nearNode = (Math.abs(p.Sun - p.Node) <= 15) || (Math.abs(p.Sun - normalize(p.Node + 180)) <= 15);
+                    
+                    // DEEP EXPLANATION: Eclipses and Syzygy
+                    if (nearNode) {
+                        data.isEclipse = true;
+                        data.score += 5;
+                        data.tags.push(`<span class="tag tag-eclipse">${phase} Eclipse</span>`);
+                        data.summary.push(`<li><strong>Eclipse on the Nodal Axis:</strong> The Sun (solar core energy) and Moon (water/tidal energy) are in a perfect straight line with Earth, intersecting Rahu/Ketu. This perfect alignment creates a 'cosmic bottleneck', pulling Earth's lithosphere to its absolute maximum tidal stretch, deeply destabilizing locked fault lines.</li>`);
+                    } else {
+                        data.tags.push(`<span class="tag tag-syzygy">${phase}</span>`);
+                        data.summary.push(`<li><strong>Syzygy (Sun/Moon Alignment):</strong> The gravitational tug-of-war between the Sun and Moon creates peak 'Earth Tides', subtly lifting and dropping the Earth's crust.</li>`);
+                    }
+                }
+
+                // DEEP EXPLANATION: Lunar Perigee
+                if (p.MoonAnomaly < 15 || p.MoonAnomaly > 345) {
+                    if (syzygy) {
+                        data.score += 3;
+                        data.tags.push(`<span class="tag tag-perigee">Lunar Perigee</span>`);
+                        data.summary.push(`<li><strong>Lunar Perigee (Supermoon):</strong> The Moon has reached its absolute closest physical point to Earth in its elliptical orbit. Because gravity operates on the inverse-square law, this physical proximity exponentially amplifies the gravitational pull on the Earth, acting as a profound multiplier for tectonic stress.</li>`);
+                    }
+                }
+
+                // DEEP EXPLANATION: Mars & Saturn
+                let marsSaturn = checkAspect(p.Mars, p.Saturn, orb);
+                if (marsSaturn) {
+                    data.score += 4;
+                    data.tags.push(`<span class="tag tag-mars">Mars-Saturn ${marsSaturn}</span>`);
+                    data.summary.push(`<li><strong>Mars-Saturn Conflict:</strong> Saturn rules ancient, accumulated pressure, restriction, and deep rock structures. Mars rules kinetic energy, heat, and sudden fractures. When they form a hard geometric angle (${marsSaturn}), the built-up friction of Saturn is violently detonated by the spark of Mars.</li>`);
+                }
+
+                // DEEP EXPLANATION: Graha Yuddha
+                if (checkAspect(p.Mars, p.Mercury, warOrb) === "Conjunct") {
+                    data.score += 3;
+                    data.tags.push(`<span class="tag tag-war">Mars-Mercury War</span>`);
+                    data.summary.push(`<li><strong>Graha Yuddha (Planetary War):</strong> Mars is within 2 degrees of Mercury. Mercury governs the <em>Prithvi Tattva</em> (Earth element) and the physical crust. This close combat signifies acute trauma to the Earth's surface and tectonic communication pathways.</li>`);
+                }
+                
+                // DEEP EXPLANATION: Gandanta
+                if (isGandanta(p.Mars) || isGandanta(p.Sun)) {
+                    data.score += 4;
+                    data.tags.push(`<span class="tag tag-gandanta">Gandanta Activation</span>`);
+                    data.summary.push(`<li><strong>Gandanta (Elemental Knot) Crossed:</strong> A major trigger planet is crossing the exact void where a Water sign ends and a Fire sign begins (e.g., Pisces to Aries). This represents a catastrophic loss of structural integrity, a 'karmic unravelling' where elemental energies clash wildly.</li>`);
+                }
+
+                // DEEP EXPLANATION: Nakshatras
+                let marsNak = getVolatileNakshatra(p.Mars);
+                if (marsNak) {
+                    data.score += 3;
+                    data.tags.push(`<span class="tag tag-nak">Mars in ${marsNak.split(' ')[0]}</span>`);
+                    data.summary.push(`<li><strong>Volatile Nakshatra:</strong> Mars is transiting <em>${marsNak}</em>. Ancient seers identified these specific lunar mansions as highly conductive to seismic energy. For instance, Krittika represents a razor severing the earth, while Chitra and Svati represent violent wind/lateral shearing friction.</li>`);
+                }
+
+                if (checkAspect(p.Jupiter, p.Uranus, orb) || checkAspect(p.Jupiter, p.Pluto, orb)) {
+                    data.score += 2;
+                    data.tags.push(`<span class="tag tag-outer">Outer Planet Shift</span>`);
+                    data.summary.push(`<li><strong>Outer Planet Amplifier:</strong> Jupiter is applying a hard geometric aspect to Uranus (sudden shocks) or Pluto (deep subterranean upheaval), expanding the magnitude of the background tension.</li>`);
+                }
+
+                if (data.score >= 5) { 
+                    dailyData.push(data);
+                }
+            }
+
+            let eclipses = dailyData.filter(d => d.isEclipse);
+            for (let i = 0; i < eclipses.length - 1; i++) {
+                let diffDays = (eclipses[i+1].date - eclipses[i].date) / 86400000;
+                if (diffDays >= 13 && diffDays <= 16) {
+                    eclipses[i].tags.push(`<span class="tag tag-paksha">Paksha Grahana Sequence</span>`);
+                    eclipses[i].score += 5;
+                    eclipses[i].summary.push("<li><strong>Paksha Grahana (Dual Eclipse):</strong> This date initiates a terrifying 14-day window containing both a Solar and Lunar eclipse. The Earth does not have time to re-stabilize its electromagnetic field between the two gravitational 'squeezes', making this the most historically dangerous omen for mass devastation.</li>");
+                    
+                    eclipses[i+1].tags.push(`<span class="tag tag-paksha">Paksha Grahana Sequence</span>`);
+                    eclipses[i+1].score += 5;
+                    eclipses[i+1].summary.push("<li><strong>Paksha Grahana (Dual Eclipse):</strong> This date completes the 14-day dual eclipse cluster. The tectonic plates, having been subjected to two back-to-back maximum gravitational pulls without recovery time, are at their absolute peak vulnerability.</li>");
+                }
+            }
+
+            let finalWindows = [];
+            dailyData.sort((a,b) => a.date - b.date);
+
+            if (dailyData.length > 0) {
+                let currentWindow = [dailyData[0]];
+                for (let i = 1; i < dailyData.length; i++) {
+                    let prevDate = currentWindow[currentWindow.length - 1].date;
+                    let currDate = dailyData[i].date;
+                    if ((currDate - prevDate) / 86400000 <= 6) {
+                        currentWindow.push(dailyData[i]);
+                    } else {
+                        let peakDay = currentWindow.reduce((max, day) => day.score > max.score ? day : max, currentWindow[0]);
+                        finalWindows.push(peakDay);
+                        currentWindow = [dailyData[i]];
+                    }
+                }
+                let peakDay = currentWindow.reduce((max, day) => day.score > max.score ? day : max, currentWindow[0]);
+                finalWindows.push(peakDay);
+            }
+
+            document.getElementById('statusMessage').innerText = finalWindows.length > 0 
+                ? `Identified ${finalWindows.length} Significant Tension Windows in ${year}.`
+                : `No Extreme Tension Windows detected for ${year}.`;
+
+            if (finalWindows.length === 0) {
+                resultsDiv.innerHTML = `<div class="no-results"><strong>Stable Period:</strong> The algorithm did not detect overlapping stress points for ${year}.</div>`;
+                return;
+            }
+
+            finalWindows.sort((a,b) => a.date - b.date).forEach(win => {
+                let levelClass = win.score >= 15 ? 'level-extreme' : (win.score >= 10 ? 'level-high' : 'level-elevated');
+                let levelText = win.score >= 15 ? 'EXTREME TENSION (Score: ' + win.score + ')' : 
+                               (win.score >= 10 ? 'HIGH TENSION (Score: ' + win.score + ')' : 'ELEVATED TENSION (Score: ' + win.score + ')');
+                let titleColor = win.score >= 15 ? '#c026d3' : (win.score >= 10 ? '#ef4444' : '#f59e0b');
+
+                let seismicZone = getVarahamihiraZone(win.p.Moon);
+                
+                // Deduplicate summary bullets in case of overlap
+                let uniqueSummary = [...new Set(win.summary)];
+
+                resultsDiv.innerHTML += `
+                    <div class="window-card ${levelClass}">
+                        <h3 class="date-title" style="color: ${titleColor};">Peak Alignment: ${win.date.toDateString()} <br><small style="font-size: 0.75em; color: #94a3b8;">[${levelText}]</small></h3>
+                        <div class="tags">${win.tags.join('')}</div>
+                        
+                        <div class="summary">
+                            <strong style="color:#38bdf8;">The Cosmic Anatomy of this Trigger:</strong>
+                            <ul>${uniqueSummary.join('')}</ul>
+                        </div>
+                        
+                        <div class="zone-info">
+                            <strong>Astrological Trigger Zone:</strong> <em>${seismicZone.name}</em><br>
+                            <strong>Geological Equivalent:</strong> ${seismicZone.geology}<br>
+                            <span class="zone-modern">🌍 High-Risk Modern Locations: ${seismicZone.modern}</span>
+                        </div>
+
+                        <div class="planet-data">
+                            <em>*Degrees adjusted for Lahiri Ayanamsa (Sidereal)*</em><br><br>
+                            <strong>Luminaries:</strong> Sun: ${win.p.Sun.toFixed(1)}° | Moon: ${win.p.Moon.toFixed(1)}° | Node: ${win.p.Node.toFixed(1)}°<br>
+                            <strong>Triggers:</strong> Mars: ${win.p.Mars.toFixed(1)}° | Saturn: ${win.p.Saturn.toFixed(1)}° | Mercury: ${win.p.Mercury.toFixed(1)}°
+                        </div>
+                    </div>
+                `;
+            });
+        }
+    </script>
+</body>
+</html>

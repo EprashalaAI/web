@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>माझे वैयक्तिक पंचांग आणि विज्ञान - गुरुजी</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.8.0/suncalc.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Baloo+Bhai+2:wght@400;600;700&family=Mukta:wght@300;400;600;700&display=swap');
+        
+        body { 
+            font-family: 'Mukta', sans-serif; 
+            background-color: #f5f3ff; 
+            background-image: url('https://www.transparenttextures.com/patterns/cream-paper.png');
+        }
+        h1, h2, h3, h4, .title-font { font-family: 'Baloo Bhai 2', sans-serif; line-height: 1.4; }
+        
+        .purple-gradient { background: linear-gradient(135deg, #7e22ce 0%, #4338ca 100%); }
+        .card { background: white; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); border-radius: 1rem; border-top: 4px solid #7e22ce; }
+        .science-box { background: #f0fdf4; border-left: 4px solid #16a34a; }
+        .danger-science-box { background: #fef2f2; border-left: 4px solid #dc2626; }
+        
+        .suggestions-box {
+            position: absolute; top: 100%; left: 0; right: 0; background: white;
+            border: 1px solid #7e22ce; border-radius: 0.5rem; z-index: 50; max-height: 200px;
+            overflow-y: auto; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); display: none;
+        }
+        .suggestion-item { padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #e5e7eb; }
+        .suggestion-item:hover { background-color: #f3e8ff; color: #7e22ce; font-weight: bold; }
+        
+        .loader {
+            border: 4px solid #e0e7ff; border-top: 4px solid #7e22ce; border-radius: 50%;
+            width: 40px; height: 40px; animation: spin 1s linear infinite; display: none; margin: 0 auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="text-gray-800 min-h-screen pb-10">
+
+    <header class="purple-gradient text-white py-6 shadow-lg mb-8 text-center relative">
+        <div class="container mx-auto px-4">
+            <p class="text-yellow-200 text-lg md:text-xl font-bold mb-3 tracking-widest drop-shadow-md">।। श्री गणेशाय नमः ।।</p>
+            <h1 class="text-4xl md:text-5xl font-bold mb-2">माझे वैयक्तिक पंचांग</h1>
+            <p class="text-purple-200 text-lg">।। ताराबळ आणि चंद्रबळ आधारित अचूक मार्गदर्शन ।।</p>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-4 max-w-6xl">
+        
+        <a href="panchang.html" class="text-purple-700 font-bold mb-4 inline-block hover:underline">← मुख्य पंचांगकडे परत जा</a>
+
+        <!-- १. जन्म माहिती सेक्शन -->
+        <div class="card p-6 mb-8">
+            <h2 class="text-2xl font-bold text-purple-800 title-font mb-4 border-b border-purple-100 pb-2">१. तुमची जन्म माहिती</h2>
+            
+            <div class="flex gap-4 mb-6">
+                <button onclick="switchTab('calc')" id="btn-calc" class="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold shadow">जन्मतारखेवरून काढा</button>
+                <button onclick="switchTab('manual')" id="btn-manual" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-bold shadow hover:bg-gray-300">नक्षत्र/रास स्वतः निवडा</button>
+            </div>
+
+            <!-- Tab: Calculate -->
+            <div id="tab-calc" class="space-y-4 bg-purple-50 p-4 rounded-lg border border-purple-100">
+                <p class="text-sm text-gray-700 font-semibold mb-2">तुमची अचूक जन्म तारीख, वेळ आणि जन्मस्थान प्रविष्ट करा:</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <input type="date" id="bDate" class="px-4 py-3 border rounded-lg outline-none focus:ring-2 focus:ring-purple-500">
+                    <input type="time" id="bTime" class="px-4 py-3 border rounded-lg outline-none focus:ring-2 focus:ring-purple-500">
+                    <div class="relative text-left">
+                        <input type="text" id="bCity" placeholder="जन्मस्थान (उदा. Mumbai)" autocomplete="off" class="w-full px-4 py-3 border rounded-lg outline-none focus:ring-2 focus:ring-purple-500">
+                        <div id="bCitySuggestions" class="suggestions-box"></div>
+                    </div>
+                </div>
+                <button onclick="calculateBirthDetails()" class="mt-4 bg-purple-700 text-white px-8 py-3 rounded-lg font-bold hover:bg-purple-800">माझे नक्षत्र व रास शोधा</button>
+                <p id="birth-error" class="text-red-500 font-bold hidden mt-2"></p>
+            </div>
+
+            <!-- Tab: Manual -->
+            <div id="tab-manual" class="space-y-4 bg-purple-50 p-4 rounded-lg border border-purple-100 hidden">
+                <p class="text-sm text-gray-700 font-semibold mb-2">जर तुम्हाला तुमचे जन्म नक्षत्र आणि रास माहीत असेल, तर थेट निवडा:</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <select id="manualNakshatra" class="px-4 py-3 border rounded-lg outline-none focus:ring-2 focus:ring-purple-500">
+                        <option value="">जन्म नक्षत्र निवडा</option>
+                    </select>
+                    <select id="manualRashi" class="px-4 py-3 border rounded-lg outline-none focus:ring-2 focus:ring-purple-500">
+                        <option value="">जन्म रास (चंद्र रास) निवडा</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Result Box -->
+            <div id="birth-result" class="mt-6 hidden bg-green-50 p-4 rounded-lg border border-green-200 text-center shadow-sm">
+                <h3 class="text-xl text-green-800 font-bold mb-2">तुमचे अचूक जन्म तपशील:</h3>
+                <p class="text-lg">जन्म नक्षत्र: <span id="res-bnak" class="font-bold text-green-900 text-2xl"></span></p>
+                <p class="text-lg mt-1">जन्म रास: <span id="res-brashi" class="font-bold text-green-900 text-2xl"></span></p>
+            </div>
+        </div>
+
+        <!-- २. पंचांग तपासणी सेक्शन -->
+        <div id="check-section" class="card p-6 border-t-4 border-indigo-600 mb-8 opacity-50 pointer-events-none transition-opacity duration-300">
+            <h2 class="text-2xl font-bold text-indigo-800 title-font mb-4 border-b border-indigo-100 pb-2">२. तुमचा आजचा दिवस तपासा</h2>
+            <p class="mb-4 text-gray-600 font-medium">कोणत्याही दिवसाचे तुमच्यासाठीचे वैयक्तिक शुभ/अशुभ फळ पाहण्यासाठी तारीख आणि सध्याचे शहर टाका:</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <input type="date" id="tDate" class="px-4 py-3 border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-indigo-50">
+                <div class="relative text-left">
+                    <input type="text" id="tCity" placeholder="सध्याचे शहर..." autocomplete="off" class="w-full px-4 py-3 border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-indigo-50">
+                    <div id="tCitySuggestions" class="suggestions-box"></div>
+                </div>
+                <button onclick="checkPersonalPanchang()" class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-indigo-700 shadow-md">माझे वैयक्तिक पंचांग पहा</button>
+            </div>
+            <p id="check-error" class="text-red-500 mt-2 font-bold hidden"></p>
+        </div>
+
+        <!-- ३. मुख्य निष्कर्ष आणि पंचांग -->
+        <div id="final-results" class="hidden space-y-6">
+            
+            <div class="text-center mb-6 border-b-2 border-purple-200 pb-4">
+                <h2 id="display-date-city" class="text-3xl font-bold text-purple-700 title-font mb-2"></h2>
+            </div>
+
+            <!-- वैयक्तिक ग्रहबळ -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div id="tarabala-card" class="p-6 rounded-xl border-l-8 shadow-md bg-white">
+                    <h3 class="text-xl font-bold mb-2 flex items-center gap-2 title-font"><span id="tb-icon"></span> ताराबळ (Star Resonance)</h3>
+                    <p class="text-gray-700 mb-2">आजचे नक्षत्र: <strong id="daily-nak"></strong></p>
+                    <div class="p-3 rounded-lg mb-2" id="tb-bg">
+                        <p class="text-lg font-bold" id="tb-result"></p>
+                        <p class="text-sm mt-1" id="tb-desc"></p>
+                    </div>
+                    <p class="text-xs text-gray-700 mt-2"><strong>🔬 विज्ञान:</strong> <span id="tb-science"></span></p>
+                </div>
+
+                <div id="chandrabala-card" class="p-6 rounded-xl border-l-8 shadow-md bg-white">
+                    <h3 class="text-xl font-bold mb-2 flex items-center gap-2 title-font"><span id="cb-icon"></span> चंद्रबळ (Lunar Influence)</h3>
+                    <p class="text-gray-700 mb-2">आजची चंद्र रास: <strong id="daily-rashi"></strong></p>
+                    <div class="p-3 rounded-lg mb-2" id="cb-bg">
+                        <p class="text-lg font-bold" id="cb-result"></p>
+                        <p class="text-sm mt-1" id="cb-desc"></p>
+                    </div>
+                    <p class="text-xs text-gray-700 mt-2"><strong>🔬 विज्ञान:</strong> <span id="cb-science"></span></p>
+                </div>
+            </div>
+
+            <!-- नवीन: पंचांग आणि मानवी शरीरशास्त्र (Bio-Physics of Panchang) -->
+            <div class="card p-6 rounded-xl bg-blue-50 border-l-4 border-blue-600 mb-6 shadow-sm">
+                <h3 class="text-2xl font-bold text-blue-900 title-font mb-3 border-b border-blue-200 pb-2">🧬 पंचांग आणि तुमचे शरीरशास्त्र (Bio-Cosmic Resonance)</h3>
+                <p class="text-sm text-gray-700 mb-4">आजची तिथी, वार आणि नक्षत्र तुमच्या शरीरातील तीन मुख्य घटकांवर (दोष आणि तत्त्व) कसा प्रभाव टाकत आहेत, याचे सखोल खगोलीय विज्ञान:</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-white p-4 rounded border border-blue-100 shadow-sm">
+                        <h4 class="text-blue-800 font-bold mb-1">💧 जल तत्त्व (Emotions)</h4>
+                        <p class="text-sm mb-2">आजची तिथी: <strong id="bio-tithi"></strong></p>
+                        <p class="text-xs text-gray-600"><strong>विज्ञान:</strong> तिथी चंद्र आणि सूर्याच्या अंतरावरून ठरते. याचा थेट प्रभाव शरीरातील ७०% पाण्यावर (Hydration/Blood plasma) आणि 'पीनिअल ग्रंथी'वर (Pineal Gland) होतो. हे तुमचे आजचे भावनिक संतुलन (Emotional Stability) ठरवते.</p>
+                    </div>
+                    <div class="bg-white p-4 rounded border border-blue-100 shadow-sm">
+                        <h4 class="text-red-800 font-bold mb-1">🔥 अग्नी तत्त्व (Metabolism)</h4>
+                        <p class="text-sm mb-2">आजचा वार: <strong id="bio-vaar"></strong></p>
+                        <p class="text-xs text-gray-600"><strong>विज्ञान:</strong> वार ग्रहांच्या ऊर्जेचे प्रतिनिधित्व करतो. याचा परिणाम तुमच्या पचनसंस्थेवर (Digestive Fire/Metabolism) आणि शारीरिक ऊर्जेवर (Solar Plexus) होतो. यामुळे आजचा तुमचा स्टॅमिना ठरतो.</p>
+                    </div>
+                    <div class="bg-white p-4 rounded border border-blue-100 shadow-sm">
+                        <h4 class="text-green-800 font-bold mb-1">🌬️ वायू तत्त्व (Nervous System)</h4>
+                        <p class="text-sm mb-2">आजचे नक्षत्र: <strong id="bio-nak"></strong></p>
+                        <p class="text-xs text-gray-600"><strong>विज्ञान:</strong> नक्षत्र हे ताऱ्यांच्या प्रकाशाची फ्रिक्वेन्सी आहे. याचा परिणाम मेंदूतील 'न्यूरल पाथवेज' (Neural Pathways) आणि श्वासोच्छवासावर (Vata) होतो. हे तुमची निर्णयक्षमता (Focus) ठरवते.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- मुख्य दिवसाचे पंचांग -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
+                    <h3 class="text-purple-700 font-bold mb-2 border-b border-purple-100 pb-1">सूर्य व चंद्र काळ</h3>
+                    <p class="text-sm mb-1">सूर्योदय: <br><span id="r-sunrise" class="font-bold"></span></p>
+                    <p class="text-sm mb-1">सूर्यास्त: <br><span id="r-sunset" class="font-bold"></span></p>
+                    <p class="text-sm mb-1 text-blue-700">चंद्रोदय: <br><span id="r-moonrise" class="font-bold"></span></p>
+                    <p class="text-sm text-blue-700">चंद्रास्त: <br><span id="r-moonset" class="font-bold"></span></p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
+                    <h3 class="text-purple-700 font-bold mb-2 border-b border-purple-100 pb-1">पंचांग अंग</h3>
+                    <p class="text-sm mb-1">पक्ष: <span id="r-paksha" class="font-bold"></span></p>
+                    <p class="text-sm mb-1">तिथी: <span id="r-tithi" class="font-bold"></span></p>
+                    <p class="text-sm mb-1">नक्षत्र: <span id="r-nakshatra" class="font-bold"></span></p>
+                    <p class="text-sm mb-1">योग: <span id="r-yoga" class="font-bold"></span></p>
+                    <p class="text-sm">वार: <span id="r-vaar" class="font-bold"></span></p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
+                    <h3 class="text-purple-700 font-bold mb-2 border-b border-purple-100 pb-1">राशी आणि करण</h3>
+                    <p class="text-sm mb-1">सूर्य रास: <span id="r-sunsign" class="font-bold"></span></p>
+                    <p class="text-sm mb-1">चंद्र रास: <span id="r-moonsign" class="font-bold"></span></p>
+                    <p class="text-sm mb-1">१ले करण: <span id="r-karana1" class="font-bold"></span></p>
+                    <p class="text-sm">२रे करण: <span id="r-karana2" class="font-bold"></span></p>
+                </div>
+                <div class="bg-orange-50 p-4 rounded-xl shadow-sm border border-red-300 text-center">
+                    <h3 class="text-red-700 font-bold mb-2 border-b border-red-200 pb-1">विशेष योग</h3>
+                    <p class="text-sm font-medium mb-1">भद्रा: <br><span id="r-bhadra" class="font-bold"></span></p>
+                    <p class="text-sm font-medium mt-2">पंचक: <br><span id="r-panchak" class="font-bold"></span></p>
+                </div>
+            </div>
+
+            <!-- नवीन: दिशाशूल आणि राहुवास -->
+            <div class="card p-6 rounded-xl border-l-8 border-yellow-500 shadow-md bg-white mt-6">
+                <h3 class="text-2xl font-bold mb-2 flex items-center gap-2 title-font text-yellow-800">🧭 दिशाशूल आणि प्रवास विज्ञान (Travel Constraints)</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div class="bg-yellow-50 p-4 rounded border border-yellow-200">
+                        <p class="text-lg font-bold text-red-700">❌ दिशाशूल (निषिद्ध दिशा): <span id="disha-shool"></span></p>
+                        <p class="text-sm text-gray-700 mt-2"><strong>शास्त्र नियम:</strong> आज या दिशेला प्रवास करू नये. अत्यंत आवश्यक असल्यास घरातून निघताना गूळ खाऊन किंवा आरशात तोंड पाहून बाहेर पडावे.</p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded border border-gray-200">
+                        <p class="text-sm text-gray-800"><strong>🔬 क्वांटम विज्ञान (Geomagnetism):</strong> <span id="disha-science"></span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- मुहूर्त आणि अशुभ काळ -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                <div class="bg-green-50 p-5 rounded-xl border-t-4 border-green-500 shadow-md">
+                    <h3 class="text-xl text-green-800 font-bold mb-3 title-font">शुभ काळ (अभिजित आणि चौघडिया)</h3>
+                    <div id="personal-warning-good" class="hidden mb-3 p-3 bg-yellow-100 text-yellow-900 rounded-lg border border-yellow-400 text-sm font-bold shadow-inner">
+                        ⚠️ वैयक्तिक इशारा: जगासाठी हा शुभ काळ असला तरी, आज तुमचे ताराबळ/चंद्रबळ कमजोर असल्याने या काळातही मोठी जोखीम घेऊ नका.
+                    </div>
+                    <div class="bg-white p-3 rounded-lg border border-green-200 mb-3 shadow-sm">
+                        <p class="font-bold text-green-800 border-b border-green-100 pb-1">अभिजित मुहूर्त: <br><span id="t-abhijit" class="text-gray-800 font-normal"></span></p>
+                    </div>
+                    <div id="choghadiya-list" class="space-y-3"></div>
+                </div>
+
+                <div class="bg-red-50 p-5 rounded-xl border-t-4 border-red-500 shadow-md">
+                    <h3 class="text-xl text-red-800 font-bold mb-3 title-font">अशुभ काळ (सर्वांसाठी वर्ज्य)</h3>
+                    <div id="personal-warning-bad" class="hidden mb-3 p-3 bg-red-100 text-red-900 rounded-lg border border-red-400 text-sm font-bold shadow-inner">
+                        🚨 महा-अशुभ इशारा: आज तुमचे वैयक्तिक ग्रहबळ कमजोर आहे आणि त्यात हे अशुभ काळ आल्याने धोक्याची पातळी दुप्पट झाली आहे! अत्यंत सावध राहा.
+                    </div>
+                    <div class="space-y-3">
+                        <div class="bg-white p-3 rounded border border-red-200"><span class="font-bold text-red-800">राहु काळ:</span> <span id="t-rahu"></span></div>
+                        <div class="bg-white p-3 rounded border border-red-200"><span class="font-bold text-red-800">यमगंड:</span> <span id="t-yama"></span></div>
+                        <div class="bg-white p-3 rounded border border-red-200"><span class="font-bold text-red-800">गुलिक काळ:</span> <span id="t-gulika"></span></div>
+                        <div class="bg-white p-3 rounded border border-red-200"><span class="font-bold text-red-800">दुर्मुहूर्त:</span> <span id="t-duru"></span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- अंतिम निष्कर्ष -->
+            <div class="card p-6 rounded-xl bg-purple-900 text-white shadow-xl border-b-8 border-purple-400 mt-6">
+                <h3 class="text-3xl font-bold title-font mb-4 text-purple-200 text-center border-b border-purple-700 pb-3">तुमचा आजचा वैयक्तिक निष्कर्ष</h3>
+                
+                <p id="final-verdict" class="text-xl font-medium leading-relaxed mb-4 text-center"></p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div class="bg-purple-800 p-4 rounded-lg border border-purple-600">
+                        <h4 class="text-green-300 font-bold text-lg mb-2">✅ आज काय करावे (Do's):</h4>
+                        <p id="final-dos" class="text-purple-100 text-sm leading-relaxed"></p>
+                    </div>
+                    <div class="bg-purple-800 p-4 rounded-lg border border-purple-600">
+                        <h4 class="text-red-300 font-bold text-lg mb-2">❌ आज काय टाळावे (Don'ts):</h4>
+                        <p id="final-donts" class="text-purple-100 text-sm leading-relaxed"></p>
+                        <p id="final-remedy" class="mt-3 text-yellow-300 font-bold text-sm hidden bg-purple-900 p-2 rounded border border-yellow-600/50"></p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const NAKSHATRAS = ["अश्विनी", "भरणी", "कृत्तिका", "रोहिणी", "मृगशीर्ष", "आर्द्रा", "पुनर्वसु", "पुष्य", "आश्लेषा", "मघा", "पूर्वा फाल्गुनी", "उत्तरा फाल्गुनी", "हस्त", "चित्रा", "स्वाती", "विशाखा", "अनुराधा", "ज्येष्ठा", "मूळ", "पूर्वाषाढा", "उत्तराषाढा", "श्रवण", "धनिष्ठा", "शततारका", "पूर्वा भाद्रपदा", "उत्तरा भाद्रपदा", "रेवती"];
+        const RASHIS = ["मेष", "वृषभ", "मिथुन", "कर्क", "सिंह", "कन्या", "तूळ", "वृश्चिक", "धनु", "मकर", "कुंभ", "मीन"];
+        const TITHIS = ["प्रतिपदा", "द्वितीया", "तृतीया", "चतुर्थी", "पंचमी", "षष्ठी", "सप्तमी", "अष्टमी", "नवमी", "दशमी", "एकादशी", "द्वादशी", "त्रयोदशी", "चतुर्दशी", "पौर्णिमा", "प्रतिपदा", "द्वितीया", "तृतीया", "चतुर्थी", "पंचमी", "षष्ठी", "सप्तमी", "अष्टमी", "नवमी", "दशमी", "एकादशी", "द्वादशी", "त्रयोदशी", "चतुर्दशी", "अमावास्या"];
+        const YOGAS = ["विष्कंभ", "प्रीती", "आयुष्मान", "सौभाग्य", "शोभन", "अतिगंड", "सुकर्मा", "धृती", "शूल", "गंड", "वृद्धी", "ध्रुव", "व्याघात", "हर्षण", "वज्र", "सिद्धी", "व्यतिपात", "वरीयान", "परिघ", "शिव", "सिद्ध", "साध्य", "शुभ", "शुक्ल", "ब्रह्म", "ऐंद्र", "वैधृती"];
+        const KARANAS = ["बव", "बालव", "कौलव", "तैतिल", "गर", "वणिज", "विष्टी", "शकुनी", "चतुष्पाद", "नाग", "किंस्तुघ्न"];
+        const VAAR = ["रविवार", "सोमवार", "मंगळवार", "बुधवार", "गुरुवार", "शुक्रवार", "शनिवार"];
+        const CHOGHADIYA_NAMES = ["उद्वेग", "चल", "लाभ", "अमृत", "काळ", "शुभ", "रोग"];
+        
+        // दिशाशूल डेटाबेस
+        const DISHA_SHOOL = {
+            0: { dir: "पश्चिम (West)", science: "रविवारी सूर्याची इलेक्ट्रोमॅग्नेटिक ऊर्जा अत्यंत प्रबळ असते. पश्चिमेकडे प्रवास केल्याने पृथ्वीच्या जिओ-मॅग्नेटिक ग्रिडशी (Geomagnetic grid) तुमचा 'फेस अँगल' (Phase angle) चुकतो, ज्यामुळे अंतर्गत कानातील 'व्हेस्टिब्युलर सिस्टीम'वर (Vestibular system) सूक्ष्म ताण येतो व दिशाभूल होऊ शकते." },
+            1: { dir: "पूर्व (East)", science: "सोमवारी चंद्राचे गुरुत्वाकर्षण आणि पृथ्वीच्या 'कोरिओलिस इफेक्ट' (Coriolis Effect) मुळे पूर्वेकडील प्रवास मानवी रक्ताभिसरणातील पाण्याचे संतुलन (Hydration equilibrium) बिघडवतो." },
+            2: { dir: "उत्तर (North)", science: "मंगळवारी मंगळ ग्रहाचे इन्फ्रारेड रेडिएशन उत्तरेकडील चुंबकीय ध्रुवाकडे खेचले जाते. या दिशेने प्रवास केल्यास रक्तातील हिमोग्लोबिनमधील लोहावर (Iron) परिणाम होऊन चिडचिड आणि अपघात होऊ शकतात." },
+            3: { dir: "उत्तर (North)", science: "बुधवारी बुध ग्रहाच्या लहरी उत्तरेला अस्थिरता निर्माण करतात. मज्जासंस्थेवर (Nervous system) ताण येतो." },
+            4: { dir: "दक्षिण (South)", science: "गुरुवारी गुरु ग्रहाच्या लहरींमुळे दक्षिणेकडील चुंबकीय क्षेत्र (Magnetic Flux) अत्यंत जड होते. प्रवासात सुस्तपणा आणि थकवा येतो." },
+            5: { dir: "पश्चिम (West)", science: "शुक्रवारी शुक्राचे आकर्षण पश्चिमेला असते. पृथ्वीच्या इलेक्ट्रोमॅग्नेटिक क्षेत्राच्या विरुद्ध जाण्याने 'बायो-रिदम' (Bio-rhythm) बिघडतो." },
+            6: { dir: "पूर्व (East)", science: "शनिवारी शनीचे गुरुत्वाकर्षण आणि जडत्व पूर्वेला असते. या दिशेने प्रवास केल्यास शरीराची 'कायनेटिक एनर्जी' (Kinetic Energy) मंदावते आणि प्रवासात विलंब किंवा अपघात होतात." }
+        };
+
+        let userBirthNakshatra = "";
+        let userBirthRashi = "";
+        let bLat = null, bLon = null;
+        let tLat = null, tLon = null;
+
+        window.onload = () => {
+            const nSelect = document.getElementById('manualNakshatra');
+            NAKSHATRAS.forEach(n => { nSelect.add(new Option(n, n)); });
+            
+            const rSelect = document.getElementById('manualRashi');
+            RASHIS.forEach(r => { rSelect.add(new Option(r, r)); });
+
+            document.getElementById('tDate').valueAsDate = new Date();
+            
+            nSelect.addEventListener('change', updateManualSelection);
+            rSelect.addEventListener('change', updateManualSelection);
+            
+            setupAutocomplete('bCity', 'bCitySuggestions', (lat, lon, name) => { bLat = lat; bLon = lon; document.getElementById('bCity').value = name; });
+            setupAutocomplete('tCity', 'tCitySuggestions', (lat, lon, name) => { tLat = lat; tLon = lon; document.getElementById('tCity').value = name; });
+
+            if(localStorage.getItem('my_nakshatra')) {
+                userBirthNakshatra = localStorage.getItem('my_nakshatra');
+                userBirthRashi = localStorage.getItem('my_rashi');
+                document.getElementById('res-bnak').innerText = userBirthNakshatra;
+                document.getElementById('res-brashi').innerText = userBirthRashi;
+                document.getElementById('birth-result').classList.remove('hidden');
+                enableCheckSection();
+            }
+        };
+
+        function switchTab(tab) {
+            document.getElementById('tab-calc').classList.add('hidden');
+            document.getElementById('tab-manual').classList.add('hidden');
+            document.getElementById('btn-calc').classList.replace('bg-purple-600', 'bg-gray-200');
+            document.getElementById('btn-calc').classList.replace('text-white', 'text-gray-700');
+            document.getElementById('btn-manual').classList.replace('bg-purple-600', 'bg-gray-200');
+            document.getElementById('btn-manual').classList.replace('text-white', 'text-gray-700');
+
+            document.getElementById('tab-' + tab).classList.remove('hidden');
+            document.getElementById('btn-' + tab).classList.replace('bg-gray-200', 'bg-purple-600');
+            document.getElementById('btn-' + tab).classList.replace('text-gray-700', 'text-white');
+        }
+
+        function updateManualSelection() {
+            userBirthNakshatra = document.getElementById('manualNakshatra').value;
+            userBirthRashi = document.getElementById('manualRashi').value;
+            
+            if (userBirthNakshatra && userBirthRashi) {
+                localStorage.setItem('my_nakshatra', userBirthNakshatra);
+                localStorage.setItem('my_rashi', userBirthRashi);
+                document.getElementById('res-bnak').innerText = userBirthNakshatra;
+                document.getElementById('res-brashi').innerText = userBirthRashi;
+                document.getElementById('birth-result').classList.remove('hidden');
+                enableCheckSection();
+            }
+        }
+
+        function setupAutocomplete(inputId, suggestionId, callback) {
+            let timeout = null;
+            const input = document.getElementById(inputId);
+            const box = document.getElementById(suggestionId);
+            
+            input.addEventListener('input', function() {
+                clearTimeout(timeout);
+                const query = this.value.trim();
+                if(query.length < 3) { box.style.display = 'none'; return; }
+                
+                timeout = setTimeout(async () => {
+                    try {
+                        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&addressdetails=1`);
+                        const data = await res.json();
+                        box.innerHTML = '';
+                        if(data.length > 0) {
+                            data.forEach(item => {
+                                const div = document.createElement('div');
+                                div.className = 'suggestion-item';
+                                const state = item.address.state ? `, ${item.address.state}` : '';
+                                const country = item.address.country ? `, ${item.address.country}` : '';
+                                const fullName = `${item.name}${state}${country}`;
+                                div.innerText = fullName;
+                                div.onclick = () => {
+                                    callback(parseFloat(item.lat), parseFloat(item.lon), fullName);
+                                    box.style.display = 'none';
+                                };
+                                box.appendChild(div);
+                            });
+                            box.style.display = 'block';
+                        }
+                    } catch(e) {}
+                }, 600);
+            });
+            document.addEventListener('click', (e) => { if(e.target !== input && e.target !== box) box.style.display = 'none'; });
+        }
+
+        function getVedicDetails(date, lat, lon) {
+            const times = SunCalc.getTimes(date, lat, lon);
+            const jd = (date.getTime() / 86400000) + 2440587.5;
+            const d = jd - 2451545.0; 
+            
+            let L_sun = (280.459 + 0.98564736 * d) % 360;
+            let g_sun = (357.529 + 0.98560028 * d) % 360;
+            let sun_true = (L_sun + 1.915 * Math.sin(g_sun * Math.PI/180) + 0.020 * Math.sin(2 * g_sun * Math.PI/180)) % 360;
+            if(sun_true < 0) sun_true += 360;
+
+            let L_moon = (218.316 + 13.1763964 * d) % 360;
+            let M_moon = (134.963 + 13.064993 * d) % 360;
+            let moon_true = (L_moon + 6.289 * Math.sin(M_moon * Math.PI/180) - 1.274 * Math.sin((L_moon - L_sun) * 2 * Math.PI/180 - M_moon * Math.PI/180)) % 360;
+            if(moon_true < 0) moon_true += 360;
+
+            const ayanamsa = 24.11 + ((date.getFullYear() - 2024) * 0.01396);
+            let sun_nirayana = (sun_true - ayanamsa + 360) % 360;
+            let moon_nirayana = (moon_true - ayanamsa + 360) % 360;
+
+            let diff = moon_nirayana - sun_nirayana;
+            if (diff < 0) diff += 360;
+
+            let tithiIndex = Math.floor(diff / 12);
+            let nakshatraIndex = Math.floor(moon_nirayana / (360/27));
+            let moonSignIndex = Math.floor(moon_nirayana / 30);
+            let sunSignIndex = Math.floor(sun_nirayana / 30);
+            let yogaIndex = Math.floor(((sun_nirayana + moon_nirayana) % 360) / (360/27));
+            
+            let karanaIndex = Math.floor(diff / 6);
+            let k1_name, k2_name;
+            if (karanaIndex === 0) { k1_name = "किंस्तुघ्न"; k2_name = "बव"; }
+            else if (karanaIndex >= 57) {
+                let endKaranas = ["शकुनी", "चतुष्पाद", "नाग", "किंस्तुघ्न"];
+                k1_name = endKaranas[karanaIndex - 57];
+                k2_name = (karanaIndex === 59) ? "किंस्तुघ्न" : endKaranas[karanaIndex - 56];
+            } else {
+                k1_name = KARANAS[(karanaIndex - 1) % 7];
+                k2_name = KARANAS[karanaIndex % 7];
+            }
+            
+            return { 
+                nakshatra: NAKSHATRAS[nakshatraIndex], 
+                rashi: RASHIS[moonSignIndex],
+                tithi: TITHIS[tithiIndex],
+                paksha: tithiIndex < 15 ? "शुक्ल पक्ष" : "कृष्ण पक्ष",
+                yoga: YOGAS[yogaIndex],
+                karana1: k1_name,
+                karana2: k2_name,
+                sunSign: RASHIS[sunSignIndex],
+                dayOfWeek: date.getDay(),
+                vaar: VAAR[date.getDay()],
+                times: times
+            };
+        }
+
+        function calculateBirthDetails() {
+            const d = document.getElementById('bDate').value;
+            const t = document.getElementById('bTime').value;
+            if(!d || !t || !bLat) { 
+                document.getElementById('birth-error').innerText = "तारीख, वेळ आणि शहर भरा."; 
+                document.getElementById('birth-error').classList.remove('hidden'); return; 
+            }
+            document.getElementById('birth-error').classList.add('hidden');
+
+            const [year, month, day] = d.split('-');
+            const [hour, min] = t.split(':');
+            
+            const birthDate = new Date(year, month-1, day, hour, min, 0);
+            const details = getVedicDetails(birthDate, bLat, bLon);
+            
+            userBirthNakshatra = details.nakshatra;
+            userBirthRashi = details.rashi;
+            
+            localStorage.setItem('my_nakshatra', userBirthNakshatra);
+            localStorage.setItem('my_rashi', userBirthRashi);
+
+            document.getElementById('res-bnak').innerText = userBirthNakshatra;
+            document.getElementById('res-brashi').innerText = userBirthRashi;
+            document.getElementById('birth-result').classList.remove('hidden');
+            enableCheckSection();
+        }
+
+        function enableCheckSection() {
+            const checkSec = document.getElementById('check-section');
+            checkSec.classList.remove('opacity-50', 'pointer-events-none');
+        }
+
+        function formatTimeWithDate(timeObj, baseDate) {
+            if (!timeObj || isNaN(timeObj)) return "--:--";
+            let timeStr = timeObj.toLocaleTimeString('mr-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+            if (timeObj.getDate() !== baseDate.getDate() || timeObj.getMonth() !== baseDate.getMonth()) {
+                timeStr += ` <span class="text-xs text-red-600 font-bold">(पुढील दिन)</span>`;
+            }
+            return timeStr;
+        }
+
+        function checkPersonalPanchang() {
+            const d = document.getElementById('tDate').value;
+            if(!d) { document.getElementById('check-error').innerText = "तारीख टाका."; document.getElementById('check-error').classList.remove('hidden'); return; }
+            
+            if(!tLat) { 
+                tLat = bLat || 18.5204; 
+                tLon = bLon || 73.8567; 
+            }
+
+            document.getElementById('check-error').classList.add('hidden');
+            
+            const [year, month, day] = d.split('-');
+            const targetDate = new Date(year, month-1, day, 12, 0, 0); 
+            
+            const daily = getVedicDetails(targetDate, tLat, tLon);
+            let moonTimes = SunCalc.getMoonTimes(targetDate, tLat, tLon);
+            let mRise = moonTimes.rise || SunCalc.getMoonTimes(new Date(targetDate.getTime() + 86400000), tLat, tLon).rise;
+            let mSet = moonTimes.set || SunCalc.getMoonTimes(new Date(targetDate.getTime() + 86400000), tLat, tLon).set;
+
+            // --- १. FULL PANCHANG DISPLAY ---
+            document.getElementById('display-date-city').innerText = `${targetDate.toLocaleDateString('mr-IN', {day:'numeric', month:'long', year:'numeric'})} | वैयक्तिक फळ`;
+            
+            document.getElementById('r-paksha').innerText = daily.paksha;
+            document.getElementById('r-tithi').innerText = daily.tithi;
+            document.getElementById('r-nakshatra').innerText = daily.nakshatra;
+            document.getElementById('r-yoga').innerText = daily.yoga;
+            document.getElementById('r-vaar').innerText = daily.vaar;
+            
+            document.getElementById('r-sunsign').innerText = daily.sunSign;
+            document.getElementById('r-moonsign').innerText = daily.rashi;
+            document.getElementById('r-karana1').innerText = daily.karana1;
+            document.getElementById('r-karana2').innerText = daily.karana2;
+
+            document.getElementById('r-sunrise').innerHTML = formatTimeWithDate(daily.times.sunrise, targetDate);
+            document.getElementById('r-sunset').innerHTML = formatTimeWithDate(daily.times.sunset, targetDate);
+            document.getElementById('r-moonrise').innerHTML = formatTimeWithDate(mRise, targetDate);
+            document.getElementById('r-moonset').innerHTML = formatTimeWithDate(mSet, targetDate);
+
+            let isBhadra = (daily.karana1 === "विष्टी" || daily.karana2 === "विष्टी");
+            document.getElementById('r-bhadra').innerHTML = isBhadra ? "<span class='text-red-600'>सुरू आहे</span>" : "<span class='text-green-600'>नाही</span>";
+            
+            let isPanchak = (daily.rashi === "कुंभ" || daily.rashi === "मीन");
+            document.getElementById('r-panchak').innerHTML = isPanchak ? "<span class='text-red-600'>सुरू आहे</span>" : "<span class='text-green-600'>नाही</span>";
+
+            // --- नवीन: Bio-Physics of Panchang ---
+            document.getElementById('bio-tithi').innerText = daily.tithi;
+            document.getElementById('bio-vaar').innerText = daily.vaar;
+            document.getElementById('bio-nak').innerText = daily.nakshatra;
+
+            // --- नवीन: दिशाशूल ---
+            const dShool = DISHA_SHOOL[daily.dayOfWeek];
+            document.getElementById('disha-shool').innerText = dShool.dir;
+            document.getElementById('disha-science').innerText = dShool.science;
+
+            // --- २. PERSONALIZED TARABALA & CHANDRABALA ---
+            document.getElementById('daily-nak').innerText = daily.nakshatra;
+            document.getElementById('daily-rashi').innerText = daily.rashi;
+
+            let birthNakIdx = NAKSHATRAS.indexOf(userBirthNakshatra) + 1;
+            let dailyNakIdx = NAKSHATRAS.indexOf(daily.nakshatra) + 1;
+            let distance = (dailyNakIdx - birthNakIdx) + 1;
+            if (distance <= 0) distance += 27;
+            let tara = distance % 9;
+            if (tara === 0) tara = 9;
+
+            const TARA_RESULTS = {
+                1: { name: "जन्म तारा", type: "bad", desc: "मानसिक तणाव वाढतो. आरोग्याची काळजी घ्यावी.", science: "तुमच्या जन्माची आणि आजची कॉस्मिक फ्रिक्वेन्सी (Resonance) समान असल्याने शरीरातील ऊर्जा अस्थिर (Overlapping Sine Waves) होते." },
+                2: { name: "संपत तारा", type: "good", desc: "आर्थिक लाभ आणि कामात यश मिळते.", science: "नक्षत्रांच्या लहरी डोपामाईन (Dopamine) स्रवण्यास अनुकूल असतात, निर्णय क्षमता वाढते." },
+                3: { name: "विपत् तारा", type: "bad", desc: "अडथळे, नुकसान आणि संकटे येतात.", science: "इलेक्ट्रोमॅग्नेटिक लहरींचे 'विनाशक व्यतिकरण' (Destructive interference) होते, मज्जासंस्थेवर (Nervous System) ताण येतो." },
+                4: { name: "क्षेम तारा", type: "good", desc: "सुरक्षितता, सुख आणि समृद्धी मिळते.", science: "तुमचे बायो-रिदम्स (Bio-rhythms) आज निसर्गाशी पूर्णपणे सुसंवादी (Synchronized) आहेत." },
+                5: { name: "प्रत्यरी तारा", type: "bad", desc: "शत्रूचा त्रास आणि कामात अपयश.", science: "ग्रहांची चुंबकीय क्षेत्रे तुमच्या जन्म-लहरींना विरोध (Magnetic Repulsion) करतात." },
+                6: { name: "साधक तारा", type: "good", desc: "प्रयत्नांना यश मिळते. नवीन कार्यासाठी उत्तम.", science: "कॉस्मिक एनर्जी तुमच्या शरीराच्या ऊर्जेला चालना (Kinetic boost) देते." },
+                7: { name: "वध तारा", type: "severe_bad", desc: "अत्यंत घातक! अपघात आणि मोठे नुकसान संभवते.", science: "सर्वात भयंकर काळ! रक्तातील लोहाचे (Hemoglobin) संतुलन बिघडल्याने रिफ्लेक्सेस (Reflexes) मंदावतात." },
+                8: { name: "मित्र तारा", type: "good", desc: "मित्रांकडून मदत आणि आनंद.", science: "हार्मोनल संतुलन अत्यंत सकारात्मक (Serotonin boost) असते." },
+                9: { name: "परम मित्र तारा", type: "good", desc: "सर्व कार्यात अनपेक्षित यश.", science: "तुम्ही निसर्गाच्या लहरींशी पूर्णपणे एकरूप (Absolute Quantum Resonance) झालेले असता." }
+            };
+
+            const tb = TARA_RESULTS[tara];
+            const tbCard = document.getElementById('tarabala-card');
+            const tbBg = document.getElementById('tb-bg');
+            document.getElementById('tb-result').innerText = `${tara}. ${tb.name}`;
+            document.getElementById('tb-desc').innerText = tb.desc;
+            document.getElementById('tb-science').innerText = tb.science;
+
+            let tbScore = 0; 
+            if (tb.type === 'good') {
+                tbCard.className = "p-6 rounded-xl border-l-8 shadow-md bg-white border-green-500";
+                tbBg.className = "p-3 rounded-lg mb-2 bg-green-100 text-green-900 border border-green-300";
+                document.getElementById('tb-icon').innerText = "✅"; tbScore = 1;
+            } else if (tb.type === 'bad') {
+                tbCard.className = "p-6 rounded-xl border-l-8 shadow-md bg-white border-orange-500";
+                tbBg.className = "p-3 rounded-lg mb-2 bg-orange-100 text-orange-900 border border-orange-300";
+                document.getElementById('tb-icon').innerText = "⚠️"; tbScore = -1;
+            } else {
+                tbCard.className = "p-6 rounded-xl border-l-8 shadow-md bg-white border-red-600";
+                tbBg.className = "p-3 rounded-lg mb-2 bg-red-100 text-red-900 border border-red-400";
+                document.getElementById('tb-icon').innerText = "🚨"; tbScore = -2;
+            }
+
+            let birthRashiIdx = RASHIS.indexOf(userBirthRashi) + 1;
+            let dailyRashiIdx = RASHIS.indexOf(daily.rashi) + 1;
+            let rashiDistance = (dailyRashiIdx - birthRashiIdx) + 1;
+            if (rashiDistance <= 0) rashiDistance += 12;
+
+            let cbScore = 0;
+            const cbCard = document.getElementById('chandrabala-card');
+            const cbBg = document.getElementById('cb-bg');
+            let cbDesc = "", cbScience = "";
+
+            if ([1, 3, 6, 7, 10, 11].includes(rashiDistance)) {
+                cbDesc = "आजचा चंद्र तुमच्या जन्मराशीला अनुकूल आहे. मानसिक शांती आणि कार्यात यश मिळेल.";
+                cbScience = "चंद्राचे गुरुत्वाकर्षण (Gravitational pull) तुमच्या 'लूनर पोझिशन'शी सुसंवादी आहे. रक्तातील पाण्याचे संतुलन उत्तम राहते.";
+                cbCard.className = "p-6 rounded-xl border-l-8 shadow-md bg-white border-green-500";
+                cbBg.className = "p-3 rounded-lg mb-2 bg-green-100 text-green-900 border border-green-300";
+                document.getElementById('cb-icon').innerText = "✅";
+                document.getElementById('cb-result').innerText = "शुभ चंद्रबळ"; cbScore = 1;
+            } else if (rashiDistance === 8) {
+                cbDesc = "🚨 अष्टम चंद्र! आज मानसिक ताण आणि मोठे नुकसान होऊ शकते.";
+                cbScience = "चंद्राचा 'अष्टम' कोन पृथ्वीच्या 'मॅग्नेटिक फिल्ड'ला छेदतो, ज्याचा 'पिट्युटरी ग्रंथी'वर ताण येतो. यामुळे विनाकारण भीती वाटते.";
+                cbCard.className = "p-6 rounded-xl border-l-8 shadow-md bg-white border-red-600";
+                cbBg.className = "p-3 rounded-lg mb-2 bg-red-100 text-red-900 border border-red-400";
+                document.getElementById('cb-icon').innerText = "🚨";
+                document.getElementById('cb-result').innerText = "अत्यंत घातक (अष्टम चंद्र)"; cbScore = -2;
+            } else {
+                cbDesc = "चंद्र अनुकूल नाही. खर्चात वाढ आणि मानसिक अस्वस्थता संभवते.";
+                cbScience = "चंद्राचे गुरुत्वाकर्षण तुमच्या शरीरातील जलतत्त्वाला अस्थिर करत आहे. भावनिक नियंत्रण कमकुवत होते.";
+                cbCard.className = "p-6 rounded-xl border-l-8 shadow-md bg-white border-orange-500";
+                cbBg.className = "p-3 rounded-lg mb-2 bg-orange-100 text-orange-900 border border-orange-300";
+                document.getElementById('cb-icon').innerText = "⚠️";
+                document.getElementById('cb-result').innerText = "अशुभ चंद्रबळ"; cbScore = -1;
+            }
+            document.getElementById('cb-desc').innerText = cbDesc;
+            document.getElementById('cb-science').innerText = cbScience;
+
+            // --- ३. MUHURATS & CHOGHADIYAS ---
+            const segmentMs = (daily.times.sunset.getTime() - daily.times.sunrise.getTime()) / 8;
+            const addTime = (start, ms) => new Date(start.getTime() + ms);
+            const formatPeriod = (start, end) => `${formatTimeWithDate(start, targetDate)} ते ${formatTimeWithDate(end, targetDate)}`;
+
+            const rahuSeg = [8, 2, 7, 5, 6, 4, 3][daily.dayOfWeek]; 
+            const yamaSeg = [5, 4, 3, 2, 1, 7, 6][daily.dayOfWeek];
+            const gulikaSeg = [7, 6, 5, 4, 3, 2, 1][daily.dayOfWeek];
+            const duruSeg = [9, 6, 3, 6, 4, 4, 2][daily.dayOfWeek];
+
+            document.getElementById('t-rahu').innerText = formatPeriod(addTime(daily.times.sunrise, (rahuSeg-1)*segmentMs), addTime(daily.times.sunrise, rahuSeg*segmentMs));
+            document.getElementById('t-yama').innerText = formatPeriod(addTime(daily.times.sunrise, (yamaSeg-1)*segmentMs), addTime(daily.times.sunrise, yamaSeg*segmentMs));
+            document.getElementById('t-gulika').innerText = formatPeriod(addTime(daily.times.sunrise, (gulikaSeg-1)*segmentMs), addTime(daily.times.sunrise, gulikaSeg*segmentMs));
+            
+            let duruMs = (daily.times.sunset.getTime() - daily.times.sunrise.getTime()) / 15;
+            document.getElementById('t-duru').innerText = formatPeriod(addTime(daily.times.sunrise, (duruSeg-1)*duruMs), addTime(daily.times.sunrise, duruSeg*duruMs));
+
+            const abhijitStart = new Date(daily.times.solarNoon.getTime() - 1440000);
+            const abhijitEnd = new Date(daily.times.solarNoon.getTime() + 1440000);
+            document.getElementById('t-abhijit').innerHTML = daily.dayOfWeek === 3 ? "<span class='text-red-500'>बुधवारी ग्राह्य नाही</span>" : formatPeriod(abhijitStart, abhijitEnd);
+
+            const chList = document.getElementById('choghadiya-list');
+            chList.innerHTML = '';
+            const chStartIdx = [0, 3, 6, 2, 5, 1, 4][daily.dayOfWeek]; 
+            
+            for(let i=0; i<8; i++) {
+                let name = CHOGHADIYA_NAMES[(chStartIdx + i) % 7];
+                if(["अमृत", "शुभ", "लाभ"].includes(name)) {
+                    let segStart = addTime(daily.times.sunrise, i * segmentMs);
+                    let segEnd = addTime(daily.times.sunrise, (i + 1) * segmentMs);
+                    let overlap = ((i+1) === rahuSeg || (i+1) === yamaSeg || (i+1) === gulikaSeg);
+                    
+                    if(!overlap) {
+                        chList.innerHTML += `<div class="bg-white p-3 rounded-lg border border-green-200 shadow-sm flex flex-col md:flex-row md:justify-between">
+                            <span class="font-bold text-green-800">${name} चौघडिया:</span> <span class="text-gray-800 font-semibold">${formatPeriod(segStart, segEnd)}</span>
+                        </div>`;
+                    }
+                }
+            }
+
+            const warnGood = document.getElementById('personal-warning-good');
+            const warnBad = document.getElementById('personal-warning-bad');
+            warnGood.classList.add('hidden'); warnBad.classList.add('hidden');
+
+            if (tbScore < 0 || cbScore < 0) {
+                warnGood.classList.remove('hidden');
+                warnBad.classList.remove('hidden');
+            }
+
+            // --- ४. FINAL VERDICT LOGIC ---
+            const vElem = document.getElementById('final-verdict');
+            const dElem = document.getElementById('final-dos');
+            const dtElem = document.getElementById('final-donts');
+            const remElem = document.getElementById('final-remedy');
+            remElem.classList.add('hidden');
+
+            if (tbScore === 1 && cbScore === 1 && !isBhadra && !isPanchak) {
+                vElem.innerHTML = "🌟 आजचा दिवस तुमच्यासाठी <strong>'सुवर्णकाळ'</strong> आहे! तुमचे ताराबळ आणि चंद्रबळ दोन्ही अत्यंत मजबूत आहेत. निसर्गाची पूर्ण ऊर्जा तुमच्या पाठीशी आहे.";
+                vElem.className = "text-xl font-bold text-green-300 leading-relaxed mb-4 text-center";
+                dElem.innerHTML = "<li>मोठे आर्थिक व्यवहार आणि नवीन गुंतवणूक करावी.</li><li>प्रॉपर्टी खरेदी किंवा नवीन नोकरीची सुरुवात आज आवर्जून करावी.</li>";
+                dtElem.innerHTML = "<li>केवळ राहु काळ आणि यमगंड या वेळेत काम करणे टाळा.</li><li>दिशाशूल असलेल्या <strong>" + dShool.dir + "</strong> दिशेला प्रवास टाळा.</li>";
+            } 
+            else if (tbScore === -2 || cbScore === -2) {
+                vElem.innerHTML = "🚨 अत्यंत सावधान! आज तुमच्यासाठी <strong>महा-अशुभ योग (वध तारा किंवा अष्टम चंद्र)</strong> आहे. तुमची निर्णयक्षमता अत्यंत कमकुवत असेल.";
+                vElem.className = "text-xl font-bold text-red-400 leading-relaxed mb-4 text-center";
+                dElem.innerHTML = "<li>केवळ दैनंदिन आणि अत्यंत गरजेची कामेच शांतपणे पार पाडा.</li><li>शक्यतो घरातच थांबा आणि शांत राहा.</li>";
+                dtElem.innerHTML = "<li>मोठे व्यवहार, लांबचा प्रवास आणि वाहन चालवणे टाळा.</li><li>कोणत्याही परिस्थितीत <strong>" + dShool.dir + "</strong> दिशेला जाऊ नका.</li>";
+                remElem.innerText = "📿 शास्त्रोक्त उपाय: शिव आराधना करावी आणि 'ॐ नमः शिवाय' चा जप करावा.";
+                remElem.classList.remove('hidden');
+            } 
+            else if (tbScore < 0 || cbScore < 0 || isBhadra) {
+                vElem.innerHTML = "⚠️ आजचा दिवस तुमच्यासाठी <strong>'प्रतिकूल (अशुभ)'</strong> आहे. ग्रहांचे विज्ञान सांगते की आज तुमच्या मज्जासंस्थेवर ताण असेल.";
+                vElem.className = "text-xl font-bold text-orange-300 leading-relaxed mb-4 text-center";
+                dElem.innerHTML = "<li>रूटीन कामे सुरू ठेवावीत.</li><li>कोणतीही नवीन जोखीम घेऊ नये.</li>";
+                dtElem.innerHTML = "<li>धोक्याची कामे आणि शेअर मार्केटमध्ये गुंतवणूक टाळावी.</li><li>भद्रा काळ असल्यास शुभ काम वर्ज्य.</li>";
+                remElem.innerText = "📿 उपाय: इष्टदेवतेचे स्मरण करूनच घराबाहेर पडावे.";
+                remElem.classList.remove('hidden');
+            } 
+            else {
+                vElem.innerHTML = "👍 आजचा दिवस तुमच्यासाठी <strong>'सामान्यतः शुभ'</strong> आहे. दैनंदिन कामे व्यवस्थित पार पडतील.";
+                vElem.className = "text-xl font-bold text-blue-300 leading-relaxed mb-4 text-center";
+                dElem.innerHTML = "<li>अभिजित मुहूर्त किंवा शुभ चौघडिया पाहून महत्त्वाची कामे पूर्ण करू शकता.</li>";
+                dtElem.innerHTML = "<li>अशुभ काळात (राहु काळ/गुलिक) काम करणे टाळा.</li>";
+            }
+
+            document.getElementById('final-results').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

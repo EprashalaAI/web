@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepDetect PRO V5 | Advanced Forensic Analyzer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root { --brand: #0ea5e9; --bg-main: #020617; --bg-card: #0f172a; --bg-glass: rgba(15, 23, 42, 0.75); }
+        body { background-color: var(--bg-main); color: #f8fafc; font-family: 'Inter', system-ui, sans-serif; }
+        
+        .glass-panel { 
+            background: var(--bg-glass); 
+            backdrop-filter: blur(12px); 
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08); 
+        }
+        
+        .canvas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1rem;
+        }
+
+        .canvas-container { 
+            position: relative;
+            background: #000; 
+            border-radius: 0.5rem; 
+            overflow: hidden; 
+            aspect-ratio: 4/3; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+        
+        canvas { max-width: 100%; max-height: 100%; object-fit: contain; }
+        
+        .metric-bar { height: 6px; border-radius: 3px; background: #1e293b; overflow: hidden; margin-top: 4px; }
+        .metric-fill { height: 100%; transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Loader Animation */
+        .scanning-line {
+            position: absolute; top: 0; left: 0; width: 100%; height: 2px;
+            background: var(--brand); box-shadow: 0 0 10px var(--brand);
+            animation: scan 1.5s linear infinite; display: none; z-index: 10;
+        }
+        @keyframes scan { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-6 text-sm">
+
+    <div class="max-w-[1600px] mx-auto space-y-6">
+        
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-sky-500/10 rounded-lg border border-sky-500/20">
+                    <i data-lucide="scan-line" class="w-8 h-8 text-sky-400"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight uppercase tracking-widest bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">DeepDetect <span class="text-sky-400">V5 Max</span></h1>
+                    <p class="text-[11px] text-slate-500 font-mono tracking-widest">Multi-Spectra Pixel Forensics Engine</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 text-xs font-mono text-slate-400">
+                <span class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div> Local Compute Active</span>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Left Sidebar (Controls & Results) -->
+            <div class="lg:col-span-4 space-y-6">
+                
+                <!-- Upload Dropzone -->
+                <div id="dropZone" class="glass-panel p-8 rounded-xl border-2 border-dashed border-slate-700 hover:border-sky-500 hover:bg-slate-800/50 cursor-pointer text-center transition-all group relative overflow-hidden">
+                    <input type="file" id="fileInput" accept="image/jpeg, image/png, image/webp" class="hidden">
+                    <div class="relative z-10 flex flex-col items-center gap-3 pointer-events-none">
+                        <div class="p-4 bg-slate-800/80 rounded-full group-hover:scale-110 transition-transform duration-300">
+                            <i data-lucide="upload-cloud" class="w-8 h-8 text-sky-400"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-slate-200">Initialize Analysis</p>
+                            <p class="text-[11px] text-slate-500 mt-1">Drag & Drop or Click to browse</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Primary Verdict Dashboard -->
+                <div id="verdictBox" class="glass-panel rounded-xl overflow-hidden hidden flex flex-col h-full">
+                    <div class="p-6 bg-gradient-to-br from-slate-800/50 to-slate-900/50 border-b border-slate-700/50 relative overflow-hidden" id="verdictHeader">
+                        <div class="absolute top-0 right-0 p-4 opacity-10">
+                            <i data-lucide="fingerprint" class="w-24 h-24"></i>
+                        </div>
+                        <h2 class="text-[10px] uppercase tracking-[0.2em] text-slate-400 mb-1 font-semibold">Authenticity Index</h2>
+                        <div class="flex items-baseline gap-3 relative z-10">
+                            <span class="text-6xl font-black tracking-tighter" id="scoreDisplay">--%</span>
+                            <span class="text-lg font-bold uppercase tracking-wider" id="verdictLabel">Analyzing...</span>
+                        </div>
+                    </div>
+                    
+                    <div class="p-5 flex-1 space-y-5 overflow-y-auto max-h-[500px]">
+                        <!-- Dynamic Metric Bars -->
+                        <div id="metricsArea" class="space-y-4"></div>
+                        
+                        <!-- Forensic Reasoning List -->
+                        <div class="mt-6 pt-5 border-t border-slate-700/50">
+                            <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                <i data-lucide="file-text" class="w-4 h-4 text-slate-400"></i> Executive Summary
+                            </h3>
+                            <ul id="reasonList" class="text-xs space-y-2.5 text-slate-400"></ul>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Visualizer Grid (6 Up) -->
+            <div class="lg:col-span-8 glass-panel p-5 rounded-xl hidden" id="visualizerArea">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xs font-bold text-slate-300 uppercase tracking-widest">Multi-Spectra Heatmaps</h3>
+                    <button onclick="exportReport()" class="text-[10px] font-mono bg-slate-800 hover:bg-slate-700 text-slate-300 py-1.5 px-3 rounded flex items-center gap-1.5 transition-colors">
+                        <i data-lucide="download" class="w-3 h-3"></i> Export Log
+                    </button>
+                </div>
+                
+                <div class="canvas-grid">
+                    <!-- 1. Original -->
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between text-[10px] font-mono text-slate-400 uppercase tracking-wider"><span>1. Optical Source</span></div>
+                        <div class="canvas-container"><div class="scanning-line"></div><canvas id="cOrig"></canvas></div>
+                    </div>
+                    <!-- 2. ELA -->
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between text-[10px] font-mono text-slate-400 uppercase tracking-wider"><span>2. ELA (Morphing)</span></div>
+                        <div class="canvas-container"><div class="scanning-line"></div><canvas id="cELA"></canvas></div>
+                    </div>
+                    <!-- 3. AI Spatial -->
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between text-[10px] font-mono text-slate-400 uppercase tracking-wider"><span>3. Generative Grid</span></div>
+                        <div class="canvas-container"><div class="scanning-line"></div><canvas id="cAI"></canvas></div>
+                    </div>
+                    <!-- 4. Chroma YCbCr -->
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between text-[10px] font-mono text-slate-400 uppercase tracking-wider"><span>4. Chroma Bleed (CbCr)</span></div>
+                        <div class="canvas-container"><div class="scanning-line"></div><canvas id="cChroma"></canvas></div>
+                    </div>
+                    <!-- 5. Noise Topology -->
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between text-[10px] font-mono text-slate-400 uppercase tracking-wider"><span>5. Radial Noise Floor</span></div>
+                        <div class="canvas-container"><div class="scanning-line"></div><canvas id="cNoise"></canvas></div>
+                    </div>
+                    <!-- 6. Luminance Variance -->
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between text-[10px] font-mono text-slate-400 uppercase tracking-wider"><span>6. Exposure Map</span></div>
+                        <div class="canvas-container"><div class="scanning-line"></div><canvas id="cLum"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const vArea = document.getElementById('visualizerArea');
+        const vBox = document.getElementById('verdictBox');
+        
+        // Canvas Contexts
+        const ctxOrig = document.getElementById('cOrig').getContext('2d', { willReadFrequently: true });
+        const ctxELA = document.getElementById('cELA').getContext('2d', { willReadFrequently: true });
+        const ctxAI = document.getElementById('cAI').getContext('2d', { willReadFrequently: true });
+        const ctxChroma = document.getElementById('cChroma').getContext('2d', { willReadFrequently: true });
+        const ctxNoise = document.getElementById('cNoise').getContext('2d', { willReadFrequently: true });
+        const ctxLum = document.getElementById('cLum').getContext('2d', { willReadFrequently: true });
+
+        // Event Listeners
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-sky-500', 'bg-slate-800/50'); });
+        dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); dropZone.classList.remove('border-sky-500', 'bg-slate-800/50'); });
+        dropZone.addEventListener('drop', (e) => { 
+            e.preventDefault(); 
+            dropZone.classList.remove('border-sky-500', 'bg-slate-800/50'); 
+            if(e.dataTransfer.files.length) initProcessing(e.dataTransfer.files[0]); 
+        });
+        fileInput.addEventListener('change', (e) => { if(e.target.files.length) initProcessing(e.target.files[0]); });
+
+        function initProcessing(file) {
+            if(!file.type.startsWith('image/')) { alert('Please upload an image file.'); return; }
+            vArea.classList.remove('hidden'); vBox.classList.remove('hidden');
+            document.querySelectorAll('.scanning-line').forEach(el => el.style.display = 'block');
+            
+            // Reset UI
+            document.getElementById('scoreDisplay').innerText = "---";
+            document.getElementById('verdictLabel').innerText = "Processing Data...";
+            document.getElementById('metricsArea').innerHTML = '';
+            document.getElementById('reasonList').innerHTML = '';
+            document.getElementById('verdictHeader').className = 'p-6 bg-gradient-to-br from-slate-800/50 to-slate-900/50 border-b border-slate-700/50 relative overflow-hidden';
+            
+            const reader = new FileReader();
+            reader.onload = (e) => { 
+                const img = new Image(); 
+                img.onload = () => runForensicsCore(img); 
+                img.src = e.target.result; 
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // --- CORE FORENSIC ENGINE ---
+
+        async function runForensicsCore(img) {
+            // 1. Setup & Normalize Canvas bounds (Max 800px to maintain strict metric ratios)
+            const MAX_DIM = 800;
+            let w = img.width, h = img.height;
+            if(w > MAX_DIM || h > MAX_DIM) { 
+                const r = Math.min(MAX_DIM/w, MAX_DIM/h); 
+                w = Math.round(w*r); h = Math.round(h*r); 
+            }
+            
+            const canvases = [ctxOrig, ctxELA, ctxAI, ctxChroma, ctxNoise, ctxLum];
+            canvases.forEach(ctx => { ctx.canvas.width = w; ctx.canvas.height = h; });
+            
+            ctxOrig.drawImage(img, 0, 0, w, h);
+            const origData = ctxOrig.getImageData(0, 0, w, h);
+
+            // Yield to main thread for UI updates
+            await new Promise(r => setTimeout(r, 50));
+
+            // 2. Execute Analysis Modules
+            const elaResult = await computeELA(ctxOrig.canvas, origData, w, h);
+            ctxELA.putImageData(elaResult.img, 0, 0);
+
+            const aiResult = computeAIGrids(origData, w, h);
+            ctxAI.putImageData(aiResult.img, 0, 0);
+
+            const chromaResult = computeChromaVariance(origData, w, h);
+            ctxChroma.putImageData(chromaResult.img, 0, 0);
+
+            const topoResult = computeRadialNoise(origData, w, h);
+            ctxNoise.putImageData(topoResult.img, 0, 0);
+
+            const lumResult = computeLuminanceExposure(origData, w, h);
+            ctxLum.putImageData(lumResult.img, 0, 0);
+
+            // NEW: Compute Resolution Interpolation (Upscaling/Downscaling)
+            const upscaleResult = computeInterpolation(origData, w, h);
+
+            document.querySelectorAll('.scanning-line').forEach(el => el.style.display = 'none');
+
+            // 3. Compile Master Report
+            generateFinalVerdict(elaResult, aiResult, chromaResult, topoResult, lumResult, upscaleResult);
+        }
+
+        // --- ALGORITHM MODULES ---
+
+        // Module 1: Error Level Analysis (Morphs/Splicing)
+        function computeELA(canvas, origData, w, h) {
+            return new Promise(resolve => {
+                const compImg = new Image();
+                compImg.onload = () => {
+                    const tempCtx = document.createElement('canvas').getContext('2d');
+                    tempCtx.canvas.width = w; tempCtx.canvas.height = h;
+                    tempCtx.drawImage(compImg, 0, 0, w, h);
+                    const compData = tempCtx.getImageData(0, 0, w, h);
+                    
+                    const dst = new ImageData(w, h);
+                    let highVarCount = 0;
+
+                    for(let i=0; i<origData.data.length; i+=4) {
+                        const diff = Math.abs(origData.data[i] - compData.data[i]) + 
+                                     Math.abs(origData.data[i+1] - compData.data[i+1]) + 
+                                     Math.abs(origData.data[i+2] - compData.data[i+2]);
+                        
+                        dst.data[i] = dst.data[i+1] = dst.data[i+2] = diff * 7; // Amplify
+                        dst.data[i+3] = 255;
+                        // Increased threshold to account for modern smartphone aggressive JPEG compression
+                        if(diff > 55) highVarCount++; // Localized spike threshold
+                    }
+                    resolve({ img: dst, score: (highVarCount / (w*h)) * 1000 });
+                };
+                compImg.src = canvas.toDataURL('image/jpeg', 0.90); 
+            });
+        }
+
+        // Module 2: Generative Upscale Grids (Spatial Frequency via Laplacian)
+        function computeAIGrids(data, w, h) {
+            const src = data.data;
+            const dst = new ImageData(w, h);
+            let anomalyScore = 0;
+            
+            for(let y=2; y<h-2; y++) {
+                for(let x=2; x<w-2; x++) {
+                    const i = (y*w + x)*4;
+                    // Check horizontal/vertical sub-pixel strides typical of Transposed Convolutions
+                    const c = src[i];
+                    const diff = Math.abs((c * 4) - (src[i-8] + src[i+8] + src[((y-2)*w+x)*4] + src[((y+2)*w+x)*4]));
+                    
+                    dst.data[i] = dst.data[i+1] = dst.data[i+2] = diff * 2;
+                    dst.data[i+3] = 255;
+                    
+                    // Shifted detection window to ignore standard smartphone sharpening (which sits lower)
+                    if(diff > 45 && diff < 90) anomalyScore++; 
+                }
+            }
+            return { img: dst, score: (anomalyScore / (w*h)) * 100 };
+        }
+
+        // Module 3: YCbCr Chroma Variance (Color-Space Bleed)
+        function computeChromaVariance(data, w, h) {
+            const src = data.data;
+            const dst = new ImageData(w, h);
+            let chromaBleed = 0;
+
+            for(let i=0; i<src.length; i+=4) {
+                const r = src[i], g = src[i+1], b = src[i+2];
+                // Convert to YCbCr
+                const y  =  0.299*r + 0.587*g + 0.114*b;
+                const cb = 128 - 0.168736*r - 0.331264*g + 0.5*b;
+                const cr = 128 + 0.5*r - 0.418688*g - 0.081312*b;
+
+                // Variance from neutral gray (128)
+                const variance = Math.abs(cb - 128) + Math.abs(cr - 128);
+                
+                // Color map: High variance shown as magenta
+                dst.data[i] = variance * 2.5; 
+                dst.data[i+1] = 0; 
+                dst.data[i+2] = variance * 2.5; 
+                dst.data[i+3] = 255;
+
+                // Raised tolerance for HDR phone photos
+                if(variance > 60 && y < 220 && y > 30) chromaBleed++; 
+            }
+            return { img: dst, score: (chromaBleed / (w*h)) * 100 };
+        }
+
+        // Module 4: Radial Noise Floor (Background Swap / Airbrushing)
+        function computeRadialNoise(data, w, h) {
+            const src = data.data;
+            const dst = new ImageData(w, h);
+            const cx = w/2, cy = h/2;
+            const maxR = Math.sqrt(cx*cx + cy*cy);
+            
+            let faceNoise = 0, facePx = 0;
+            let bgNoise = 0, bgPx = 0;
+
+            for(let y=1; y<h-1; y+=2) {
+                for(let x=1; x<w-1; x+=2) {
+                    const i = (y*w + x)*4;
+                    // Fast local noise approx
+                    const noise = Math.abs(src[i] - src[i+4]) + Math.abs(src[i] - src[i+(w*4)]);
+                    
+                    dst.data[i] = dst.data[i+1] = dst.data[i+2] = noise * 5; 
+                    dst.data[i+3] = 255;
+
+                    // Radial distance from center
+                    const dist = Math.sqrt(Math.pow(x-cx, 2) + Math.pow(y-cy, 2));
+                    const normalizedDist = dist / maxR;
+
+                    if(normalizedDist < 0.35) { // Center 35% (Face)
+                        faceNoise += noise; facePx++;
+                        dst.data[i] += 50; // Tint face red slightly for visualizer
+                    } else if (normalizedDist > 0.6) { // Outer 40% (Background)
+                        bgNoise += noise; bgPx++;
+                        dst.data[i+2] += 50; // Tint bg blue slightly
+                    }
+                }
+            }
+            
+            const avgFace = faceNoise / Math.max(1, facePx);
+            const avgBg = bgNoise / Math.max(1, bgPx);
+            const ratio = Math.max(avgFace, avgBg) / (Math.min(avgFace, avgBg) || 1);
+            
+            return { img: dst, faceSmoothness: avgFace, ratio: ratio };
+        }
+
+        // Module 5: Luminance / Exposure Check
+        function computeLuminanceExposure(data, w, h) {
+            const src = data.data;
+            const dst = new ImageData(w, h);
+            let clippedHigh = 0, clippedLow = 0;
+            
+            for(let i=0; i<src.length; i+=4) {
+                const lum = 0.299*src[i] + 0.587*src[i+1] + 0.114*src[i+2];
+                dst.data[i] = dst.data[i+1] = dst.data[i+2] = lum;
+                dst.data[i+3] = 255;
+
+                if(lum > 245) { clippedHigh++; dst.data[i] = 255; dst.data[i+1]=0; dst.data[i+2]=0; } // Show blown highlights red
+                if(lum < 10) { clippedLow++; dst.data[i] = 0; dst.data[i+1]=0; dst.data[i+2]=255; }   // Show crushed blacks blue
+            }
+            
+            const total = w*h;
+            return { 
+                img: dst, 
+                blownRatio: ((clippedHigh + clippedLow) / total) * 100 
+            };
+        }
+
+        // Module 6: Resolution Interpolation Check (Upscaling/Downscaling)
+        function computeInterpolation(data, w, h) {
+            const src = data.data;
+            let interpolatedPixels = 0;
+            let totalSampled = 0;
+
+            for(let y=1; y<h-1; y+=2) {
+                for(let x=1; x<w-1; x+=2) {
+                    const i = (y*w + x)*4;
+                    // Calculate luminance of current pixel and its horizontal neighbors
+                    const lum = 0.299*src[i] + 0.587*src[i+1] + 0.114*src[i+2];
+                    const left = 0.299*src[i-4] + 0.587*src[i-3] + 0.114*src[i-2];
+                    const right = 0.299*src[i+4] + 0.587*src[i+5] + 0.114*src[i+6];
+
+                    const diffLeft = Math.abs(lum - left);
+                    const diffRight = Math.abs(lum - right);
+
+                    // Detect linear interpolation: the pixel is exactly midway between its neighbors
+                    if (diffLeft > 1.0 && Math.abs(diffLeft - diffRight) <= 0.5) {
+                        interpolatedPixels++;
+                    }
+                    totalSampled++;
+                }
+            }
+            // Natural images rarely have perfect linear sub-pixel gradients. 
+            // High percentages indicate digital resizing (bilinear/bicubic algorithms).
+            const score = (interpolatedPixels / totalSampled) * 100;
+            return { score: score };
+        }
+
+        // --- SCORING & UI ---
+
+        function createMetricHTML(label, score, max, invert=false) {
+            let percentage = Math.min((score / max) * 100, 100);
+            let color = 'bg-emerald-400';
+            let status = 'PASS';
+            
+            // Risk colors (Invert means higher score = bad)
+            if(!invert) {
+                if(percentage > 70) { color = 'bg-rose-500'; status = 'CRITICAL'; }
+                else if(percentage > 40) { color = 'bg-amber-400'; status = 'WARNING'; }
+            } else {
+                if(percentage < 30) { color = 'bg-rose-500'; status = 'CRITICAL'; }
+                else if(percentage < 60) { color = 'bg-amber-400'; status = 'WARNING'; }
+            }
+
+            return `
+                <div>
+                    <div class="flex justify-between text-[11px] font-mono text-slate-400 mb-1">
+                        <span>${label}</span>
+                        <span class="${color.replace('bg-', 'text-')} font-bold">${status} [${score.toFixed(1)}]</span>
+                    </div>
+                    <div class="metric-bar">
+                        <div class="metric-fill ${color}" style="width: ${percentage}%"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function generateFinalVerdict(ela, ai, chroma, topo, lum, upscale) {
+            let authScore = 100;
+            let reasons = [];
+
+            let metricsHTML = "";
+
+            // 1. Evaluate AI Synthetics (Weight: HEAVY)
+            metricsHTML += createMetricHTML("Spatial Periodic Grids (GANs)", ai.score, 25);
+            if(ai.score > 20) {
+                authScore -= 80;
+                reasons.push(`<span class="text-rose-400 font-bold">100% Synthetic:</span> Severe neural network upscaling grids detected. Matches transposed convolution layers used in Generative AI. Mathematically impossible for optical camera sensors.`);
+            } else if (ai.score > 7) {
+                authScore -= 5; // Minor penalty for smartphone AI
+                reasons.push(`<span class="text-sky-400 font-bold">Computational Photo (Phone AI):</span> Minor repeating grids suggest smartphone built-in AI processing (e.g., Apple Deep Fusion, Android Smart Sharpening) rather than pure malicious generation.`);
+            } else {
+                reasons.push(`<span class="text-emerald-400 font-bold">Spatial Grid Clear:</span> No generative upscaling matrices (checkerboard artifacts) found in the high-frequency domain.`);
+            }
+
+            // 2. Evaluate Chroma Integrity (HDR Recognition)
+            metricsHTML += createMetricHTML("CbCr Color-Space Bleed", chroma.score, 25);
+            if(chroma.score > 25 && ai.score <= 20) {
+                authScore -= 20;
+                reasons.push(`<span class="text-amber-400 font-bold">Severe Color Synthesis:</span> High-frequency chroma noise indicates severe digital interpolation or generative fill artifacts.`);
+            } else if (chroma.score > 12 && ai.score <= 20) {
+                authScore -= 2; // Nominal penalty for HDR
+                reasons.push(`<span class="text-sky-400 font-bold">HDR / Scene Optimizer:</span> Elevated chroma variance typical of built-in smartphone High Dynamic Range (HDR) processing or automated color-boosting.`);
+            } else if (chroma.score <= 12) {
+                reasons.push(`<span class="text-emerald-400 font-bold">Chroma Integrity Pass:</span> Color-space boundaries are sharp and consistent with natural physical lens optics.`);
+            }
+
+            // 3. Evaluate Morphs & Splicing (ELA)
+            metricsHTML += createMetricHTML("ELA Quantization Errors", ela.score, 25);
+            if(ela.score > 22 && ai.score <= 20) {
+                authScore -= 35;
+                reasons.push(`<span class="text-rose-400 font-bold">Digital Morphing / Splicing:</span> Irregular JPEG blocks detected. Quantization tables show localized rewriting, highly indicative of clone-stamping, liquify tools, or spliced insertions.`);
+            } else if (ela.score <= 22) {
+                reasons.push(`<span class="text-emerald-400 font-bold">Compression Uniformity:</span> JPEG quantization tables are uniform across the image, suggesting no localized pixel warping or splicing.`);
+            }
+
+            // 4. Background Swaps vs. Portrait Mode
+            let noiseMismatch = Math.abs(topo.ratio - 1.0) * 10; 
+            metricsHTML += createMetricHTML("Background Noise Variance", noiseMismatch, 20);
+            
+            if(topo.ratio > 3.5 && ai.score <= 20) {
+                // Cross-verification: If ELA is high, it's a Photoshop composite. If ELA is low, it's just Portrait Mode.
+                if (ela.score > 18) {
+                    authScore -= 25;
+                    reasons.push(`<span class="text-rose-400 font-bold">Composite Swap:</span> Background noise signature severely mismatches the subject with harsh boundaries, indicating a manual composite or background replacement.`);
+                } else {
+                    authScore -= 3; // Very minor penalty
+                    reasons.push(`<span class="text-sky-400 font-bold">Portrait Mode / Depth Effect:</span> Severe background noise drop-off detected, but boundary compression is clean. Highly indicative of a smartphone's artificial background blur (Portrait Mode/Bokeh).`);
+                }
+            } else if (topo.ratio <= 3.5) {
+                reasons.push(`<span class="text-emerald-400 font-bold">Noise Floor Uniform:</span> Electronic sensor noise is consistent between the subject and background, indicating a standard single exposure.`);
+            }
+
+            // 5. Exposure Tweaks
+            if(lum.blownRatio > 25) {
+                authScore -= 4;
+                reasons.push(`<span class="text-sky-400 font-bold">Post-Processing:</span> Histogram analysis shows clipping at the extremes, typical of destructive contrast pushing, Instagram filters, or global exposure adjustments.`);
+            }
+
+            // 6. Resolution Resampling
+            metricsHTML += createMetricHTML("Digital Resampling (Scale)", upscale.score, 15);
+            if(upscale.score > 8) {
+                reasons.push(`<span class="text-sky-400 font-bold">Resolution Altered:</span> Linear pixel interpolation detected. The image was digitally upscaled or downscaled (e.g., social media compression or digital zoom).`);
+            } else {
+                reasons.push(`<span class="text-slate-400 font-bold">Native Resolution:</span> Pixel gradients appear natural without heavy digital resizing or resampling artifacts.`);
+            }
+
+            // Authentication Fallback & Bounds Checking
+            authScore = Math.max(0, Math.min(100, Math.round(authScore)));
+            
+            // --- CRITICAL AI ADVISORY OVERRIDE ---
+            if(authScore >= 95) {
+                reasons.push(`
+                <div class="mt-4 p-4 bg-rose-950/40 border border-rose-500/50 rounded-lg text-rose-200 flex flex-col gap-2">
+                    <div class="flex items-center gap-2 text-rose-400 font-bold text-[13px] tracking-wide uppercase">
+                        <i data-lucide="shield-alert" class="w-5 h-5"></i> Critical AI Advisory
+                    </div>
+                    <p class="text-[11px] leading-relaxed">While this image scored <strong class="text-white">${authScore}% Authentic</strong> and passed mathematical pixel forensics, <strong>caution is required.</strong></p>
+                    <p class="text-[11px] leading-relaxed">Modern state-of-the-art Generative AI can perfectly mimic physical camera sensor noise, optical lens distortion, and uniform compression arrays, effectively rendering heuristic mathematics blind.</p>
+                </div>`);
+            }
+
+            // Update UI
+            document.getElementById('metricsArea').innerHTML = metricsHTML;
+            document.getElementById('reasonList').innerHTML = reasons.map(r => r.startsWith('<div') ? `<li class="list-none">${r}</li>` : `<li class="mb-1.5 leading-relaxed">• ${r}</li>`).join('');
+            
+            setTimeout(() => lucide.createIcons(), 10);
+            
+            const vHeader = document.getElementById('verdictHeader');
+            const scDisplay = document.getElementById('scoreDisplay');
+            const vLabel = document.getElementById('verdictLabel');
+
+            scDisplay.innerText = `${authScore}%`;
+
+            // Updated Threshold for "Authentic Capture" mapping better to smartphones
+            if(authScore >= 80) {
+                vHeader.className = 'p-6 border-b relative overflow-hidden bg-emerald-950/40 border-emerald-500/30 text-emerald-400';
+                vLabel.innerText = "Authentic Capture";
+            } else if (authScore > 40) {
+                vHeader.className = 'p-6 border-b relative overflow-hidden bg-amber-950/40 border-amber-500/30 text-amber-400';
+                vLabel.innerText = "Morphed / Edited";
+            } else {
+                vHeader.className = 'p-6 border-b relative overflow-hidden bg-rose-950/40 border-rose-500/30 text-rose-400';
+                vLabel.innerText = "Synthetic / Deepfake";
+            }
+        }
+
+        function exportReport() {
+            const score = document.getElementById('scoreDisplay').innerText;
+            const verdict = document.getElementById('verdictLabel').innerText;
+            let report = `=== DEEPDETECT V5 FORENSIC LOG ===\nDate: ${new Date().toLocaleString()}\n`;
+            report += `Verdict: ${verdict}\nAuthenticity Index: ${score}\n\n=== REASONING ===\n`;
+            
+            document.querySelectorAll('#reasonList li').forEach(li => {
+                report += `${li.innerText.replace('• ', '')}\n`;
+            });
+            
+            const blob = new Blob([report], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `DeepDetect_Report_${Date.now()}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dhwani PoC - Demo Day Edition</title>
+    <style>
+        body { font-family: sans-serif; background: #222; color: white; padding: 20px; max-width: 500px; margin: auto; }
+        .card { background: #333; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        button { background: #007bff; color: white; border: none; padding: 15px; width: 100%; border-radius: 6px; font-size: 18px; margin-top: 10px; font-weight: bold; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .btn-green { background: #28a745; }
+        .btn-green:hover { background: #218838; }
+        .btn-red { background: #dc3545; }
+        input[type="text"] { padding: 12px; width: calc(100% - 26px); margin-bottom: 10px; border-radius: 4px; font-size: 16px; border: none; }
+        h2 { border-bottom: 1px solid #555; padding-bottom: 10px; margin-top: 0; color: #f8f9fa; }
+        #status { color: #ffc107; font-size: 18px; font-weight: bold; text-align: center; margin-bottom: 15px; }
+        #resultDisplay { text-align: center; font-size: 28px; color: #00ff00; margin-top: 20px; }
+        .step-badge { background: #ffc107; color: black; padding: 3px 8px; border-radius: 10px; font-size: 14px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1 style="text-align: center; color: #007bff;">Dhwani Acoustic Reader</h1>
+    <div id="status">Status: Ready. Please Calibrate Background.</div>
+
+    <div class="card" id="calibModule">
+        <h2><span class="step-badge">Step 1</span> Environment Setup</h2>
+        <p style="font-size: 14px; color: #ccc;">Ensure the table is completely empty. Place the phone flat.</p>
+        <button onclick="calibrateBaseline()" class="btn-red">🎯 Calibrate Empty Table</button>
+    </div>
+
+    <div class="card" id="learnerModule" style="display: none;">
+        <h2><span class="step-badge">Step 2</span> Train Coins</h2>
+        <input type="text" id="coinName" placeholder="e.g., Rs 5, Rs 10">
+        <button onclick="learnCoinDelta()">🎙️ Learn Coin Signature</button>
+        <p style="font-size: 12px; color: #aaa; text-align: center; margin-top: 10px;">Move coin 1mm and learn 5 times per coin.</p>
+    </div>
+
+    <div class="card" id="identifierModule" style="display: none;">
+        <h2><span class="step-badge">Step 3</span> Live Detection</h2>
+        <button onclick="detectCoinDelta()" class="btn-green">🔊 Detect Object</button>
+        <h3 id="resultDisplay">--</h3>
+    </div>
+
+<script>
+    let audioCtx;
+    let analyser;
+    let baselineProfile = null;
+    let coinDatabase = {};
+
+    async function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+            const source = audioCtx.createMediaStreamSource(micStream);
+            analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 2048;
+            source.connect(analyser);
+        }
+        if (audioCtx.state === 'suspended') await audioCtx.resume();
+    }
+
+    async function captureRawSignature() {
+        await initAudio();
+        return new Promise((resolve) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.type = 'sine';
+            const now = audioCtx.currentTime;
+            osc.frequency.setValueAtTime(10000, now);
+            osc.frequency.exponentialRampToValueAtTime(18000, now + 0.1);
+            
+            osc.start(now);
+            osc.stop(now + 0.1);
+
+            setTimeout(() => {
+                const data = new Float32Array(analyser.frequencyBinCount);
+                analyser.getFloatFrequencyData(data);
+                resolve(Array.from(data).slice(400, 900)); 
+            }, 60); 
+        });
+    }
+
+    // NEW MATH: Subtract the table's echo from the coin's echo
+    function calculateDelta(rawSig, baseSig) {
+        let delta = [];
+        for(let i=0; i<rawSig.length; i++) {
+            delta.push(Math.abs(rawSig[i] - baseSig[i]));
+        }
+        return delta;
+    }
+
+    async function calibrateBaseline() {
+        setStatus("Calibrating... Keep silent.", "orange");
+        baselineProfile = await captureRawSignature();
+        
+        document.getElementById('learnerModule').style.display = 'block';
+        document.getElementById('identifierModule').style.display = 'block';
+        setStatus("Background Calibrated. Ready to Learn.", "#00ff00");
+    }
+
+    async function learnCoinDelta() {
+        if (!baselineProfile) return alert("Calibrate first!");
+        const name = document.getElementById('coinName').value.trim();
+        if (!name) return alert("Enter coin name.");
+        
+        setStatus(`Scanning ${name}...`, "orange");
+        let rawSig = await captureRawSignature();
+        let deltaSig = calculateDelta(rawSig, baselineProfile);
+
+        if (!coinDatabase[name]) coinDatabase[name] = [];
+        coinDatabase[name].push(deltaSig);
+        
+        setStatus(`Learned ${name}! (${coinDatabase[name].length} profiles)`, "#007bff");
+    }
+
+    async function detectCoinDelta() {
+        if (!baselineProfile || Object.keys(coinDatabase).length === 0) return alert("Learn a coin first!");
+        
+        setStatus("Detecting...", "orange");
+        let liveRaw = await captureRawSignature();
+        let liveDelta = calculateDelta(liveRaw, baselineProfile);
+        
+        let bestMatch = "Unknown";
+        let highestScore = -1;
+
+        for (const [coinName, profiles] of Object.entries(coinDatabase)) {
+            for (const savedProfile of profiles) {
+                let score = cosineSimilarity(liveDelta, savedProfile);
+                if (score > highestScore) {
+                    highestScore = score;
+                    bestMatch = coinName;
+                }
+            }
+        }
+
+        // Demo threshold set to 0.92 (92%) due to Delta Math being more sensitive
+        if (highestScore > 0.92) {
+            document.getElementById('resultDisplay').innerText = bestMatch;
+            document.getElementById('resultDisplay').style.color = "#00ff00";
+            speakAloud(bestMatch);
+            setStatus(`Match: ${(highestScore*100).toFixed(1)}%`, "#00ff00");
+        } else {
+            document.getElementById('resultDisplay').innerText = "Not Recognized";
+            document.getElementById('resultDisplay').style.color = "red";
+            speakAloud("Not Recognized");
+            setStatus(`Too low: ${(highestScore*100).toFixed(1)}%`, "red");
+        }
+    }
+
+    function cosineSimilarity(A, B) {
+        let dotProduct = 0, normA = 0, normB = 0;
+        for (let i = 0; i < A.length; i++) {
+            dotProduct += A[i] * B[i];
+            normA += A[i] * A[i];
+            normB += B[i] * B[i];
+        }
+        if (normA === 0 || normB === 0) return 0;
+        return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+    }
+
+    function speakAloud(text) {
+        window.speechSynthesis.cancel(); // Stop current speech
+        const utterance = new SpeechSynthesisUtterance(text);
+        window.speechSynthesis.speak(utterance);
+    }
+
+    function setStatus(msg, color) {
+        const el = document.getElementById('status');
+        el.innerText = msg;
+        el.style.color = color;
+    }
+</script>
+</body>
+</html>

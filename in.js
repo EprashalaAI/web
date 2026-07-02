@@ -93,7 +93,9 @@ const LIBRARY_CONFIG = {
         "Padma Purana": { persona: "Sage Vyasa", texts: "Padma Purana", greeting: "Hari Om" },
         "Shiva Purana": { persona: "Sage Romaharshana", texts: "Shiva Purana", greeting: "Om Namah Shivaya" },
         "Skanda Purana": { persona: "Lord Kartikeya", texts: "Skanda Purana", greeting: "Hari Om" },
-        "Vishnu Purana": { persona: "Sage Parashara", texts: "Vishnu Purana", greeting: "Om Namo Narayana" }
+        "Vishnu Purana": { persona: "Sage Parashara", texts: "Vishnu Purana", greeting: "Om Namo Narayana" },
+		"Yogeshwari Mahatmya": { persona: "Sage Vyasa", texts: "Yogeshwari Mahatmya", greeting: "Shri Kshetrapalaya Namah" },
+		"Kalbhairav Mahatmya": { persona: "Sage Vyasa", texts: "Vijnana Bhairava Tantra, Kaalbhairav Rahasyam,Shri Bhairava Upasana Manual,  ", greeting: "Shri Kshetrapalaya Namah" }
     },
     "Samhitas": {
         "Bhrigu Samhita": { persona: "Maharishi Bhrigu", texts: "Bhrigu Samhita (Astrology)", greeting: "Hari Om", desc: "Ancient astrological science" },
@@ -801,60 +803,11 @@ function renderMessage(sender, text, isModel) {
     setTimeout(() => { UI.log.scrollTop = UI.log.scrollHeight; }, 50);
 }
 
-async function speakText(text, langCode) {
+function speakText(text, langCode) {
     if (state.isMuted) return;
-    
-    // Stop any currently playing audio
-    synth.cancel(); 
-    if (window.currentCloudAudio) {
-        window.currentCloudAudio.pause();
-    }
-    
+    synth.cancel();
     togglePlayIcon(false);
     
-    const ttsKey = document.getElementById('custom-tts-key').value.trim();
-
-    // SCENARIO 1: User has provided a premium Google Cloud TTS Key
-    if (ttsKey.length > 15) {
-        const voiceName = document.getElementById('tts-voice-select').value;
-        const speed = parseFloat(document.getElementById('tts-speed').value);
-        const pitch = parseFloat(document.getElementById('tts-pitch').value);
-
-        const payload = {
-            input: { text: text },
-            voice: { languageCode: langCode, name: voiceName },
-            audioConfig: { 
-                audioEncoding: "MP3",
-                speakingRate: speed,
-                pitch: pitch
-            }
-        };
-
-        try {
-            const response = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${ttsKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            if (!response.ok) throw new Error('TTS API Error');
-
-            const data = await response.json();
-            const audioSrc = `data:audio/mp3;base64,${data.audioContent}`;
-            
-            window.currentCloudAudio = new Audio(audioSrc);
-            window.currentCloudAudio.onended = () => togglePlayIcon(true);
-            window.currentCloudAudio.onerror = () => togglePlayIcon(true);
-            window.currentCloudAudio.play();
-            return; // Exit function so fallback doesn't run
-
-        } catch (error) {
-            console.error("Cloud TTS failed, falling back to local...", error);
-            // If the API call fails (bad key, out of quota), it naturally falls through to Scenario 2
-        }
-    }
-
-    // SCENARIO 2: Fallback to existing free browser TTS
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = langCode;
     utterance.rate = 0.85; 
@@ -865,11 +818,3 @@ async function speakText(text, langCode) {
 
     synth.speak(utterance);
 }
-
-// Add event listeners for the sliders to update their visual labels
-document.getElementById('tts-speed').addEventListener('input', (e) => {
-    document.getElementById('speed-val').innerText = `${e.target.value}x`;
-});
-document.getElementById('tts-pitch').addEventListener('input', (e) => {
-    document.getElementById('pitch-val').innerText = e.target.value;
-});

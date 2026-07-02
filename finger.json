@@ -1,0 +1,74 @@
+{
+  "Thumb": {
+    "plain_whorl": {
+      "pattern_name": "Plain Whorl (Chakra)",
+      "analysis": "The Chakra on the Thumb (Angustha) indicates an uncompromising, independent soul. You possess immense inherent willpower and logic. However, this independence often makes you stubborn and resistant to taking orders. Your karmic path relies entirely on self-driven success rather than inheritance or luck.",
+      "purushartha": {"Dharma": 85, "Artha": 75, "Kama": 50, "Moksha": 60},
+      "enemies": {"Kama": 40, "Krodha": 75, "Moha": 30, "Mada": 85, "Matsarya": 40},
+      "traits": {"Honesty": 90, "Reliability": 85, "Hardworking": 95, "Punctuality": 70, "Accountability": 90}
+    },
+    "double_loop_whorl": {
+      "pattern_name": "Double Loop Whorl (Dvi-Chakra)",
+      "analysis": "A dual-loop on the thumb reveals a profoundly conflicted but highly intelligent mind. You possess the ability to see both sides of every argument, making you an excellent diplomat but a terrible decision-maker. Your willpower is split, often leading to delayed actions.",
+      "purushartha": {"Dharma": 70, "Artha": 65, "Kama": 60, "Moksha": 75},
+      "enemies": {"Kama": 60, "Krodha": 40, "Moha": 65, "Mada": 40, "Matsarya": 50},
+      "traits": {"Honesty": 75, "Reliability": 60, "Hardworking": 70, "Punctuality": 60, "Accountability": 65}
+    },
+    "left_loop": {
+      "pattern_name": "Left-Opening Loop (Vamavarti Shankha)",
+      "analysis": "This pattern shows a highly adaptable, receptive intellect. You absorb energy and information from your environment. While you are socially fluid and cooperative, your internal willpower can easily be swayed by strong personalities around you.",
+      "purushartha": {"Dharma": 65, "Artha": 70, "Kama": 80, "Moksha": 50},
+      "enemies": {"Kama": 75, "Krodha": 35, "Moha": 80, "Mada": 30, "Matsarya": 60},
+      "traits": {"Honesty": 80, "Reliability": 75, "Hardworking": 70, "Punctuality": 85, "Accountability": 70}
+    },
+    "right_loop": {
+      "pattern_name": "Right-Opening Loop (Dakshinavarti Shankha)",
+      "analysis": "A right-flowing loop on the thumb indicates a projective intellect. You actively push your ideas onto the world. You are an excellent communicator and negotiator, using logic to persuade others rather than brute force.",
+      "purushartha": {"Dharma": 70, "Artha": 85, "Kama": 70, "Moksha": 45},
+      "enemies": {"Kama": 65, "Krodha": 55, "Moha": 60, "Mada": 65, "Matsarya": 50},
+      "traits": {"Honesty": 75, "Reliability": 80, "Hardworking": 85, "Punctuality": 80, "Accountability": 85}
+    },
+    "plain_arch": {
+      "pattern_name": "Plain Arch (Seep)",
+      "analysis": "The arch is the most grounded pattern. On the thumb, it indicates a highly practical, no-nonsense approach to life. You lack deep imaginative logic but excel in raw, reliable execution. You do not take risks and prefer stable, traditional paths.",
+      "purushartha": {"Dharma": 95, "Artha": 80, "Kama": 30, "Moksha": 40},
+      "enemies": {"Kama": 30, "Krodha": 50, "Moha": 40, "Mada": 30, "Matsarya": 20},
+      "traits": {"Honesty": 95, "Reliability": 95, "Hardworking": 95, "Punctuality": 95, "Accountability": 95}
+    },
+    "tented_arch": {
+      "pattern_name": "Tented Arch (Urdhva Seep)",
+      "analysis": "The tented arch indicates high nervous tension and extreme sensitivity. Your willpower is explosive but short-lived. You are prone to sudden bursts of inspiration and anger. You require deep spiritual grounding to control your erratic mental energy.",
+      "purushartha": {"Dharma": 60, "Artha": 50, "Kama": 75, "Moksha": 85},
+      "enemies": {"Kama": 80, "Krodha": 90, "Moha": 50, "Mada": 60, "Matsarya": 70},
+      "traits": {"Honesty": 85, "Reliability": 50, "Hardworking": 65, "Punctuality": 40, "Accountability": 55}
+    }
+  },
+  "Index Finger": {
+    "plain_whorl": {
+      "pattern_name": "Plain Whorl (Chakra)",
+      "analysis": "On Jupiter (Tarjani), a whorl demands authority. You have a natural instinct to lead, teach, and control. You struggle immensely when placed in subordinate roles. Your dharma requires you to build your own empire.",
+      "purushartha": {"Dharma": 90, "Artha": 85, "Kama": 40, "Moksha": 60},
+      "enemies": {"Kama": 30, "Krodha": 80, "Moha": 40, "Mada": 95, "Matsarya": 30},
+      "traits": {"Honesty": 85, "Reliability": 90, "Hardworking": 90, "Punctuality": 85, "Accountability": 95}
+    },
+    "left_loop": {
+      "pattern_name": "Left-Opening Loop (Vamavarti Shankha)",
+      "analysis": "You are a cooperative leader. You lead through consensus and empathy rather than dictatorship. However, your ego is fragile, and you rely heavily on the validation of your peers to feel secure in your position.",
+      "purushartha": {"Dharma": 75, "Artha": 70, "Kama": 65, "Moksha": 55},
+      "enemies": {"Kama": 50, "Krodha": 40, "Moha": 70, "Mada": 45, "Matsarya": 65},
+      "traits": {"Honesty": 85, "Reliability": 80, "Hardworking": 75, "Punctuality": 80, "Accountability": 75}
+    }
+  },
+  "Middle Finger": {
+    "plain_whorl": {"pattern_name": "Plain Whorl (Chakra)", "analysis": "Intense karmic burden. Highly disciplined worker.", "purushartha": {"Dharma": 95, "Artha": 70, "Kama": 20, "Moksha": 50}, "enemies": {"Kama": 20, "Krodha": 60, "Moha": 20, "Mada": 50, "Matsarya": 20}, "traits": {"Honesty": 95, "Reliability": 95, "Hardworking": 95, "Punctuality": 95, "Accountability": 95}},
+    "left_loop": {"pattern_name": "Loop (Shankha)", "analysis": "Adaptable career path. Balances work and life well.", "purushartha": {"Dharma": 70, "Artha": 70, "Kama": 70, "Moksha": 70}, "enemies": {"Kama": 50, "Krodha": 40, "Moha": 50, "Mada": 40, "Matsarya": 40}, "traits": {"Honesty": 80, "Reliability": 80, "Hardworking": 80, "Punctuality": 80, "Accountability": 80}}
+  },
+  "Ring Finger": {
+    "plain_whorl": {"pattern_name": "Plain Whorl (Chakra)", "analysis": "Craves spotlight and massive fame. Highly creative.", "purushartha": {"Dharma": 60, "Artha": 80, "Kama": 90, "Moksha": 30}, "enemies": {"Kama": 80, "Krodha": 50, "Moha": 70, "Mada": 85, "Matsarya": 60}, "traits": {"Honesty": 70, "Reliability": 60, "Hardworking": 80, "Punctuality": 60, "Accountability": 60}},
+    "left_loop": {"pattern_name": "Loop (Shankha)", "analysis": "Appreciates art and beauty but does not need to be the center of attention.", "purushartha": {"Dharma": 75, "Artha": 70, "Kama": 75, "Moksha": 50}, "enemies": {"Kama": 60, "Krodha": 30, "Moha": 60, "Mada": 40, "Matsarya": 40}, "traits": {"Honesty": 85, "Reliability": 80, "Hardworking": 75, "Punctuality": 85, "Accountability": 80}}
+  },
+  "Little Finger": {
+    "plain_whorl": {"pattern_name": "Plain Whorl (Chakra)", "analysis": "Shrewd, calculating intellect. Excellent at business and keeping secrets.", "purushartha": {"Dharma": 50, "Artha": 95, "Kama": 60, "Moksha": 20}, "enemies": {"Kama": 60, "Krodha": 40, "Moha": 80, "Mada": 60, "Matsarya": 50}, "traits": {"Honesty": 50, "Reliability": 70, "Hardworking": 90, "Punctuality": 80, "Accountability": 85}},
+    "left_loop": {"pattern_name": "Loop (Shankha)", "analysis": "Honest communicator. Terrible at keeping secrets. Good in sales and networking.", "purushartha": {"Dharma": 80, "Artha": 75, "Kama": 60, "Moksha": 40}, "enemies": {"Kama": 50, "Krodha": 40, "Moha": 50, "Mada": 30, "Matsarya": 40}, "traits": {"Honesty": 90, "Reliability": 85, "Hardworking": 75, "Punctuality": 80, "Accountability": 85}}
+  }
+}

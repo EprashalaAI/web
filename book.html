@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ध्वनी - आपला वाचक मित्र</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; }
+        
+        /* Theme - Knowledge */
+        .knowledge-bg {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #7c2d12 100%);
+            background-size: 200% 200%;
+            animation: gradientBG 20s ease infinite;
+        }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .listening-pulse { animation: pulse 1.5s infinite ease-in-out; }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.7); } 
+            70% { box-shadow: 0 0 0 15px rgba(249, 115, 22, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
+        }
+
+        .custom-input {
+            @apply block border border-blue-800 rounded-lg p-2 outline-none transition-all text-sm;
+            background-color: #0f172a !important; 
+            color: #e2e8f0 !important;              
+            caret-color: #f97316 !important;       
+        }
+        .custom-input:focus { border-color: #f97316; ring: 1px solid #f97316; }
+
+        .icon-btn {
+            @apply p-2 rounded-full transition-all duration-200 text-white flex items-center justify-center shadow-lg border;
+        }
+
+        .bottom-icon-btn {
+            @apply flex-1 py-3 px-2 rounded-lg transition-all duration-200 border shadow-md flex items-center justify-center hover:-translate-y-1;
+        }
+
+        /* External Link Buttons */
+        .external-link-btn {
+            @apply inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-bold cursor-pointer transition-colors mt-2 mb-1 mr-2 shadow-md no-underline;
+        }
+        .yt-btn { @apply bg-red-600 text-white hover:bg-red-700; }
+        .img-btn { @apply bg-blue-600 text-white hover:bg-blue-700; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #ea580c; border-radius: 3px; }
+    </style>
+</head>
+
+<body class="knowledge-bg text-slate-50 flex items-center justify-center h-screen w-screen p-2" oncontextmenu="return false;">
+
+    <div class="bg-slate-900/95 backdrop-blur-md rounded-xl shadow-2xl p-3 w-full max-w-2xl flex flex-col h-[98vh] border-t-4 border-orange-500 border-b-4 border-blue-600 relative">
+        
+        <div class="flex items-center justify-between mb-2 shrink-0">
+            <h1 class="text-xl font-bold text-white flex items-center gap-2">
+                <span class="text-orange-500">॥</span> 
+                <span class="text-blue-300">ध्वनी</span> 
+                <span class="text-slate-400 text-[10px] font-normal self-end mb-1">- वाचक मित्र</span>
+            </h1>
+            <div id="status-indicator" class="w-3 h-3 rounded-full bg-gray-600 transition-colors shadow-[0_0_8px_rgba(255,255,255,0.2)]"></div>
+        </div>
+
+        <div id="conversation-log" class="flex-grow overflow-y-auto bg-slate-950/80 rounded-lg p-3 mb-2 border border-slate-800 space-y-3 shadow-inner">
+            <div class="text-slate-400 text-center text-sm mt-10">
+                नमस्ते! मी ध्वनी.<br>
+                सुरू करण्यासाठी खालील बटण दाबा.
+            </div>
+        </div>
+
+        <div class="flex justify-center gap-4 mb-2 shrink-0 bg-slate-800/40 p-1 rounded-lg border border-slate-700/50">
+            <button id="btn-pause" class="icon-btn bg-yellow-600/20 hover:bg-yellow-600 border-yellow-600/50 w-8 h-8" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" /></svg>
+            </button>
+            <button id="btn-resume" class="icon-btn bg-green-600/20 hover:bg-green-600 border-green-600/50 w-8 h-8" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" /></svg>
+            </button>
+            <button id="btn-repeat" class="icon-btn bg-blue-600/20 hover:bg-blue-600 border-blue-600/50 w-8 h-8" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
+            </button>
+        </div>
+
+        <div class="flex flex-col gap-2 mb-2 shrink-0 w-full">
+            <div class="flex gap-2 w-full">
+                <div class="flex-grow">
+                    <input type="text" id="user-name" class="custom-input w-full text-center" placeholder="नाव (Name)">
+                </div>
+                <div class="w-20 shrink-0">
+                    <input type="number" id="user-age" class="custom-input w-full text-center" placeholder="वय">
+                </div>
+            </div>
+            <div class="w-full">
+                <input type="text" id="book-details" class="custom-input w-full text-left" placeholder="पुस्तकाचे नाव व तपशील (उदा. भगवद्गीता, अध्याय २)">
+            </div>
+        </div>
+
+        <div id="advance-container" class="hidden shrink-0 w-full bg-slate-900 border border-slate-700 rounded-lg p-2 gap-2 flex-col mb-2">
+            <div class="flex gap-2 w-full">
+                <input type="text" id="api-key-input" class="custom-input w-full text-xs" placeholder="Google Gemini API Key">
+                <button id="btn-paste-key" class="bg-slate-700 text-white px-3 rounded text-xs border border-slate-600">Paste</button>
+            </div>
+        </div>
+
+        <div class="flex gap-2 shrink-0 mb-2">
+            <button id="talk-button" class="flex-grow py-3 px-4 rounded-lg text-md font-bold uppercase tracking-wider transition-all duration-300
+                            bg-gradient-to-r from-blue-700 to-orange-600 text-white shadow-md
+                            hover:from-blue-600 hover:to-orange-500 hover:-translate-y-0.5
+                            focus:ring-2 focus:ring-orange-500 disabled:grayscale disabled:cursor-not-allowed">
+                संवाद साधा
+            </button>
+            <button id="advance-toggle-btn" class="px-2 text-blue-400 hover:text-orange-400">⚙️</button>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3 shrink-0 border-t border-slate-800 pt-3">
+            <button id="btn-restart" class="bottom-icon-btn bg-slate-800 text-blue-300 border-slate-700 hover:bg-blue-900 hover:text-white" title="Restart">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
+            </button>
+            <button id="btn-share" class="bottom-icon-btn bg-orange-900/20 text-orange-300 border-orange-900/40 hover:bg-orange-800 hover:text-white" title="Share">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.287.696.287 1.093s-.107.77-.287 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" /></svg>
+            </button>
+            <button id="btn-end" class="bottom-icon-btn bg-red-900/20 text-red-300 border-red-900/40 hover:bg-red-800 hover:text-white" disabled title="Stop">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 7.5A2.25 2.25 0 017.5 5.25h9a2.25 2.25 0 012.25 2.25v9a2.25 2.25 0 01-2.25 2.25h-9a2.25 2.25 0 01-2.25-2.25v-9z" /></svg>
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Config ---
+        let apiKey = localStorage.getItem('dhwani_api_key') || "";
+        let state = 'IDLE'; 
+        let interactionStep = 0; 
+        let userData = { name: '', age: '', book: '' };
+        let chatHistory = [];
+        let recognition;
+        const synth = window.speechSynthesis;
+        let voices = [];
+        let lastSpokenText = "";
+        let shouldAutoListen = false;
+        let wakeLock = null;
+
+        // --- DOM Elements ---
+        const els = {
+            btnTalk: document.getElementById('talk-button'),
+            log: document.getElementById('conversation-log'),
+            indicator: document.getElementById('status-indicator'),
+            inpName: document.getElementById('user-name'),
+            inpAge: document.getElementById('user-age'),
+            inpBook: document.getElementById('book-details'),
+            inpKey: document.getElementById('api-key-input'),
+            boxKey: document.getElementById('advance-container'),
+            btnKeyToggle: document.getElementById('advance-toggle-btn'),
+            btnPasteKey: document.getElementById('btn-paste-key'),
+            btnPause: document.getElementById('btn-pause'),
+            btnResume: document.getElementById('btn-resume'),
+            btnRepeat: document.getElementById('btn-repeat'),
+            btnRestart: document.getElementById('btn-restart'),
+            btnShare: document.getElementById('btn-share'),
+            btnEnd: document.getElementById('btn-end'),
+        };
+
+        // --- Init ---
+        window.onload = () => {
+            loadVoices();
+            if(apiKey) els.inpKey.value = apiKey;
+            if(localStorage.getItem('dhwani_user_name')) els.inpName.value = localStorage.getItem('dhwani_user_name');
+            if(localStorage.getItem('dhwani_user_age')) els.inpAge.value = localStorage.getItem('dhwani_user_age');
+            if(localStorage.getItem('dhwani_book')) els.inpBook.value = localStorage.getItem('dhwani_book');
+            
+            requestWakeLock();
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') requestWakeLock();
+            });
+        };
+
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                }
+            } catch (err) { console.log('Wake Lock Error:', err); }
+        }
+
+        // --- Logic ---
+        els.btnKeyToggle.onclick = () => { els.boxKey.classList.toggle('hidden'); els.boxKey.classList.toggle('flex'); };
+        els.inpKey.oninput = (e) => { apiKey = e.target.value; localStorage.setItem('dhwani_api_key', apiKey); };
+        els.btnPasteKey.onclick = async () => {
+            try { els.inpKey.value = await navigator.clipboard.readText(); apiKey = els.inpKey.value; localStorage.setItem('dhwani_api_key', apiKey); } catch(e){}
+        };
+
+        // Save inputs
+        [els.inpName, els.inpAge, els.inpBook].forEach(el => {
+            el.addEventListener('input', () => {
+                localStorage.setItem('dhwani_user_name', els.inpName.value);
+                localStorage.setItem('dhwani_user_age', els.inpAge.value);
+                localStorage.setItem('dhwani_book', els.inpBook.value);
+            });
+        });
+
+        // Controls
+        els.btnRestart.onclick = () => { if(confirm("Restart?")) { localStorage.clear(); location.reload(); } };
+        els.btnShare.onclick = async () => {
+            let txt = chatHistory.map(i => `${i.role}: ${i.message}`).join('\n\n');
+            if(!txt) return;
+            try { await navigator.share({title:'Dhwani Chat', text:txt}); } catch(e){ navigator.clipboard.writeText(txt); alert("Copied!"); }
+        };
+        els.btnEnd.onclick = stopAll;
+        els.btnPause.onclick = () => { if(synth.speaking && !synth.paused) { synth.pause(); recognition.stop(); updateMediaUI(true); } };
+        els.btnResume.onclick = () => { if(synth.paused) { synth.resume(); updateMediaUI(false); } };
+        els.btnRepeat.onclick = () => { if(lastSpokenText) speak(lastSpokenText); };
+
+        function updateMediaUI(isPaused) {
+            els.btnPause.disabled = isPaused;
+            els.btnResume.disabled = !isPaused;
+        }
+
+        // --- Interaction ---
+        els.btnTalk.onclick = async () => {
+            if (state === 'IDLE') {
+                if (!apiKey) { alert('API Key Required'); els.boxKey.classList.remove('hidden'); els.boxKey.classList.add('flex'); return; }
+                
+                shouldAutoListen = true;
+                checkManualInputs();
+                requestWakeLock();
+                
+                // Logic: If user entered details but we haven't greeted them yet, GREET first.
+                // If details are missing, ASK for them.
+                // Only start listening if we are in flow (Step 3) AND chat history exists.
+                if (interactionStep === 3 && chatHistory.length > 0) {
+                     startListening(); 
+                } else {
+                     handleConversationFlow();
+                }
+            } else {
+                stopAll();
+            }
+        };
+
+        async function handleConversationFlow() {
+            updateState('PROCESSING');
+            let msg = "";
+            
+            // Step 0: Name check
+            if (!userData.name) { 
+                msg = "नमस्कार, मी ध्वनी. तुमचे नाव काय आहे?"; 
+                interactionStep = 0; 
+            }
+            // Step 1: Age check
+            else if (!userData.age) { 
+                msg = `नमस्कार ${userData.name}. तुमचे वय काय आहे?`; 
+                interactionStep = 1; 
+            }
+            // Step 2: Book check
+            else if (!userData.book) { 
+                msg = "आज कोणते पुस्तक समजून घ्यायचे आहे?"; 
+                interactionStep = 2; 
+            }
+            // Step 3: All set - Specific Greeting Request
+            else { 
+                msg = `नमस्कार ${userData.name}, तुम्हाला ह्या पुस्तकाबद्दल काय जाणून घ्यायचे आहे?`; 
+                interactionStep = 3; 
+            }
+            
+            addLog('Dhwani', msg);
+            await speak(msg);
+        }
+
+        function checkManualInputs() {
+            userData.name = els.inpName.value.trim();
+            userData.age = els.inpAge.value.trim();
+            userData.book = els.inpBook.value.trim();
+            if (userData.name && userData.age && userData.book) interactionStep = 3;
+            else if (userData.name && userData.age) interactionStep = 2;
+            else if (userData.name) interactionStep = 1;
+        }
+
+        // --- Speech Recognition ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.lang = 'mr-IN'; 
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.onstart = () => updateState('LISTENING');
+            recognition.onend = () => { if (state === 'LISTENING') updateState('IDLE'); };
+            recognition.onresult = async (e) => {
+                const text = e.results[0][0].transcript;
+                addLog('तुम्ही', text);
+                processUserInput(text);
+            };
+        } else { alert("Use Chrome for Speech Recognition"); }
+
+        function startListening() { if (!shouldAutoListen) return; try { recognition.start(); } catch(e){} }
+
+        // --- AI Logic (Brain) ---
+        async function processUserInput(text) {
+            updateState('PROCESSING');
+            if (interactionStep === 0) { userData.name = text.replace(/माझे नाव|आहे/g, '').trim(); els.inpName.value = userData.name; handleConversationFlow(); }
+            else if (interactionStep === 1) { userData.age = text.match(/\d+/) ? text.match(/\d+/)[0] : text; els.inpAge.value = userData.age; handleConversationFlow(); }
+            else if (interactionStep === 2) { userData.book = text; els.inpBook.value = userData.book; handleConversationFlow(); }
+            else { await generateAIResponse(text); }
+        }
+
+        async function generateAIResponse(query) {
+            const age = parseInt(userData.age) || 25;
+            let tone = age < 15 ? "Simple, Storytelling, Kind" : "Philosophical, Deep, Mature";
+
+            const systemPrompt = `
+                Act as 'Dhwani', an expert book explainer.
+                User: ${userData.name} (${age} years old). Book: ${userData.book}.
+                
+                STRICT RULES:
+                1. EXACT QUOTE: First, output the exact verse/quote from the book in the ORIGINAL language of the book.
+                2. CITATION: Explicitly state the Chapter Number and Page Number (or Verse Number) in brackets [ ].
+                3. EXPLANATION: Translate the quote and give a deep meaning of it.
+                   - Default Language: Marathi.
+                   - If the user EXPLICITLY asks for another language (e.g., "Tell in Hindi", "English please"), only then use that language.
+                4. MEDIA: At the end, ask: "तुम्हाला या विषयावर फोटो किंवा व्हिडिओ बघायला आवडेल का?"
+                5. MEDIA LINKS: If the user wants media, provide:
+                   - A YouTube Search Link format: "YT_SEARCH: topic_keywords"
+                   - A Google Image Search Link format: "IMG_SEARCH: topic_keywords"
+                6. LENGTH: Concise (3-4 sentences max for explanation).
+                7. Tone: ${tone}.
+            `;
+
+            const history = chatHistory.map(i => ({ role: i.role==='Dhwani'?'model':'user', parts:[{text:i.message}] }));
+            history.push({ role: 'user', parts: [{ text: query }] });
+
+            try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`, {
+                    method: 'POST', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({ contents: history, systemInstruction: { parts:[{text:systemPrompt}] } })
+                });
+                const data = await res.json();
+                let aiText = data.candidates[0].content.parts[0].text;
+                
+                addLog('Dhwani', aiText);
+                chatHistory.push({ role: 'user', message: query });
+                chatHistory.push({ role: 'Dhwani', message: aiText });
+                
+                await speak(cleanForTTS(aiText));
+            } catch (err) { 
+                const e = "Error connecting to AI. Please check key/internet."; 
+                addLog('Error', e); await speak(e); 
+            }
+        }
+
+        // --- TTS Engine ---
+        function loadVoices() { voices = synth.getVoices(); synth.onvoiceschanged = () => voices = synth.getVoices(); }
+
+        function speak(text) {
+            return new Promise((resolve, reject) => {
+                synth.cancel(); 
+                if(recognition) try{ recognition.stop(); } catch(e){}
+
+                lastSpokenText = text;
+                els.btnRepeat.disabled = false;
+                
+                const utt = new SpeechSynthesisUtterance(text);
+                let lang = 'mr';
+                if(/[a-zA-Z]/.test(text) && !/[\u0900-\u097F]/.test(text)) lang = 'en'; 
+                else if(text.includes('है') || text.includes('को')) lang = 'hi'; 
+                
+                let v = voices.find(x => x.lang.includes(lang)) || voices.find(x => x.lang.includes('hi')) || voices[0];
+                if(v) utt.voice = v;
+                
+                const age = parseInt(userData.age) || 25;
+                utt.rate = age < 12 ? 0.9 : 1.0;
+                utt.pitch = 1.0;
+
+                utt.onstart = () => { updateState('SPEAKING'); updateMediaUI(false); };
+                utt.onend = () => { 
+                    updateMediaUI(true); 
+                    els.btnResume.disabled = true; 
+                    if (shouldAutoListen) { updateState('IDLE'); setTimeout(() => { if(shouldAutoListen) startListening(); }, 500); }
+                    else { updateState('IDLE'); }
+                    resolve(); 
+                };
+                utt.onerror = () => { updateState('IDLE'); resolve(); };
+                setTimeout(() => synth.speak(utt), 100);
+            });
+        }
+
+        function stopAll() {
+            shouldAutoListen = false;
+            synth.cancel();
+            if(recognition) recognition.stop();
+            updateState('IDLE');
+            updateMediaUI(true);
+            els.btnResume.disabled = true;
+            if(wakeLock) wakeLock.release().then(() => wakeLock = null).catch(e => {});
+        }
+
+        function cleanForTTS(text) {
+            let clean = text.replace(/YT_SEARCH:.*$/gm, '').replace(/IMG_SEARCH:.*$/gm, '');
+            clean = clean.replace(/[*#_`]/g, '');
+            clean = clean.replace(/[\[\]\(\)\<\>\{\}]/g, ' '); 
+            return clean.replace(/\s+/g, ' ').trim();
+        }
+
+        function updateState(s) {
+            state = s;
+            els.indicator.className = `w-3 h-3 rounded-full transition-colors ${s==='IDLE'?'bg-gray-500':s==='LISTENING'?'bg-red-500 listening-pulse':s==='SPEAKING'?'bg-green-500':'bg-yellow-500'}`;
+            els.btnTalk.textContent = s==='LISTENING'?"ऐकत आहे...":s==='SPEAKING'?"बोलत आहे...":s==='PROCESSING'?"थांबा...":"संवाद साधा";
+            els.btnEnd.disabled = (s==='IDLE');
+        }
+
+        function addLog(sender, msg) {
+            const div = document.createElement('div');
+            const isUser = sender === 'तुम्ही';
+            div.className = `p-2 rounded-lg border text-sm ${isUser ? 'bg-slate-800 border-slate-700 text-slate-200 ml-8' : 'bg-blue-900/30 border-blue-800 text-blue-100 mr-8'}`;
+            
+            let formattedMsg = msg.replace(/\n/g, '<br>');
+            formattedMsg = formattedMsg.replace(/YT_SEARCH:\s*(.*)/g, (match, keyword) => {
+                const q = encodeURIComponent(keyword.trim());
+                return `<br><a href="https://www.youtube.com/results?search_query=${q}" target="_blank" class="external-link-btn yt-btn">🎥 व्हिडिओ पहा (Watch Video)</a>`;
+            });
+            formattedMsg = formattedMsg.replace(/IMG_SEARCH:\s*(.*)/g, (match, keyword) => {
+                const q = encodeURIComponent(keyword.trim());
+                return `<br><a href="https://www.google.com/search?tbm=isch&q=${q}" target="_blank" class="external-link-btn img-btn">🖼️ संबंधित फोटो पहा (See Photos)</a>`;
+            });
+
+            div.innerHTML = `<div class="text-[10px] opacity-50 mb-1 ${isUser?'text-right':'text-left'}">${sender}</div><div class="leading-snug">${formattedMsg}</div>`;
+            els.log.appendChild(div);
+            els.log.scrollTop = els.log.scrollHeight;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,542 @@
+[
+    {
+        "date": "2025-12-05",
+        "year": 2025,
+        "sun_deg": 253.09,
+        "moon_deg": 73.55,
+        "mars_deg": 262.27,
+        "saturn_deg": 355.2,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2031-10-01",
+        "year": 2031,
+        "sun_deg": 187.63,
+        "moon_deg": 10.35,
+        "mars_deg": 263.35,
+        "saturn_deg": 83.01,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2032-06-08",
+        "year": 2032,
+        "sun_deg": 77.77,
+        "moon_deg": 77.02,
+        "mars_deg": 87.45,
+        "saturn_deg": 85.36,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2033-04-15",
+        "year": 2033,
+        "sun_deg": 25.35,
+        "moon_deg": 207.5,
+        "mars_deg": 273.49,
+        "saturn_deg": 91.97,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2033-06-13",
+        "year": 2033,
+        "sun_deg": 82.32,
+        "moon_deg": 262.67,
+        "mars_deg": 280.72,
+        "saturn_deg": 98.26,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2038-03-06",
+        "year": 2038,
+        "sun_deg": 345.5,
+        "moon_deg": 345.85,
+        "mars_deg": 73.02,
+        "saturn_deg": 162.64,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2038-08-15",
+        "year": 2038,
+        "sun_deg": 142.3,
+        "moon_deg": 322.82,
+        "mars_deg": 167.54,
+        "saturn_deg": 166.08,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2040-03-13",
+        "year": 2040,
+        "sun_deg": 353.02,
+        "moon_deg": 352.06,
+        "mars_deg": 98.6,
+        "saturn_deg": 189.88,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2042-03-07",
+        "year": 2042,
+        "sun_deg": 346.54,
+        "moon_deg": 168.28,
+        "mars_deg": 129.07,
+        "saturn_deg": 216.22,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2043-05-24",
+        "year": 2043,
+        "sun_deg": 62.76,
+        "moon_deg": 242.93,
+        "mars_deg": 43.1,
+        "saturn_deg": 223.88,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2045-10-26",
+        "year": 2045,
+        "sun_deg": 212.98,
+        "moon_deg": 34.2,
+        "mars_deg": 159.55,
+        "saturn_deg": 249.63,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2046-09-30",
+        "year": 2046,
+        "sun_deg": 187.01,
+        "moon_deg": 185.56,
+        "mars_deg": 255.28,
+        "saturn_deg": 257.88,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2050-05-21",
+        "year": 2050,
+        "sun_deg": 60.17,
+        "moon_deg": 61.81,
+        "mars_deg": 311.12,
+        "saturn_deg": 308.92,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2053-08-14",
+        "year": 2053,
+        "sun_deg": 141.7,
+        "moon_deg": 141.3,
+        "mars_deg": 162.51,
+        "saturn_deg": 342.66,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2055-09-06",
+        "year": 2055,
+        "sun_deg": 163.41,
+        "moon_deg": 342.52,
+        "mars_deg": 189.14,
+        "saturn_deg": 7.96,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2060-06-14",
+        "year": 2060,
+        "sun_deg": 83.72,
+        "moon_deg": 261.96,
+        "mars_deg": 67.84,
+        "saturn_deg": 69.09,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2061-10-29",
+        "year": 2061,
+        "sun_deg": 216.09,
+        "moon_deg": 38.27,
+        "mars_deg": 269.51,
+        "saturn_deg": 91.34,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2066-08-21",
+        "year": 2066,
+        "sun_deg": 148.3,
+        "moon_deg": 147.89,
+        "mars_deg": 150.4,
+        "saturn_deg": 150.6,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2067-05-29",
+        "year": 2067,
+        "sun_deg": 67.76,
+        "moon_deg": 250.71,
+        "mars_deg": 335.87,
+        "saturn_deg": 154.55,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2069-02-06",
+        "year": 2069,
+        "sun_deg": 317.77,
+        "moon_deg": 135.11,
+        "mars_deg": 277.0,
+        "saturn_deg": 186.55,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2072-05-18",
+        "year": 2072,
+        "sun_deg": 57.93,
+        "moon_deg": 57.76,
+        "mars_deg": 131.76,
+        "saturn_deg": 219.07,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2073-06-20",
+        "year": 2073,
+        "sun_deg": 89.32,
+        "moon_deg": 272.14,
+        "mars_deg": 51.65,
+        "saturn_deg": 229.62,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2074-05-26",
+        "year": 2074,
+        "sun_deg": 65.16,
+        "moon_deg": 65.73,
+        "mars_deg": 152.04,
+        "saturn_deg": 243.66,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2075-12-08",
+        "year": 2075,
+        "sun_deg": 256.0,
+        "moon_deg": 256.53,
+        "mars_deg": 171.15,
+        "saturn_deg": 260.38,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2079-12-23",
+        "year": 2079,
+        "sun_deg": 271.28,
+        "moon_deg": 268.33,
+        "mars_deg": 210.75,
+        "saturn_deg": 302.47,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2082-06-26",
+        "year": 2082,
+        "sun_deg": 94.89,
+        "moon_deg": 92.24,
+        "mars_deg": 336.82,
+        "saturn_deg": 339.33,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2082-07-10",
+        "year": 2082,
+        "sun_deg": 108.24,
+        "moon_deg": 286.56,
+        "mars_deg": 341.55,
+        "saturn_deg": 339.02,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2082-10-07",
+        "year": 2082,
+        "sun_deg": 194.18,
+        "moon_deg": 15.63,
+        "mars_deg": 335.07,
+        "saturn_deg": 333.41,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2084-01-23",
+        "year": 2084,
+        "sun_deg": 302.9,
+        "moon_deg": 123.24,
+        "mars_deg": 260.58,
+        "saturn_deg": 348.43,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2085-04-24",
+        "year": 2085,
+        "sun_deg": 34.54,
+        "moon_deg": 32.93,
+        "mars_deg": 97.49,
+        "saturn_deg": 10.41,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2088-07-04",
+        "year": 2088,
+        "sun_deg": 103.04,
+        "moon_deg": 283.32,
+        "mars_deg": 55.92,
+        "saturn_deg": 53.82,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2088-12-13",
+        "year": 2088,
+        "sun_deg": 261.94,
+        "moon_deg": 261.54,
+        "mars_deg": 142.0,
+        "saturn_deg": 51.79,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2088-12-28",
+        "year": 2088,
+        "sun_deg": 277.22,
+        "moon_deg": 96.63,
+        "mars_deg": 142.39,
+        "saturn_deg": 50.98,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2089-01-12",
+        "year": 2089,
+        "sun_deg": 292.5,
+        "moon_deg": 294.17,
+        "mars_deg": 139.78,
+        "saturn_deg": 50.52,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2090-12-21",
+        "year": 2090,
+        "sun_deg": 269.59,
+        "moon_deg": 268.79,
+        "mars_deg": 169.14,
+        "saturn_deg": 81.31,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2091-07-01",
+        "year": 2091,
+        "sun_deg": 99.48,
+        "moon_deg": 278.44,
+        "mars_deg": 180.01,
+        "saturn_deg": 90.39,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2091-11-26",
+        "year": 2091,
+        "sun_deg": 243.96,
+        "moon_deg": 62.25,
+        "mars_deg": 277.62,
+        "saturn_deg": 98.47,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2093-01-13",
+        "year": 2093,
+        "sun_deg": 293.54,
+        "moon_deg": 116.39,
+        "mars_deg": 198.74,
+        "saturn_deg": 109.97,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2094-04-01",
+        "year": 2094,
+        "sun_deg": 11.79,
+        "moon_deg": 191.69,
+        "mars_deg": 31.85,
+        "saturn_deg": 120.8,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2094-08-26",
+        "year": 2094,
+        "sun_deg": 153.33,
+        "moon_deg": 332.8,
+        "mars_deg": 132.52,
+        "saturn_deg": 134.23,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2095-02-05",
+        "year": 2095,
+        "sun_deg": 316.43,
+        "moon_deg": 317.88,
+        "mars_deg": 228.91,
+        "saturn_deg": 138.3,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2095-12-27",
+        "year": 2095,
+        "sun_deg": 275.47,
+        "moon_deg": 278.21,
+        "mars_deg": 336.8,
+        "saturn_deg": 155.09,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2099-03-07",
+        "year": 2099,
+        "sun_deg": 346.72,
+        "moon_deg": 167.3,
+        "mars_deg": 284.53,
+        "saturn_deg": 192.7,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2099-10-29",
+        "year": 2099,
+        "sun_deg": 215.88,
+        "moon_deg": 33.87,
+        "mars_deg": 22.12,
+        "saturn_deg": 199.55,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2099-11-28",
+        "year": 2099,
+        "sun_deg": 246.05,
+        "moon_deg": 67.31,
+        "mars_deg": 19.93,
+        "saturn_deg": 202.88,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2099-12-12",
+        "year": 2099,
+        "sun_deg": 260.25,
+        "moon_deg": 260.69,
+        "mars_deg": 22.68,
+        "saturn_deg": 204.19,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2100-11-02",
+        "year": 2100,
+        "sun_deg": 219.64,
+        "moon_deg": 217.69,
+        "mars_deg": 212.51,
+        "saturn_deg": 210.76,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2103-03-24",
+        "year": 2103,
+        "sun_deg": 2.71,
+        "moon_deg": 184.56,
+        "mars_deg": 330.9,
+        "saturn_deg": 242.21,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2105-07-27",
+        "year": 2105,
+        "sun_deg": 123.93,
+        "moon_deg": 302.58,
+        "mars_deg": 80.64,
+        "saturn_deg": 259.25,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2106-07-16",
+        "year": 2106,
+        "sun_deg": 113.2,
+        "moon_deg": 290.53,
+        "mars_deg": 181.6,
+        "saturn_deg": 271.89,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2110-02-05",
+        "year": 2110,
+        "sun_deg": 315.79,
+        "moon_deg": 136.16,
+        "mars_deg": 220.67,
+        "saturn_deg": 313.67,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2110-02-19",
+        "year": 2110,
+        "sun_deg": 329.96,
+        "moon_deg": 330.26,
+        "mars_deg": 226.22,
+        "saturn_deg": 315.33,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2110-04-19",
+        "year": 2110,
+        "sun_deg": 28.63,
+        "moon_deg": 26.31,
+        "mars_deg": 232.87,
+        "saturn_deg": 321.09,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2112-02-13",
+        "year": 2112,
+        "sun_deg": 323.4,
+        "moon_deg": 144.96,
+        "mars_deg": 244.43,
+        "saturn_deg": 335.44,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2112-12-19",
+        "year": 2112,
+        "sun_deg": 267.2,
+        "moon_deg": 264.99,
+        "mars_deg": 343.61,
+        "saturn_deg": 341.05,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2114-02-20",
+        "year": 2114,
+        "sun_deg": 331.0,
+        "moon_deg": 153.98,
+        "mars_deg": 267.08,
+        "saturn_deg": 358.12,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2117-06-30",
+        "year": 2117,
+        "sun_deg": 98.26,
+        "moon_deg": 98.64,
+        "mars_deg": 140.01,
+        "saturn_deg": 48.4,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2120-08-24",
+        "year": 2120,
+        "sun_deg": 151.13,
+        "moon_deg": 148.28,
+        "mars_deg": 93.74,
+        "saturn_deg": 91.51,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2121-12-24",
+        "year": 2121,
+        "sun_deg": 272.11,
+        "moon_deg": 91.52,
+        "mars_deg": 286.72,
+        "saturn_deg": 105.63,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    },
+    {
+        "date": "2123-09-06",
+        "year": 2123,
+        "sun_deg": 162.99,
+        "moon_deg": 344.33,
+        "mars_deg": 222.73,
+        "saturn_deg": 130.6,
+        "risk_level": "High - Combined Syzygy and Mars/Saturn Aspect"
+    }
+]

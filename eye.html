@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lazy Eye Therapy – Children</title>
+
+<style>
+html, body {
+    margin: 0;
+    padding: 0;
+    background: black;
+    color: white;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+}
+
+#menu {
+    text-align: center;
+    padding: 20px;
+}
+
+button, select {
+    font-size: 18px;
+    padding: 10px 14px;
+    margin: 6px;
+    border-radius: 10px;
+    border: none;
+}
+
+.eye-btn.active {
+    background: #22c55e;
+    color: black;
+}
+
+#therapy {
+    display: none;
+    width: 100vw;
+    height: 100vh;
+}
+
+.half {
+    position: absolute;
+    width: 50vw;
+    height: 100vh;
+}
+
+#left { left: 0; }
+#right { right: 0; }
+
+#object {
+    position: absolute;
+    transition: transform 3s linear;
+}
+
+#popup {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.9);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    font-size: 24px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="menu">
+<h2>👁️ Lazy Eye Exercise</h2>
+
+<p style="color:yellow">
+⚠ Please consult an Eye Specialist to identify the lazy eye
+</p>
+
+<h3>Select Lazy Eye</h3>
+<button class="eye-btn" id="btnLeft" onclick="selectEye('left')">Left Eye</button>
+<button class="eye-btn" id="btnRight" onclick="selectEye('right')">Right Eye</button>
+
+<h3>Select Activity</h3>
+<select id="mode">
+<option value="white">White Dancing Ball</option>
+<option value="color">Colourful Dancing Ball</option>
+<option value="shape">Dancing Shapes</option>
+<option value="line">Dancing Lines</option>
+<option value="fruit">Dancing Fruits</option>
+<option value="flower">Dancing Flowers</option>
+</select>
+
+<br><br>
+<button onclick="start()">Start</button>
+</div>
+
+<div id="popup">
+<div>📱 Put the mobile in VR headset</div>
+<div id="count">Starting in 10</div>
+</div>
+
+<div id="therapy">
+<div id="left" class="half"></div>
+<div id="right" class="half"></div>
+</div>
+
+<audio id="bgm" loop>
+<source src="https://cdn.pixabay.com/audio/2022/10/25/audio_9467a82fa0.mp3">
+</audio>
+
+<script>
+let eye = "left";
+let area, obj;
+let x = 0, y = 0;
+const colors = ["red","blue","green","yellow","orange","pink","brown"];
+const shapes = ["circle","square","rectangle","triangle","oval"];
+const fruits = ["🍎","🍌","🍊","🍉","🍓"];
+const flowers = ["🌸","🌼","🌻","🌹"];
+
+const speech = new SpeechSynthesisUtterance();
+speech.rate = 0.7;
+speech.pitch = 1.4;
+
+function selectEye(e) {
+    eye = e;
+    document.querySelectorAll(".eye-btn").forEach(b=>b.classList.remove("active"));
+    document.getElementById(e === "left" ? "btnLeft" : "btnRight").classList.add("active");
+}
+
+function start() {
+    let c = 10;
+    document.getElementById("popup").style.display="flex";
+    let t = setInterval(()=>{
+        document.getElementById("count").innerText = "Starting in " + c;
+        c--;
+        if(c<0){
+            clearInterval(t);
+            document.getElementById("popup").style.display="none";
+            launch();
+        }
+    },1000);
+}
+
+function launch() {
+    document.getElementById("menu").style.display="none";
+    document.getElementById("therapy").style.display="block";
+    document.getElementById("bgm").volume = 0.15;
+    document.getElementById("bgm").play();
+
+    area = document.getElementById(eye);
+    obj = document.createElement("div");
+    obj.id="object";
+    area.appendChild(obj);
+
+    setInterval(updateVisual,5000);
+    animate();
+}
+
+function animate() {
+    x += 0.01;
+    y += 0.008;
+    obj.style.left = (45 + Math.sin(x)*40) + "%";
+    obj.style.top  = (45 + Math.sin(y)*40) + "%";
+    requestAnimationFrame(animate);
+}
+
+function updateVisual() {
+    let mode = modeSelect = document.getElementById("mode").value;
+    let color = colors[Math.floor(Math.random()*colors.length)];
+    obj.innerHTML="";
+    obj.style.width="30px";
+    obj.style.height="30px";
+    obj.style.background=color;
+    obj.style.borderRadius="50%";
+    obj.style.transform="rotate(0deg)";
+
+    if(mode==="shape"){
+        let s = shapes[Math.floor(Math.random()*shapes.length)];
+        speak("Can you tell me the shape?");
+        if(s==="square") obj.style.borderRadius="0";
+        if(s==="rectangle") obj.style.width="50px";
+        if(s==="triangle"){
+            obj.style.background="transparent";
+            obj.style.borderLeft="25px solid transparent";
+            obj.style.borderRight="25px solid transparent";
+            obj.style.borderBottom="40px solid "+color;
+        }
+    }
+
+    if(mode==="line"){
+        speak("Can you tell me the line?");
+        obj.style.width="4px";
+        obj.style.height="60px";
+        obj.style.background=color;
+        obj.style.transform = [
+            "rotate(0deg)",
+            "rotate(90deg)",
+            "rotate(30deg)",
+            "rotate(-30deg)",
+            "skewX(20deg)",
+            "skewX(-20deg)"
+        ][Math.floor(Math.random()*6)];
+    }
+
+    if(mode==="fruit"){
+        speak("Which fruit is this?");
+        obj.style.fontSize="40px";
+        obj.style.background="transparent";
+        obj.innerHTML = fruits[Math.floor(Math.random()*fruits.length)];
+    }
+
+    if(mode==="flower"){
+        speak("Which flower is this?");
+        obj.style.fontSize="40px";
+        obj.style.background="transparent";
+        obj.innerHTML = flowers[Math.floor(Math.random()*flowers.length)];
+    }
+
+    if(mode==="color"){
+        speak("Can you tell me the colour?");
+    }
+}
+
+function speak(text){
+    speech.text = text;
+    speechSynthesis.cancel();
+    speechSynthesis.speak(speech);
+}
+</script>
+
+</body>
+</html>
