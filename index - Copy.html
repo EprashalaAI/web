@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eprashala | Comprehensive Digital Classroom Solutions</title>
+    
+    <meta name="description" content="Eprashala provides solar-powered, zero-maintenance digital classrooms and vernacular e-learning software. Empowering rural India with accessible education technologies.">
+    <link rel="canonical" href="https://www.eprashala.com">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            dark: '#0f172a',
+                            primary: '#2563eb',
+                            accent: '#10b981',
+                            light: '#f8fafc',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Lightbox Styles */
+        #lightbox {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+        #lightbox.active {
+            display: flex;
+        }
+        #lightbox img {
+            max-width: 90%;
+            max-height: 90vh;
+            border-radius: 0.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: zoomIn 0.3s ease-out forwards;
+        }
+        @keyframes zoomIn {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .lightbox-trigger {
+            cursor: zoom-in;
+            transition: transform 0.3s ease;
+        }
+        .lightbox-trigger:hover {
+            transform: scale(1.02);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .close-lightbox {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+            z-index: 10000;
+        }
+    </style>
+</head>
+<body class="bg-brand-light text-slate-800 antialiased font-sans">
+
+    <!-- Navigation -->
+    <header class="fixed w-full top-0 z-40 bg-white/95 backdrop-blur-md shadow-sm border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg4363GXODGN4g-cVMo4bjxLcoAPb2Hl-ScUc11QC5K9Lv9yP6LIFvyCYdDvzG2_eLncxytRI7FClzT055APwOKLUMKd9sUSiYhpZLNPJ7Darmw5IvqvqebaaCaFud-MQgNfoSI4Hra5ts/s320/eprashala+copy.jpg" alt="Eprashala Logo" class="h-10 w-auto rounded lightbox-trigger">
+                <span class="text-2xl font-black text-brand-dark tracking-tight">Eprashala | Digital Classroom Solutions</span>
+            </div>
+            <nav class="hidden lg:flex space-x-6 font-semibold text-sm text-slate-600 uppercase tracking-wide">
+                <a href="#mission" class="hover:text-brand-primary">Mission</a>
+                <a href="#technology" class="hover:text-brand-primary">Tech & FAQ</a>
+                <a href="#products" class="hover:text-brand-primary">Products</a>
+                <a href="#media" class="hover:text-brand-primary">Impact</a>
+                <a href="#team" class="hover:text-brand-primary">Team</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="pt-20">
+        
+        <!-- Hero Section -->
+        <section class="relative bg-brand-dark text-white pt-20 pb-24 border-b-8 border-brand-primary">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-12 items-center">
+                <div>
+                    <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-6">
+                        Bridging the Rural-Urban Education Divide.
+                    </h1>
+                    <p class="text-lg md:text-xl text-slate-300 mb-8 max-w-xl">
+                        Eprashala has spearheaded a digital education revolution in India, transforming the learning experience for over 50 lakh students across 6000 schools<!--[cite: 1] -->.
+                    </p>
+                    <div class="flex flex-wrap gap-4">
+                        <a href="https://ai.eprashala.com/Dhwani.apk" class="bg-brand-primary text-white px-6 py-3 rounded font-bold shadow-lg hover:bg-blue-600 transition">Download Dhwani AI App<!--[cite: 1] --></a>
+                        <a href="#products" class="bg-white text-brand-dark px-6 py-3 rounded font-bold shadow-lg hover:bg-slate-100 transition">View Products</a>
+                    </div>
+                </div>
+                <div class="relative">
+                    <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjM0cDSma76kjslEF26YZUyF38cuHIe6Ao06GlQf2lvbAjEQeG7jO5HYXvmrmMPZUNg7y-DnJg1CYuxbkYIheHlBFqJGf7JSkR6UAk0NuIaXeNBU6PXmO3RtAolzlnQ_RDMG5SKH6eocVY/s640/DIGITAL-CLASSROOM-FOR-SCHOOLS.jpg" alt="Digital Classroom Demo" class="rounded-xl shadow-2xl border border-slate-700 w-full h-auto lightbox-trigger">
+                </div>
+            </div>
+        </section>
+
+        <!-- The Educational Crisis & Our Mission -->
+        <section id="mission" class="py-20 bg-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl font-bold text-brand-dark mb-4">The Educational Crisis & Our Vision</h2>
+                    <p class="text-lg text-slate-600 max-w-3xl mx-auto">India continues to face stern challenges. Despite growing investment in education, severe gaps remain between urban and rural infrastructures<!--[cite: 9] -->.</p>
+                </div>
+                
+                <div class="grid md:grid-cols-3 gap-8 mb-12">
+                    <div class="p-6 bg-slate-50 rounded-xl border border-slate-200">
+                        <div class="text-3xl font-black text-brand-primary mb-2">35%</div>
+                        <h3 class="font-bold text-lg mb-2">Illiteracy Rate</h3>
+                        <p class="text-slate-600 text-sm">35% of the population is still illiterate; only 15% of Indian students reach high school, and just 7% graduate<!--[cite: 9] -->.</p>
+                    </div>
+                    <div class="p-6 bg-slate-50 rounded-xl border border-slate-200">
+                        <div class="text-3xl font-black text-brand-primary mb-2">25%</div>
+                        <h3 class="font-bold text-lg mb-2">Vacant Teaching Posts</h3>
+                        <p class="text-slate-600 text-sm">25% of teaching positions nationwide are vacant, and 57% of college professors lack either a master's or PhD degree<!--[cite: 9] -->.</p>
+                    </div>
+                    <div class="p-6 bg-slate-50 rounded-xl border border-slate-200">
+                        <div class="text-3xl font-black text-brand-primary mb-2">5-6 km</div>
+                        <h3 class="font-bold text-lg mb-2">Daily Commute</h3>
+                        <p class="text-slate-600 text-sm">With daily treks of 5-6 km to under-equipped schools lacking proper facilities, young learners spend hours commuting only to sit in classrooms devoid of proper infrastructure<!--[cite: 1] -->.</p>
+                    </div>
+                </div>
+
+                <div class="bg-brand-dark text-white rounded-2xl p-8 md:p-12 shadow-xl">
+                    <h3 class="text-2xl font-bold mb-4 text-brand-accent">Our Comprehensive Mission</h3>
+                    <ul class="space-y-4 text-slate-300">
+                        <li><strong class="text-white">Equitable Education:</strong> Provide a uniform standard of education all across the entire country (rural or urban)<!--[cite: 9] -->.</li>
+                        <li><strong class="text-white">Vernacular Preservation:</strong> Counteract the rapid decline of local language schools caused by the shift towards ICSE and CBSE curricula, preventing the loss of native language proficiency<!--[cite: 1] -->.</li>
+                        <li><strong class="text-white">Empowering Farmers:</strong> Teach new techniques like rain water harvesting, raised bed farming, creating organic fertilizers, and implementing biogas<!--[cite: 9] -->. We want to see a software engineer in every farmer and a farmer in every software engineer<!--[cite: 9] -->.</li>
+                        <li><strong class="text-white">Single-Teacher Solutions:</strong> Prevent scenarios where one teacher shoulders the responsibility of teaching multiple subjects to multiple grades by automating lectures aligned with school timetables<!--[cite: 1] -->.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- Technology Edge & FAQ -->
+        <section id="technology" class="py-20 bg-slate-900 text-slate-300">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl font-bold text-white mb-4">Why Eprashala Hardware?</h2>
+                    <p class="max-w-3xl mx-auto">It operates efficiently on solar power, requires minimal maintenance, and boasts virtually zero running costs<!--[cite: 1] -->.</p>
+                </div>
+
+                <div class="grid lg:grid-cols-2 gap-12">
+                    <!-- Comparison Table -->
+                    <div class="bg-slate-800 rounded-xl overflow-hidden border border-slate-700 shadow-xl">
+                        <h3 class="text-xl font-bold text-white bg-slate-950 p-4 border-b border-slate-700">Projector Comparison</h3>
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-900 text-white">
+                                <tr>
+                                    <th class="p-3 border-b border-slate-700">Feature</th>
+                                    <th class="p-3 border-b border-slate-700 text-brand-accent">Eprashala Projector<!--[cite: 2] --></th>
+                                    <th class="p-3 border-b border-slate-700">Other Projectors<!--[cite: 2] --></th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-700">
+                                <tr>
+                                    <td class="p-3 font-semibold text-white">Technology</td>
+                                    <td class="p-3">Single lcd + led – simple and repairable<!--[cite: 2] --></td>
+                                    <td class="p-3">3 lcd or DLP – use and throw<!--[cite: 2] --></td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-semibold text-white">Lamp Life</td>
+                                    <td class="p-3">100 watts led (20,000 hours)<!--[cite: 2] --></td>
+                                    <td class="p-3">Mercury vapour (2000 hours)<!--[cite: 2] --></td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-semibold text-white">Temperature</td>
+                                    <td class="p-3">Very cold max temp 70 degrees Celsius<!--[cite: 2] --></td>
+                                    <td class="p-3">Reaches more than 300 degrees Celsius<!--[cite: 2] --></td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-semibold text-white">Replacement Cost</td>
+                                    <td class="p-3">Very less Rs. 2,700/-<!--[cite: 2] --></td>
+                                    <td class="p-3">Very high Rs. 12,500/-<!--[cite: 2] --></td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-semibold text-white">Power Draw</td>
+                                    <td class="p-3">Equivalent to running 2 * 40 watts tube lights<!--[cite: 2] --></td>
+                                    <td class="p-3">Consumes 250 to 300 watts of power<!--[cite: 2] --></td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-semibold text-white">Brightness</td>
+                                    <td class="p-3">2000 PEAK Lumens (Uniform throughout life)<!--[cite: 2] --></td>
+                                    <td class="p-3">2000 ANSI Lumens (Decreases very fast)<!--[cite: 2] --></td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-semibold text-white">Warranty</td>
+                                    <td class="p-3 font-bold text-white">2 years including lamp<!--[cite: 2] --></td>
+                                    <td class="p-3">1 year lamp not included<!--[cite: 2] --></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- FAQ Text Block -->
+                    <div class="space-y-6">
+                        <div>
+                            <h4 class="text-white font-bold text-lg">What makes it so unique and affordable?</h4>
+                            <p class="text-sm mt-2">Normally you need 3 units: a projector, a PC, and an electronic exam system. Eprashala combines the software, projector with built-in PC, and electronic examination system for 60 students at 1/4th the cost of competitors<!--[cite: 2] -->. The device dimensions are 320mm * 240mm * 120mm and weigh only 4.5 kgs<!--[cite: 2] -->.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-white font-bold text-lg">Why can't other projectors run on solar?</h4>
+                            <p class="text-sm mt-2">Conventional projectors use mercury vapor lamps requiring high starting voltages (nearly 1000 volts) and consume around 300 watts AC. Running them on solar requires massive panels and 450W DC to AC inverters, driving the cost to almost Rs. 2 Lakhs<!--[cite: 2] -->.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-white font-bold text-lg">Is the internal PC powerful enough?</h4>
+                            <p class="text-sm mt-2">The PC built inside uses an Intel ultra low power CPU, a fanless CPU with only 15 watts of power consumption<!--[cite: 2] -->. Running Windows XP on an 8 GB high-speed Solid State Disk is as fast as an Intel Atom 1.8 ghz on a conventional hard drive<!--[cite: 2] -->. The secondary storage is a 64 gb nand disk<!--[cite: 2] -->.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-white font-bold text-lg">Reliability in Indian Climates?</h4>
+                            <p class="text-sm mt-2">Designed to sustain 90% relative humidity, 45-degree hot summers, and extremely dusty conditions<!--[cite: 2] -->. As per our design, it should run at least 5 years without any service calls<!--[cite: 2] -->.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Product Catalog -->
+        <section id="products" class="py-20 bg-slate-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl font-bold text-brand-dark mb-4">Complete Hardware Portfolio</h2>
+                    <p class="text-lg text-slate-600 max-w-3xl mx-auto">From heavy-duty multi-touch digital boards to individual e-learning tabs and automated assessment clickers.</p>
+                </div>
+
+                <!-- Main Projectors Grid -->
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+                    
+                    <!-- EP 9.0 -->
+                    <div class="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden hover:shadow-2xl transition">
+                        <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjM0cDSma76kjslEF26YZUyF38cuHIe6Ao06GlQf2lvbAjEQeG7jO5HYXvmrmMPZUNg7y-DnJg1CYuxbkYIheHlBFqJGf7JSkR6UAk0NuIaXeNBU6PXmO3RtAolzlnQ_RDMG5SKH6eocVY/s640/DIGITAL-CLASSROOM-FOR-SCHOOLS.jpg" alt="EP9.0 Digital Classroom" class="w-full h-56 object-cover lightbox-trigger">
+                        <div class="p-6">
+                            <h3 class="text-xl font-bold text-brand-dark mb-2">EP 9.0 Digital Classroom</h3>
+                            <ul class="text-sm text-slate-600 space-y-1 list-disc list-inside">
+                                <li>Short throw 3D DLP 3000 ANSI lumens projector<!--[cite: 3, 4] -->.</li>
+                                <li>Intel Core i7 CPU, 4 gb ram, 1000 GB hdd<!--[cite: 3, 4] -->.</li>
+                                <li>Interactive 84 inches infra red camera based multi touch smart board<!--[cite: 3, 4] -->.</li>
+                                <li>Consumes just 200 watts power in ECO mode (>4000 hours lamp life)<!--[cite: 3, 4] -->.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Acer 8.1 -->
+                    <div class="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden hover:shadow-2xl transition">
+                        <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhw6eccrwWp7Zq6mA6TFnHDcDbtdqMl5jYP9WSlgTwzDThq78QnP2gmI1EQG2-e5UsMh3LcpoWGLmt2pF4PS-9kFoA-H0AI-7e6MDntzlKhAAkHsef7guRD8iWlkb2XWrCpmHDd0WurboA/s320/8.12.jpg" alt="Acer EP8.1" class="w-full h-56 object-contain bg-slate-100 lightbox-trigger">
+                        <div class="p-6">
+                            <h3 class="text-xl font-bold text-brand-dark mb-2">Acer EP8.1 Initiative</h3>
+                            <ul class="text-sm text-slate-600 space-y-1 list-disc list-inside">
+                                <li>Short throw 3D DLP 3500 ANSI lumens projector (Acer S1286H)<!--[cite: 4] -->.</li>
+                                <li>Intel Core i7 / I5 / i3 CPU, 4 gb ram, m.2 support<!--[cite: 4] -->.</li>
+                                <li>Interactive 84 inches multi touch smart board (auto calibration)<!--[cite: 4] -->.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- EP 6.0 -->
+                    <div class="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden hover:shadow-2xl transition">
+                        <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjEgLyBAI1NU0dMWRVB06okFtzliz__856l86ANfbUaRs0mmGAJJxHh-Q6QnDd5l3m3BTE_SBscOA7Ij_R9q9b4UEmiuY9f7wmt4Dg9RALCH2Ev7PilgGB2ujJ3nnFUoRZq2MlDY_kcjm8/s320/ep6.0+2.jpg" alt="EP 6.0" class="w-full h-56 object-cover lightbox-trigger">
+                        <div class="p-6">
+                            <h3 class="text-xl font-bold text-brand-dark mb-2">EP 6.0 All In One</h3>
+                            <ul class="text-sm text-slate-600 space-y-1 list-disc list-inside">
+                                <li>3D DLP LED 1500 ANSI lumens projector<!--[cite: 3, 4] -->.</li>
+                                <li>Intel Quad core Z8350 CPU, 2 gb ram, 100 GB SSD<!--[cite: 3, 4] -->.</li>
+                                <li>Consumes just 45 watts power<!--[cite: 3, 4] -->.</li>
+                                <li>More than 20000 hours lamp life<!--[cite: 3, 4] -->.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Learning & Peripherals -->
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+                    <!-- Epustak -->
+                    <div class="bg-white rounded-xl shadow p-6 border border-slate-200 flex flex-col items-center text-center">
+                        <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjOEwOyxYh7NBW2bekRSmugi3Lmueej9QouNR3Y-lMoVfDL8ed56jzNrD97efnlFn43AT07iW2NEoyxWeWowUpmMtblM7Mi5vKS47c0p1_uiZUzRJ5vmLky0c-sw1IB0rf6qwrUxsRRaig/s320/epustak1.jpg" alt="Epustak" class="h-32 mb-4 lightbox-trigger">
+                        <h4 class="font-bold text-lg mb-2">Epustak</h4>
+                        <p class="text-xs text-slate-600">Based on Std. I to 9th, SSC (English, Semi English, Marathi). Content available for CBSE/HSC. 300gms, 7" screen, 3 hours battery backup<!--[cite: 3] -->.</p>
+                    </div>
+
+                    <!-- E Exam -->
+                    <div class="bg-white rounded-xl shadow p-6 border border-slate-200 flex flex-col items-center text-center">
+                        <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhiXcU6poaFEmfjJYPCB9NKBa2H87A_gqtC-nS9RejTEPb5WjkuYS0VZh8VE5Cc8rWdd7hkZ3GtSVy28PWZ8i7LE_1-SL5kPJSOmnXdR1UbX1jraBsQVe8yQcd8rGvzh7foq1jxFzmSWto/s320/remote1.jpg" alt="E-Exam Remote" class="h-32 mb-4 lightbox-trigger">
+                        <h4 class="font-bold text-lg mb-2">Electronic Examination</h4>
+                        <p class="text-xs text-slate-600">60 set of IR remote controls with 4 buttons. Each remote has the enrollment number printed. Identifies weaker students immediately<!--[cite: 1, 2, 3] -->.</p>
+                    </div>
+
+                    <!-- Solar Panels -->
+                    <div class="bg-white rounded-xl shadow p-6 border border-slate-200 flex flex-col items-center text-center">
+                        <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjuAEORr5E3PKWHd6qjjXqz2Po6BORXIwXhkXh4KhEazRGglATGr4kLzIMcNIMNWEXivJj9vLkqnkV-8Mks640uirfkiehW6jv9i71i4WV-Duuf0oMQd9N_ztiIVLPOP1JhWcFD9XSowY8/s320/solarpanel.jpg" alt="Solar Panel" class="h-32 mb-4 lightbox-trigger">
+                        <h4 class="font-bold text-lg mb-2">Solar Infrastructure</h4>
+                        <p class="text-xs text-slate-600">150 watts 24 volt DC roof point solar panel with controller<!--[cite: 3] -->. Module Size: 1250 * 800 * 450 mm<!--[cite: 3] -->.</p>
+                    </div>
+
+                    <!-- Batteries -->
+                    <div class="bg-white rounded-xl shadow p-6 border border-slate-200 flex flex-col items-center text-center">
+                        <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEixV3hGJgr9rTZS4gwb3G7Xf7Hp0UQv9rhRoga8vJMCoDjrkVO8cHfM3SplaNOtZAZxMJhhFhPSSLuxhO8ujp7FC32zDhKBxcY6vrFyijZ1_9tfxQWrQ-V4NVnIh4IxJKJFhdS5nOLTmX4/s1600/040-250x250.jpg" alt="Battery" class="h-32 mb-4 lightbox-trigger">
+                        <h4 class="font-bold text-lg mb-2">Power Storage</h4>
+                        <p class="text-xs text-slate-600">80 AH, 12 volt Semi maintainence battery (2 numbers)<!--[cite: 3] -->.</p>
+                    </div>
+                </div>
+
+                <!-- Mini Devices Gallery -->
+                <div class="border-t border-slate-200 pt-12">
+                    <h3 class="text-2xl font-bold text-center text-brand-dark mb-8">Other Accessories & Mini PCs</h3>
+                    <div class="flex flex-wrap justify-center gap-6">
+                        <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh5NC2N9QQN3JOD_Q2BRmTbXhfdZhn-oh30U5AKlujGdpNw8ivT-hT5M5s_poZAmAu7jSuEteikUMBwA4ZfgEMuqDMXkW9svx7yHbdlo9v-p5TzZAZKUiPbACd5xVp2KauTNiQIaO5x69Q/s320/c5+copy.jpg" alt="C5 Mini PC" class="h-24 object-contain shadow-sm rounded border border-slate-200 bg-white p-2 lightbox-trigger">
+                        <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhFRrKogGRg08jUaDWPKDD2w38jk8X5byzGYJBhN9DUMEN2FcPowp_XN3h0clajg33-JsJXgM4gn5gytT9ba6h8EDGz5D03ck6riEXAVlXzAxA6K5swgcVczo9B-eDiEdafvcXpRsWO-3A/s320/android+stick.jpg" alt="Android Stick" class="h-24 object-contain shadow-sm rounded border border-slate-200 bg-white p-2 lightbox-trigger">
+                        <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh0isFHNcuZiH1ztK1A7Hh7gig89fm17LIpE9P01H8w-ma-ko0VZaQq73hP9cw4wSE_KyjlkbAlA8K4iyyDRKUpiSxSsoFwsjD3DhVNEpX0aZCB3sDfrq4h-UbijlN7HW_6qAFOTrwMQkY/s320/exam+copy.jpg" alt="Exam System Box" class="h-24 object-contain shadow-sm rounded border border-slate-200 bg-white p-2 lightbox-trigger">
+                        <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhWvRLCTQCkcR0RKIiK6j4FjrB0V0j6DTswjaeln8KRO10hLuudVO4uuXMt7hxUrdzHiAwtoII6ngwCteYoJOH3vqV7f2-8VZoPb7vQsAhlx45yyH0Exl1VNc79dqeebDBxe_k0rS5-bqU/s320/intel+stick+copy.jpg" alt="Intel Stick" class="h-24 object-contain shadow-sm rounded border border-slate-200 bg-white p-2 lightbox-trigger">
+                        <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgry6d4lTuuAZuzc9GzBN0RT_az8OMp-jqUepEVIlxIWJzpTRuqaPIYYxy8klhj_8KbqTtRc5IFTW-CQMCg8mRb96elafw-m2P3U8gfmYW_wUcWsGTAFvWHCHJ2FIYkuiW3sQks2PIkEL8/s320/mii+win+copy.jpg" alt="Mini Win PC" class="h-24 object-contain shadow-sm rounded border border-slate-200 bg-white p-2 lightbox-trigger">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Media & Impact -->
+        <section id="media" class="py-20 bg-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl font-bold text-brand-dark mb-4">Media Coverage & Recognition</h2>
+                    <p class="text-lg text-slate-600">Recognized by national institutions for transforming rural education footprints.</p>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-12 items-center mb-16">
+                    <div>
+                        <h3 class="text-2xl font-bold mb-4 text-brand-primary">Taskar Award Winner (2012/2013)</h3>
+                        <p class="text-slate-700 leading-relaxed">
+                            Our efforts were recognized with the esteemed Small Scale Industrialist Award (Taskar Award) from the Marathi Vidgyan Parishad<!--[cite: 1, 8] -->. Eprashala has been covered heavily in the media, including features in India Today Aspire, Lokmat, Maharashtra Times, NDTV (Think Science), and Times Now (Amazing Indians)<!--[cite: 1] -->.
+                        </p>
+                    </div>
+                    <div class="flex justify-center">
+                        <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjLNUCeqQlR7MJRf-LoDt24uuH_BCnVeIdr3cupajOSJzSrESPEH9zfMdfcPjgDgEs_vZo0N_TVOtYNFjJTf6f25FVdrdSiYky3g-syjwi9gx4O3TGjRAaE-a5y8kbvJlbJc7ovf2UyYl8/s320/taskar.jpg" alt="Taskar Award Ceremony" class="rounded-lg shadow-lg max-h-64 lightbox-trigger">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgNC6-M8daTfgnkQUdtW8w6uV0Qihd5eOq3p-sYwdMSsMDN7LtEQxs4lUQ0V6WOV5HitR1uYYzIaM2V1QXDt8Pwgyjz-8gbiCxvGDr0yAgIaBGD5PuTrjpuIqPfvHb5-2aYfjUqLvUuiOk/s320/Elearning+in+kolhapur.jpg" alt="Elearning in Kolhapur" class="w-full h-40 object-cover rounded shadow-md lightbox-trigger">
+                    <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjaraZ8UWDecSMnYsZgSDe3wLoymx0jLtqBAoLRBCfaBYX2Mtdz1w2E7b7An5QTbDi5EKjWXMuZG_xsVJ8C9FnxWa7vs8Lh9ZlaieKjB79Rwa9zaUQ6gmKJpN9mQmo0N7jCab9ulEKjnRY/s320/lokmat+4th+dec.jpg" alt="Lokmat Coverage" class="w-full h-40 object-cover rounded shadow-md lightbox-trigger">
+                    <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjp3wC1W7oiETeebmbNkWpyntDrudONX9gjA0NuidU3k06RY7sxEoy7CyKgFa-LwS9bK8gtSxIcFYdKDsPu94AkZ-ggJ0SmP4QOCZCMbruu6t0lpdWNKyYzl1teiqNJGE3FHWAfagzXXAk/s320/jalna2.jpg" alt="Jalna Implementation" class="w-full h-40 object-cover rounded shadow-md lightbox-trigger">
+                    <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEje9qXno7LLUoGw66i3NMmMW-O-jozwMsHaHtQFngaM2tF_nY-W_VZj9CQ6KXvNMdVeKI11drrR0WH31PYOuOaJJlU1ht5lIlhrHgX4JNE506n3XB2aCOVuf2771DUv3rlzFwl6qT7iPa8/s320/D28061778.JPG" alt="Chandrapur Implementation" class="w-full h-40 object-cover rounded shadow-md lightbox-trigger">
+                </div>
+            </div>
+        </section>
+
+        <!-- Team, CSR & Work With Us -->
+        <section id="team" class="py-20 bg-slate-900 text-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                
+                <!-- Employment Opportunities -->
+                <div class="bg-slate-800 p-8 rounded-2xl border border-slate-700 mb-16">
+                    <h2 class="text-3xl font-bold mb-4 text-brand-accent">Join Our Mission</h2>
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div>
+                            <h3 class="text-xl font-bold mb-2">Full-Time Inclusive Employment</h3>
+                            <p class="text-slate-300 text-sm">Eprashala is interested in employing needy (physically and mentally challenged) individuals with an aim to provide them an independent living in our new factory in Bhiwandi<!--[cite: 6, 7] -->. Interested individuals and NGOs kindly contact us at Eprashala@hotmail.com<!--[cite: 6, 7] -->.</p>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold mb-2">Upcoming Social Programs</h3>
+                            <ul class="text-sm text-slate-300 list-disc list-inside">
+                                <li>Eprashala rural computer education<!--[cite: 6, 7] --></li>
+                                <li>Eprashala build the nation program<!--[cite: 6, 7] --></li>
+                                <li>Eprashala women protection program<!--[cite: 6, 7] --></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-12">
+                    <!-- Core Team -->
+                    <div>
+                        <h3 class="text-xl font-bold border-b border-slate-700 pb-2 mb-4">Core Management & Team</h3>
+                        <ul class="space-y-3 text-sm text-slate-400">
+                            <li><strong class="text-white">Narendra Sadashiv Shinde</strong> - CEO<!--[cite: 10] --></li>
+                            <li><strong class="text-white">Pramod Narendra Shinde</strong> - Tech Head Hardware<!--[cite: 10] --></li>
+                            <li><strong class="text-white">Laxman Ghodke</strong> - Marketing Head<!--[cite: 10] --></li>
+                            <li><strong class="text-white">Rajashree Shinde</strong> - Design Engineer<!--[cite: 10] --></li>
+                            <li><strong class="text-white">Deepak Vitmal</strong> - Dispatch Manager<!--[cite: 10] --></li>
+                            <li><strong class="text-white">Prashant Kabadi</strong> - Production Manager<!--[cite: 10] --></li>
+                            <li><strong class="text-white">Rohan Sutar</strong> - Quality Control<!--[cite: 10] --></li>
+                            <li><strong class="text-white">Nitesh Bhatade, Hitendra Gije</strong> - Prod Engineers<!--[cite: 10] --></li>
+                            <li><strong class="text-white">Rajesh Kadam, Anand Mishra</strong> - Sales<!--[cite: 10] --></li>
+                            <li><strong class="text-white">Salil Choudhary</strong> - Web Development<!--[cite: 10] --></li>
+                        </ul>
+                    </div>
+
+                    <!-- Dealers -->
+                    <div>
+                        <h3 class="text-xl font-bold border-b border-slate-700 pb-2 mb-4">Dealer Network</h3>
+                        <ul class="space-y-2 text-sm text-slate-400">
+                            <li>Modern ERP, Kolhapur<!--[cite: 10] --></li>
+                            <li>Elements EDU / Mahesh Infotech, Bangalore<!--[cite: 10] --></li>
+                            <li>E Disha, Amravati<!--[cite: 10] --></li>
+                            <li>Gurukul IT Solutions<!--[cite: 10] --></li>
+                            <li>Shree Computers, Solapur<!--[cite: 10] --></li>
+                            <li>Sankalp TV, Orissa<!--[cite: 10] --></li>
+                            <li>Poonam Trading, Thane<!--[cite: 10] --></li>
+                            <li>Average To Excellent, Kharghar<!--[cite: 10] --></li>
+                            <li>Core IT Solutions, Aurangabad<!--[cite: 10] --></li>
+                            <li>Self Guru Educational Technologies / ASTPL, Pune<!--[cite: 10] --></li>
+                            <li>Oxygen animation, Sangli<!--[cite: 10] --></li>
+                        </ul>
+                        <p class="mt-4 text-xs italic text-brand-accent">Appointing distributors in every district<!--[cite: 6, 7] -->.</p>
+                    </div>
+
+                    <!-- CSR Partners -->
+                    <div>
+                        <h3 class="text-xl font-bold border-b border-slate-700 pb-2 mb-4">CSR Partners & Divisions</h3>
+                        <ul class="space-y-2 text-sm text-slate-400">
+                            <li>Selco Foundation, Bangalore<!--[cite: 10] --></li>
+                            <li>Ambuja Cement Foundation, Chandrapur<!--[cite: 10] --></li>
+                            <li>Cairn India / Boond, Haryana<!--[cite: 10] --></li>
+                            <li>Harmon Infocem, Aurangabad<!--[cite: 10] --></li>
+                            <li>Firefield Belgaum<!--[cite: 10] --></li>
+                            <li>Graziano Trasmissioni India Pvt. Ltd, Noida<!--[cite: 10] --></li>
+                            <li>Pawar Charitable Trust / Gokal Charitable Trust<!--[cite: 10] --></li>
+                            <li>Sewa Sahayog / P E H L, Mumbai<!--[cite: 10] --></li>
+                            <li>Think Sharp foundation<!--[cite: 10] --></li>
+                            <li>Abhishiek Industries / Monginis / Wam India / Vashi Electrical<!--[cite: 10] --></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-black text-slate-500 py-12 border-t border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm">
+            <p class="mb-4">
+                <strong>Corporate Address:</strong> Eprashala, Gadrewadi, Uthalsar Naka, Thane (w) 400601<!--[cite: 10] --><br>
+                <strong>Hardware R&D:</strong> Eprashala, R1-001 Pavanputra, Opp Saipooja hotel, Kalher, Bhiwandi, Thane (w) 421302<!--[cite: 10] --><br>
+                <strong>Email:</strong> info@eprashala.com<!--[cite: 6, 7] --> | <strong>Phone:</strong> 9869065253<!--[cite: 10] -->
+            </p>
+            <p>&copy; 2026 Eprashala. All rights reserved. Service for mankind.</p>
+        </div>
+    </footer>
+
+    <!-- Fullscreen Image Lightbox Modal -->
+    <div id="lightbox">
+        <span class="close-lightbox" id="closeLightbox">&times;</span>
+        <img id="lightboxImage" src="" alt="Full Screen Image">
+    </div>
+
+    <!-- Lightbox Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImage = document.getElementById('lightboxImage');
+            const closeLightboxBtn = document.getElementById('closeLightbox');
+            const triggers = document.querySelectorAll('.lightbox-trigger');
+
+            // Open Lightbox
+            triggers.forEach(img => {
+                img.addEventListener('click', () => {
+                    let src = img.getAttribute('src');
+                    if(src) {
+                        lightboxImage.src = src;
+                        lightbox.classList.add('active');
+                    }
+                });
+            });
+
+            // Close Lightbox functions
+            const closeLightbox = () => {
+                lightbox.classList.remove('active');
+                lightboxImage.src = "";
+            };
+
+            closeLightboxBtn.addEventListener('click', closeLightbox);
+            
+            // Close if clicked outside the image
+            lightbox.addEventListener('click', (e) => {
+                if (e.target === lightbox) {
+                    closeLightbox();
+                }
+            });
+            
+            // Close with escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && lightbox.classList.contains('active')) {
+                    closeLightbox();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
