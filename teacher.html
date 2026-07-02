@@ -118,7 +118,6 @@
                             Paste
                         </button>
                     </div>
-                    <p class="text-[10px] text-gray-500 mt-1 ml-1">Requires a free Google AI Studio key.</p>
                 </div>
                 <div class="flex items-center gap-3 pt-2 pl-1">
                     <input type="checkbox" id="remember-checkbox" checked class="w-5 h-5 accent-sky-500 rounded cursor-pointer">
@@ -133,7 +132,6 @@
     <div class="flex flex-col w-full h-full max-w-2xl relative shadow-2xl bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]">
         
         <header class="flex-shrink-0 pt-4 pb-4 px-4 glass-panel z-20 rounded-b-3xl relative">
-            
             <button id="adv-toggle" class="absolute top-5 right-5 z-50 text-slate-400 hover:text-white transition-colors" title="Settings">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
             </button>
@@ -273,7 +271,8 @@
         // --- 3. INITIALIZATION ---
         window.onload = () => {
             loadData();
-            initSpeechRecognition();
+            // We initialize speech recognition strictly on load as per original file
+            initSpeechRecognition(); 
         };
 
         UI.overlay.addEventListener('click', () => {
@@ -283,7 +282,8 @@
             const silent = new SpeechSynthesisUtterance('');
             silent.volume = 0; synth.speak(silent);
             UI.overlay.style.display = 'none';
-            setupEventListeners();
+            // Event listeners are set AFTER the overlay is clicked, ensuring user interaction
+            setupEventListeners(); 
         });
 
         function updateSubjectsList() {
@@ -313,7 +313,7 @@
             const savedStd = localStorage.getItem('edu_std');
             const savedSub = localStorage.getItem('edu_sub');
             
-            UI.remember.checked = localStorage.getItem('edu_remember') !== 'false'; // default true
+            UI.remember.checked = localStorage.getItem('edu_remember') !== 'false';
 
             if (savedMedium) UI.selMedium.value = savedMedium;
             if (savedStd) UI.selStd.value = savedStd;
@@ -365,7 +365,60 @@
             synth.cancel();
         }
 
-        // --- 5. EVENT LISTENERS ---
+        // --- 5. EXACT ORIGINAL SPEECH RECOGNITION LOGIC ---
+        function initSpeechRecognition() {
+            const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRec) return;
+            recognition = new SpeechRec();
+            recognition.continuous = false; 
+            recognition.interimResults = false; 
+            
+            recognition.onstart = () => {
+                isListening = true;
+                UI.btnMic.classList.add('mic-pulse');
+                UI.status.style.backgroundColor = '#ef4444'; 
+                UI.textIn.value = '';
+                UI.textIn.placeholder = "Listening... Speak now.";
+            };
+            recognition.onresult = (e) => {
+                const transcript = e.results[e.results.length - 1][0].transcript.trim();
+                if (transcript) { UI.textIn.value = transcript; processInput(transcript); }
+            };
+            recognition.onend = () => {
+                isListening = false;
+                if (!state.isProcessing) resetMicUI();
+            };
+            recognition.onerror = (e) => {
+                if (e.error === 'no-speech' || e.error === 'not-allowed') { isListening = false; resetMicUI(); }
+            };
+        }
+
+        function resetMicUI() {
+            UI.btnMic.classList.remove('mic-pulse');
+            UI.status.style.backgroundColor = '#4b5563'; 
+            UI.textIn.placeholder = "Type your message...";
+            setMicThinkingState(false);
+        }
+
+        function togglePlayIcon(isPaused) {
+            if(isPaused) { UI.iconPause.classList.add('hidden'); UI.iconPlay.classList.remove('hidden'); }
+            else { UI.iconPause.classList.remove('hidden'); UI.iconPlay.classList.add('hidden'); }
+        }
+
+        function setMicThinkingState(isThinking) {
+            if (isThinking) {
+                UI.btnMic.classList.add('mic-thinking');
+                UI.btnMic.classList.remove('mic-pulse');
+                UI.iconMicDefault.classList.add('hidden');
+                UI.iconMicThinking.classList.remove('hidden');
+            } else {
+                UI.btnMic.classList.remove('mic-thinking');
+                UI.iconMicDefault.classList.remove('hidden');
+                UI.iconMicThinking.classList.add('hidden');
+            }
+        }
+
+        // --- 6. EVENT LISTENERS ---
         function setupEventListeners() {
             // Dropdowns
             UI.selMedium.addEventListener('change', saveData);
@@ -407,68 +460,17 @@
             UI.btnSend.onclick = (e) => { e.stopPropagation(); processInput(UI.textIn.value); };
             UI.textIn.onkeypress = (e) => { e.stopPropagation(); if(e.key === 'Enter') processInput(UI.textIn.value); };
 
+            // EXACT ORIGINAL MIC CLICK LOGIC
             UI.btnMic.addEventListener('click', (e) => {
                 e.stopPropagation();
                 if (state.isProcessing || !recognition) return;
                 if (isListening) { recognition.stop(); } 
                 else { 
+                    // Set language based on dropdown just before starting
                     recognition.lang = UI.selMedium.value === 'Marathi' ? 'mr-IN' : 'en-IN'; 
                     try { recognition.start(); } catch(err) {} 
                 }
             });
-        }
-
-        // --- 6. SPEECH RECOGNITION ---
-        function initSpeechRecognition() {
-            const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRec) return;
-            recognition = new SpeechRec();
-            recognition.continuous = false; 
-            recognition.interimResults = false; 
-            
-            recognition.onstart = () => {
-                isListening = true;
-                UI.btnMic.classList.add('mic-pulse');
-                UI.status.style.backgroundColor = '#ef4444'; 
-                UI.textIn.value = '';
-                UI.textIn.placeholder = "Listening...";
-            };
-            recognition.onresult = (e) => {
-                const transcript = e.results[e.results.length - 1][0].transcript.trim();
-                if (transcript) { UI.textIn.value = transcript; processInput(transcript); }
-            };
-            recognition.onend = () => {
-                isListening = false;
-                if (!state.isProcessing) resetMicUI();
-            };
-            recognition.onerror = () => {
-                isListening = false; resetMicUI();
-            };
-        }
-
-        function resetMicUI() {
-            UI.btnMic.classList.remove('mic-pulse');
-            UI.status.style.backgroundColor = '#4b5563'; 
-            UI.textIn.placeholder = "Type your message...";
-            setMicThinkingState(false);
-        }
-
-        function togglePlayIcon(isPaused) {
-            if(isPaused) { UI.iconPause.classList.add('hidden'); UI.iconPlay.classList.remove('hidden'); }
-            else { UI.iconPause.classList.remove('hidden'); UI.iconPlay.classList.add('hidden'); }
-        }
-
-        function setMicThinkingState(isThinking) {
-            if (isThinking) {
-                UI.btnMic.classList.add('mic-thinking');
-                UI.btnMic.classList.remove('mic-pulse');
-                UI.iconMicDefault.classList.add('hidden');
-                UI.iconMicThinking.classList.remove('hidden');
-            } else {
-                UI.btnMic.classList.remove('mic-thinking');
-                UI.iconMicDefault.classList.remove('hidden');
-                UI.iconMicThinking.classList.add('hidden');
-            }
         }
 
         // --- 7. AI LOGIC & PROCESSING ---
