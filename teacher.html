@@ -147,6 +147,8 @@
         </div>
     </div>
 
+    <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden">
+
     <div class="flex flex-col w-full h-full max-w-2xl relative shadow-2xl bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]">
         
         <header class="flex-shrink-0 pt-4 pb-4 px-4 glass-panel z-20 rounded-b-3xl relative">
@@ -205,6 +207,14 @@
                 </div>
 
                 <div class="flex items-center bg-black/60 p-1.5 rounded-full border border-white/10 shadow-inner flex-shrink-0">
+                    
+                    <button id="btn-camera" class="audio-btn p-1.5 mr-1" title="Snap Textbook Page">
+                        <svg class="w-5 h-5 text-gray-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                    </button>
+
                     <button id="btn-mic" class="big-mic w-12 h-12 rounded-full flex items-center justify-center mx-1 outline-none select-none transition-all shadow-[0_0_15px_rgba(2,132,199,0.5)]">
                         <svg id="icon-mic-default" class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z"/></svg>
                         <svg id="icon-mic-thinking" class="w-5 h-5 text-white hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
@@ -238,7 +248,7 @@
             }
         });
 
-        // WAKE LOCK API (Prevents screen from sleeping)
+        // WAKE LOCK API
         let wakeLock = null;
         async function requestWakeLock() {
             try {
@@ -250,16 +260,14 @@
             }
         }
 
-        // VISIBILITY API (Handles calls, switching apps, minimizing)
+        // VISIBILITY API
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') {
                 requestWakeLock();
             } else {
-                // If moving to background and speaking, PAUSE immediately.
                 if (synth.speaking && !synth.paused) {
                     synth.pause();
                     if (window.currentPlayingBtn) {
-                        // Change icon to Play so user knows they can resume
                         window.currentPlayingBtn.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
                     }
                 }
@@ -307,6 +315,10 @@
             iconVol: document.getElementById('icon-vol'),
             iconMute: document.getElementById('icon-mute'),
             
+            // Multimodal Additions
+            btnCamera: document.getElementById('btn-camera'),
+            cameraInput: document.getElementById('camera-input'),
+            
             advToggle: document.getElementById('adv-toggle'),
             settingsModal: document.getElementById('settings-modal'),
             btnCloseSet: document.getElementById('btn-close-settings'),
@@ -328,6 +340,7 @@
         let recognition = null;
         let synth = window.speechSynthesis;
         let isListening = false; 
+        let pendingImageData = null; // Holds the compressed base64 image
         let state = { isProcessing: false, isMuted: false, lastAIMessage: "" };
 
         // Globals for individual TTS Button Logic
@@ -353,7 +366,6 @@
             setupEventListeners(); 
         });
 
-        // Trigger silent audio to wake up iOS/Android TTS Engines
         function unlockAudio() {
             const silent = new SpeechSynthesisUtterance('');
             silent.volume = 0;
@@ -411,10 +423,12 @@
                         if (chatHistory.length > 0) {
                             UI.welcome.style.display = 'none';
                             chatHistory.forEach(msg => {
-                                renderMessage(msg.role === 'user' ? (UI.name.value || UI.role.value) : "Teacher", msg.parts[0].text, msg.role === 'model', false); // false = don't auto-play history
+                                // For visual log, just grab the text part
+                                const textPart = msg.parts.find(p => p.text)?.text || "📷 [Image attached]";
+                                renderMessage(msg.role === 'user' ? (UI.name.value || UI.role.value) : "Teacher", textPart, msg.role === 'model', false); 
                             });
                             const lastModel = [...chatHistory].reverse().find(m => m.role === 'model');
-                            if (lastModel) state.lastAIMessage = lastModel.parts[0].text;
+                            if (lastModel) state.lastAIMessage = lastModel.parts.find(p => p.text)?.text || "";
                         }
                     } catch (e) {}
                 }
@@ -472,11 +486,9 @@
             };
 			recognition.onerror = (e) => {
 				console.warn("Speech Recognition Error fired:", e.error);
-				
 				if (e.error === 'not-allowed') {
 					alert("Microphone access was blocked! Please click the lock icon in your URL bar and allow microphone permissions.");
 				}
-				
 				isListening = false; 
 				resetMicUI();
 			};
@@ -485,7 +497,7 @@
         function resetMicUI() {
             UI.btnMic.classList.remove('mic-pulse');
             UI.status.style.backgroundColor = '#4b5563'; 
-            UI.textIn.placeholder = "Ask your question here...";
+            UI.textIn.placeholder = pendingImageData ? "📷 Image attached! Add text or send..." : "Ask your question here...";
             setMicThinkingState(false);
         }
 
@@ -534,8 +546,9 @@
                 sender.style.marginBottom = '5px';
                 sender.style.fontSize = '1.1rem';
                 
+                const textPart = msg.parts.find(p => p.text)?.text || "[Image Analyzed]";
                 const content = document.createElement('div');
-                content.innerText = msg.parts[0].text;
+                content.innerText = textPart;
                 content.style.lineHeight = '1.6';
                 content.style.fontSize = '1rem';
                 content.style.whiteSpace = 'pre-wrap'; 
@@ -552,7 +565,6 @@
                 html2canvas:  { scale: 2 },
                 jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
             };
-
             html2pdf().set(opt).from(container).save();
         }
 
@@ -567,6 +579,44 @@
             UI.btnSaveSet.onclick = (e) => { e.stopPropagation(); saveData(); UI.settingsModal.classList.add('hidden'); };
             UI.settingsModal.addEventListener('click', e => e.stopPropagation());
             
+            // Image Upload Event Listeners
+            UI.btnCamera.addEventListener('click', (e) => {
+                e.stopPropagation();
+                UI.cameraInput.click(); 
+            });
+
+            UI.cameraInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 800; // Optimal scaling for textbook text readability without bloated payloads
+                        let scaleSize = 1;
+                        if (img.width > MAX_WIDTH) {
+                            scaleSize = MAX_WIDTH / img.width;
+                        }
+                        
+                        canvas.width = img.width * scaleSize;
+                        canvas.height = img.height * scaleSize;
+                        
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        
+                        pendingImageData = canvas.toDataURL('image/jpeg', 0.6).split(',')[1];
+                        
+                        UI.textIn.placeholder = "📷 Image attached! Add text or send...";
+                        UI.btnCamera.classList.remove('text-gray-400');
+                        UI.btnCamera.classList.add('text-sky-400'); 
+                    };
+                };
+            });
+
             UI.btnPasteKey.addEventListener('click', async (e) => {
                 e.stopPropagation(); 
                 try {
@@ -644,10 +694,15 @@
         // --- 7. AI LOGIC & PROCESSING ---
         async function processInput(userText) {
             userText = userText.trim();
-            if (!userText || state.isProcessing) return;
+            if (!userText && !pendingImageData) return; // Need at least text or image
 
+            // UI Resets
             UI.textIn.value = '';
             UI.textIn.placeholder = "Teacher is thinking...";
+            UI.btnCamera.classList.remove('text-sky-400');
+            UI.btnCamera.classList.add('text-gray-400');
+            UI.cameraInput.value = '';
+            
             if (UI.welcome) UI.welcome.style.display = 'none';
             
             state.isProcessing = true;
@@ -655,8 +710,28 @@
             setMicThinkingState(true);
 
             const userName = UI.name.value || UI.role.value;
-            renderMessage(userName, userText, false);
-            chatHistory.push({ role: 'user', parts: [{ text: userText }] });
+            const displayMessage = userText || "📷 [Image attached for analysis]";
+            renderMessage(userName, displayMessage, false);
+            
+            // Build the multimodal payload
+            let messageParts = [];
+            if (userText) {
+                messageParts.push({ text: userText });
+            }
+            if (!userText && pendingImageData) {
+                messageParts.push({ text: "Please carefully analyze and explain the contents of this image." });
+            }
+            if (pendingImageData) {
+                messageParts.push({
+                    inlineData: {
+                        mimeType: "image/jpeg",
+                        data: pendingImageData
+                    }
+                });
+            }
+
+            chatHistory.push({ role: 'user', parts: messageParts });
+            pendingImageData = null; // Clear image state after push
             saveData();
 
             try {
@@ -737,7 +812,6 @@
         // --- DYNAMIC PLAY/PAUSE UI LOGIC ---
         function resetAllPlayButtons() {
             document.querySelectorAll('.msg-play-btn').forEach(b => {
-                // Set all to "Play" icon
                 b.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
             });
         }
@@ -745,29 +819,35 @@
 		function handleIndividualPlayPause(text, btnElement) {
 			if (state.isMuted) return;
 
+            const playIcon = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+            const pauseIcon = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+
 			// SCENARIO 1: The user clicked play/pause on the CURRENTLY active text
 			if (window.currentPlayingText === text) {
-				
-				// FIX 1: Explicitly check synth.paused instead of relying on synth.speaking.
+                // OPTIMISTIC UI FIX: Do not wait for browser onpause/onresume events to fire. 
+                // We update the button immediately upon click to bypass the Android delay bug.
 				if (synth.paused) {
 					synth.resume();
-					return; // Exit early, let the onresume event handle the UI change
+                    btnElement.innerHTML = pauseIcon; // Show pause immediately (it is resuming)
+					return; 
 				} else if (synth.speaking) {
 					synth.pause();
-					return; // Exit early, let the onpause event handle the UI change
+                    btnElement.innerHTML = playIcon; // Show play immediately (it is pausing)
+					return;
 				}
 			}
 
 			// SCENARIO 2: The user clicked a NEW text message entirely
 			synth.cancel();
 			
-			// FIX 2: THE WAKE-UP CALL. If the engine was paused when we hit cancel(), 
+			// THE WAKE-UP CALL. If the engine was paused when we hit cancel(), 
 			// it gets stuck forever. We must force a resume() immediately after cancel().
 			if (synth.paused) {
 				synth.resume();
 			}
 
 			resetAllPlayButtons();
+            btnElement.innerHTML = pauseIcon; // Optimistic update for the new block
 			
 			// Timeout prevents browser bug where cancel immediately followed by speak gets dropped
 			setTimeout(() => {
@@ -792,28 +872,20 @@
 					utterance.pitch = 1.05;
 				}
 				
-				// UI SYNC: Use native events to handle the button icons so the UI 
-				// perfectly mirrors what the hardware engine is actually doing.
-				utterance.onstart = () => {
-					btnElement.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
-				};
-				
-				utterance.onpause = () => {
-					btnElement.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
-				};
-
-				utterance.onresume = () => {
-					btnElement.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
-				};
+				// Keep native event listeners as a fallback to ensure the UI eventually 
+                // syncs with the engine, even though we now optimisticly update on click.
+				utterance.onstart = () => btnElement.innerHTML = pauseIcon;
+				utterance.onpause = () => btnElement.innerHTML = playIcon;
+				utterance.onresume = () => btnElement.innerHTML = pauseIcon;
 				
 				utterance.onend = () => {
-					btnElement.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+					btnElement.innerHTML = playIcon;
 					window.currentPlayingText = "";
 					window.currentPlayingBtn = null;
 				};
 
 				utterance.onerror = (e) => {
-					btnElement.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+					btnElement.innerHTML = playIcon;
 				};
 
 				synth.speak(utterance);
