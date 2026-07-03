@@ -107,7 +107,7 @@ const UI = {
     remember: document.getElementById('remember-checkbox'),
     welcome: document.getElementById('welcome-msg'),
     
-    // New Quiz UI
+    // Quiz UI
     quizModal: document.getElementById('quiz-modal'),
     btnQuizYes: document.getElementById('btn-quiz-yes'),
     btnQuizNo: document.getElementById('btn-quiz-no'),
@@ -131,6 +131,17 @@ let ttsStatus = 'STOPPED';
 let lastSpokenIndex = 0;   
 window.currentPlayingText = "";
 window.currentPlayingBtn = null;
+
+// --- TTS SANITIZER ---
+// Removes Markdown and HTML so the Text-to-Speech engine doesn't read the symbols
+function sanitizeForTTS(text) {
+    return text
+        .replace(/[*_#`~]/g, '') 
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') 
+        .replace(/<[^>]+>/g, '') 
+        .replace(/^[-*+]\s+/gm, '') 
+        .trim();
+}
 
 // --- 3. INITIALIZATION ---
 window.onload = () => {
@@ -242,18 +253,16 @@ function clearData() {
     window.currentPlayingText = "";
 }
 
-// --- NEW 4.5 DYNAMIC APTITUDE QUIZ INTERCEPTOR ---
+// --- 4.5 DYNAMIC APTITUDE QUIZ INTERCEPTOR ---
 function calculateQuizQuestions() {
-    // 1 question per AI answer, max 5, min 1
     const aiMessages = chatHistory.filter(m => m.role === 'model').length;
     if (aiMessages === 0) return 0;
     return Math.min(Math.max(aiMessages, 1), 5);
 }
 
 function triggerMilestoneQuiz(questionCount) {
-    // Generate a background prompt for the AI acting as the student triggering a quiz
-    const hiddenQuizPrompt = `Please generate a fun, multiple-choice quiz with exactly ${questionCount} questions based ONLY on the topics we discussed above. Present it as a challenge. Format it nicely without using markdown characters like *, #, etc. Do not provide the answers yet.`;
-    processInput(hiddenQuizPrompt, true); // The true flag hides it from the UI user-log
+    const hiddenQuizPrompt = `Please generate a fun, multiple-choice quiz with exactly ${questionCount} questions based ONLY on the topics we discussed above. Present it as a challenge. Format it neatly using Markdown. Do not provide the answers yet.`;
+    processInput(hiddenQuizPrompt, true); 
 }
 
 // --- 5. SPEECH RECOGNITION ---
@@ -328,10 +337,15 @@ function exportChatToPDF() {
         sender.innerText = msg.role === 'user' ? (UI.name.value || UI.role.value) : "Eprashala AI Teacher";
         sender.style.fontWeight = 'bold';
         sender.style.color = msg.role === 'user' ? '#0284c7' : '#16a34a';
+        
         const textPart = msg.parts.find(p => p.text)?.text || "[Image Analyzed]";
+        
         const content = document.createElement('div');
-        content.innerText = textPart;
+        // If it's the model, render it using Markdown for the PDF as well
+        content.innerHTML = msg.role === 'model' ? marked.parse(textPart) : textPart;
         content.style.marginTop = '5px';
+        content.style.lineHeight = '1.5';
+        
         msgDiv.appendChild(sender);
         msgDiv.appendChild(content);
         container.appendChild(msgDiv);
@@ -432,7 +446,7 @@ function setupEventListeners() {
     UI.btnRestart.onclick = (e) => { 
         e.stopPropagation(); 
         const qCount = calculateQuizQuestions();
-        if (qCount > 0 && UI.role.value !== 'Teacher') { // Only quiz students
+        if (qCount > 0 && UI.role.value !== 'Teacher') { 
             UI.quizQCount.innerText = qCount;
             UI.quizModal.classList.remove('hidden');
         } else {
@@ -487,7 +501,6 @@ async function processInput(userText, isHiddenQuizTrigger = false) {
     const userName = UI.name.value || UI.role.value;
     const displayMessage = userText || "📷 [Image attached for analysis]";
     
-    // Only render the user bubble if it's a real user message (not the hidden quiz prompt)
     if (!isHiddenQuizTrigger) {
         renderMessage(userName, displayMessage, false);
     }
@@ -505,7 +518,8 @@ async function processInput(userText, isHiddenQuizTrigger = false) {
 
     try {
         const res = await getAIResponse(chatHistory);
-        const cleanRes = res.replace(/[*#`_\[\]()]/g, '').trim();
+        // We keep the Markdown intact for rendering, only trim whitespace
+        const cleanRes = res.trim();
         
         state.lastAIMessage = cleanRes;
         chatHistory.push({ role: 'model', parts: [{ text: cleanRes }] });
@@ -513,7 +527,8 @@ async function processInput(userText, isHiddenQuizTrigger = false) {
         const playBtn = renderMessage("Teacher", cleanRes, true, true);
         saveData();
         
-        if (!state.isMuted && playBtn) handleIndividualPlayPause(cleanRes, playBtn);
+        // Pass the SANITIZED version of the text to the audio engine
+        if (!state.isMuted && playBtn) handleIndividualPlayPause(sanitizeForTTS(cleanRes), playBtn);
     } catch (err) {
         renderMessage("System", "⚠️ Network interrupted. Please try again.", true);
     }
@@ -541,7 +556,7 @@ async function getAIResponse(history) {
         1. Strictly adhere to the syllabus.
         2. Tone: Professional, helpful, collaborative.
         3. Language: Primary language is ${med}.
-        4. FORMATTING: Do not use ANY markdown characters (*, #, _, [, ]). Write in plain text.`;
+        4. FORMATTING: Use Markdown to format your response neatly (use **bold** for emphasis, bullet points for lists, and short paragraphs). Do NOT use complex LaTeX.`;
     } else {
         const studentName = UI.name.value || "Child";
         const estimatedAge = parseInt(std) + 5;
@@ -559,7 +574,7 @@ async function getAIResponse(history) {
         2. EXPERTISE: Draw explanations strictly from the textbook for this grade.
         3. COMPLEXITY: ${toneInstruction}
         4. Language: Primary language is ${med}.
-        5. FORMATTING: Do not use ANY markdown characters (*, #, _, [, ]). Write in plain text.`;
+        5. FORMATTING: Use Markdown to format your response neatly (use **bold** for emphasis, bullet points for lists, and short paragraphs). Do NOT use complex LaTeX.`;
     }
 
     const payload = { 
@@ -656,8 +671,11 @@ function renderMessage(sender, text, isModel, isNewMessage = true) {
     const div = document.createElement('div');
     div.className = `p-4 rounded-2xl ${isModel ? 'bg-[#0f172a]/90 border border-slate-700/50 shadow-lg ml-2 mr-8' : 'bg-sky-900/40 text-right mr-2 ml-8'} mb-4`;
     
+    // NEW: Parse the markdown if it is from the AI, assign the markdown-body CSS class
+    const parsedText = isModel ? marked.parse(text) : text;
+    
     let htmlContent = `<div class="text-[10px] uppercase font-bold tracking-wider ${isModel ? 'text-sky-400 cinzel' : 'text-slate-300'} mb-1">${sender}</div>
-                       <div class="text-sm leading-relaxed text-gray-100">${text}</div>`;
+                       <div class="text-sm leading-relaxed text-gray-100 markdown-body">${parsedText}</div>`;
     
     let playBtnElement = null;
 
@@ -681,9 +699,16 @@ function renderMessage(sender, text, isModel, isNewMessage = true) {
     if (isModel) {
         playBtnElement = div.querySelector('.msg-play-btn');
         div.querySelector('.msg-pdf-btn').addEventListener('click', (e) => { e.stopPropagation(); exportChatToPDF(); });
-        playBtnElement.addEventListener('click', (e) => { e.stopPropagation(); handleIndividualPlayPause(text, playBtnElement); });
+        
+        // Pass the sanitized text to the play button
+        playBtnElement.addEventListener('click', (e) => { 
+            e.stopPropagation(); 
+            handleIndividualPlayPause(sanitizeForTTS(text), playBtnElement); 
+        });
+        
         div.querySelector('.msg-copy-btn').addEventListener('click', (e) => {
             e.stopPropagation();
+            // Copies the raw text, which is usually preferred over stripped text
             navigator.clipboard.writeText(text).then(() => {
                 e.currentTarget.classList.replace('text-slate-400', 'text-green-400');
                 setTimeout(() => { e.currentTarget.classList.replace('text-green-400', 'text-slate-400'); }, 1500);
