@@ -376,13 +376,15 @@ function exportChatToPDF() {
     const container = document.createElement('div');
     container.style.padding = '30px';
     container.style.fontFamily = 'Arial, sans-serif';
-    container.style.backgroundColor = '#FFF';
+    container.style.backgroundColor = '#FFFFFF'; // Explicit white background
+    container.style.color = '#000000'; // NEW: Force the baseline text color to black
 
     const title = document.createElement('h2');
     title.innerText = `Eprashala Notes: Std ${UI.selStd.value} - ${UI.selSub.value}`;
     title.style.borderBottom = '2px solid #ccc';
     title.style.paddingBottom = '15px';
     title.style.marginBottom = '20px';
+    title.style.color = '#000000'; // NEW: Force the title text to black
     container.appendChild(title);
 
     chatHistory.forEach(msg => {
@@ -391,7 +393,9 @@ function exportChatToPDF() {
         const sender = document.createElement('div');
         sender.innerText = msg.role === 'user' ? (UI.name.value || UI.role.value) : "Eprashala AI Teacher";
         sender.style.fontWeight = 'bold';
-        sender.style.color = msg.role === 'user' ? '#0284c7' : '#16a34a';
+        
+        // Keep the sender names colorful so it's easy to read
+        sender.style.color = msg.role === 'user' ? '#0284c7' : '#16a34a'; 
         
         const textPart = msg.parts.find(p => p.text)?.text || "[Image Analyzed]";
         
@@ -399,6 +403,7 @@ function exportChatToPDF() {
         content.innerHTML = msg.role === 'model' ? marked.parse(textPart) : textPart;
         content.style.marginTop = '5px';
         content.style.lineHeight = '1.5';
+        content.style.color = '#1e293b'; // NEW: Force the actual chat content to a highly readable dark slate/black
         
         msgDiv.appendChild(sender);
         msgDiv.appendChild(content);
