@@ -35,15 +35,29 @@ document.addEventListener('visibilitychange', () => {
     }
 });
 
+// --- UPGRADED FULLSCREEN ENFORCER ---
 function enforceFullscreen() {
-    if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen().catch(() => {});
+    // Check if we are currently NOT in fullscreen
+    if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+        const docElm = document.documentElement;
+        
+        // Attempt to request fullscreen with cross-browser fallbacks
+        if (docElm.requestFullscreen) {
+            docElm.requestFullscreen().catch(() => {});
+        } else if (docElm.webkitRequestFullscreen) { /* Safari & iOS */
+            docElm.webkitRequestFullscreen().catch(() => {});
+        } else if (docElm.msRequestFullscreen) { /* IE11/Edge Legacy */
+            docElm.msRequestFullscreen().catch(() => {});
+        }
     }
 }
 
-['click', 'touchstart', 'keydown'].forEach(eventType => {
+// Bind to the window and document to ensure EVERY interaction triggers it
+['click', 'touchstart', 'touchend', 'keydown'].forEach(eventType => {
+    window.addEventListener(eventType, enforceFullscreen, { capture: true, passive: true });
     document.addEventListener(eventType, enforceFullscreen, { capture: true, passive: true });
 });
+
 
 function unlockAudio() {
     const silent = new SpeechSynthesisUtterance('');
@@ -87,6 +101,7 @@ const UI = {
     iconMute: document.getElementById('icon-mute'),
     
     // Multimodal & Crop Additions
+    btnQuizManual: document.getElementById('btn-quiz-manual'), 
     btnCamera: document.getElementById('btn-camera'),
     cameraInput: document.getElementById('camera-input'),
     cropModal: document.getElementById('crop-modal'),
@@ -112,6 +127,11 @@ const UI = {
     btnQuizYes: document.getElementById('btn-quiz-yes'),
     btnQuizNo: document.getElementById('btn-quiz-no'),
     quizQCount: document.getElementById('quiz-q-count'),
+	
+	// Scoreboard Additions
+    scoreContainer: document.getElementById('score-container'),
+    currentScore: document.getElementById('current-score'),
+    scoreIcon: document.getElementById('score-icon'),
     
     selMedium: document.getElementById('medium-selector'),
     selStd: document.getElementById('std-selector'),
@@ -125,6 +145,7 @@ let isListening = false;
 let pendingImageData = null; 
 let cropper = null;
 let state = { isProcessing: false, isMuted: false, lastAIMessage: "" };
+let inningsScore = 0; // NEW: Track the current score
 
 // TTS Tracking
 let ttsStatus = 'STOPPED'; 
@@ -194,6 +215,9 @@ function loadData() {
     const savedMedium = localStorage.getItem('edu_medium');
     const savedStd = localStorage.getItem('edu_std');
     const savedSub = localStorage.getItem('edu_sub');
+	inningsScore = parseInt(localStorage.getItem('edu_score')) || 0;
+    UI.currentScore.innerText = inningsScore;
+    if(inningsScore > 0) UI.scoreIcon.classList.remove('grayscale', 'opacity-80');
     
     UI.remember.checked = localStorage.getItem('edu_remember') !== 'false';
 
@@ -233,6 +257,7 @@ function saveData() {
     localStorage.setItem('edu_std', UI.selStd.value);
     localStorage.setItem('edu_sub', UI.selSub.value);
     localStorage.setItem('edu_remember', UI.remember.checked);
+	localStorage.setItem('edu_score', inningsScore);
     
     if (UI.remember.checked && chatHistory.length > 0) {
         localStorage.setItem('edu_history', JSON.stringify(chatHistory));
@@ -244,7 +269,11 @@ function saveData() {
 function clearData() {
     chatHistory = []; 
     state.lastAIMessage = ""; 
+	inningsScore = 0; // Reset score on clear
+    UI.currentScore.innerText = "0";
+    UI.scoreIcon.classList.add('grayscale', 'opacity-80');
     localStorage.removeItem('edu_history');
+    localStorage.setItem('edu_score', 0);
     UI.log.innerHTML = `<div class="text-gray-400 text-center mt-12 cinzel"><p class="text-sky-500 text-xl mb-2 font-bold">🧹 History Cleared</p>Let's start a new lesson.</div>`;
     synth.cancel();
     resetAllPlayButtons();
@@ -261,7 +290,14 @@ function calculateQuizQuestions() {
 }
 
 function triggerMilestoneQuiz(questionCount) {
-    const hiddenQuizPrompt = `Please generate a fun, multiple-choice quiz with exactly ${questionCount} questions based ONLY on the topics we discussed above. Present it as a challenge. Format it neatly using Markdown. Do not provide the answers yet.`;
+    const hiddenQuizPrompt = `Let's play a knowledge check game! Act as a Quizmaster. Generate a multiple-choice quiz with exactly ${questionCount} questions based on our discussion today.
+    
+    CRITICAL RULES:
+    1. Ask ONLY ONE question right now. Do not list them all.
+    2. Wait for my reply.
+    3. Grade my reply, tell me if I am right or wrong, then ask the next question.
+    4. After the last question, give my final score. Praise me if I scored well, and thoroughly explain any mistakes so I can improve.`;
+    
     processInput(hiddenQuizPrompt, true); 
 }
 
@@ -316,6 +352,25 @@ function setMicThinkingState(isThinking) {
     }
 }
 
+function updateScore(runs) {
+    if (runs === 0) return;
+    inningsScore += runs;
+    UI.currentScore.innerText = inningsScore;
+    
+    // Visual celebration based on runs
+    UI.scoreIcon.classList.remove('grayscale', 'opacity-80');
+    UI.scoreContainer.classList.add('scale-110');
+    
+    if (runs >= 50) UI.scoreContainer.classList.add('bg-yellow-600/80', 'border-yellow-400');
+    else if (runs >= 4) UI.scoreContainer.classList.add('bg-green-600/80', 'border-green-400');
+    else UI.scoreContainer.classList.add('bg-sky-600/80', 'border-sky-400');
+
+    setTimeout(() => {
+        UI.scoreContainer.classList.remove('scale-110', 'bg-yellow-600/80', 'border-yellow-400', 'bg-green-600/80', 'border-green-400', 'bg-sky-600/80', 'border-sky-400');
+    }, 500);
+    saveData();
+}
+
 function exportChatToPDF() {
     if (chatHistory.length === 0) return alert("No chat history to export.");
     const container = document.createElement('div');
@@ -341,7 +396,6 @@ function exportChatToPDF() {
         const textPart = msg.parts.find(p => p.text)?.text || "[Image Analyzed]";
         
         const content = document.createElement('div');
-        // If it's the model, render it using Markdown for the PDF as well
         content.innerHTML = msg.role === 'model' ? marked.parse(textPart) : textPart;
         content.style.marginTop = '5px';
         content.style.lineHeight = '1.5';
@@ -442,6 +496,31 @@ function setupEventListeners() {
     
     UI.btnSharePdf.onclick = (e) => { e.stopPropagation(); exportChatToPDF(); };
 
+    // --- MANUAL QUIZ TRIGGER ---
+    UI.btnQuizManual.addEventListener('click', (e) => {
+        e.stopPropagation(); 
+        enforceFullscreen();
+        unlockAudio();
+
+        const aiMessages = chatHistory.filter(m => m.role === 'model').length;
+        if (aiMessages === 0) {
+            alert("We need to chat a little bit first before I can create a quiz for you!");
+            return;
+        }
+
+        const interactiveQuizPrompt = `Let's do a knowledge check! I want you to act as an interactive Quizmaster. 
+        Generate a multiple-choice quiz with exactly 3 questions based ONLY on the educational topics we have discussed today.
+        
+        CRITICAL RULES:
+        1. Ask ONLY ONE question right now (Question 1). Do NOT give me all the questions at once.
+        2. Wait for my answer. 
+        3. Once I answer, briefly tell me if I was right or wrong, and then immediately ask Question 2.
+        4. Repeat this until all 3 questions are answered.
+        5. After the final question, give me my total score. If I did well, praise me enthusiastically! If I got any wrong, please provide a detailed, easy-to-understand explanation of the correct answers so I can learn.`;
+
+        processInput(interactiveQuizPrompt, true);
+    });
+
     // --- QUIZ INTERCEPTION ---
     UI.btnRestart.onclick = (e) => { 
         e.stopPropagation(); 
@@ -516,19 +595,34 @@ async function processInput(userText, isHiddenQuizTrigger = false) {
     pendingImageData = null; 
     saveData();
 
-    try {
+	try {
         const res = await getAIResponse(chatHistory);
-        // We keep the Markdown intact for rendering, only trim whitespace
-        const cleanRes = res.trim();
+        // Rename to displayRes and use let so we can modify it
+        let displayRes = res.trim();
         
-        state.lastAIMessage = cleanRes;
-        chatHistory.push({ role: 'model', parts: [{ text: cleanRes }] });
+        // --- SCORE INTERCEPTOR ---
+        if (UI.role.value !== 'Teacher') {
+            const scoreMatch = displayRes.match(/\[SCORE:(\d+)\]/);
+            if (scoreMatch) {
+                const runs = parseInt(scoreMatch[1], 10);
+                updateScore(runs);
+                // Strip the tag so the student doesn't see it
+                displayRes = displayRes.replace(scoreMatch[0], '').trim();
+            } else if (chatHistory.length > 2) {
+                // Strike Rotation: 1 steady run for participating and moving the lesson forward
+                updateScore(1); 
+            }
+        }
         
-        const playBtn = renderMessage("Teacher", cleanRes, true, true);
+        // Ensure everything uses displayRes down here, NOT cleanRes
+        state.lastAIMessage = displayRes;
+        chatHistory.push({ role: 'model', parts: [{ text: displayRes }] });
+        
+        const playBtn = renderMessage("Teacher", displayRes, true, true);
         saveData();
         
         // Pass the SANITIZED version of the text to the audio engine
-        if (!state.isMuted && playBtn) handleIndividualPlayPause(sanitizeForTTS(cleanRes), playBtn);
+        if (!state.isMuted && playBtn) handleIndividualPlayPause(sanitizeForTTS(displayRes), playBtn);
     } catch (err) {
         renderMessage("System", "⚠️ Network interrupted. Please try again.", true);
     }
@@ -567,15 +661,21 @@ async function getAIResponse(history) {
             "Use EXTREMELY simple words. Keep answers SHORT, highly nurturing. Talk to them like a loving primary school teacher." : 
             "Use clear, encouraging explanations appropriate for a teenager.";
 
-        prompt = `You are a highly polite, caring, and expert teacher.
+		prompt = `You are a highly polite, caring, and expert teacher.
         Context: You are teaching a student named ${studentName} (Age: ~${finalAge}), in Standard ${std}, Subject: "${sub}", Medium: ${med} (Maharashtra State Board).
         CRITICAL RULES:
         1. PERSONA: Answer in a gender-neutral, deeply caring way. Address them affectionately with respect.
         2. EXPERTISE: Draw explanations strictly from the textbook for this grade.
         3. COMPLEXITY: ${toneInstruction}
         4. Language: Primary language is ${med}.
-        5. FORMATTING: Use Markdown to format your response neatly (use **bold** for emphasis, bullet points for lists, and short paragraphs). Do NOT use complex LaTeX.`;
-    }
+        5. FORMATTING: Use Markdown to format your response neatly (use **bold** for emphasis, bullet points for lists, and short paragraphs). Do NOT use complex LaTeX.
+        6. GAMIFICATION (CRICKET THEME): Act as an automated umpire to score the student's progress. Append a hidden tag exactly like [SCORE:X] at the very end of your response if they hit a milestone.
+           - [SCORE:4] if they grasp a major topic (Boundary).
+           - [SCORE:6] if they answer a quiz question perfectly (Sixer).
+           - [SCORE:50] if they show 50% mastery of the current lesson (Fifty).
+           - [SCORE:100] if they fully complete and master the chapter (Century).
+           IMPORTANT: Do NOT explain the score or mention the tag to the user, just output the tag silently.`; 
+		   }
 
     const payload = { 
         model: "gemini-3.1-flash", 
@@ -686,7 +786,7 @@ function renderMessage(sender, text, isModel, isNewMessage = true) {
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                 </button>
                 <button class="msg-copy-btn p-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-full text-slate-400 hover:text-green-400 transition-colors shadow-sm focus:outline-none" title="Copy Answer">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
                 </button>
                 <button class="msg-play-btn p-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-full text-sky-400 transition-colors shadow-sm focus:outline-none" title="Play/Pause Audio">
                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
