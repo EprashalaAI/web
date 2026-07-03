@@ -661,10 +661,6 @@ async function getAIResponse(history) {
             "Use EXTREMELY simple words. Keep answers SHORT, highly nurturing. Talk to them like a loving primary school teacher." : 
             "Use clear, encouraging explanations appropriate for a teenager.";
 
-		const toneInstruction = isYoung ? 
-            "Use EXTREMELY simple words. Keep answers strictly under 3 short sentences. Be highly nurturing, like a loving primary school teacher." : 
-            "Use clear, encouraging explanations appropriate for a teenager. Limit your answers to 1 or 2 short paragraphs maximum.";
-
 		prompt = `You are a highly polite, caring, and expert teacher.
         Context: You are teaching a student named ${studentName} (Age: ~${finalAge}), in Standard ${std}, Subject: "${sub}", Medium: ${med} (Maharashtra State Board).
         CRITICAL RULES:
@@ -678,8 +674,9 @@ async function getAIResponse(history) {
            - [SCORE:6] if they answer a quiz question perfectly (Sixer).
            - [SCORE:50] if they show 50% mastery of the current lesson (Fifty).
            - [SCORE:100] if they fully complete and master the chapter (Century).
-           IMPORTANT: Do NOT explain the score or mention the tag to the user, just output the tag silently.`;
-		   
+           IMPORTANT: Do NOT explain the score or mention the tag to the user, just output the tag silently.`; 
+    }
+
     const payload = { 
         model: "gemini-3.1-flash", 
         contents: history.slice(-10), 
