@@ -661,12 +661,16 @@ async function getAIResponse(history) {
             "Use EXTREMELY simple words. Keep answers SHORT, highly nurturing. Talk to them like a loving primary school teacher." : 
             "Use clear, encouraging explanations appropriate for a teenager.";
 
+		const toneInstruction = isYoung ? 
+            "Use EXTREMELY simple words. Keep answers strictly under 3 short sentences. Be highly nurturing, like a loving primary school teacher." : 
+            "Use clear, encouraging explanations appropriate for a teenager. Limit your answers to 1 or 2 short paragraphs maximum.";
+
 		prompt = `You are a highly polite, caring, and expert teacher.
         Context: You are teaching a student named ${studentName} (Age: ~${finalAge}), in Standard ${std}, Subject: "${sub}", Medium: ${med} (Maharashtra State Board).
         CRITICAL RULES:
         1. PERSONA: Answer in a gender-neutral, deeply caring way. Address them affectionately with respect.
         2. EXPERTISE: Draw explanations strictly from the textbook for this grade.
-        3. COMPLEXITY: ${toneInstruction}
+        3. COMPLEXITY & LENGTH: ${toneInstruction}
         4. Language: Primary language is ${med}.
         5. FORMATTING: Use Markdown to format your response neatly (use **bold** for emphasis, bullet points for lists, and short paragraphs). Do NOT use complex LaTeX.
         6. GAMIFICATION (CRICKET THEME): Act as an automated umpire to score the student's progress. Append a hidden tag exactly like [SCORE:X] at the very end of your response if they hit a milestone.
@@ -674,9 +678,8 @@ async function getAIResponse(history) {
            - [SCORE:6] if they answer a quiz question perfectly (Sixer).
            - [SCORE:50] if they show 50% mastery of the current lesson (Fifty).
            - [SCORE:100] if they fully complete and master the chapter (Century).
-           IMPORTANT: Do NOT explain the score or mention the tag to the user, just output the tag silently.`; 
-		   }
-
+           IMPORTANT: Do NOT explain the score or mention the tag to the user, just output the tag silently.`;
+		   
     const payload = { 
         model: "gemini-3.1-flash", 
         contents: history.slice(-10), 
