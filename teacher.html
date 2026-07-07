@@ -4,12 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Eprashala AI Teacher</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script> 
     
-    <style>
+    <style type="text/tailwindcss">
         @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@300;400;600&display=swap');
         
         /* SECURITY: Disable text selection globally */
@@ -20,7 +22,7 @@
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
-            background-color: #020617;
+            background-color: #020617; /* Dark Slate Background */
         }
 
         /* Allow typing/selecting in inputs only */
@@ -38,12 +40,12 @@
             cursor: pointer;
         }
         .big-mic:active { transform: scale(0.92); }
-        
+
         .mic-pulse { 
             animation: ripple 1.5s infinite; 
             background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%) !important;
         }
-        
+
         .mic-thinking {
             background: linear-gradient(135deg, #ca8a04 0%, #854d0e 100%) !important;
             box-shadow: 0 0 20px rgba(234, 179, 8, 0.6), inset 0 2px 5px rgba(255,255,255,0.2) !important;
@@ -56,7 +58,7 @@
             70% { box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); }
             100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
-        
+
         @keyframes pulse-think {
             0%, 100% { opacity: 1; transform: scale(1); }
             50% { opacity: 0.8; transform: scale(0.95); }
@@ -97,6 +99,15 @@
             margin-bottom: 20px;
             font-weight: bold;
         }
+
+        /* --- MARKDOWN CHAT BUBBLE STYLING --- */
+        .markdown-body p { margin-bottom: 0.75rem; }
+        .markdown-body p:last-child { margin-bottom: 0; }
+        .markdown-body strong { color: #7dd3fc; font-weight: 600; }
+        .markdown-body ul { list-style-type: disc; margin-left: 1.5rem; margin-bottom: 0.75rem; }
+        .markdown-body ol { list-style-type: decimal; margin-left: 1.5rem; margin-bottom: 0.75rem; }
+        .markdown-body li { margin-bottom: 0.35rem; }
+        .markdown-body h1, .markdown-body h2, .markdown-body h3 { font-weight: bold; color: #38bdf8; margin-top: 0.5rem; margin-bottom: 0.5rem; }
     </style>
 </head>
 
@@ -115,12 +126,8 @@
             <img id="crop-image" class="max-w-full block" src="">
         </div>
         <div class="h-20 bg-slate-900 flex justify-between items-center px-6 border-t border-slate-700 pb-safe">
-            <button id="btn-crop-retake" class="text-red-400 font-bold py-3 px-4 rounded-xl active:bg-slate-800 transition-colors outline-none tracking-wide">
-                RETAKE
-            </button>
-            <button id="btn-crop-done" class="bg-sky-600 text-white font-bold py-3 px-8 rounded-xl active:bg-sky-700 transition-colors shadow-[0_0_15px_rgba(2,132,199,0.4)] outline-none tracking-wide">
-                DONE
-            </button>
+            <button id="btn-crop-retake" class="text-red-400 font-bold py-3 px-4 rounded-xl active:bg-slate-800 transition-colors outline-none tracking-wide">RETAKE</button>
+            <button id="btn-crop-done" class="bg-sky-600 text-white font-bold py-3 px-8 rounded-xl active:bg-sky-700 transition-colors shadow-[0_0_15px_rgba(2,132,199,0.4)] outline-none tracking-wide">DONE</button>
         </div>
     </div>
 
@@ -128,7 +135,6 @@
         <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl relative">
             <button id="btn-close-settings" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl">✕</button>
             <h2 class="text-xl font-bold text-sky-400 mb-5 cinzel">Profile & Settings</h2>
-            
             <div class="space-y-4">
                 <div>
                     <label class="block text-xs text-gray-400 mb-1 ml-1 uppercase tracking-wider">I am a...</label>
@@ -149,9 +155,7 @@
                     <label class="block text-xs text-gray-400 mb-1 ml-1 uppercase tracking-wider">Custom Eprashala Key</label>
                     <div class="flex gap-2">
                         <input type="password" id="custom-api-key-input" class="custom-input !p-2 text-sm flex-1" placeholder="Paste Eprashala Key here">
-                        <button id="btn-paste-key" class="bg-slate-700 hover:bg-slate-600 text-white text-xs px-4 rounded-xl transition-colors font-semibold shadow-inner border border-slate-600">
-                            Paste
-                        </button>
+                        <button id="btn-paste-key" class="bg-slate-700 hover:bg-slate-600 text-white text-xs px-4 rounded-xl transition-colors font-semibold shadow-inner border border-slate-600">Paste</button>
                     </div>
                 </div>
                 <div class="flex items-center gap-3 pt-2 pl-1">
@@ -159,8 +163,19 @@
                     <label for="remember-checkbox" class="text-sm text-gray-300 cursor-pointer">Remember Chat History</label>
                 </div>
             </div>
-            
             <button id="btn-save-settings" class="w-full mt-6 bg-sky-700 hover:bg-sky-600 text-white font-bold py-2.5 rounded-xl transition-colors shadow-lg">Save & Close</button>
+        </div>
+    </div>
+
+    <div id="quiz-modal" class="hidden fixed inset-0 bg-black/80 z-[160] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-slate-900 border border-sky-500/30 rounded-2xl p-6 w-full max-w-sm shadow-[0_0_30px_rgba(2,132,199,0.2)] text-center relative overflow-hidden">
+            <div class="absolute -top-10 -right-10 text-sky-500/10 text-9xl">?</div>
+            <h2 class="text-2xl font-bold text-white mb-2 cinzel relative z-10">Wait a second!</h2>
+            <p class="text-sky-300 mb-6 text-sm relative z-10">You did great learning today. Before we clear the board, are you ready for a fun, <span id="quiz-q-count" class="font-bold text-yellow-400">3</span> question quiz to test your memory?</p>
+            <div class="flex gap-3 relative z-10">
+                <button id="btn-quiz-no" class="flex-1 bg-slate-800 hover:bg-slate-700 text-gray-400 font-bold py-3 rounded-xl transition-colors border border-slate-700">Skip & Clear</button>
+                <button id="btn-quiz-yes" class="flex-1 bg-gradient-to-r from-sky-600 to-sky-500 hover:from-sky-500 hover:to-sky-400 text-white font-bold py-3 rounded-xl transition-colors shadow-lg">Yes, Quiz Me!</button>
+            </div>
         </div>
     </div>
 
@@ -172,14 +187,12 @@
             <button id="adv-toggle" class="absolute top-5 right-5 z-50 text-slate-400 hover:text-white transition-colors" title="Settings">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
             </button>
-
             <div class="flex flex-col items-center justify-center mb-5 relative mt-2">
                 <div id="status-indicator" class="absolute left-0 top-0 w-2.5 h-2.5 rounded-full bg-gray-600 shadow-[0_0_8px_rgba(75,85,99,0.8)]" title="Idle"></div>
                 <h1 class="text-xl md:text-2xl font-bold tracking-widest text-center uppercase mb-3">
                     <span class="text-sky-400">Eprashala AI Teacher</span> 
                 </h1>
             </div>
-
             <div class="grid grid-cols-2 gap-2 mb-2">
                 <select id="medium-selector" class="custom-input !py-2 text-sm font-bold cursor-pointer">
                     <option value="Marathi">Marathi Medium</option>
@@ -207,7 +220,6 @@
         </main>
 
         <footer class="w-full glass-panel rounded-t-3xl p-3 pb-safe flex flex-col flex-shrink-0 relative z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
-            
             <div class="w-full flex gap-2 items-center mb-3">
                 <input type="text" id="text-input" class="custom-input flex-1 text-sm rounded-full px-5 py-3 placeholder-slate-500 focus:bg-slate-900 border-slate-700" placeholder="Ask your question here...">
                 <button id="btn-send" class="p-3.5 bg-sky-700 hover:bg-sky-600 rounded-full transition-colors shadow-lg outline-none">
@@ -216,33 +228,38 @@
             </div>
 
             <div class="w-full flex items-center px-1 relative mt-1">
-                
                 <div class="flex-1 flex justify-start items-center pl-2">
                     <button id="btn-share-pdf" class="text-slate-400 hover:text-sky-400 transition-colors outline-none p-1" title="Download Entire Chat as PDF">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                     </button>
                 </div>
-
+                
                 <div class="flex items-center bg-black/60 p-1.5 rounded-full border border-white/10 shadow-inner flex-shrink-0">
-                    
+                    <button id="btn-quiz-manual" class="audio-btn p-1.5 mr-1" title="Start Interactive Quiz">
+                        <svg class="w-5 h-5 text-yellow-400 hover:text-yellow-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                        </svg>
+                    </button>
                     <button id="btn-camera" class="audio-btn p-1.5 mr-1" title="Snap Textbook Page">
                         <svg class="w-5 h-5 text-gray-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
                     </button>
-
                     <button id="btn-mic" class="big-mic w-12 h-12 rounded-full flex items-center justify-center mx-1 outline-none select-none transition-all shadow-[0_0_15px_rgba(2,132,199,0.5)]">
                         <svg id="icon-mic-default" class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z"/></svg>
                         <svg id="icon-mic-thinking" class="w-5 h-5 text-white hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                     </button>
-
                     <button id="btn-mute" class="audio-btn p-1.5" title="Mute TTS">
                         <svg class="w-5 h-5" id="icon-vol" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
                         <svg class="w-5 h-5 hidden text-red-400" id="icon-mute" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/></svg>
                     </button>
+					                    <div id="score-container" class="flex items-center gap-1.5 bg-slate-800/80 border border-slate-600 px-3 py-1.5 rounded-full shadow-[0_0_10px_rgba(2,132,199,0.2)] transition-all duration-300 cursor-default" title="Current Innings Score">
+                        <span class="text-sm grayscale opacity-80" id="score-icon">🏏</span>
+                        <span id="current-score" class="text-yellow-400 font-bold cinzel text-sm tracking-wider w-6 text-center transition-all">0</span>
+                    </div>
                 </div>
-
+                
                 <div class="flex-1 flex justify-end items-center gap-2 pr-2">
                     <button id="btn-restart" class="text-slate-400 hover:text-white transition-colors outline-none p-1" title="Clear Chat">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -251,838 +268,7 @@
             </div>
         </footer>
     </div>
-
-    <script>
-        // --- 0. SECURITY, WAKE LOCK, VISIBILITY & FULLSCREEN ---
-        document.addEventListener('contextmenu', event => event.preventDefault());
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'F12') { e.preventDefault(); return false; }
-            if (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) { e.preventDefault(); return false; }
-            if (e.ctrlKey && ['U', 'S', 'P'].includes(e.key.toUpperCase())) { e.preventDefault(); return false; }
-            if (e.ctrlKey && e.key.toUpperCase() === 'C' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
-                e.preventDefault(); return false;
-            }
-        });
-
-        // WAKE LOCK API
-        let wakeLock = null;
-        async function requestWakeLock() {
-            try {
-                if ('wakeLock' in navigator) {
-                    wakeLock = await navigator.wakeLock.request('screen');
-                }
-            } catch (err) {
-                console.log('Wake Lock Error:', err.message);
-            }
-        }
-
-        // VISIBILITY API
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible') {
-                requestWakeLock();
-            } else {
-                if (ttsStatus === 'PLAYING') {
-                    // Safe pause handling if app is minimized
-                    ttsStatus = 'PAUSED';
-                    synth.cancel();
-                    if (window.currentPlayingBtn) {
-                        window.currentPlayingBtn.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
-                    }
-                }
-            }
-        });
-
-        // AGGRESSIVE FULLSCREEN ENFORCEMENT
-        function enforceFullscreen() {
-            if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
-                document.documentElement.requestFullscreen().catch(() => {});
-            }
-        }
-
-        // Global listener intercepts any touch/click/key before anything else and enforces fullscreen
-        ['click', 'touchstart', 'keydown'].forEach(eventType => {
-            document.addEventListener(eventType, enforceFullscreen, { 
-                capture: true,  
-                passive: true   
-            });
-        });
-
-        function unlockAudio() {
-            const silent = new SpeechSynthesisUtterance('');
-            silent.volume = 0;
-            synth.speak(silent);
-        }
-
-        // --- 1. DATA STRUCTURES & CONFIG ---
-        const PROXY_URL = "https://eprashala.pythonanywhere.com/api/chat"; 
-
-        const MAHA_BOARD_SUBJECTS = {
-            std1to2: ["Marathi (मराठी)", "English", "Mathematics (गणित)"],
-            std3: ["Marathi (मराठी)", "English", "Mathematics (गणित)", "Environmental Studies (परिसर अभ्यास)"],
-            std4to5: ["Marathi (मराठी)", "English", "Hindi (हिंदी)", "Mathematics (गणित)", "EVS Part 1 (परिसर अभ्यास १)", "EVS Part 2 (परिसर अभ्यास २ - शिवछत्रपती)"],
-            std6to8: ["Marathi (मराठी)", "English", "Hindi (हिंदी)", "Mathematics (गणित)", "General Science (सामान्य विज्ञान)", "History & Civics (इतिहास व नागरिकशास्त्र)", "Geography (भूगोल)"],
-            std9to10: ["Marathi (मराठी)", "English", "Hindi (हिंदी)", "Sanskrit (संस्कृत)", "Mathematics Part-I (Algebra / बीजगणित)", "Mathematics Part-II (Geometry / भूमिती)", "Science & Technology Part-1", "Science & Technology Part-2", "History & Political Science", "Geography (भूगोल)"],
-            std11to12: [
-                "English", "Marathi (मराठी)", "Hindi (हिंदी)", "Physics", "Chemistry", "Biology", 
-                "Mathematics & Statistics", "Information Technology (IT)", "Economics (अर्थशास्त्र)", 
-                "Book Keeping & Accountancy", "Organization of Commerce & Management (OCM)", 
-                "Secretarial Practice (SP)", "History (इतिहास)", "Geography (भूगोल)", 
-                "Political Science (राज्यशास्त्र)", "Sociology (समाजशास्त्र)", "Psychology (मानसशास्त्र)"
-            ]
-        };
-
-        // --- 2. DOM & STATE ---
-        const UI = {
-            overlay: document.getElementById('start-overlay'),
-            log: document.getElementById('conversation-log'),
-            status: document.getElementById('status-indicator'),
-            textIn: document.getElementById('text-input'),
-            btnSend: document.getElementById('btn-send'),
-            btnMic: document.getElementById('btn-mic'),
-            iconMicDefault: document.getElementById('icon-mic-default'),
-            iconMicThinking: document.getElementById('icon-mic-thinking'),
-            btnMute: document.getElementById('btn-mute'),
-            btnRestart: document.getElementById('btn-restart'),
-            btnPasteKey: document.getElementById('btn-paste-key'),
-            btnSharePdf: document.getElementById('btn-share-pdf'),
-            iconVol: document.getElementById('icon-vol'),
-            iconMute: document.getElementById('icon-mute'),
-            
-            // Multimodal & Crop Additions
-            btnCamera: document.getElementById('btn-camera'),
-            cameraInput: document.getElementById('camera-input'),
-            cropModal: document.getElementById('crop-modal'),
-            cropImage: document.getElementById('crop-image'),
-            btnCropRetake: document.getElementById('btn-crop-retake'),
-            btnCropDone: document.getElementById('btn-crop-done'),
-            
-            advToggle: document.getElementById('adv-toggle'),
-            settingsModal: document.getElementById('settings-modal'),
-            btnCloseSet: document.getElementById('btn-close-settings'),
-            btnSaveSet: document.getElementById('btn-save-settings'),
-            role: document.getElementById('user-role'),
-            name: document.getElementById('manual-name'),
-            age: document.getElementById('manual-age'),
-            ageContainer: document.getElementById('age-container'),
-            keyIn: document.getElementById('custom-api-key-input'),
-            remember: document.getElementById('remember-checkbox'),
-            welcome: document.getElementById('welcome-msg'),
-            
-            selMedium: document.getElementById('medium-selector'),
-            selStd: document.getElementById('std-selector'),
-            selSub: document.getElementById('subject-selector')
-        };
-
-        let chatHistory = [];
-        let recognition = null;
-        let synth = window.speechSynthesis;
-        let isListening = false; 
-        
-        let pendingImageData = null; 
-        let cropper = null;
-        
-        let state = { isProcessing: false, isMuted: false, lastAIMessage: "" };
-
-        // --- EXPERT TTS TRACKING STATE ---
-        let ttsStatus = 'STOPPED'; 
-        let lastSpokenIndex = 0;   
-        window.currentPlayingText = "";
-        window.currentPlayingBtn = null;
-
-        // --- 3. INITIALIZATION ---
-        window.onload = () => {
-            loadData();
-            initSpeechRecognition(); 
-            
-            UI.role.addEventListener('change', (e) => {
-                if(e.target.value === 'Teacher') UI.ageContainer.style.display = 'none';
-                else UI.ageContainer.style.display = 'block';
-            });
-        };
-
-        UI.overlay.addEventListener('click', () => {
-            enforceFullscreen();
-            requestWakeLock();
-            unlockAudio(); 
-            UI.overlay.style.display = 'none';
-            setupEventListeners(); 
-        });
-
-        function updateSubjectsList() {
-            const std = parseInt(UI.selStd.value);
-            let subjects = [];
-            
-            if (std >= 1 && std <= 2) subjects = MAHA_BOARD_SUBJECTS.std1to2;
-            else if (std === 3) subjects = MAHA_BOARD_SUBJECTS.std3;
-            else if (std >= 4 && std <= 5) subjects = MAHA_BOARD_SUBJECTS.std4to5;
-            else if (std >= 6 && std <= 8) subjects = MAHA_BOARD_SUBJECTS.std6to8;
-            else if (std >= 9 && std <= 10) subjects = MAHA_BOARD_SUBJECTS.std9to10;
-            else if (std >= 11 && std <= 12) subjects = MAHA_BOARD_SUBJECTS.std11to12;
-
-            UI.selSub.innerHTML = '';
-            subjects.forEach(sub => {
-                const opt = document.createElement('option');
-                opt.value = sub;
-                opt.text = sub;
-                UI.selSub.appendChild(opt);
-            });
-        }
-
-        // --- 4. DATA MANAGEMENT ---
-        function loadData() {
-            UI.role.value = localStorage.getItem('edu_role') || "Student";
-            if(UI.role.value === 'Teacher') UI.ageContainer.style.display = 'none';
-
-            UI.name.value = localStorage.getItem('edu_name') || "";
-            UI.age.value = localStorage.getItem('edu_age') || "";
-            UI.keyIn.value = localStorage.getItem('edu_api_key') || "";
-            
-            const savedMedium = localStorage.getItem('edu_medium');
-            const savedStd = localStorage.getItem('edu_std');
-            const savedSub = localStorage.getItem('edu_sub');
-            
-            UI.remember.checked = localStorage.getItem('edu_remember') !== 'false';
-
-            if (savedMedium) UI.selMedium.value = savedMedium;
-            if (savedStd) UI.selStd.value = savedStd;
-            
-            updateSubjectsList(); 
-            if (savedSub && Array.from(UI.selSub.options).some(opt => opt.value === savedSub)) {
-                UI.selSub.value = savedSub;
-            }
-
-            if (UI.remember.checked) {
-                const savedHistory = localStorage.getItem('edu_history');
-                if (savedHistory) {
-                    try {
-                        chatHistory = JSON.parse(savedHistory);
-                        if (chatHistory.length > 0) {
-                            UI.welcome.style.display = 'none';
-                            chatHistory.forEach(msg => {
-                                const textPart = msg.parts.find(p => p.text)?.text || "📷 [Image attached]";
-                                renderMessage(msg.role === 'user' ? (UI.name.value || UI.role.value) : "Teacher", textPart, msg.role === 'model', false); 
-                            });
-                            const lastModel = [...chatHistory].reverse().find(m => m.role === 'model');
-                            if (lastModel) state.lastAIMessage = lastModel.parts.find(p => p.text)?.text || "";
-                        }
-                    } catch (e) {}
-                }
-            }
-        }
-
-        function saveData() {
-            localStorage.setItem('edu_role', UI.role.value);
-            localStorage.setItem('edu_name', UI.name.value);
-            localStorage.setItem('edu_age', UI.age.value);
-            localStorage.setItem('edu_api_key', UI.keyIn.value);
-            localStorage.setItem('edu_medium', UI.selMedium.value);
-            localStorage.setItem('edu_std', UI.selStd.value);
-            localStorage.setItem('edu_sub', UI.selSub.value);
-            localStorage.setItem('edu_remember', UI.remember.checked);
-            
-            if (UI.remember.checked && chatHistory.length > 0) {
-                localStorage.setItem('edu_history', JSON.stringify(chatHistory));
-            } else {
-                localStorage.removeItem('edu_history');
-            }
-        }
-
-        function clearData() {
-            chatHistory = []; 
-            state.lastAIMessage = ""; 
-            localStorage.removeItem('edu_history');
-            UI.log.innerHTML = `<div class="text-gray-400 text-center mt-12 cinzel"><p class="text-sky-500 text-xl mb-2 font-bold">🧹 History Cleared</p>Let's start a new lesson.</div>`;
-            synth.cancel();
-            resetAllPlayButtons();
-            ttsStatus = 'STOPPED';
-            lastSpokenIndex = 0;
-            window.currentPlayingText = "";
-        }
-
-        // --- 5. SPEECH RECOGNITION ---
-        function initSpeechRecognition() {
-            const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRec) return;
-            recognition = new SpeechRec();
-            recognition.continuous = false; 
-            recognition.interimResults = false; 
-            
-            recognition.onstart = () => {
-                isListening = true;
-                UI.btnMic.classList.add('mic-pulse');
-                UI.status.style.backgroundColor = '#ef4444'; 
-                UI.textIn.value = '';
-                UI.textIn.placeholder = "Listening... Speak now.";
-            };
-            recognition.onresult = (e) => {
-                const transcript = e.results[e.results.length - 1][0].transcript.trim();
-                if (transcript) { UI.textIn.value = transcript; processInput(transcript); }
-            };
-            recognition.onend = () => {
-                isListening = false;
-                if (!state.isProcessing) resetMicUI();
-            };
-			recognition.onerror = (e) => {
-				console.warn("Speech Recognition Error fired:", e.error);
-				if (e.error === 'not-allowed') {
-					alert("Microphone access was blocked! Please click the lock icon in your URL bar and allow microphone permissions.");
-				}
-				isListening = false; 
-				resetMicUI();
-			};
-        }
-
-        function resetMicUI() {
-            UI.btnMic.classList.remove('mic-pulse');
-            UI.status.style.backgroundColor = '#4b5563'; 
-            UI.textIn.placeholder = pendingImageData ? "📷 Image attached! Add text or send..." : "Ask your question here...";
-            setMicThinkingState(false);
-        }
-
-        function setMicThinkingState(isThinking) {
-            if (isThinking) {
-                UI.btnMic.classList.add('mic-thinking');
-                UI.btnMic.classList.remove('mic-pulse');
-                UI.iconMicDefault.classList.add('hidden');
-                UI.iconMicThinking.classList.remove('hidden');
-            } else {
-                UI.btnMic.classList.remove('mic-thinking');
-                UI.iconMicDefault.classList.remove('hidden');
-                UI.iconMicThinking.classList.add('hidden');
-            }
-        }
-
-        // --- PDF GENERATION LOGIC ---
-        function exportChatToPDF() {
-            if (chatHistory.length === 0) {
-                alert("No chat history to export.");
-                return;
-            }
-
-            const container = document.createElement('div');
-            container.style.padding = '30px';
-            container.style.fontFamily = 'Arial, sans-serif';
-            container.style.color = '#000';
-            container.style.backgroundColor = '#FFF';
-
-            const title = document.createElement('h2');
-            title.innerText = `Eprashala Notes: Std ${UI.selStd.value} - ${UI.selSub.value}`;
-            title.style.textAlign = 'center';
-            title.style.borderBottom = '2px solid #ccc';
-            title.style.paddingBottom = '15px';
-            title.style.marginBottom = '20px';
-            container.appendChild(title);
-
-            chatHistory.forEach(msg => {
-                const msgDiv = document.createElement('div');
-                msgDiv.style.marginBottom = '20px';
-                
-                const sender = document.createElement('div');
-                sender.innerText = msg.role === 'user' ? (UI.name.value || UI.role.value) : "Eprashala AI Teacher";
-                sender.style.fontWeight = 'bold';
-                sender.style.color = msg.role === 'user' ? '#0284c7' : '#16a34a';
-                sender.style.marginBottom = '5px';
-                sender.style.fontSize = '1.1rem';
-                
-                const textPart = msg.parts.find(p => p.text)?.text || "[Image Analyzed]";
-                const content = document.createElement('div');
-                content.innerText = textPart;
-                content.style.lineHeight = '1.6';
-                content.style.fontSize = '1rem';
-                content.style.whiteSpace = 'pre-wrap'; 
-                
-                msgDiv.appendChild(sender);
-                msgDiv.appendChild(content);
-                container.appendChild(msgDiv);
-            });
-
-            const opt = {
-                margin:       0.5,
-                filename:     `Notes_Std${UI.selStd.value}_${UI.selSub.value.replace(/[^a-zA-Z0-9]/g, '')}.pdf`,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2 },
-                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-            };
-            html2pdf().set(opt).from(container).save();
-        }
-
-        // --- 6. EVENT LISTENERS ---
-        function setupEventListeners() {
-            UI.selMedium.addEventListener('change', saveData);
-            UI.selStd.addEventListener('change', () => { updateSubjectsList(); saveData(); });
-            UI.selSub.addEventListener('change', saveData);
-
-            UI.advToggle.onclick = (e) => { e.stopPropagation(); UI.settingsModal.classList.remove('hidden'); };
-            UI.btnCloseSet.onclick = (e) => { e.stopPropagation(); UI.settingsModal.classList.add('hidden'); };
-            UI.btnSaveSet.onclick = (e) => { e.stopPropagation(); saveData(); UI.settingsModal.classList.add('hidden'); };
-            UI.settingsModal.addEventListener('click', e => e.stopPropagation());
-            
-            // --- NEW MULTIMODAL CROP LOGIC ---
-            UI.btnCamera.addEventListener('click', (e) => {
-                e.stopPropagation();
-                enforceFullscreen();
-                UI.cameraInput.click(); 
-            });
-
-            // 1. Load image into the Crop Modal
-            UI.cameraInput.addEventListener('change', (event) => {
-                const file = event.target.files[0];
-                if (!file) return;
-
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = (e) => {
-                    // Show modal and set image source
-                    UI.cropImage.src = e.target.result;
-                    UI.cropModal.classList.remove('hidden');
-                    
-                    // Destroy old cropper instance if it exists
-                    if (cropper) cropper.destroy();
-                    
-                    // Initialize touch-friendly cropper
-                    cropper = new Cropper(UI.cropImage, {
-                        viewMode: 2,       // Restrict crop box to not exceed canvas
-                        dragMode: 'move',  // Allow panning the image with one finger
-                        autoCropArea: 0.9,
-                        restore: false,
-                        guides: true,
-                        center: true,
-                        highlight: false,
-                        cropBoxMovable: true,
-                        cropBoxResizable: true,
-                        toggleDragModeOnDblclick: false,
-                    });
-                };
-            });
-
-            // 2. RETAKE Button
-            UI.btnCropRetake.addEventListener('click', (e) => {
-                e.stopPropagation();
-                enforceFullscreen();
-                if (cropper) cropper.destroy();
-                UI.cropModal.classList.add('hidden');
-                UI.cameraInput.value = ''; // Reset input
-                UI.cameraInput.click();    // Re-trigger camera
-            });
-
-            // 3. DONE Button
-            UI.btnCropDone.addEventListener('click', (e) => {
-                e.stopPropagation();
-                enforceFullscreen();
-                if (!cropper) return;
-
-                // Extract the cropped area
-                const canvas = cropper.getCroppedCanvas({
-                    maxWidth: 800,
-                    maxHeight: 1200,
-                    fillColor: '#fff', 
-                });
-
-                // Extract pure Base64
-                pendingImageData = canvas.toDataURL('image/jpeg', 0.6).split(',')[1];
-                
-                // Cleanup and close
-                cropper.destroy();
-                cropper = null;
-                UI.cropModal.classList.add('hidden');
-
-                // Visual Feedback
-                UI.textIn.placeholder = "📷 Cropped image attached! Ask question...";
-                UI.btnCamera.classList.remove('text-gray-400');
-                UI.btnCamera.classList.add('text-sky-400');
-            });
-
-            UI.btnPasteKey.addEventListener('click', async (e) => {
-                e.stopPropagation(); 
-                try {
-                    const text = await navigator.clipboard.readText();
-                    if (text) {
-                        UI.keyIn.value = text;
-                        const originalText = UI.btnPasteKey.innerText;
-                        UI.btnPasteKey.innerText = "Pasted!";
-                        UI.btnPasteKey.classList.replace('bg-slate-700', 'bg-green-600');
-                        setTimeout(() => { 
-                            UI.btnPasteKey.innerText = originalText; 
-                            UI.btnPasteKey.classList.replace('bg-green-600', 'bg-slate-700');
-                        }, 1500);
-                    }
-                } catch (err) { alert('Could not access clipboard. Please paste manually.'); }
-            });
-
-            UI.btnMute.onclick = (e) => { 
-                e.stopPropagation(); 
-                state.isMuted = !state.isMuted; 
-                if(state.isMuted) { 
-                    synth.cancel(); 
-                    ttsStatus = 'STOPPED';
-                    resetAllPlayButtons();
-                    window.currentPlayingText = "";
-                    UI.iconVol.classList.add('hidden'); 
-                    UI.iconMute.classList.remove('hidden'); 
-                } else { 
-                    UI.iconVol.classList.remove('hidden'); 
-                    UI.iconMute.classList.add('hidden'); 
-                } 
-            };
-            
-            UI.btnRestart.onclick = (e) => { e.stopPropagation(); clearData(); };
-            UI.btnSharePdf.onclick = (e) => { e.stopPropagation(); exportChatToPDF(); };
-
-            UI.btnSend.onclick = (e) => { 
-                e.stopPropagation(); 
-                enforceFullscreen();
-                unlockAudio(); 
-                processInput(UI.textIn.value); 
-            };
-            
-            UI.textIn.onkeypress = (e) => { 
-                e.stopPropagation(); 
-                if(e.key === 'Enter') {
-                    enforceFullscreen();
-                    unlockAudio();
-                    processInput(UI.textIn.value);
-                } 
-            };
-
-			UI.btnMic.addEventListener('click', (e) => {
-				e.stopPropagation();
-				enforceFullscreen();
-				
-				if (state.isProcessing || !recognition) {
-					if (!recognition) alert("Speech recognition is not supported in this browser. Please use Chrome.");
-					return;
-				}
-				
-				if (isListening) { 
-					recognition.stop(); 
-				} else { 
-					recognition.lang = UI.selMedium.value === 'Marathi' ? 'mr-IN' : 'en-IN'; 
-					try { 
-						recognition.start(); 
-					} catch(err) {
-						console.error("Microphone startup failed:", err);
-						alert("Could not start microphone: " + err.message);
-					} 
-				}
-			});
-        }
-
-        // --- 7. AI LOGIC & PROCESSING ---
-        async function processInput(userText) {
-            userText = userText.trim();
-            if (!userText && !pendingImageData) return; 
-
-            // UI Resets
-            UI.textIn.value = '';
-            UI.textIn.placeholder = "Teacher is thinking...";
-            UI.btnCamera.classList.remove('text-sky-400');
-            UI.btnCamera.classList.add('text-gray-400');
-            UI.cameraInput.value = '';
-            
-            if (UI.welcome) UI.welcome.style.display = 'none';
-            
-            state.isProcessing = true;
-            UI.status.style.backgroundColor = '#facc15'; 
-            setMicThinkingState(true);
-
-            const userName = UI.name.value || UI.role.value;
-            const displayMessage = userText || "📷 [Image attached for analysis]";
-            renderMessage(userName, displayMessage, false);
-            
-            // Build the multimodal payload
-            let messageParts = [];
-            if (userText) {
-                messageParts.push({ text: userText });
-            }
-            if (!userText && pendingImageData) {
-                messageParts.push({ text: "Please carefully analyze and explain the contents of this image." });
-            }
-            if (pendingImageData) {
-                messageParts.push({
-                    inlineData: {
-                        mimeType: "image/jpeg",
-                        data: pendingImageData
-                    }
-                });
-            }
-
-            chatHistory.push({ role: 'user', parts: messageParts });
-            pendingImageData = null; // Clear image state after push
-            saveData();
-
-            try {
-                const res = await getAIResponse(chatHistory);
-                const cleanRes = res.replace(/[*#`_\[\]()]/g, '').trim();
-                
-                state.lastAIMessage = cleanRes;
-                chatHistory.push({ role: 'model', parts: [{ text: cleanRes }] });
-                
-                // Renders the message and triggers the exact play button for this response automatically
-                const playBtn = renderMessage("Teacher", cleanRes, true, true);
-                saveData();
-                
-                if (!state.isMuted && playBtn) {
-                    handleIndividualPlayPause(cleanRes, playBtn);
-                }
-            } catch (err) {
-                renderMessage("System", "⚠️ Network interrupted. Please try again.", true);
-            }
-
-            state.isProcessing = false;
-            resetMicUI();
-        }
-
-        async function getAIResponse(history) {
-            const role = UI.role.value;
-            const med = UI.selMedium.value;
-            const std = UI.selStd.value;
-            const sub = UI.selSub.value;
-            const customKey = (UI.keyIn.value.trim().length > 10) ? UI.keyIn.value.trim() : null;
-            const headers = { 'Content-Type': 'application/json' };
-            if (customKey) headers['X-Custom-Api-Key'] = customKey;
-
-            let prompt = "";
-
-            if (role === 'Teacher') {
-                const teacherName = UI.name.value ? ` as ${UI.name.value}` : "";
-                prompt = `You are an expert educational assistant helping a fellow teacher${teacherName}.
-                Context: Maharashtra State Board (Balbharati), Standard ${std}, Subject: "${sub}", Medium: ${med}.
-                CRITICAL RULES:
-                1. Strictly adhere to the syllabus for this standard and subject.
-                2. If the teacher asks for questions, quizzes, lesson plans, or summaries, provide them accurately based on the textbook.
-                3. Tone: Professional, helpful, collaborative, and peer-to-peer.
-                4. Language: Primary language is ${med}, but adapt smoothly if the request is in English/Hindi.
-                5. FORMATTING: Do not use any markdown characters (*, #, _, [, ]). Write in plain text so the Text-to-Speech engine can read it perfectly.`;
-            } else {
-                const studentName = UI.name.value || "Child";
-                const estimatedAge = parseInt(std) + 5;
-                const finalAge = UI.age.value ? parseInt(UI.age.value) : estimatedAge;
-                const isYoung = finalAge <= 11 || parseInt(std) <= 5;
-                
-                const toneInstruction = isYoung ? 
-                    "Use EXTREMELY simple words. Keep answers SHORT, highly nurturing, caring, and easy to digest. Talk to them like a loving primary school teacher." : 
-                    "Use clear, encouraging, and detailed explanations appropriate for a teenager.";
-
-                prompt = `You are a highly polite, caring, and expert teacher.
-                Context: You are teaching a student named ${studentName} (Age: ~${finalAge}), in Standard ${std}, Subject: "${sub}", Medium: ${med} (Maharashtra State Board - Balbharati).
-                CRITICAL RULES:
-                1. PERSONA: Answer in a gender-neutral, deeply caring way. Address them affectionately as ${studentName}.
-                2. EXPERTISE: Draw explanations strictly from the textbook for this grade. Out-of-book examples are allowed ONLY if they simplify the in-book concept.
-                3. COMPLEXITY: ${toneInstruction}
-                4. Language: Primary language is ${med}.
-                5. FORMATTING: Do not use any markdown characters (*, #, _, [, ]). Write in plain text so the Text-to-Speech engine can read it perfectly.`;
-            }
-
-            const payload = { 
-                model: "gemini-3.1-flash", 
-                contents: history.slice(-10), 
-                systemInstruction: { parts: [{ text: prompt }] } 
-            };
-
-            const response = await fetch(PROXY_URL, { method: 'POST', headers: headers, body: JSON.stringify(payload) });
-            if (!response.ok) throw new Error('API Error');
-            const data = await response.json();
-            return data.candidates[0].content.parts[0].text;
-        }
-
-        // --- EXPERT DYNAMIC PLAY/PAUSE UI LOGIC ---
-        function resetAllPlayButtons() {
-            document.querySelectorAll('.msg-play-btn').forEach(b => {
-                b.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
-            });
-        }
-
-        function handleIndividualPlayPause(text, btnElement) {
-            if (state.isMuted) return;
-
-            const playIcon = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
-            const pauseIcon = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
-
-            // SCENARIO 1: Interacting with the currently active message
-            if (window.currentPlayingText === text) {
-                
-                if (ttsStatus === 'PAUSED') {
-                    // EXPERT RESUME: We slice the text and start a new utterance
-                    ttsStatus = 'PLAYING';
-                    btnElement.innerHTML = pauseIcon; // Optimistic UI
-                    
-                    synth.cancel(); // Clear any hung states in the OS
-                    
-                    setTimeout(() => {
-                        // Slice the original text from the exact character we stopped at
-                        const remainingText = text.substring(lastSpokenIndex);
-                        startNewUtterance(remainingText, text, btnElement, lastSpokenIndex);
-                    }, 50);
-                    return;
-                    
-                } else if (ttsStatus === 'PLAYING') {
-                    // EXPERT PAUSE: We kill the audio entirely to avoid the resume bug
-                    ttsStatus = 'PAUSED';
-                    btnElement.innerHTML = playIcon; // Optimistic UI
-                    synth.cancel(); // Instantly halts audio and is 100% reliable
-                    return;
-                }
-            }
-
-            // SCENARIO 2: Starting a brand new message from the beginning
-            synth.cancel(); 
-            resetAllPlayButtons();
-            
-            window.currentPlayingText = text;
-            ttsStatus = 'PLAYING';
-            lastSpokenIndex = 0;
-            btnElement.innerHTML = pauseIcon; 
-
-            setTimeout(() => {
-                startNewUtterance(text, text, btnElement, 0);
-            }, 50);
-        }
-
-        function startNewUtterance(textToSpeak, fullOriginalText, btnElement, offsetIndex) {
-            if (!textToSpeak.trim()) {
-                btnElement.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
-                ttsStatus = 'STOPPED';
-                return;
-            }
-
-            const utterance = new SpeechSynthesisUtterance(textToSpeak);
-            window.currentUtterance = utterance; // Prevents aggressive garbage collection
-            
-            utterance.lang = UI.selMedium.value === 'Marathi' ? 'mr-IN' : 'en-IN';
-            
-            const isTeacher = UI.role.value === 'Teacher';
-            const std = parseInt(UI.selStd.value);
-            
-            if (isTeacher) {
-                utterance.rate = 1.0;
-                utterance.pitch = 1.0;
-            } else if (std <= 5) {
-                utterance.rate = 0.75; 
-                utterance.pitch = 1.15; 
-            } else {
-                utterance.rate = 0.9;
-                utterance.pitch = 1.05;
-            }
-            
-            // Track exactly where the AI is in the sentence natively
-            utterance.onboundary = (event) => {
-                lastSpokenIndex = offsetIndex + event.charIndex;
-            };
-            
-            utterance.onend = () => {
-                // Only reset the UI if it finished naturally
-                if (ttsStatus === 'PLAYING') {
-                    btnElement.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
-                    ttsStatus = 'STOPPED';
-                    window.currentPlayingText = "";
-                    lastSpokenIndex = 0;
-                }
-            };
-
-            utterance.onerror = (e) => {
-                // Ignore intentionally canceled errors
-                if (e.error !== 'canceled' && e.error !== 'interrupted') {
-                    btnElement.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
-                    ttsStatus = 'STOPPED';
-                }
-            };
-
-            synth.resume(); // Flushes any ghost pauses
-            synth.speak(utterance);
-        }
-
-        // --- RENDER UI ---
-        function renderMessage(sender, text, isModel, isNewMessage = true) {
-            const div = document.createElement('div');
-            div.className = `p-4 rounded-2xl ${isModel ? 'bg-[#0f172a]/90 border border-slate-700/50 shadow-lg ml-2 mr-8' : 'bg-sky-900/40 text-right mr-2 ml-8'} mb-4`;
-            
-            let htmlContent = `<div class="text-[10px] uppercase font-bold tracking-wider ${isModel ? 'text-sky-400 cinzel' : 'text-slate-300'} mb-1">${sender}</div>
-                               <div class="text-sm leading-relaxed text-gray-100">${text}</div>`;
-            
-            let playBtnElement = null;
-
-            if (isModel) {
-                htmlContent += `
-                    <div class="mt-3 flex justify-end gap-2">
-                        <button class="msg-pdf-btn p-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-full text-slate-400 hover:text-red-400 transition-colors shadow-sm focus:outline-none" title="Download Answer as PDF">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                        </button>
-                        <button class="msg-copy-btn p-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-full text-slate-400 hover:text-green-400 transition-colors shadow-sm focus:outline-none" title="Copy Answer">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                        </button>
-                        <button class="msg-play-btn p-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-full text-sky-400 transition-colors shadow-sm focus:outline-none" title="Play/Pause Audio">
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                        </button>
-                    </div>`;
-            }
-
-            div.innerHTML = htmlContent;
-
-            if (isModel) {
-                playBtnElement = div.querySelector('.msg-play-btn');
-
-                // PDF Logic
-                const pdfBtn = div.querySelector('.msg-pdf-btn');
-                pdfBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const container = document.createElement('div');
-                    container.style.padding = '30px';
-                    container.style.fontFamily = 'Arial, sans-serif';
-                    container.style.color = '#000';
-                    container.style.backgroundColor = '#FFF';
-
-                    const title = document.createElement('h2');
-                    title.innerText = `Eprashala Note: Std ${UI.selStd.value} - ${UI.selSub.value}`;
-                    title.style.borderBottom = '2px solid #ccc';
-                    title.style.paddingBottom = '10px';
-                    title.style.marginBottom = '15px';
-                    
-                    const content = document.createElement('div');
-                    content.innerText = text;
-                    content.style.lineHeight = '1.6';
-                    content.style.fontSize = '1.1rem';
-                    content.style.whiteSpace = 'pre-wrap';
-                    
-                    container.appendChild(title);
-                    container.appendChild(content);
-
-                    const opt = {
-                        margin:       0.5,
-                        filename:     `Answer_Std${UI.selStd.value}_${Date.now()}.pdf`,
-                        image:        { type: 'jpeg', quality: 0.98 },
-                        html2canvas:  { scale: 2 },
-                        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-                    };
-                    html2pdf().set(opt).from(container).save();
-                });
-
-                // User-triggered Play/Pause via the button click
-                playBtnElement.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    handleIndividualPlayPause(text, playBtnElement);
-                });
-
-                // Copy Logic
-                const copyBtn = div.querySelector('.msg-copy-btn');
-                copyBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    navigator.clipboard.writeText(text).then(() => {
-                        copyBtn.classList.add('text-green-400');
-                        copyBtn.classList.remove('text-slate-400');
-                        setTimeout(() => {
-                            copyBtn.classList.remove('text-green-400');
-                            copyBtn.classList.add('text-slate-400');
-                        }, 1500);
-                    });
-                });
-            }
-
-            UI.log.appendChild(div);
-            setTimeout(() => { UI.log.scrollTop = UI.log.scrollHeight; }, 50);
-
-            return playBtnElement;
-        }
-    </script>
+    
+    <script src="appteach.js"></script>
 </body>
 </html>
