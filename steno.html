@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Steno Pro: AI Document Architect</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --primary: #0f172a; --primary-hover: #334155; --accent: #2563eb; --accent-hover: #1d4ed8;
+            --success: #10b981; --warning: #f59e0b; --danger: #ef4444; --bg-color: #f8fafc;
+            --panel-bg: #ffffff; --border: #e2e8f0; --text: #1e293b; --text-light: #64748b;
+        }
+        
+        * { box-sizing: border-box; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        
+        /* Mobile Viewport Fix */
+        body { margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text); display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; }
+        
+        /* Navbar Redesigned for Mobile Space Saving */
+        .navbar { background: var(--primary); color: white; padding: 10px 15px; display: flex; flex-direction: column; gap: 8px; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .navbar-top { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .navbar-brand-group { display: flex; align-items: center; gap: 8px; }
+        .navbar h1 { margin: 0; font-size: 1.1rem; font-weight: 600; letter-spacing: 0.5px; white-space: nowrap; }
+        
+        #langSelect { padding: 2px 4px; font-size: 0.75rem; background: transparent; border: 1px solid rgba(255,255,255,0.3); color: white; border-radius: 4px; outline: none; }
+        #langSelect option { background: var(--primary); color: white; }
+
+        .profile-widget { display: flex; align-items: center; gap: 5px; background: rgba(255, 255, 255, 0.1); padding: 2px 6px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.2); }
+        .profile-widget span { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; color: #cbd5e1; font-weight: 600; }
+        .profile-widget select { background: transparent; border: none; color: white; font-size: 0.75rem; font-weight: 600; outline: none; cursor: pointer; padding: 0; max-width: 80px; text-overflow: ellipsis; }
+        .profile-widget select option { background: var(--primary); color: white; }
+        .profile-widget button { background: var(--success); color: white; border: none; border-radius: 4px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; padding: 0; }
+        
+        .session-badge { background: var(--success); font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; display: none; font-weight: 600; }
+        
+        .nav-controls { display: flex; width: 100%; gap: 6px; justify-content: space-between; }
+        .nav-btn { flex: 1; background: var(--bg-color); color: var(--text); border: 1px solid #cbd5e1; padding: 6px 0; font-size: 0.75rem; border-radius: 6px; font-weight: 600; cursor: pointer; text-align: center; }
+        
+        /* Main Layout */
+        .main-workspace { display: flex; flex-direction: column; flex: 1; overflow: hidden; position: relative; }
+        
+        /* Config Strip */
+        .config-strip { background: var(--panel-bg); padding: 8px 12px; border-bottom: 1px solid var(--border); display: flex; gap: 10px; overflow-x: auto; white-space: nowrap; scrollbar-width: thin; transition: all 0.2s ease-in-out; }
+        .config-item { display: flex; flex-direction: column; gap: 2px; }
+        .config-item label { font-size: 0.65rem; font-weight: 600; color: var(--text-light); text-transform: uppercase; }
+        .config-item select { padding: 4px 8px; font-size: 0.8rem; border: 1px solid var(--border); border-radius: 4px; outline: none; background: white; }
+        .config-divider { width: 1px; background: var(--border); height: 25px; align-self: center; margin: 0 2px; }
+        
+		
+        /* Chat Window */
+        .chat-container { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
+        .message { padding: 12px 15px; border-radius: 8px; max-width: 100%; line-height: 1.6; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .user-msg { background: #eff6ff; border: 1px solid #bfdbfe; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .ai-msg { background: #ffffff; border: 1px solid var(--border); align-self: flex-start; border-bottom-left-radius: 2px; width: 100%; }
+        .ai-msg table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        .ai-msg th, .ai-msg td { border: 1px solid #cbd5e1; padding: 6px; text-align: left; font-size: 0.9rem; }
+        .ai-msg th { background: #f8fafc; font-weight: bold; }
+        
+        .msg-label { font-size: 0.7rem; font-weight: bold; color: var(--text-light); margin-bottom: 8px; text-transform: uppercase; }
+        .content-editable { outline: none; min-height: 30px; font-size: 0.95rem; }
+        
+        /* Bottom Controls Redesigned */
+        .controls-panel { background: var(--panel-bg); border-top: 1px solid var(--border); padding: 10px; display: flex; flex-direction: column; gap: 8px; z-index: 5; }
+        .input-row { display: flex; gap: 8px; align-items: stretch; }
+        
+        button { border: none; border-radius: 6px; cursor: pointer; font-weight: 500; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px; outline: none; }
+        .btn-primary { background: var(--accent); color: white; padding: 10px; font-size: 0.9rem; }
+        .btn-success { background: var(--success); color: white; padding: 10px; font-size: 1.2rem; }
+        .btn-secondary { background: #e2e8f0; color: var(--text); border: 1px solid #cbd5e1; padding: 8px; font-size: 0.85rem; }
+        
+        #aiInstructions { flex: 1; min-width: 0; padding: 10px; font-size: 0.9rem; border: 1px solid var(--border); border-radius: 6px; outline: none; }
+        .action-row { display: flex; gap: 8px; justify-content: space-between; }
+        .action-row button { flex: 1; }
+
+        .recording { background: #ef4444 !important; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } }
+
+        /* Modals */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; padding: 15px; backdrop-filter: blur(2px); }
+        .modal-content { background: var(--bg-color); width: 100%; max-width: 600px; max-height: 90vh; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+        .modal-header { padding: 12px 15px; background: white; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 15px; overflow-y: auto; flex: 1; }
+        
+        /* Fullscreen Screenshot Modal */
+        #msgFsModal { background: white; z-index: 999999; padding: 0; }
+        
+        /* Settings Elements */
+        details { background: white; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; overflow: hidden; }
+        summary { padding: 12px 15px; font-weight: 600; cursor: pointer; background: #f8fafc; list-style: none; display: flex; justify-content: space-between; font-size: 0.9rem; }
+        summary::-webkit-details-marker { display: none; }
+        summary:after { content: "▼"; font-size: 0.8rem; color: var(--text-light); }
+        details[open] summary:after { content: "▲"; }
+        .details-content { padding: 15px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 15px; }
+        .setup-block { border: 1px dashed #cbd5e1; padding: 12px; border-radius: 6px; background: #fafafa; }
+        .setup-block textarea { width: 100%; min-height: 60px; margin-bottom: 10px; resize: vertical; padding: 8px; border: 1px solid var(--border); border-radius: 4px; outline: none; }
+        .file-upload { font-size: 0.8rem; display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+        .img-preview { max-height: 50px; border-radius: 4px; display: none; border: 1px solid var(--border); }
+
+        .history-item { background: white; padding: 12px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* =========================================
+           MOBILE OPTIMIZATIONS
+           ========================================= */
+        @media (max-width: 768px) {
+            .navbar { flex-direction: column; align-items: stretch; padding: 10px; }
+            .navbar-brand { justify-content: space-between; width: 100%; margin-bottom: 10px; }
+            .nav-controls { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 100%; }
+            
+            .config-strip { flex-wrap: wrap; overflow-x: hidden; gap: 10px; }
+            .config-item { width: calc(50% - 5px); } 
+            .config-divider { display: none; }
+            
+            .controls-panel { padding: 10px; }
+            .input-row { flex-direction: row; gap: 8px; }
+            #dictateBtn { width: 100px; min-width: 0; padding: 8px; font-size: 0.85rem; }
+            .btn-success { padding: 8px; }
+            
+            .action-row { flex-direction: row; align-items: stretch; gap: 8px; }
+            
+            button, select, input { padding: 10px; }
+            .message { max-width: 100%; }
+        }
+		
+		/* Rich Text Toolbar */
+        .rich-toolbar {
+            background: var(--panel-bg);
+            border-bottom: 1px solid var(--border);
+            padding: 8px 10px;
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            white-space: nowrap;
+            scrollbar-width: none; /* Hide scrollbar for clean mobile look */
+            -ms-overflow-style: none;
+            z-index: 10;
+        }
+        .rich-toolbar::-webkit-scrollbar { display: none; }
+        
+        .fmt-btn {
+            background: var(--bg-color);
+            border: 1px solid #cbd5e1;
+            color: var(--text);
+            border-radius: 4px;
+            min-width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        .fmt-btn:active { background: #e2e8f0; transform: scale(0.95); }
+        .fmt-divider {
+            width: 1px;
+            background: var(--border);
+            height: 24px;
+            align-self: center;
+            margin: 0 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="start-overlay" style="position:fixed; inset:0; z-index:9999; background:#0f172a; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; color:white; text-align:center;">
+        <h1 style="color:var(--accent); margin-bottom:10px;">Steno Pro</h1>
+        <p>Tap anywhere to start dictation mode</p>
+        <p style="font-size:0.75rem; color:#64748b;">Enables Fullscreen & Keeps Screen Awake</p>
+    </div>
+        
+    <div class="navbar">
+        <div class="navbar-top">
+            <div class="navbar-brand-group">
+                <h1>Steno Pro</h1>
+                <select id="langSelect">
+				<option value="mr-IN" selected>मराठी</option>
+				<option value="hi-IN">हिन्दी</option>
+				<option value="en-IN">English</option>
+				<option value="gu-IN">ગુજરાતી</option>
+				<option value="bn-IN">বাংলা</option>
+				<option value="te-IN">తెలుగు</option>
+				<option value="ta-IN">தமிழ்</option>
+				<option value="kn-IN">ಕನ್ನಡ</option>
+				<option value="ml-IN">മലയാളം</option>
+				<option value="pa-IN">ਪੰਜਾਬੀ</option>
+				<option value="or-IN">ଓଡ଼ିଆ</option>
+				<option value="as-IN">অসমীয়া</option>
+				<option value="ur-IN">اردو</option>
+				<option value="kok-IN">कोंकणी</option>
+				<option value="ne-IN">नेपाली</option>
+				<option value="mai-IN">मैथिली</option>
+				<option value="sa-IN">संस्कृतम्</option>
+				<option value="sd-IN">سنڌي</option>
+				<option value="mni-IN">ꯃꯤꯇꯩ ꯂꯣꯟ</option>
+				<option value="bodo-IN">बड़ो</option>
+				<option value="doi-IN">डोगरी</option>
+				<option value="ks-IN">کٲشُر</option>
+                </select>
+            </div>
+			<div class="profile-widget">
+                <select id="profileSelect" onchange="switchProfile()"></select>
+                <button onclick="createNewProfile()" title="Create New Profile">+</button>
+                <button onclick="closeApp()" title="Close App" style="background: #ef4444; margin-left: 2px;">✕</button>
+            </div>
+		</div>
+        <div class="nav-controls">
+            <button class="nav-btn" onclick="toggleConfigStrip()">🔧 Format</button>
+            <button class="nav-btn" onclick="startNewSession()">📝 New Doc</button>
+            <button class="nav-btn" onclick="openHistoryModal()">🕒 History</button>
+            <button class="nav-btn" onclick="openModal('settingsModal')">⚙️ Settings</button>
+        </div>
+    </div>
+
+    <div class="main-workspace">
+        
+        <div class="config-strip" id="configStrip" style="display: none;">
+            <div class="config-item">
+                <label>Doc Type</label>
+                <select id="sel_doctype">
+                    <option>Formal Letter</option><option>Notice</option><option>Basic Invoice</option>
+                    <option>Delivery Challan</option><option>Quotation</option><option>Doctor Prescription</option>
+                    <option>SMS</option><option>Email</option><option>Memo</option><option>Report</option>
+                </select>
+            </div>
+            <div class="config-divider"></div>
+            <div class="config-item"><label>Page Size</label><select id="sel_pagesize"><option value="a4">A4</option><option value="letter">Letter</option><option value="legal">Legal</option></select></div>
+            <div class="config-item"><label>Orientation</label><select id="sel_orientation"><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></div>
+            <div class="config-divider"></div>
+            <div class="config-item"><label>Font</label><select id="sel_font"><option value="Arial, sans-serif">Arial</option><option value="'Times New Roman', serif">Times New Roman</option><option value="'Courier New', monospace">Courier</option></select></div>
+            <div class="config-item"><label>Size</label><select id="sel_fontsize"><option value="10pt">10pt</option><option value="11pt" selected>11pt</option><option value="12pt">12pt</option><option value="14pt">14pt</option></select></div>
+            <div class="config-divider"></div>
+            <div class="config-item"><label>LH Top</label><select id="sel_lht"><option value="">None</option><option value="lht1">Option 1</option><option value="lht2">Option 2</option></select></div>
+            <div class="config-item"><label>Header</label><select id="sel_h"><option value="">None</option><option value="h1">H1</option><option value="h2">H2</option><option value="h3">H3</option></select></div>
+            <div class="config-item"><label>Footer</label><select id="sel_f"><option value="">None</option><option value="f1">F1</option><option value="f2">F2</option><option value="f3">F3</option></select></div>
+            <div class="config-item"><label>Signature</label><select id="sel_s"><option value="">None</option><option value="s1">S1</option><option value="s2">S2</option><option value="s3">S3</option></select></div>
+            <div class="config-item"><label>LH Bot</label><select id="sel_lhb"><option value="">None</option><option value="lhb1">Option 1</option><option value="lhb2">Option 2</option></select></div>
+            <div class="config-item"><label>Background</label><select id="sel_bg"><option value="">None</option><option value="bg1">BG 1</option></select></div>
+        </div>
+
+		<div class="rich-toolbar" id="richToolbar" style="display: none;">
+            <button class="fmt-btn" onclick="execCmd('undo')" title="Undo">↩️</button>
+            <button class="fmt-btn" onclick="execCmd('redo')" title="Redo">↪️</button>
+            <div class="fmt-divider"></div>
+            <button class="fmt-btn" onclick="execCmd('bold')" style="font-family: serif;"><b>B</b></button>
+            <button class="fmt-btn" onclick="execCmd('italic')" style="font-family: serif;"><i>I</i></button>
+            <button class="fmt-btn" onclick="execCmd('underline')" style="font-family: serif;"><u>U</u></button>
+            <button class="fmt-btn" onclick="execCmd('strikeThrough')" style="text-decoration: line-through;">S</button>
+            <div class="fmt-divider"></div>
+            <button class="fmt-btn" onclick="execCmd('justifyLeft')" title="Align Left">⬅️</button>
+            <button class="fmt-btn" onclick="execCmd('justifyCenter')" title="Center">↔️</button>
+            <button class="fmt-btn" onclick="execCmd('justifyRight')" title="Align Right">➡️</button>
+            <div class="fmt-divider"></div>
+            <button class="fmt-btn" onclick="execCmd('insertUnorderedList')" title="Bullet List">●</button>
+            <button class="fmt-btn" onclick="execCmd('insertOrderedList')" title="Numbered List">1.</button>
+        </div>
+
+        <div class="chat-container" id="chatWindow">
+            <div class="message user-msg" id="activeUserNode">
+                <div class="msg-label">You (Dictation Draft)</div>
+                <div class="content-editable" contenteditable="true"></div>
+            </div>
+        </div>
+
+        <div class="controls-panel">
+            <div class="input-row">
+                <button id="dictateBtn" class="btn-primary" onclick="toggleDictation()" style="flex: 0 0 auto;">🎙️ Dictate</button>
+                <input type="text" id="aiInstructions" placeholder="Instructions...">
+                <button class="btn-success" onclick="generateDocument()" style="flex: 0 0 auto;">✨</button>
+            </div>
+            <div class="action-row">
+                <button class="btn-primary" onclick="previewDoc()">👁️ Preview</button>
+                <button class="btn-secondary" onclick="downloadWord()">📄 DOC</button>
+                <button class="btn-secondary" onclick="downloadPDF()">📕 PDF</button>
+            </div>
+        </div>
+        
+    </div>
+
+    <div class="modal-overlay" id="historyModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 style="margin:0; font-size:1.1rem;">Session History</h2>
+                <button class="btn-secondary" style="padding: 4px 10px; background: #ef4444; color:white; border:none;" onclick="closeModal('historyModal')">✕</button>
+            </div>
+            <div class="modal-body" id="historyContainer"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 style="margin:0; font-size:1.1rem;">Settings & Data Management</h2>
+                <button class="btn-secondary" style="padding: 4px 10px; background: #ef4444; color:white; border:none;" onclick="closeModal('settingsModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="setup-block" style="margin-bottom: 15px; border-color: var(--accent); background: #eff6ff;">
+                    <h4 style="color: var(--accent); margin-top:0;">💾 Backup & Restore</h4>
+                    <p style="font-size: 0.8rem; color: var(--text-light); margin-top:0;">Export your history and settings to a file to prevent data loss or move to a new device.</p>
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <button onclick="exportSystemData()" style="background: var(--accent); flex: 1; padding: 8px;">⬇️ Export (.steno)</button>
+                        <div style="position: relative; overflow: hidden; flex: 1;">
+                            <button class="btn-secondary" style="width: 100%; padding: 8px;">⬆️ Import</button>
+                            <input type="file" accept=".steno" onchange="importSystemData(event)" style="position: absolute; top: 0; left: 0; opacity: 0; cursor: pointer; height: 100%; width: 100%;">
+                        </div>
+                    </div>
+                </div>
+                <div class="setup-block" style="margin-bottom: 15px;">
+                    <label style="font-weight: bold; font-size: 0.85rem;">Custom API Key (Optional):</label>
+                    <input type="password" id="cfg_apikey" style="width:100%; margin-top: 5px; padding: 8px;" placeholder="AIzaSy...">
+                </div>
+                <div id="settingsAccordion"></div>
+            </div>
+            <div class="modal-header" style="justify-content: flex-end;">
+                <button class="btn-success" style="padding: 8px 15px;" onclick="saveAllSettings()">💾 Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+		<div class="modal-overlay" id="previewModal" style="background: #525659; flex-direction: column; padding: 0; display: none;">
+        <div style="width: 100%; background: #2b2b2b; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.5); z-index: 10; flex-shrink: 0;">
+            <h2 style="color: white; margin: 0; font-size: 1.1rem;">PDF Preview</h2>
+            <div style="display: flex; gap: 8px;">
+                <button onclick="changeZoom('finalDocumentContainer', -0.15)" style="background: #4b5563; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer;">🔍 -</button>
+                <button onclick="changeZoom('finalDocumentContainer', 0.15)" style="background: #4b5563; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer;">🔍 +</button>
+                <button onclick="closeModal('previewModal')" style="background: #ef4444; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer;">✕</button>
+            </div>
+        </div>
+        
+        <div style="flex: 1; overflow: auto; padding: 20px 0; text-align: center; width: 100%;">
+            <div class="page-sheet" id="finalDocumentContainer" style="width: 794px; min-height: 1123px; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.4); text-align: left; margin: 0 auto; transform-origin: top center;"></div>
+        </div>
+    </div>
+	
+	
+	<div class="modal-overlay" id="msgFsModal" style="background: #525659; flex-direction: column; padding: 0; display: none; z-index: 999999;">
+        <div style="width: 100%; background: #2b2b2b; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.5); z-index: 10; flex-shrink: 0;">
+            <h2 style="color: white; margin: 0; font-size: 1.1rem;">Draft Preview</h2>
+            <div style="display: flex; gap: 8px;">
+                <button onclick="changeZoom('msgFsContent', -0.15)" style="background: #4b5563; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer;">🔍 -</button>
+                <button onclick="changeZoom('msgFsContent', 0.15)" style="background: #4b5563; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer;">🔍 +</button>
+                <button onclick="closeMsgFs()" style="background: #ef4444; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer;">✕</button>
+            </div>
+        </div>
+        
+        <div style="flex: 1; overflow: auto; padding: 20px 0; text-align: center; width: 100%;">
+            <div id="msgFsContent" style="width: 794px; min-height: 1123px; background: white; padding: 96px; font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.5; text-align: justify; user-select: text; box-shadow: 0 4px 20px rgba(0,0,0,0.4); box-sizing: border-box; margin: 0 auto; transform-origin: top center;"></div>
+        </div>
+    </div>
+
+    <script>
+    // ==========================================
+    // KIOSK MODE / AGGRESSIVE FULLSCREEN LOCKDOWN
+    // ==========================================
+    document.addEventListener('contextmenu', event => event.preventDefault());
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'F12') { e.preventDefault(); return false; }
+        if (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) { e.preventDefault(); return false; }
+        if (e.ctrlKey && ['U', 'S', 'P'].includes(e.key.toUpperCase())) { e.preventDefault(); return false; }
+    });
+
+    let wakeLock = null;
+    async function requestWakeLock() {
+        try { 
+            if ('wakeLock' in navigator) { 
+                if (wakeLock !== null) return;
+                wakeLock = await navigator.wakeLock.request('screen'); 
+                wakeLock.addEventListener('release', () => { wakeLock = null; });
+            } 
+        } catch (err) { console.warn('Wake Lock Error:', err.message); }
+    }
+
+    function enforceFullscreen() {
+        const docElm = document.documentElement;
+        if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement && !document.msFullscreenElement) {
+            if (docElm.requestFullscreen) {
+                docElm.requestFullscreen().catch(() => {});
+            } else if (docElm.webkitRequestFullscreen) { 
+                docElm.webkitRequestFullscreen();
+            } else if (docElm.mozRequestFullScreen) { 
+                docElm.mozRequestFullScreen();
+            } else if (docElm.msRequestFullscreen) { 
+                docElm.msRequestFullscreen();
+            }
+        }
+    }
+
+    document.getElementById('start-overlay').addEventListener('click', function() {
+        this.style.display = 'none';
+        enforceFullscreen();
+        requestWakeLock();
+    });
+
+    document.addEventListener('click', () => {
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+            enforceFullscreen();
+        }
+    }, { capture: true, passive: true });
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') requestWakeLock();
+    });
+
+    document.body.setAttribute('ondragstart', 'return false;');
+    document.body.setAttribute('ondrop', 'return false;');
+
+    // ==========================================
+    // FULLSCREEN MESSAGE / SCREENSHOT LOGIC
+    // ==========================================
+	function expandMessage(textId) {
+        const content = document.getElementById(textId).innerHTML;
+        document.getElementById('msgFsContent').innerHTML = content;
+        document.getElementById('msgFsModal').style.display = 'flex';
+        autoFitZoom('msgFsContent'); // <-- ADD THIS LINE
+    }
+    function closeMsgFs() {
+        document.getElementById('msgFsModal').style.display = 'none';
+    }
+
+    // ==========================================
+    // TEXT-TO-SPEECH (TTS) ENGINE
+    // ==========================================
+    function playTTS(btn, textId) {
+        const textElement = document.getElementById(textId);
+        if (!textElement) return;
+        
+        if (btn.dataset.playing === 'true') {
+            window.speechSynthesis.cancel();
+            btn.innerHTML = '🔊 Read';
+            btn.dataset.playing = 'false';
+            return;
+        }
+
+        window.speechSynthesis.cancel();
+        
+        document.querySelectorAll('.tts-btn').forEach(b => {
+            b.innerHTML = '🔊 Read';
+            b.dataset.playing = 'false';
+            b.style.background = 'transparent';
+            b.style.color = '#64748b';
+        });
+
+        const textToRead = textElement.innerText;
+        if (!textToRead.trim()) return;
+
+        const utterance = new SpeechSynthesisUtterance(textToRead);
+        utterance.lang = document.getElementById('langSelect').value;
+        
+        utterance.onend = () => {
+            btn.innerHTML = '🔊 Read';
+            btn.dataset.playing = 'false';
+            btn.style.background = 'transparent';
+            btn.style.color = '#64748b';
+        };
+        
+        utterance.onerror = () => {
+            btn.innerHTML = '🔊 Read';
+            btn.dataset.playing = 'false';
+            btn.style.background = 'transparent';
+            btn.style.color = '#64748b';
+        };
+
+        btn.innerHTML = '⏹️ Stop';
+        btn.dataset.playing = 'true';
+        btn.style.background = '#eff6ff';
+        btn.style.color = '#2563eb';
+        
+        window.speechSynthesis.speak(utterance);
+    }
+		// ==========================================
+    // APP TERMINATION LOGIC
+    // ==========================================
+    function closeApp() {
+        if (confirm("Are you sure you want to exit Steno Pro?")) {
+            // Attempt to close the window (Works in PWAs, WebViews, Electron)
+            window.close();
+            
+            // Fallback for strict desktop browsers that block window.close()
+            setTimeout(() => {
+                document.body.innerHTML = `
+                    <div style="display:flex; flex-direction:column; height:100vh; align-items:center; justify-content:center; background:#0f172a; color:white; text-align:center; padding: 20px;">
+                        <h1 style="color: #38bdf8; margin-bottom: 10px;">Steno Pro Closed</h1>
+                        <p style="color: #94a3b8;">It is now safe to close this browser tab.</p>
+                    </div>`;
+            }, 300);
+        }
+    }
+
+
+
+    // ==========================================
+    // API & DATABASE
+    // ==========================================
+    const PROXY_URL = "https://eprashala.pythonanywhere.com/api/chat";
+    const DB_NAME = 'StenoProDB';
+    const DB_VERSION = 1;
+    let db;
+
+    function initDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(DB_NAME, DB_VERSION);
+            request.onupgradeneeded = (event) => {
+                db = event.target.result;
+                if (!db.objectStoreNames.contains('sessions')) {
+                    const store = db.createObjectStore('sessions', { keyPath: 'id' });
+                    store.createIndex('date', 'date', { unique: false });
+                }
+            };
+            request.onsuccess = (event) => { db = event.target.result; resolve(db); };
+            request.onerror = (event) => { console.error("Database error: ", event.target.error); reject(event.target.error); };
+        });
+    }
+
+    const dbOps = {
+        saveSession: (sessionData) => {
+            return new Promise((resolve) => {
+                const tx = db.transaction('sessions', 'readwrite');
+                tx.objectStore('sessions').put(sessionData);
+                tx.oncomplete = () => resolve();
+            });
+        },
+        getAllSessions: () => {
+            return new Promise((resolve) => {
+                const tx = db.transaction('sessions', 'readonly');
+                const request = tx.objectStore('sessions').getAll();
+                request.onsuccess = () => resolve(request.result.sort((a,b) => b.timestamp - a.timestamp));
+            });
+        },
+        deleteSession: (id) => {
+            return new Promise((resolve) => {
+                const tx = db.transaction('sessions', 'readwrite');
+                tx.objectStore('sessions').delete(id);
+                tx.oncomplete = () => resolve();
+            });
+        },
+        clearAll: () => {
+            return new Promise((resolve) => {
+                const tx = db.transaction('sessions', 'readwrite');
+                tx.objectStore('sessions').clear();
+                tx.oncomplete = () => resolve();
+            });
+        }
+    };
+
+    // ==========================================
+    // SESSION STATE
+    // ==========================================
+    let currentSessionId = null;
+    let saveTimeout = null;
+
+    function startNewSession() {
+        currentSessionId = Date.now();
+        document.getElementById('chatWindow').innerHTML = `
+            <div class="message user-msg" id="activeUserNode">
+                <div class="msg-label">You (Dictation Draft)</div>
+                <div class="content-editable" contenteditable="true"></div>
+            </div>`;
+        window.speechSynthesis.cancel(); 
+        autoSaveSession();
+    }
+
+    function extractMessages() {
+        const msgs = [];
+        document.querySelectorAll('#chatWindow .message').forEach(el => {
+            const role = el.classList.contains('user-msg') ? 'user' : 'ai';
+            const content = el.querySelector('.content-editable').innerHTML;
+            if (content.trim()) msgs.push({ role, content });
+        });
+        return msgs;
+    }
+
+    async function autoSaveSession() {
+        if (!currentSessionId) currentSessionId = Date.now();
+        const msgs = extractMessages();
+        if (msgs.length === 0) return;
+
+        const dateStr = new Date(currentSessionId).toLocaleDateString();
+        const timeStr = new Date(currentSessionId).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        let previewText = msgs[0].content.replace(/<[^>]+>/g, '').substring(0, 60) + '...';
+
+        const sessionData = {
+            id: currentSessionId,
+            date: dateStr,
+            time: timeStr,
+            timestamp: currentSessionId,
+            preview: previewText,
+            messages: msgs
+        };
+        await dbOps.saveSession(sessionData);
+        document.getElementById('sessionBadge').style.display = 'inline-block';
+    }
+
+    document.getElementById('chatWindow').addEventListener('input', () => {
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(autoSaveSession, 1500);
+    });
+
+    // ==========================================
+    // HISTORY UI
+    // ==========================================
+    async function openHistoryModal() {
+        const container = document.getElementById('historyContainer');
+        container.innerHTML = '<p>Loading...</p>';
+        openModal('historyModal');
+        
+        const sessions = await dbOps.getAllSessions();
+        if (sessions.length === 0) {
+            container.innerHTML = '<p style="text-align:center; color:#64748b;">No history found.</p>';
+            return;
+        }
+
+        const grouped = {};
+        sessions.forEach(s => {
+            if(!grouped[s.date]) grouped[s.date] = [];
+            grouped[s.date].push(s);
+        });
+
+        container.innerHTML = '';
+        for (const [date, sessArr] of Object.entries(grouped)) {
+            let html = `<div class="history-group"><div class="history-date">📅 ${date}</div>`;
+            sessArr.forEach(s => {
+                const isActive = s.id === currentSessionId ? 'border-color:var(--accent);' : '';
+                html += `
+                    <div class="history-item" style="${isActive}">
+                        <div class="history-info">
+                            <div style="font-size:0.8rem; font-weight:bold; color:var(--primary);">${s.time}</div>
+                            <div class="history-preview">${s.preview || 'Empty Draft'}</div>
+                        </div>
+                        <div class="history-actions">
+                            <button class="btn-secondary" onclick="loadSession(${s.id})" style="padding: 4px 10px; font-size: 0.8rem;">📂 Load</button>
+                            <button class="btn-secondary" style="padding: 4px 10px; font-size: 0.8rem; color: #ef4444; border-color: #ef4444;" onclick="deleteSession(${s.id}, this)">🗑️</button>
+                        </div>
+                    </div>`;
+            });
+            html += `</div>`;
+            container.innerHTML += html;
+        }
+    }
+	
+	// ==========================================
+    // ZOOM & AUTO-FIT ENGINE
+    // ==========================================
+    const zoomStates = { 'finalDocumentContainer': 1, 'msgFsContent': 1 };
+
+    function autoFitZoom(contentId) {
+        // Calculate scale to fit mobile screen, leaving a small margin
+        const screenWidth = window.innerWidth;
+        let scale = (screenWidth - 20) / 794; 
+        
+        // Never scale UP on large desktop monitors, only scale down for mobile
+        if (scale > 1) scale = 1; 
+        
+        zoomStates[contentId] = scale;
+        document.getElementById(contentId).style.zoom = scale;
+    }
+
+    function changeZoom(contentId, delta) {
+        zoomStates[contentId] += delta;
+        // Restrict zoom limits
+        if (zoomStates[contentId] < 0.2) zoomStates[contentId] = 0.2;
+        if (zoomStates[contentId] > 2.5) zoomStates[contentId] = 2.5;
+        
+        document.getElementById(contentId).style.zoom = zoomStates[contentId];
+    }
+	
+	
+
+    async function loadSession(id) {
+        const sessions = await dbOps.getAllSessions();
+        const session = sessions.find(s => s.id === id);
+        if(!session) return;
+
+        window.speechSynthesis.cancel(); 
+        currentSessionId = session.id;
+        const chat = document.getElementById('chatWindow');
+        chat.innerHTML = '';
+
+        session.messages.forEach(m => {
+            const div = document.createElement('div');
+            const msgId = 'msg-' + Date.now() + Math.random().toString(36).substr(2, 5);
+            
+            div.className = m.role === 'user' ? 'message user-msg' : 'message ai-msg';
+            if (m.role === 'user') {
+                div.id = 'activeUserNode';
+                div.innerHTML = `<div class="msg-label">You (Dictation Draft)</div><div class="content-editable" contenteditable="true">${m.content}</div>`;
+            } else {
+                div.innerHTML = `
+                    <div class="msg-label" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>Steno AI (Final Body)</span>
+                        <button onclick="playTTS(this, 'text-${msgId}')" class="tts-btn" style="padding: 2px 8px; font-size: 0.7rem; border-radius: 4px; background: transparent; border: 1px solid #cbd5e1; color: #64748b; font-weight: bold; cursor: pointer; transition: 0.2s;">🔊 Read</button>
+                    </div>
+                    <div class="content-editable final-ai-body" id="text-${msgId}" contenteditable="true">${m.content}</div>
+                    <div style="text-align: right; margin-top: 8px; border-top: 1px dashed #cbd5e1; padding-top: 8px;">
+                        <button onclick="expandMessage('text-${msgId}')" style="background: var(--primary); color: white; padding: 4px 12px; border-radius: 4px; font-size: 0.75rem; display: inline-block; border: none; cursor: pointer;">⛶ Fullscreen</button>
+                    </div>
+                `;
+            }
+            chat.appendChild(div);
+        });
+        
+        if (session.messages.length > 0 && session.messages[session.messages.length-1].role === 'ai') {
+            addNewBubble();
+        } else {
+            document.querySelectorAll('#activeUserNode').forEach((el, index, arr) => {
+                if (index !== arr.length - 1) el.removeAttribute('id');
+            });
+        }
+
+        closeModal('historyModal');
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    async function deleteSession(id, btnElement) {
+        if(confirm("Delete this session?")) {
+            await dbOps.deleteSession(id);
+            btnElement.closest('.history-item').remove();
+            if (id === currentSessionId) startNewSession();
+        }
+    }
+
+    // ==========================================
+    // BACKUP / RESTORE
+    // ==========================================
+    async function exportSystemData() {
+        const sessions = await dbOps.getAllSessions();
+        const exportData = {
+            stenoSettings: localStorage.getItem('stenoAppData'),
+            sessions: sessions
+        };
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData));
+        const dlAnchorElem = document.createElement('a');
+        dlAnchorElem.setAttribute("href", dataStr);
+        dlAnchorElem.setAttribute("download", `StenoPro_Backup_${new Date().toLocaleDateString().replace(/\//g,'-')}.steno`);
+        dlAnchorElem.click();
+    }
+
+    async function importSystemData(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (data.stenoSettings) localStorage.setItem('stenoAppData', data.stenoSettings);
+                if (data.sessions && Array.isArray(data.sessions)) {
+                    await dbOps.clearAll();
+                    for(let s of data.sessions) await dbOps.saveSession(s);
+                }
+                alert("Backup Imported Successfully! App will now reload.");
+                location.reload();
+            } catch(err) {
+                alert("Invalid backup file.");
+                console.error(err);
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    // ==========================================
+    // PROFILES & CONFIG
+    // ==========================================
+    const configStructure = [
+        { id: 'lht1', cat: 'Letterheads (Top)', title: 'Top Letterhead 1', text: true, img: true },
+        { id: 'lht2', cat: 'Letterheads (Top)', title: 'Top Letterhead 2', text: true, img: true },
+        { id: 'lhb1', cat: 'Letterheads (Bottom)', title: 'Bottom Letterhead 1', text: true, img: true },
+        { id: 'lhb2', cat: 'Letterheads (Bottom)', title: 'Bottom Letterhead 2', text: true, img: true },
+        { id: 'h1', cat: 'Headers', title: 'Header 1', text: true, img: true },
+        { id: 'h2', cat: 'Headers', title: 'Header 2', text: true, img: true },
+        { id: 'h3', cat: 'Headers', title: 'Header 3', text: true, img: true },
+        { id: 'f1', cat: 'Footers', title: 'Footer 1', text: true, img: true },
+        { id: 'f2', cat: 'Footers', title: 'Footer 2', text: true, img: true },
+        { id: 'f3', cat: 'Footers', title: 'Footer 3', text: true, img: true },
+        { id: 's1', cat: 'Signatures', title: 'Signature 1', text: true, img: true },
+        { id: 's2', cat: 'Signatures', title: 'Signature 2', text: true, img: true },
+        { id: 's3', cat: 'Signatures', title: 'Signature 3', text: true, img: true },
+        { id: 'bg1', cat: 'Background / Watermark', title: 'Full Page Background', text: false, img: true }
+    ];
+
+    let appData = { activeProfile: "Default", profiles: { "Default": {} } };
+    let stenoData = {}; 
+    let recognition = null;
+    let isRecording = false;
+
+    window.onload = async () => {
+        if (navigator.storage && navigator.storage.persist) navigator.storage.persist();
+        await initDB();
+        initSettingsUI();
+        loadProfiles();
+        initSpeech();
+        startNewSession(); 
+    };
+
+    function loadProfiles() {
+        const saved = localStorage.getItem('stenoAppData');
+        if (saved) {
+            appData = JSON.parse(saved);
+            if (!appData.profiles) appData = { activeProfile: "Default", profiles: { "Default": {} } };
+        }
+        updateProfileDropdown();
+        switchProfile(appData.activeProfile);
+    }
+
+    function updateProfileDropdown() {
+        const sel = document.getElementById('profileSelect');
+        sel.innerHTML = '';
+        for (const profileName in appData.profiles) {
+            const opt = document.createElement('option');
+            opt.value = profileName;
+            opt.innerText = profileName;
+            if (profileName === appData.activeProfile) opt.selected = true;
+            sel.appendChild(opt);
+        }
+    }
+
+    function createNewProfile() {
+        const name = prompt("Enter new profile name:");
+        if (name && name.trim() !== "" && !appData.profiles[name]) {
+            appData.profiles[name] = {};
+            appData.activeProfile = name;
+            saveAppData();
+            updateProfileDropdown();
+            switchProfile(name);
+        }
+    }
+
+    function switchProfile(forceName = null) {
+        const sel = document.getElementById('profileSelect');
+        const targetProfile = forceName || sel.value;
+        appData.activeProfile = targetProfile;
+        stenoData = appData.profiles[targetProfile];
+        saveAppData();
+        populateSettingsUI();
+    }
+
+    function saveAppData() {
+        localStorage.setItem('stenoAppData', JSON.stringify(appData));
+    }
+
+    function initSettingsUI() {
+        const acc = document.getElementById('settingsAccordion');
+        const categories = [...new Set(configStructure.map(c => c.cat))];
+        categories.forEach(cat => {
+            const details = document.createElement('details');
+            details.innerHTML = `<summary>${cat}</summary><div class="details-content" id="cat_${cat.replace(/\s/g,'')}"></div>`;
+            acc.appendChild(details);
+            const content = details.querySelector('.details-content');
+            configStructure.filter(c => c.cat === cat).forEach(item => {
+                let html = `<div class="setup-block"><h4>${item.title}</h4>`;
+                if (item.text) html += `<textarea id="txt_${item.id}" placeholder="Enter text or HTML here..."></textarea>`;
+                if (item.img) html += `<div class="file-upload"><input type="file" accept="image/*" onchange="processImage(this, '${item.id}')"><button class="btn-secondary" style="padding:4px 8px; font-size:0.7rem; background:#ef4444; color:white; border:none;" onclick="clearImage('${item.id}')">Clear</button></div><img id="img_preview_${item.id}" class="img-preview" src=""><input type="hidden" id="b64_${item.id}">`;
+                html += `</div>`;
+                content.innerHTML += html;
+            });
+        });
+    }
+
+    function populateSettingsUI() {
+        document.getElementById('cfg_apikey').value = stenoData['apikey'] || '';
+        configStructure.forEach(item => {
+            const txtEl = document.getElementById(`txt_${item.id}`);
+            const b64El = document.getElementById(`b64_${item.id}`);
+            const prevEl = document.getElementById(`img_preview_${item.id}`);
+            
+            if (txtEl) txtEl.value = (stenoData[item.id] && stenoData[item.id].text) ? stenoData[item.id].text : '';
+            if (b64El) {
+                const imgData = (stenoData[item.id] && stenoData[item.id].img) ? stenoData[item.id].img : '';
+                b64El.value = imgData;
+                prevEl.src = imgData;
+                prevEl.style.display = imgData ? 'block' : 'none';
+            }
+        });
+    }
+
+    function processImage(input, id) { 
+        if (!input.files[0]) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let w = img.width, h = img.height;
+                const max = id.startsWith('bg') ? 1200 : 800;
+                if(w > max) { h *= max/w; w = max; }
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                document.getElementById(`b64_${id}`).value = dataUrl;
+                const prev = document.getElementById(`img_preview_${id}`);
+                prev.src = dataUrl; prev.style.display = 'block';
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+    
+    function clearImage(id) { document.getElementById(`b64_${id}`).value = ''; document.getElementById(`img_preview_${id}`).style.display = 'none'; }
+
+    function saveAllSettings() {
+        stenoData['apikey'] = document.getElementById('cfg_apikey').value;
+        configStructure.forEach(item => {
+            stenoData[item.id] = {};
+            if (item.text) stenoData[item.id].text = document.getElementById(`txt_${item.id}`).value;
+            if (item.img) stenoData[item.id].img = document.getElementById(`b64_${item.id}`).value;
+        });
+        saveAppData(); 
+        alert(`Settings Saved for profile: ${appData.activeProfile}`);
+        closeModal('settingsModal');
+    }
+
+	function toggleConfigStrip() {
+        const strip = document.getElementById('configStrip');
+        const toolbar = document.getElementById('richToolbar');
+        
+        if (strip.style.display === 'none' || strip.style.display === '') {
+            strip.style.display = 'flex';
+            toolbar.style.display = 'flex'; // Shows the formatting buttons
+        } else {
+            strip.style.display = 'none';
+            toolbar.style.display = 'none'; // Hides the formatting buttons
+        }
+    }
+
+    // ==========================================
+    // THE ULTIMATE ANDROID DEDUPLICATION ENGINE
+    // ==========================================
+    let ignoreResultsUpTo = 0;
+    let autoPunctuateTimer = null;
+    let activeSessionSpan = null;
+	let autoPunctuateTimerFullStop = null;
+    let activeInterimSpan = null;
+
+    function initSpeech() {
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRec();
+            
+            // Continuous MUST be true to prevent dropping words
+            recognition.continuous = true; 
+            recognition.interimResults = true;
+            
+            recognition.onstart = () => {
+                ignoreResultsUpTo = 0;
+                activeSessionSpan = null;
+            };
+            
+			recognition.onresult = (e) => {
+                clearTimeout(autoPunctuateTimer);
+                clearTimeout(autoPunctuateTimerFullStop);
+
+                let currentFinals = [];
+                let interim = '';
+
+                // Extract all results we haven't locked in yet
+                for (let i = ignoreResultsUpTo; i < e.results.length; i++) {
+                    let transcript = e.results[i][0].transcript.trim();
+                    if (e.results[i].isFinal) {
+                        currentFinals.push(transcript);
+                    } else {
+                        interim += transcript + ' ';
+                    }
+                }
+
+                // Aggressive Diffing Algorithm to kill Android duplication
+                let dedup = [];
+                for (let i = 0; i < currentFinals.length; i++) {
+                    if (i > 0 && currentFinals[i].toLowerCase().startsWith(currentFinals[i-1].toLowerCase())) {
+                        dedup[dedup.length - 1] = currentFinals[i]; // Replace accumulation
+                    } else if (i > 0 && currentFinals[i-1].toLowerCase().startsWith(currentFinals[i].toLowerCase())) {
+                        // Ignore fragment
+                    } else if (i > 0 && currentFinals[i].toLowerCase() === dedup[dedup.length - 1].toLowerCase()) {
+                        // Ignore exact consecutive duplicate
+                    } else {
+                        dedup.push(currentFinals[i]);
+                    }
+                }
+
+                let finalStr = dedup.join(' ');
+                
+                // Capitalization formatting
+                if (finalStr) {
+                    finalStr = finalStr.charAt(0).toUpperCase() + finalStr.slice(1);
+                }
+
+                // Render logic
+                const activeContainer = document.querySelector('#activeUserNode .content-editable');
+                if (!activeContainer) return;
+
+                if (!activeSessionSpan) {
+                    activeSessionSpan = document.createElement('span');
+                    activeContainer.appendChild(activeSessionSpan);
+                }
+                if (!activeInterimSpan) {
+                    activeInterimSpan = document.createElement('span');
+                    activeInterimSpan.className = 'interim-text';
+                    activeInterimSpan.style.color = '#94a3b8';
+                    activeInterimSpan.style.fontStyle = 'italic';
+                    activeContainer.appendChild(activeInterimSpan);
+                }
+
+                activeSessionSpan.innerText = finalStr ? finalStr + ' ' : '';
+                activeInterimSpan.innerText = interim ? " " + interim : '';
+
+			// AUTO-PUNCTUATION: 2s for Comma
+                autoPunctuateTimer = setTimeout(() => {
+                    if (isRecording && activeSessionSpan && activeSessionSpan.innerText.trim().length > 0) {
+                        let txt = activeSessionSpan.innerText.trim();
+                        if (!/[.!?,"']$/.test(txt)) {
+                            activeSessionSpan.innerText = txt + ', ';
+                        }
+                    }
+                }, 2000); 
+
+                // AUTO-PUNCTUATION: 4s for Full Stop
+                autoPunctuateTimerFullStop = setTimeout(() => {
+                    if (isRecording && activeSessionSpan && activeSessionSpan.innerText.trim().length > 0) {
+                        let txt = activeSessionSpan.innerText.trim();
+                        
+                        // If a comma was added by the 2s timer, remove it before adding the full stop
+                        if (txt.endsWith(',')) {
+                            txt = txt.slice(0, -1);
+                        }
+
+                        if (!/[.!?,"']$/.test(txt)) {
+                            activeSessionSpan.innerText = txt + '. ';
+                        } else {
+                            activeSessionSpan.innerText = txt + ' ';
+                        }
+                        
+                        // Freeze this span and reset tracking for the next sentence
+                        activeSessionSpan = null;
+                        ignoreResultsUpTo = e.results.length;
+                        autoSaveSession();
+                    }
+                }, 4000);
+            };
+            
+            recognition.onerror = (e) => { console.warn("Speech Error:", e.error); };
+            
+            recognition.onend = () => { 
+                if (isRecording) {
+                    try { 
+                        ignoreResultsUpTo = 0;
+                        activeSessionSpan = null;
+                        recognition.start(); 
+                    } catch (err) {}
+                }
+            };
+        } else { 
+            alert("Speech Web API not supported. Use Google Chrome."); 
+        }
+    }
+
+    function toggleDictation() {
+        if (!recognition) return;
+        const btn = document.getElementById('dictateBtn');
+        if (isRecording) {
+            isRecording = false; 
+            clearTimeout(autoPunctuateTimer);
+            recognition.stop();
+            btn.innerHTML = '🎙️ Dictate'; 
+            btn.classList.remove('recording');
+            
+            if (activeInterimSpan) {
+                activeInterimSpan.remove();
+                activeInterimSpan = null;
+            }
+        } else {
+            isRecording = true; 
+            ignoreResultsUpTo = 0;
+            activeSessionSpan = null;
+            if (activeInterimSpan) {
+                activeInterimSpan.remove();
+                activeInterimSpan = null;
+            }
+            recognition.lang = document.getElementById('langSelect').value; 
+            try { recognition.start(); } catch(e){}
+            btn.innerHTML = '⏹️ Stop'; 
+            btn.classList.add('recording');
+        }
+    }
+
+    function addNewBubble() {
+        document.querySelectorAll('#activeUserNode').forEach(el => el.removeAttribute('id'));
+        const chat = document.getElementById('chatWindow');
+        const div = document.createElement('div');
+        div.className = 'message user-msg'; div.id = 'activeUserNode';
+        div.innerHTML = `<div class="msg-label">You (Dictation Draft)</div><div class="content-editable" contenteditable="true"></div>`;
+        chat.appendChild(div);
+        chat.scrollTop = chat.scrollHeight;
+        
+        // Reset pointers so the engine knows it's a new box
+        ignoreResultsUpTo = 0;
+        activeSessionSpan = null;
+        activeInterimSpan = null;
+        
+        autoSaveSession();
+    }
+
+    // ==========================================
+    // AI DOCUMENT GENERATION
+    // ==========================================
+    async function generateDocument() {
+        let fullText = "";
+        document.querySelectorAll('.user-msg .content-editable').forEach(el => fullText += el.innerText + "\n\n");
+        if(!fullText.trim()) return alert("No dictation text found. Please dictate or type something first.");
+
+        const instructions = document.getElementById('aiInstructions').value;
+        const docType = document.getElementById('sel_doctype').value;
+        const lang = document.getElementById('langSelect').options[document.getElementById('langSelect').selectedIndex].text;
+
+        const getContextText = (selId) => {
+            const val = document.getElementById(selId).value;
+            return (val && stenoData[val] && stenoData[val].text) ? stenoData[val].text : "";
+        };
+
+        let ctxStr = `Top Letterhead: ${getContextText('sel_lht')}\n`;
+        ctxStr += `Bottom Letterhead: ${getContextText('sel_lhb')}\n`;
+        ctxStr += `Signature Info: ${getContextText('sel_s')}\n`;
+
+        const prompt = `You are an expert document drafter and executive stenographer fluent in ${lang}.
+        
+TASK: Auto-draft ONLY the core BODY of a "${docType}".
+Do NOT include letterheads, headers, footers, or signatures (I will append those via the layout engine). 
+
+CRITICAL LAYOUT GUIDELINES FOR "${docType}":
+- FOR ALL STANDARD DOCUMENTS (Letters, Reports, Memos, Notices): You MUST use professional A4 spacing. Wrap paragraphs in <p style="margin-bottom: 12pt; text-align: justify; line-height: 1.5;"></p>. Do not bunch text together; space it exactly as an expert stenographer would in Microsoft Word.
+- If Invoice or Challan: You MUST output a standard HTML <table> with inline CSS (border="1" style="border-collapse: collapse; width: 100%;"). Include headers (Item, Qty, Price, Total) and a bold final total row. Align numbers to the right.
+- If Formal Letter: Include Sender Address, Date, Recipient Address, Subject, and Salutation at the top, perfectly spaced.
+- If Doctor Prescription: Use a clean layout. Start with "Rx" prominently. List medicines with bullet points or a neat table.
+- If SMS/WhatsApp: Ignore A4 spacing. Keep it extremely concise. Text only. Use <br> for line breaks.
+- If Notice/Memo: Center the title using <div align="center"><strong>NOTICE</strong></div>. Include Date, To, From.
+
+CONTEXT (External elements already present, do not duplicate):
+${ctxStr}
+
+RAW DICTATION:
+${fullText}
+
+USER INSTRUCTIONS:
+${instructions || 'Format professionally based on the document type.'}
+
+STRICT OUTPUT RULES:
+1. Output ONLY pure, valid HTML (no markdown backticks, no \`\`\`html wrapper, no conversational intro).
+2. The language must match the raw dictation unless the user instructions explicitly state otherwise.
+3. Use semantic HTML (<p>, <strong>, <ul>, <table>) so it renders perfectly in MS Word.`;
+
+        const btn = event.target;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '⏳ Drafting...'; btn.disabled = true;
+
+        try {
+            const customKey = stenoData['apikey'];
+            const headers = { 'Content-Type': 'application/json' };
+            if (customKey && customKey.trim().length > 10) {
+                headers['X-Custom-Api-Key'] = customKey.trim();
+            }
+
+            const payload = {
+                model: "gemini-1.5-flash",
+                contents: [{ role: "user", parts: [{ text: "Please draft the document based on the system instructions." }] }],
+                systemInstruction: { parts: [{ text: prompt }] }
+            };
+
+            const res = await fetch(PROXY_URL, {
+                method: 'POST', 
+                headers: headers,
+                body: JSON.stringify(payload)
+            });
+            
+            if (!res.ok) throw new Error("API Error or Server Unreachable");
+            const data = await res.json();
+            
+            let aiHtml = data.candidates[0].content.parts[0].text.replace(/```html/gi, '').replace(/```/g, '').trim();
+
+            const chat = document.getElementById('chatWindow');
+            const div = document.createElement('div');
+            const msgId = 'msg-' + Date.now() + Math.random().toString(36).substr(2, 5);
+            
+            div.className = 'message ai-msg';
+            div.innerHTML = `
+                <div class="msg-label" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Steno AI (Final Body)</span>
+                    <button onclick="playTTS(this, 'text-${msgId}')" class="tts-btn" style="padding: 2px 8px; font-size: 0.7rem; border-radius: 4px; background: transparent; border: 1px solid #cbd5e1; color: #64748b; font-weight: bold; cursor: pointer; transition: 0.2s;">🔊 Read</button>
+                </div>
+                <div class="content-editable final-ai-body" id="text-${msgId}" contenteditable="true">${aiHtml}</div>
+                <div style="text-align: right; margin-top: 8px; border-top: 1px dashed #cbd5e1; padding-top: 8px;">
+                    <button onclick="expandMessage('text-${msgId}')" style="background: var(--primary); color: white; padding: 4px 12px; border-radius: 4px; font-size: 0.75rem; display: inline-block; border: none; cursor: pointer;">⛶ Fullscreen</button>
+                </div>
+            `;
+            chat.appendChild(div);
+            
+            document.getElementById('aiInstructions').value = "";
+            addNewBubble();
+            await autoSaveSession(); 
+
+        } catch (error) { 
+            console.error(error);
+            alert("Connection failed. Check API Key or Proxy Server."); 
+        } finally { 
+            btn.innerHTML = originalText; btn.disabled = false; 
+        }
+    }
+
+
+	// ==========================================
+    // RICH TEXT FORMATTING ENGINE
+    // ==========================================
+    function execCmd(command) {
+        // Execute the native browser formatting command
+        document.execCommand(command, false, null);
+        
+        // Find the currently active editable div and ensure it retains focus
+        // so the mobile keyboard doesn't randomly close
+        const activeEditor = document.activeElement;
+        if (activeEditor && activeEditor.hasAttribute('contenteditable')) {
+            activeEditor.focus();
+        }
+        
+        // Trigger the auto-save mechanism so formatting changes are logged to IndexedDB
+        autoSaveSession();
+    }
+	
+    // ==========================================
+    // EXPORT ENGINE (WORD & PDF REBUILT FOR COMPATIBILITY)
+    // ==========================================
+    function getElementHTML(dropdownId, align = "left", forWord = false) {
+        const val = document.getElementById(dropdownId).value;
+        if (!val || !stenoData[val]) return { hasImg: false, html: "" };
+        const d = stenoData[val];
+        
+        let html = `<div style="margin-bottom: 15px; text-align: ${align};" align="${align}">`;
+        let hasImg = false;
+        
+        if (d.img) {
+            html += `<img src="${d.img}" style="width: 100%; max-width: 100%; display: block; margin: 0;"><br>`;
+            hasImg = true;
+        }
+        if (d.text) {
+            let txt = d.text;
+            if (forWord) txt = txt.replace(/\n/g, '<br>');
+            let pad = (dropdownId === 'sel_lht' || dropdownId === 'sel_lhb') ? 'padding: 0 96px;' : '';
+            html += `<div style="white-space: pre-wrap; line-height: 1.4; ${pad}">${txt}</div>`;
+        }
+        html += `</div>`;
+        return { hasImg: hasImg, html: html };
+    }
+
+    function assemblePDFDocument() {
+        const aiBodies = document.querySelectorAll('.final-ai-body');
+        let docBody = aiBodies.length > 0 ? aiBodies[aiBodies.length - 1].innerHTML : "<p style='color:red;'>No AI draft generated yet.</p>";
+        
+        const bgVal = document.getElementById('sel_bg').value;
+        const bgStyle = (bgVal && stenoData[bgVal] && stenoData[bgVal].img) ? `background-image: url('${stenoData[bgVal].img}'); background-size: cover; background-position: center;` : "";
+        
+        const fontFam = document.getElementById('sel_font').value;
+        const fontSz = document.getElementById('sel_fontsize').value;
+
+        let lht = getElementHTML('sel_lht', 'center', false);
+        let h = getElementHTML('sel_h', 'left', false);
+        let s = getElementHTML('sel_s', 'left', false);
+        let f = getElementHTML('sel_f', 'center', false);
+        let lhb = getElementHTML('sel_lhb', 'center', false);
+
+        let topSpacing = lht.hasImg ? '0px' : '96px';
+        let botSpacing = lhb.hasImg ? '0px' : '96px';
+
+        return `
+            <div style="font-family: ${fontFam}; font-size: ${fontSz}; position: relative; min-height: 1056px; color: #000; background: white; padding-top: ${topSpacing}; padding-bottom: ${botSpacing};">
+                <div style="position: absolute; top:0; left:0; right:0; bottom:0; opacity: 0.15; z-index: 0; pointer-events: none; ${bgStyle}"></div>
+                <div style="position: relative; z-index: 1; display: flex; flex-direction: column; min-height: 100%;">
+                    ${lht.html}
+                    <div style="padding: 0 96px; flex: 1; display: flex; flex-direction: column;">
+                        ${h.html ? `<div style="border-bottom: 2px solid #000; margin-bottom: 20px;">${h.html}</div>` : ''}
+                        <div style="flex: 1; line-height: 1.6;">${docBody}</div>
+                        <div style="margin-top: 40px;">
+                            <div style="display: flex; justify-content: flex-end;"><div style="width: 300px;">${s.html}</div></div>
+                            ${f.html ? `<div style="border-top: 1px solid #ccc; margin-top: 20px; padding-top: 10px; font-size: 9pt;">${f.html}</div>` : ''}
+                        </div>
+                    </div>
+                    ${lhb.html}
+                </div>
+            </div>`;
+    }
+
+    function assembleWordDocument() {
+        const aiBodies = document.querySelectorAll('.final-ai-body');
+        let docBody = aiBodies.length > 0 ? aiBodies[aiBodies.length - 1].innerHTML : "<p>No AI draft generated yet.</p>";
+
+        const fontFam = document.getElementById('sel_font').value;
+        const fontSz = document.getElementById('sel_fontsize').value;
+
+        let lht = getElementHTML('sel_lht', 'center', true);
+        let h = getElementHTML('sel_h', 'left', true);
+        let s = getElementHTML('sel_s', 'left', true);
+        let f = getElementHTML('sel_f', 'center', true);
+        let lhb = getElementHTML('sel_lhb', 'center', true);
+
+        let topSpacing = lht.hasImg ? '0px' : '96px';
+        let botSpacing = lhb.hasImg ? '0px' : '96px';
+
+        return `
+            <div style="font-family: ${fontFam}; font-size: ${fontSz}; color: #000; background: white; padding-top: ${topSpacing}; padding-bottom: ${botSpacing};">
+                <div align="center" style="text-align: center;">${lht.html}</div>
+                <div style="padding: 0 96px;">
+                    ${h.html ? `<div style="border-bottom: 1px solid #000; margin-bottom: 20px;">${h.html}</div>` : ''}
+                    <div style="line-height: 1.5; margin-bottom: 30px;">${docBody}</div>
+                    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-top: 30px;">
+                        <tr>
+                            <td width="60%"></td>
+                            <td width="40%" align="left" valign="top">${s.html}</td>
+                        </tr>
+                    </table>
+                    ${f.html ? `<div align="center" style="border-top: 1px solid #ccc; padding-top: 10px; margin-top: 20px; text-align: center;">${f.html}</div>` : ''}
+                </div>
+                <div align="center" style="text-align: center; margin-top: 10px;">${lhb.html}</div>
+            </div>`;
+    }
+
+	function previewDoc() { 
+        document.getElementById('finalDocumentContainer').innerHTML = assemblePDFDocument(); 
+        openModal('previewModal'); 
+        autoFitZoom('finalDocumentContainer'); // <-- ADD THIS LINE
+    }
+    
+    function downloadPDF() {
+        const el = document.createElement('div'); 
+        el.innerHTML = assemblePDFDocument(); 
+        document.body.appendChild(el);
+
+		const pageSize = document.getElementById('sel_pagesize').value;
+        const orientation = document.getElementById('sel_orientation').value;
+
+        let jsPDFOpts = { unit: 'in', format: pageSize, orientation: orientation };
+
+        html2pdf().set({ 
+            margin: 0, 
+            filename: 'Document.pdf', 
+            image: { type: 'jpeg', quality: 0.98 }, 
+            html2canvas: { scale: 2, useCORS: true }, 
+            jsPDF: jsPDFOpts 
+        }).from(el).save().then(() => document.body.removeChild(el));
+    }
+
+    function downloadWord() {
+        const wordHtml = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+            <meta charset="utf-8">
+            <title>Exported Document</title>
+            <xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml>
+        </head>
+        <body>
+            ${assembleWordDocument()}
+        </body>
+        </html>`;
+
+	// Create a Blob to handle the file download reliably across all browsers
+        const blob = new Blob(['\ufeff', wordHtml], { type: 'application/msword' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement("a"); 
+        a.href = url; 
+        a.download = 'Document.doc'; 
+        document.body.appendChild(a); 
+        a.click(); 
+        document.body.removeChild(a);
+        
+        // Clean up the URL object to free memory
+        URL.revokeObjectURL(url);
+    }
+
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    </script>
+</body>
+</html>
