@@ -99,7 +99,7 @@ const UI = {
     ageContainer: document.getElementById('age-container'),
     keyIn: document.getElementById('custom-api-key-input'),
     remember: document.getElementById('remember-checkbox'),
-    ttsEngine: document.getElementById('tts-engine-selector'), // NEW
+    ttsEngine: document.getElementById('tts-engine-selector'),
     welcome: document.getElementById('welcome-msg'),
     
     mainView: document.getElementById('settings-main-view'),
@@ -151,7 +151,7 @@ let currentSessionId = Date.now();
 // Cloud/Native TTS & Highlight State
 let ttsStatus = 'STOPPED';
 let currentActiveBtn = null;
-let currentAudio = new Audio(); // For Cloud TTS
+let currentAudio = new Audio(); 
 let audioChunks = [];
 let currentChunkIndex = 0;
 let globalWordIndex = 0;
@@ -162,6 +162,54 @@ window.currentPlayingText = "";
 
 const speechDataMap = {};
 const rawTextMap = {};
+
+// --- EDIT PENCIL MANAGER ---
+function updateEditPencil() {
+    document.querySelectorAll('.user-edit-btn').forEach(btn => btn.classList.add('hidden'));
+    const allUserBtns = document.querySelectorAll('.user-edit-btn');
+    if (allUserBtns.length > 0) {
+        allUserBtns[allUserBtns.length - 1].classList.remove('hidden');
+    }
+}
+
+window.triggerEditLastInput = (e) => {
+    if(e) e.stopPropagation();
+
+    if (state.isProcessing && currentAborter) currentAborter.abort();
+    resetCurrentTTS();
+    if (isListening && recognition) recognition.stop();
+    
+    resetMicUI();
+    state.isProcessing = false;
+    updateStopButtonVisibility(); 
+    UI.status.style.backgroundColor = '#4b5563';
+
+    if (chatHistory.length > 0) {
+        let lastRole = chatHistory[chatHistory.length - 1].role;
+
+        if (lastRole === 'model') {
+            chatHistory.pop();
+            if (UI.log.lastElementChild && UI.log.lastElementChild.classList.contains('msg-container')) {
+                UI.log.removeChild(UI.log.lastElementChild);
+            }
+            lastRole = chatHistory.length > 0 ? chatHistory[chatHistory.length - 1].role : null;
+        }
+
+        if (lastRole === 'user') {
+            const userMsg = chatHistory.pop();
+            if (UI.log.lastElementChild && UI.log.lastElementChild.classList.contains('msg-container')) {
+                UI.log.removeChild(UI.log.lastElementChild);
+            }
+            
+            const textContent = userMsg.parts.find(p => p.text)?.text || "";
+            UI.textIn.value = textContent;
+            UI.textIn.focus();
+        }
+    }
+
+    saveData();
+    updateEditPencil();
+};
 
 // --- 3. INITIALIZATION ---
 window.onload = () => {
@@ -178,14 +226,12 @@ UI.overlay.addEventListener('click', () => {
     enforceFullscreen();
     requestWakeLock();
     
-// Unlock Native Engine
     if (window.speechSynthesis) {
         const silent = new SpeechSynthesisUtterance('');
         silent.volume = 0; 
         window.speechSynthesis.speak(silent);
     }
     
-    // Unlock Cloud Engine
     currentAudio.play().catch(()=>{});
     currentAudio.pause();
     currentAudio.src = "";
@@ -282,7 +328,7 @@ function loadData() {
                             const textPart = msg.parts.find(p => p.text)?.text || "📷 [Image attached]";
                             renderMessage(msg.role === 'user' ? (UI.name.value || UI.role.value) : "Teacher", textPart, msg.role === 'model', false); 
                         });
-
+                        updateEditPencil();
                     }
                 }
             } catch (e) { console.warn("History parse error", e); }
@@ -340,7 +386,7 @@ function clearData() {
     UI.log.innerHTML = `<div class="text-gray-400 text-center mt-12 cinzel"><p class="text-sky-500 text-xl mb-2 font-bold">🧹 Board Cleared</p>Let's start a new lesson.</div>`;
     
     resetCurrentTTS();
-
+    updateEditPencil();
 }
 
 // --- HISTORY VAULT LOGIC ---
@@ -427,7 +473,7 @@ function loadSpecificSession(targetId) {
             renderMessage(msg.role === 'user' ? (UI.name.value || UI.role.value) : "Teacher", textPart, msg.role === 'model', false); 
         });
         
-
+        updateEditPencil();
     }
 }
 
@@ -662,7 +708,6 @@ function setupEventListeners() {
         };
     }
 
-
     UI.btnMute.onclick = (e) => { 
         e.stopPropagation(); state.isMuted = !state.isMuted; 
         if(state.isMuted) { 
@@ -753,8 +798,6 @@ async function processInput(userText, isHiddenQuizTrigger = false) {
     setMicThinkingState(true);
     updateStopButtonVisibility();
 
-
-
     const userName = UI.name.value || UI.role.value;
     const displayMessage = userText || "📷 [Image attached for analysis]";
     
@@ -800,7 +843,7 @@ async function processInput(userText, isHiddenQuizTrigger = false) {
             if (btn) window.toggleSingleMessagePlay(btn);
         }
         
-
+        updateEditPencil();
         
     } catch (err) {
         if (err.name === 'AbortError') {
@@ -838,7 +881,10 @@ async function getAIResponse(history) {
         1. Strictly adhere to the syllabus.
         2. Tone: Professional, helpful, collaborative.
         3. Language: Primary language is ${med}.
-        4. FORMATTING: Use Markdown to format your response neatly (use **bold** for emphasis, bullet points for lists, and short paragraphs). Do NOT use complex LaTeX.`;
+        4. FORMATTING: Use Markdown to format your response neatly (use **bold** for emphasis, bullet points for lists, and short paragraphs). Do NOT use complex LaTeX.
+        5. MEDIA LINKS: At the very end of your response, provide EXACTLY two lines formatted like this for further visual exploration. The keywords must accurately reflect the specific topic, subject (${sub}), and standard (${std}) in the ${med} medium:
+           YT_SEARCH: relevant_topic_keywords
+           IMG_SEARCH: relevant_topic_keywords`;
     } else {
         const studentName = UI.name.value || "Child";
         const estimatedAge = parseInt(std) + 5;
@@ -862,7 +908,10 @@ async function getAIResponse(history) {
            - [SCORE:6] if they answer a quiz question perfectly (Sixer).
            - [SCORE:50] if they show 50% mastery of the current lesson (Fifty).
            - [SCORE:100] if they fully complete and master the chapter (Century).
-           IMPORTANT: Do NOT explain the score or mention the tag to the user, just output the tag silently.`; 
+           IMPORTANT: Do NOT explain the score or mention the tag to the user, just output the tag silently.
+        7. MEDIA LINKS: At the very end of your response, provide EXACTLY two lines formatted like this for further visual exploration. The keywords must accurately reflect the specific topic, subject (${sub}), and standard (${std}) in the ${med} medium:
+           YT_SEARCH: relevant_topic_keywords
+           IMG_SEARCH: relevant_topic_keywords`; 
     }
 
     const payload = { 
@@ -887,7 +936,13 @@ async function getAIResponse(history) {
 // --- DUAL TTS ENGINE (CLOUD & NATIVE) ---
 
 function prepareTextForTTSAndHighlighting(container, msgId) {
-    const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
+    const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, {
+        acceptNode: function(node) {
+            // Do not highlight or process text inside the video/image buttons
+            if (node.parentNode && node.parentNode.closest('.external-link-btn')) return NodeFilter.FILTER_REJECT;
+            return NodeFilter.FILTER_ACCEPT;
+        }
+    }, false);
     const textNodes = [];
     let node;
     
@@ -971,13 +1026,11 @@ function resetCurrentTTS() {
         currentActiveBtn = null;
     }
     
-    // Kill Cloud Engine
     if (currentAudio) {
         currentAudio.pause();
         currentAudio.src = "";
     }
     
-    // Kill Native Engine
     if (window.speechSynthesis) {
         window.speechSynthesis.cancel();
     }
@@ -1122,14 +1175,13 @@ function playNextChunk(langCode, msgId, btnElement) {
     const currentRate = parseFloat(UI.ttsSpeedSlider ? UI.ttsSpeedSlider.value : 1.0);
 
     currentAudio.src = url;
-    // DO NOT USE currentAudio.load(); IT BLOCKS AUTOPLAY IN WEBVIEWS
     currentAudio.playbackRate = currentRate; 
     currentAudio.preservesPitch = true;
 
     currentAudio.play().then(() => {
         if (currentChunkIndex === 0) startHighlightTimer(msgId);
     }).catch(err => {
-        console.warn("Cloud TTS Blocked, skipping chunk.", err);
+        console.warn("Cloud TTS Blocked, skipping chunk.");
         setTimeout(() => {
             currentChunkIndex++;
             playNextChunk(langCode, msgId, btnElement);
@@ -1175,7 +1227,11 @@ function startHighlightTimer(msgId) {
 
 window.copySingleMessage = async (btnElem) => {
     const msgId = btnElem.getAttribute('data-msg-id');
-    const text = (rawTextMap[msgId] || "").trim(); 
+    // Strip out the search tags before copying
+    const text = (rawTextMap[msgId] || "")
+        .replace(/YT_SEARCH:.*$/gm, '')
+        .replace(/IMG_SEARCH:.*$/gm, '')
+        .trim(); 
     try {
         await navigator.clipboard.writeText(text);
         const originalHtml = btnElem.innerHTML;
@@ -1191,7 +1247,11 @@ window.downloadSinglePDF = (btnElem, senderName) => {
     }
 
     const msgId = btnElem.getAttribute('data-msg-id');
-    const rawText = rawTextMap[msgId] || "";
+    // Strip out the search tags for the PDF
+    const rawText = (rawTextMap[msgId] || "")
+        .replace(/YT_SEARCH:.*$/gm, '')
+        .replace(/IMG_SEARCH:.*$/gm, '')
+        .trim();
 
     const container = document.createElement('div');
     container.style.padding = '30px';
@@ -1240,7 +1300,6 @@ window.downloadSinglePDF = (btnElem, senderName) => {
 };
 
 // --- RENDER UI ---
-// --- RENDER UI ---
 function renderMessage(sender, text, isModel) {
     const msgId = 'msg-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
     const div = document.createElement('div');
@@ -1248,19 +1307,44 @@ function renderMessage(sender, text, isModel) {
     rawTextMap[msgId] = text; 
     div.className = `msg-container p-4 rounded-2xl ${isModel ? 'bg-[#0f172a]/90 border border-slate-700/50 shadow-lg ml-2 mr-8' : 'bg-sky-900/40 text-right mr-2 ml-8'} mb-4`;
     
-    const parsedText = isModel ? marked.parse(text) : text;
-    
-    // Sweep away any pencil buttons from older user messages so only the newest one has it
-    if (!isModel) {
-        document.querySelectorAll('.edit-user-btn').forEach(btn => btn.remove());
+    let parsedText = text;
+    let mediaLinks = "";
+
+    // Parse out the YT and IMG tags and build the HTML buttons
+    if (isModel) {
+        parsedText = parsedText.replace(/YT_SEARCH:\s*(.*)/g, (match, keyword) => {
+            const q = encodeURIComponent(keyword.trim());
+            mediaLinks += `<a href="https://www.youtube.com/results?search_query=${q}" target="_blank" class="external-link-btn inline-flex items-center gap-1 px-3 py-1.5 bg-red-600/20 text-red-400 hover:bg-red-600/40 hover:text-white rounded-lg transition-colors text-xs font-bold border border-red-500/30 shadow-sm mr-2 mb-2">🎥 Watch Video</a>`;
+            return ""; 
+        });
+        parsedText = parsedText.replace(/IMG_SEARCH:\s*(.*)/g, (match, keyword) => {
+            const q = encodeURIComponent(keyword.trim());
+            mediaLinks += `<a href="https://www.google.com/search?tbm=isch&q=${q}" target="_blank" class="external-link-btn inline-flex items-center gap-1 px-3 py-1.5 bg-sky-600/20 text-sky-400 hover:bg-sky-600/40 hover:text-white rounded-lg transition-colors text-xs font-bold border border-sky-500/30 shadow-sm mb-2">🖼️ See Images</a>`;
+            return "";
+        });
     }
 
+    parsedText = isModel ? marked.parse(parsedText) : parsedText;
+    
     let htmlContent = `
         <div class="text-[10px] uppercase font-bold tracking-wider ${isModel ? 'text-sky-400 cinzel' : 'text-slate-300'} mb-1">${sender}</div>
-        <div class="text-sm leading-relaxed text-gray-100 markdown-body" id="md-${msgId}">${parsedText}</div>
+        <div class="text-sm leading-relaxed text-gray-100 markdown-body" id="md-${msgId}">
+            ${parsedText}
+            ${mediaLinks ? `<div class="mt-4 pt-3 border-t border-slate-700/50 flex flex-wrap">${mediaLinks}</div>` : ''}
+        </div>
     `;
+
+    if (!isModel) {
+        htmlContent += `
+            <div class="flex justify-end mt-1.5 -mb-1">
+                <button class="user-edit-btn text-slate-400 hover:text-sky-400 transition-colors focus:outline-none hidden" onclick="window.triggerEditLastInput(event)" title="Edit this input">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                </button>
+            </div>
+        `;
+    }
     
-    if (isModel) {
+	if (isModel) {
         htmlContent += `
             <div class="msg-action-bar mt-3 flex justify-end gap-2">
                 <button class="msg-pdf-btn p-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-full text-slate-400 hover:text-red-400 transition-colors shadow-sm focus:outline-none" onclick="window.downloadSinglePDF(this, '${sender}')" data-msg-id="${msgId}" title="Download Answer as PDF">
@@ -1274,71 +1358,29 @@ function renderMessage(sender, text, isModel) {
                     <svg class="pause-icon w-4 h-4 hidden pointer-events-none" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
                 </button>
             </div>`;
-    } else {
-        // Embed the pencil button directly into the bottom right of the user's bubble
-        htmlContent += `
-            <div class="mt-2 flex justify-end">
-                <button class="edit-user-btn p-1 text-slate-400 hover:text-sky-400 transition-colors focus:outline-none" title="Edit Input">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                </button>
-            </div>`;
     }
 
     div.innerHTML = htmlContent;
-
-    // Bind the chat-reversal logic to the new pencil button
-    if (!isModel) {
-        const editBtn = div.querySelector('.edit-user-btn');
-        if (editBtn) {
-            editBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-
-                if (state.isProcessing && currentAborter) currentAborter.abort();
-                resetCurrentTTS();
-                if (isListening && recognition) recognition.stop();
-                
-                resetMicUI();
-                state.isProcessing = false;
-                updateStopButtonVisibility(); 
-                UI.status.style.backgroundColor = '#4b5563';
-
-                if (chatHistory.length > 0) {
-                    let lastRole = chatHistory[chatHistory.length - 1].role;
-
-                    // Erase AI response if it exists
-                    if (lastRole === 'model') {
-                        chatHistory.pop();
-                        if (UI.log.lastElementChild && UI.log.lastElementChild.classList.contains('msg-container')) {
-                            UI.log.removeChild(UI.log.lastElementChild);
-                        }
-                        lastRole = chatHistory.length > 0 ? chatHistory[chatHistory.length - 1].role : null;
-                    }
-
-                    // Erase User bubble and pull text back to input
-                    if (lastRole === 'user') {
-                        const userMsg = chatHistory.pop();
-                        if (UI.log.lastElementChild && UI.log.lastElementChild.classList.contains('msg-container')) {
-                            UI.log.removeChild(UI.log.lastElementChild);
-                        }
-                        
-                        const textContent = userMsg.parts.find(p => p.text)?.text || "";
-                        UI.textIn.value = textContent;
-                        UI.textIn.focus();
-                    }
-                }
-                saveData();
-            });
-        }
-    }
-
     UI.log.appendChild(div);
 
     if (isModel) {
         const mdBody = div.querySelector('.markdown-body');
-        const cleanTextForTTS = text.replace(/[*_#`~]/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/<[^>]+>/g, '');
+        
+        // Strip tags completely so the TTS engine doesn't read them out loud
+        const cleanTextForTTS = text
+            .replace(/YT_SEARCH:.*$/gm, '')
+            .replace(/IMG_SEARCH:.*$/gm, '')
+            .replace(/\[SCORE:\d+\]/g, '')
+            .replace(/[*_#`~]/g, '')
+            .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+            .replace(/<[^>]+>/g, '')
+            .trim();
+            
         const speechText = prepareTextForTTSAndHighlighting(mdBody, msgId);
         speechDataMap[msgId] = cleanTextForTTS;
     }
+    
+    updateEditPencil();
     
     setTimeout(() => { UI.log.scrollTop = UI.log.scrollHeight; }, 50);
 
