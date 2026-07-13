@@ -600,6 +600,16 @@ function setupEventListeners() {
             }
         }, 300);
     };
+// --- Entire Session PDF Listener ---
+    if (UI.btnSharePdf) {
+        UI.btnSharePdf.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (typeof window.downloadEntireSessionPDF === 'function') {
+                window.downloadEntireSessionPDF();
+            }
+        });
+    }
+
 
     UI.advToggle.onclick = openSettings;
     UI.btnCloseSet.onclick = closeSettings;
@@ -1291,6 +1301,97 @@ window.downloadSinglePDF = (btnElem, senderName) => {
     const opt = {
         margin:       0.5,
         filename:     `Eprashala_Note_${new Date().toISOString().slice(0,10)}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+    
+    html2pdf().set(opt).from(container).save();
+};
+
+
+window.downloadEntireSessionPDF = () => {
+    if (typeof html2pdf === 'undefined') {
+        alert("PDF engine is still loading. Please try again in a moment.");
+        return;
+    }
+    
+    if (chatHistory.length === 0) {
+        alert("The class is currently empty. Let's study something first!");
+        return;
+    }
+
+    const container = document.createElement('div');
+    container.style.padding = '30px';
+    container.style.fontFamily = 'Arial, sans-serif';
+    container.style.backgroundColor = '#FFFFFF'; 
+    container.style.color = '#000000'; 
+
+    const header = document.createElement('div');
+    header.innerText = "ai.eprashala.com - Class Session";
+    header.style.textAlign = 'center';
+    header.style.color = '#6b7280'; 
+    header.style.fontSize = '14px'; 
+    header.style.fontWeight = 'bold';
+    header.style.letterSpacing = '2px';
+    header.style.paddingBottom = '15px';
+    header.style.marginBottom = '20px';
+    header.style.borderBottom = '2px solid #e5e7eb';
+    container.appendChild(header);
+    
+    const title = document.createElement('h3');
+    const std = document.getElementById('std-selector').value || "Unknown Std";
+    const sub = document.getElementById('subject-selector').value || "Unknown Subject";
+    title.innerText = `Class Session: Std ${std} - ${sub}`;
+    title.style.color = '#0284c7'; 
+    title.style.marginBottom = '20px';
+    container.appendChild(title);
+
+    chatHistory.forEach(msg => {
+        const isModel = msg.role === 'model';
+        const senderName = isModel ? "Teacher" : (UI.name.value || UI.role.value);
+        let rawText = msg.parts.find(p => p.text)?.text || "📷 [Image attached]";
+
+        if (isModel) {
+            // Strip media tags and score tags for the clean PDF
+            rawText = rawText.replace(/YT_SEARCH:.*$/gm, '')
+                             .replace(/IMG_SEARCH:.*$/gm, '')
+                             .replace(/\[SCORE:\d+\]/g, '')
+                             .trim();
+        }
+
+        const msgDiv = document.createElement('div');
+        msgDiv.style.backgroundColor = isModel ? '#f8fafc' : '#f0f9ff'; 
+        msgDiv.style.border = '1px solid #e2e8f0';
+        msgDiv.style.marginBottom = '15px';
+        msgDiv.style.padding = '15px';
+        msgDiv.style.borderRadius = '8px';
+
+        const senderDiv = document.createElement('div');
+        senderDiv.innerText = senderName;
+        senderDiv.style.fontSize = '10px';
+        senderDiv.style.fontWeight = 'bold';
+        senderDiv.style.textTransform = 'uppercase';
+        senderDiv.style.color = isModel ? '#0284c7' : '#64748b';
+        senderDiv.style.marginBottom = '5px';
+        msgDiv.appendChild(senderDiv);
+
+        const contentDiv = document.createElement('div');
+        contentDiv.innerHTML = isModel ? marked.parse(rawText) : rawText;
+        contentDiv.style.fontSize = '14px';
+        contentDiv.style.lineHeight = '1.6';
+        
+        // Force text colors so they don't render white-on-white
+        const allElements = contentDiv.querySelectorAll('*');
+        allElements.forEach(el => { el.style.color = '#0f172a'; });
+
+        msgDiv.appendChild(contentDiv);
+        container.appendChild(msgDiv);
+    });
+
+    const opt = {
+        margin:       0.5,
+        filename:     `Eprashala_Session_${new Date().toISOString().slice(0,10)}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
         html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
         jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
