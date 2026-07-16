@@ -116,6 +116,28 @@
                                 <i data-lucide="file-text" class="w-4 h-4 text-slate-400"></i> Executive Summary
                             </h3>
                             <ul id="reasonList" class="text-xs space-y-2.5 text-slate-400"></ul>
+							<!-- Forensic Reasoning List -->
+                        <div class="mt-6 pt-5 border-t border-slate-700/50">
+                            <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                <i data-lucide="file-text" class="w-4 h-4 text-slate-400"></i> Executive Summary
+                            </h3>
+                            <ul id="reasonList" class="text-xs space-y-2.5 text-slate-400"></ul>
+                        </div>
+                        
+                        <!-- NEW: AI Expert Analysis Section -->
+                        <div class="mt-6 pt-5 border-t border-slate-700/50">
+                            <h3 class="text-xs font-bold text-sky-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                <i data-lucide="cpu" class="w-4 h-4"></i> AI Expert Summary
+                            </h3>
+                            <div class="space-y-3">
+                                <input type="password" id="api-key-input" placeholder="Gemini API Key (Optional)" class="w-full bg-slate-900/80 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-300 outline-none focus:border-sky-500 transition-colors">
+                                <button id="btn-ai-analyze" class="w-full bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-lg shadow-sky-900/20">
+                                    <i data-lucide="sparkles" class="w-4 h-4"></i> Generate AI Report
+                                </button>
+                                <div id="ai-loading" class="hidden text-xs text-sky-400 animate-pulse text-center font-mono tracking-widest py-2">CONSULTING NEURAL NET...</div>
+                                <div id="ai-response-output" class="hidden text-[11px] text-slate-300 bg-slate-900/80 p-3.5 rounded-lg border border-sky-900/50 mt-2 leading-relaxed font-mono"></div>
+                            </div>
+                        </div>
                         </div>
                     </div>
                 </div>
@@ -170,6 +192,50 @@
 
     <script>
         lucide.createIcons();
+        
+        let latestForensicData = null; // Holds mathematical data for AI injection
+
+        // --- CENTRAL PROXY ROUTER ---
+        const PROXY_BASE_URL = "https://eprashala-proxy-511804777001.asia-south1.run.app";
+
+        async function fetchGeminiChat(payloadObject) {
+            const userKey = document.getElementById('api-key-input').value.trim() || '';
+
+            // TIER 1: User has their own key -> Direct browser handoff to Google
+            if (userKey && userKey.length > 10) {
+                try {
+                    console.log("Direct Route Active: Targeting gemini-flash-latest...");
+                    const primaryUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${userKey}`;
+                    const response = await fetch(primaryUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payloadObject)
+                    });
+                    
+                    if (!response.ok) throw new Error(`Primary model status: ${response.status}`);
+                    return response;
+
+                } catch (error) {
+                    console.warn("Primary channel busy/unavailable. Re-routing to fallback...", error);
+                    const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${userKey}`;
+                    return await fetch(fallbackUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payloadObject)
+                    });
+                }
+            } 
+            
+            // TIER 2: No personal key provided -> Route to your centralized Mumbai server
+            else {
+                console.log("Proxy Route Active: Routing through centralized server...");
+                return await fetch(`${PROXY_BASE_URL}/api/chat`, {
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payloadObject)
+                });
+            }
+        }
         
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
@@ -549,10 +615,16 @@
                 </div>`);
             }
 
-            // Update UI
+		// Update UI
             document.getElementById('metricsArea').innerHTML = metricsHTML;
             document.getElementById('reasonList').innerHTML = reasons.map(r => r.startsWith('<div') ? `<li class="list-none">${r}</li>` : `<li class="mb-1.5 leading-relaxed">• ${r}</li>`).join('');
             
+            // Save stripped raw data for the AI Expert Engine
+            latestForensicData = { 
+                score: authScore, 
+                reasons: reasons.map(r => r.replace(/<[^>]*>?/gm, '')).join(' | ') 
+            };
+			
             setTimeout(() => lucide.createIcons(), 10);
             
             const vHeader = document.getElementById('verdictHeader');
@@ -592,6 +664,51 @@
             a.click();
             URL.revokeObjectURL(url);
         }
+		
+		// --- AI EXPERT ANALYSIS EXECUTION ---
+        document.getElementById('btn-ai-analyze').addEventListener('click', async () => {
+            if (!latestForensicData) return alert("Please initialize an image analysis first.");
+            
+            const btn = document.getElementById('btn-ai-analyze');
+            const loader = document.getElementById('ai-loading');
+            const outputBox = document.getElementById('ai-response-output');
+
+            btn.style.display = 'none';
+            loader.style.display = 'block';
+            outputBox.style.display = 'none';
+
+            const systemPrompt = `You are a Senior Digital Forensics Expert. Review the following biometric and pixel analysis data from the DeepDetect V5 Engine. 
+            Authenticity Score: ${latestForensicData.score}%.
+            Engine Findings: ${latestForensicData.reasons}
+            
+            Provide a highly professional, clinical, 1-paragraph summary of the image's authenticity. State clearly if it is likely AI-generated, Photoshopped, or a pristine original, and briefly explain why based on the provided metrics. Do not use markdown bolding or asterisks.`;
+
+            const payloadObject = {
+                contents: [{ role: "user", parts: [{ text: systemPrompt }] }]
+            };
+
+            try {
+                const response = await fetchGeminiChat(payloadObject);
+                const data = await response.json();
+                
+                if (data.error) throw new Error(data.error.message);
+                
+                let rawText = data.candidates[0].content.parts[0].text;
+                outputBox.innerText = rawText;
+                outputBox.style.display = 'block';
+                
+            } catch (err) {
+                console.error(err);
+                alert("AI Error: " + err.message);
+            } finally {
+                loader.style.display = 'none';
+                btn.style.display = 'flex';
+                btn.innerHTML = `<i data-lucide="refresh-cw" class="w-4 h-4"></i> Regenerate AI Report`;
+                lucide.createIcons();
+            }
+        });
+		
+		
     </script>
 </body>
 </html>
