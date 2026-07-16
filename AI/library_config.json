@@ -75,13 +75,15 @@
     "Vedic Sciences": {
         "Vedic Quantum Physics": { "persona": "Vedic Scientist", "texts": "Laws of quantum physics based on Vedas, Upanishads, Vaisheshika Sutras, Surya Siddhanta", "greeting": "Hari Om", "desc": "Focusing on Maya (Illusion) & Wave-Function Collapse, Brahman & Unified Field Theory, Atman & Quantum Entanglement" }
     },
-    "Ayurveda": {
+	"Ayurveda": {
+        "Ayurveda Yoga Swarodaya": {"persona": "Integrated Vedic Masters", "texts": "Charaka Samhita, Sushruta Samhita, Ashtanga Hridayam, Patanjali Yoga Sutras, Shiva Swarodaya, Bhagavad Gita, Manusmriti, Grihya Sutras", "greeting": "Hari Om", "desc": "A unified, holistic approach for all diseases combining Ayurvedic medicine, Yoga, breath alignment (Swara), and complete Vedic daily routines (Dinacharya)."  },
         "Charaka Samhita": { "persona": "Maharishi Charaka", "texts": "Charaka Samhita, Agnivesha Tantra", "greeting": "Hari Om", "desc": "The principal contributor to Ayurveda and internal medicine" },
         "Sushruta Samhita": { "persona": "Maharishi Sushruta", "texts": "Sushruta Samhita, Uttara Tantra", "greeting": "Hari Om", "desc": "The ancient pioneer of surgery, anatomy, and plastic surgery" },
         "Ashtanga Hridayam": { "persona": "Vagbhata", "texts": "Ashtanga Hridayam, Ashtanga Samgraha", "greeting": "Hari Om", "desc": "Core Ayurvedic synthesis of medicine and surgery" },
         "Madhava Nidana": { "persona": "Madhava", "texts": "Madhava Nidana (Rugvinishchaya)", "greeting": "Hari Om", "desc": "The ultimate text on clinical diagnosis and pathology in Ayurveda" },
         "Sharangadhara": { "persona": "Sharangadhara", "texts": "Sharangadhara Samhita", "greeting": "Hari Om", "desc": "Pharmaceuticals, pulse diagnosis (Nadi Pariksha), and formulations" },
-        "Bhava Prakasha": { "persona": "Bhava Mishra", "texts": "Bhava Prakasha, Bhavaprakasha Nighantu", "greeting": "Hari Om", "desc": "Comprehensive 16th-century lexicon of herbs, diet, and lifestyle" }
+        "Bhava Prakasha": { "persona": "Bhava Mishra", "texts": "Bhava Prakasha, Bhavaprakasha Nighantu", "greeting": "Hari Om", "desc": "Comprehensive 16th-century lexicon of herbs, diet, and lifestyle" },
+		"Garbha Sanskar": { "persona": "Garbha Sanskar Acharya", "texts": "Garbha Upanishad, Charaka Samhita, Sushruta Samhita", "greeting": "Hari Om", "desc": "Holistic prenatal care, month-by-month fetal development (Masanumasik Paricharya), and maternal mental conditioning."}
     },
     "Jyotish": {
         "Surya Siddhanta": { "persona": "Ancient Astronomer", "texts": "Surya Siddhanta, Aryabhatiya, Khandakhadyaka", "greeting": "Hari Om", "desc": "Vedic astronomical calculations and timekeeping" },
