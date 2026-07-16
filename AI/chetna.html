@@ -165,11 +165,54 @@
 </div>
 
 <script>
+    // --- CENTRAL PROXY ROUTER ---
+    const PROXY_BASE_URL = "https://eprashala-proxy-511804777001.asia-south1.run.app";
+
+    async function fetchGeminiChat(payloadObject) {
+        // Chetna does not currently have a UI field for a custom key, 
+        // so we default to the proxy route. It can be added later if needed.
+        const userKey = ''; 
+
+        // TIER 1: User has their own key -> Direct browser handoff to Google
+        if (userKey && userKey.trim().length > 10) {
+            try {
+                console.log("Direct Route Active: Targeting gemini-flash-latest...");
+                const primaryUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${userKey.trim()}`;
+                const response = await fetch(primaryUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payloadObject)
+                });
+                
+                if (!response.ok) throw new Error(`Primary model status: ${response.status}`);
+                return response;
+
+            } catch (error) {
+                console.warn("Primary channel busy/unavailable. Re-routing to fallback...", error);
+                const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${userKey.trim()}`;
+                return await fetch(fallbackUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payloadObject)
+                });
+            }
+        } 
+        
+        // TIER 2: No personal key provided -> Route to your centralized Mumbai server
+        else {
+            console.log("Proxy Route Active: Routing through centralized server...");
+            return await fetch(`${PROXY_BASE_URL}/api/chat`, {
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payloadObject)
+            });
+        }
+    }
+
     // --- Application State ---
     const MAX_ROUNDS = 10;
     const QUESTIONS_PER_ROUND = 10;
     const FLASH_DURATION = 2000; 
-    const PROXY_URL = "https://eprashala.pythonanywhere.com/api/chat";
     
     let userProfile = { name: "", age: "", sex: "" };
     let currentRound = 1;
@@ -466,7 +509,7 @@
         let db = JSON.parse(localStorage.getItem('chetna_history') || "[]");
         let historicalAccuracies = db.map(s => s.accuracy);
         
-        try {
+	try {
             const payload = {
                 model: "gemini-2.0-flash", // Adjusted as per your provided logic
                 systemInstruction: {

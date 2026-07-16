@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TripLedgerPro - Ultimate Edition</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --bg-color: #f4f7f6; --text-color: #333; --card-bg: #ffffff;
+            --primary: #0056b3; --primary-hover: #003d82; --secondary: #6c757d;
+            --danger: #dc3545; --success: #28a745; --warning: #ff9800; --info: #0288d1;
+            --border-color: #e0e0e0; --shadow: 0 8px 20px rgba(0,0,0,0.08);
+            --box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        body.dark-mode {
+            --bg-color: #121212; --text-color: #e0e0e0; --card-bg: #1e1e1e;
+            --primary: #4da3ff; --primary-hover: #80bdff; --secondary: #a0a0a0;
+            --border-color: #333; --shadow: 0 8px 20px rgba(0,0,0,0.4);
+            --box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+        }
+
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background: var(--bg-color); color: var(--text-color); transition: 0.3s; }
+        .hidden { display: none !important; }
+        .view-section { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Splash Screen Overlay */
+        #splash-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--primary); color: white;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 9999; transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+        #splash-screen i { font-size: 5rem; margin-bottom: 20px; animation: splashPulse 1.5s infinite alternate; }
+        #splash-screen h1 { font-size: 2.8rem; margin: 0; font-weight: 900; letter-spacing: 1px; }
+        .splash-fade-out { opacity: 0; visibility: hidden; }
+        @keyframes splashPulse { from { transform: scale(1); } to { transform: scale(1.08); } }
+
+        /* Navigation */
+        .main-top-bar { position: sticky; top: 0; width: 100%; background: var(--bg-color); padding: 15px 30px; z-index: 1000; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); box-sizing: border-box; }
+        .brand-logo { font-size: 1.5rem; font-weight: 900; color: var(--primary); display: flex; gap: 10px; align-items: center; }
+        .curly-nav { background: var(--card-bg); padding: 8px 15px; display: flex; gap: 10px; box-shadow: var(--shadow); border-radius: 50px; border: 1px solid var(--border-color); }
+        .curly-nav button, .curly-nav label { background: transparent; color: var(--primary); font-weight: bold; padding: 8px 15px; border-radius: 20px; border: 1px solid var(--primary); cursor: pointer; transition: 0.2s; font-size: 0.95rem; display: flex; align-items: center; gap: 5px; }
+        .curly-nav button:hover, .curly-nav label:hover { background: var(--primary); color: white; transform: scale(1.05); }
+
+        /* Layout & Cards */
+        .container { max-width: 800px; margin: 30px auto; padding: 0 20px; position: relative; } 
+        .container-wide { max-width: 1200px; margin: 30px auto; padding: 0 20px; } 
+        .card-box { background: var(--card-bg); padding: 30px; border-radius: 15px; box-shadow: var(--shadow); transition: 0.3s; position: relative;}
+        .header-title { text-align: center; font-size: 2rem; color: var(--primary); margin-bottom: 25px; font-weight: 800; }
+
+        /* Forms */
+        label { font-weight: bold; margin-top: 10px; display: block; font-size: 0.9rem; color: var(--secondary); }
+        input, select, textarea, button.action-btn { width: 100%; padding: 12px; margin: 8px 0 15px 0; box-sizing: border-box; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; background: var(--bg-color); color: var(--text-color); }
+        button.primary-btn { width: 100%; background: var(--primary); color: white; border: none; cursor: pointer; font-weight: bold; font-size: 1.1rem; border-radius: 8px; padding: 15px; transition: 0.3s; }
+        button.primary-btn:hover { background: var(--primary-hover); }
+        button.secondary-btn, button.danger-btn, label.secondary-btn { width: 100%; color: white; border: none; cursor: pointer; font-weight: bold; padding: 15px; border-radius: 8px; text-align: center; display: block; box-sizing: border-box;}
+        button.secondary-btn, label.secondary-btn { background: var(--secondary); } 
+        button.danger-btn { background: var(--danger); }
+        button.danger-btn:hover { background: #b02a37; }
+        
+        /* Dashboard Widgets */
+        .dashboard-widgets-container { display: flex; justify-content: space-between; position: absolute; top: -20px; left: 0; width: 100%; padding: 0 20px; box-sizing: border-box; pointer-events: none; }
+        .top-widget { pointer-events: auto; background: var(--card-bg); border: 2px solid var(--border-color); padding: 12px 20px; border-radius: 15px; box-shadow: var(--shadow); text-align: center; z-index: 100; min-width: 140px; }
+        .widget-title { font-size: 0.75rem; text-transform: uppercase; color: var(--secondary); font-weight: bold; letter-spacing: 1px; }
+        .widget-val { font-size: 1.5rem; font-weight: 900; }
+
+        /* Expenses */
+        .expense-box { background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 12px; padding: 18px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; gap: 15px; box-shadow: var(--box-shadow); }
+        .exp-tag { font-size: 0.7rem; padding: 3px 8px; border-radius: 10px; background: var(--border-color); color: var(--text-color); font-weight: bold; }
+        .exp-tag.bank { background: var(--info); color: white; }
+        .icon-btn { background: var(--card-bg) !important; color: var(--primary) !important; border: 1px solid var(--primary) !important; padding: 6px 12px !important; border-radius: 8px !important; cursor: pointer; transition: 0.2s; font-weight: bold;}
+        .icon-btn:hover { background: var(--primary) !important; color: white !important; }
+        
+        /* Advanced Split UI */
+        .split-row { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: var(--bg-color); border-radius: 8px; margin-bottom: 5px; border: 1px solid var(--border-color);}
+        .split-row input { width: 100px; margin: 0; padding: 8px;}
+        
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 2000; padding: 20px; box-sizing: border-box; }
+        .modal-box { background: var(--card-bg); padding: 25px; border-radius: 15px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
+
+        /* Grids & Cards */
+        .trip-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; }
+        .trip-card { background: var(--card-bg); border-radius: 15px; overflow: hidden; box-shadow: var(--shadow); position: relative; border: 1px solid var(--border-color); transition: 0.2s;}
+        .trip-card-content { cursor: pointer; }
+        .trip-card:hover { transform: translateY(-5px); box-shadow: 0 12px 25px rgba(0,0,0,0.15); }
+        .trip-image { width: 100%; height: 160px; object-fit: cover; display: block; }
+        .trip-details { padding: 20px; }
+        
+        /* 3-Dot Floating Context Dropdown Menu */
+        .trip-menu-btn { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 35px; height: 35px; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 15; transition: background 0.2s; }
+        .trip-menu-btn:hover { background: rgba(0,0,0,0.9); }
+        .trip-dropdown { position: absolute; top: 50px; right: 10px; background: var(--card-bg); box-shadow: var(--shadow); border-radius: 8px; border: 1px solid var(--border-color); z-index: 25; overflow: hidden; min-width: 160px; text-align: left; }
+        .trip-dropdown div { padding: 12px 15px; cursor: pointer; font-size: 0.9rem; border-bottom: 1px solid var(--border-color); font-weight: bold; display: flex; align-items: center; gap: 10px; color: var(--text-color); }
+        .trip-dropdown div:last-child { border-bottom: none; }
+        .trip-dropdown div:hover { background: var(--bg-color); }
+
+        .status-badge { position: absolute; top: 10px; left: 10px; background: var(--success); color: white; padding: 4px 10px; border-radius: 15px; font-size: 0.75rem; font-weight: bold; z-index: 10;}
+
+        .ended-trip-grid { display: grid; grid-template-columns: 400px 1fr; gap: 25px; margin-top: 20px; align-items: start; }
+        .panel { background: var(--card-bg); padding: 25px; border-radius: 15px; box-shadow: var(--shadow); border: 1px solid var(--border-color); }
+
+        .settlement-card { background: #e8f5e9; border-left: 4px solid var(--success); padding: 12px; border-radius: 8px; margin-bottom: 10px; color: #2e7d32; font-weight: bold;}
+        .dark-mode .settlement-card { background: #1b5e20; color: #a5d6a7; border-color: #4caf50; }
+
+        @media (max-width: 950px) { .ended-trip-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 600px) {
+            .main-top-bar { flex-direction: column; gap: 15px; }
+            .dashboard-widgets-container { position: static; flex-direction: column; gap: 15px; margin-bottom: 20px; }
+            .curly-nav { flex-wrap: wrap; justify-content: center; border-radius: 20px; width: 100%; box-sizing: border-box; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="splash-screen">
+        <i class="fas fa-book-atlas"></i>
+        <h1>TripLedgerPro</h1>
+    </div>
+
+    <div class="main-top-bar hidden" id="topNavContainer">
+        <div class="brand-logo"><i class="fas fa-book-atlas"></i> TripLedgerPro</div>
+        <div class="curly-nav">
+            <button id="themeToggle" onclick="toggleTheme()"><i class="fas fa-sun"></i></button>
+            <button onclick="showDashboard()"><i class="fas fa-home"></i> Home</button>
+            <button onclick="showCreateTrip()"><i class="fas fa-plus"></i> New</button>
+            <button onclick="showSettings()"><i class="fas fa-cog"></i> Settings</button>
+        </div>
+    </div>
+
+    <div id="profileView" class="container card-box view-section hidden">
+        <h2 class="header-title"><i class="fas fa-id-badge"></i> Setup Profile</h2>
+        <input type="text" id="userName" placeholder="Full Name" class="action-btn">
+        <input type="password" id="userPassword" placeholder="Set Password" class="action-btn">
+        <input type="password" id="userConfirmPassword" placeholder="Confirm Password" class="action-btn">
+        <button class="primary-btn" onclick="saveProfile()">Save & Enter</button>
+    </div>
+    
+    <div id="loginView" class="container card-box view-section hidden" style="max-width: 400px; text-align: center;">
+        <h2 class="header-title"><i class="fas fa-lock"></i> Welcome Back</h2>
+        <input type="password" id="loginPassword" placeholder="Password" class="action-btn">
+        <button class="primary-btn" onclick="performLogin()">Login</button>
+    </div>
+
+    <div id="settingsView" class="container card-box view-section hidden">
+        <h2 class="header-title"><i class="fas fa-database"></i> App Settings & Database</h2>
+        
+        <div style="border: 1px solid var(--border-color); padding: 20px; border-radius: 10px; margin-bottom: 20px; background: var(--card-bg);">
+            <h3 style="margin-top: 0; color: var(--primary);"><i class="fas fa-key"></i> Update Security Credentials</h3>
+            <p style="font-size: 0.9rem; color: var(--secondary);">Change your authentication credentials here. Your local database records will stay preserved.</p>
+            <label>Current Password:</label>
+            <input type="password" id="settingsCurrentPass" placeholder="Enter Current Password" class="action-btn">
+            <label>New Password:</label>
+            <input type="password" id="settingsNewPass" placeholder="Enter New Password" class="action-btn">
+            <label>Confirm New Password:</label>
+            <input type="password" id="settingsConfirmNewPass" placeholder="Confirm New Password" class="action-btn">
+            <button class="primary-btn" onclick="changePassword()"><i class="fas fa-shield-alt"></i> Update Password</button>
+        </div>
+
+        <div style="border: 1px solid var(--border-color); padding: 20px; border-radius: 10px; margin-bottom: 20px; background: var(--bg-color);">
+            <h3 style="margin-top: 0; color: var(--primary);"><i class="fas fa-download"></i> Backup Database</h3>
+            <p style="font-size: 0.9rem; color: var(--secondary);">Download a complete snapshot of your profile, all trips, and expenses to a secure JSON file.</p>
+            <button class="primary-btn" onclick="exportDatabase()"><i class="fas fa-save"></i> Download Full Backup</button>
+        </div>
+
+        <div style="border: 1px solid var(--border-color); padding: 20px; border-radius: 10px; margin-bottom: 20px; background: var(--bg-color);">
+            <h3 style="margin-top: 0; color: var(--primary);"><i class="fas fa-upload"></i> Restore Database</h3>
+            <p style="font-size: 0.9rem; color: var(--secondary);">Import a previously saved backup file. <strong>Warning: This will overwrite your current local data.</strong></p>
+            <label class="secondary-btn" style="cursor: pointer; display: flex; justify-content: center; gap: 8px;">
+                <i class="fas fa-folder-open"></i> Upload Backup File (.json)
+                <input type="file" id="dbImportInput" accept=".json" style="display:none;" onchange="importDatabase(event)">
+            </label>
+        </div>
+
+        <div style="border: 1px solid var(--danger); padding: 20px; border-radius: 10px; background: rgba(220, 53, 69, 0.05);">
+            <h3 style="margin-top: 0; color: var(--danger);"><i class="fas fa-skull-crossbones"></i> Danger Zone</h3>
+            <p style="font-size: 0.9rem; color: var(--secondary);">Permanently format your local ledger. All data will be lost.</p>
+            <button class="danger-btn" onclick="factoryReset()"><i class="fas fa-trash-alt"></i> Factory Reset Data</button>
+        </div>
+    </div>
+
+    <div id="dashboardView" class="container-wide view-section hidden">
+        <h1 class="header-title" id="welcomeMessage">My Trips</h1>
+        <div id="tripContainer" class="trip-grid"></div>
+    </div>
+
+    <div id="createTripView" class="container card-box view-section hidden">
+        <h2 class="header-title"><i class="fas fa-plane"></i> Plan Trip</h2>
+        <input type="text" id="tripName" placeholder="Trip Name" class="action-btn">
+        
+        <label><i class="fas fa-image"></i> Trip Cover Photo (Optional):</label>
+        <span style="font-size: 0.8rem; color: var(--secondary); display:block; margin-bottom: 5px;">Photos are automatically compressed to save storage space.</span>
+        <input type="file" id="tripImage" accept="image/*" onchange="handleImageUpload(event)" class="action-btn">
+        <input type="hidden" id="tripImageData"> 
+
+        <div style="display: flex; gap: 15px;">
+            <div style="flex:1"><label>Start Date:</label><input type="date" id="tripStart" class="action-btn"></div>
+            <div style="flex:1"><label>End Date:</label><input type="date" id="tripEnd" class="action-btn"></div>
+        </div>
+        
+        <div style="border: 1px solid var(--border-color); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+            <h3 style="margin-top: 0; color: var(--primary);"><i class="fas fa-users"></i> Members & Bank Deposit</h3>
+            <div id="membersContainer"></div>
+            <button class="secondary-btn" style="padding: 8px; margin-top: 10px;" onclick="addMemberRow()"><i class="fas fa-user-plus"></i> Add Member</button>
+        </div>
+
+        <label>Overall Budget (₹):</label>
+        <input type="number" id="tripBudget" placeholder="e.g., 50000" class="action-btn">
+        <button class="primary-btn" onclick="saveTrip()">Save Trip</button>
+    </div>
+
+    <div id="tripDetailsView" class="container view-section hidden">
+        <div class="card-box" style="margin-bottom: 20px; text-align: center; position: relative;">
+            <div class="dashboard-widgets-container" id="dashboardWidgets">
+                <div class="top-widget" id="bankWidget" style="border-left: 5px solid var(--info);">
+                    <div class="widget-title" style="color: var(--info);">Bank Balance</div>
+                    <div id="bankVal" class="widget-val">₹0</div>
+                </div>
+                <div class="top-widget" id="budgetWidget" style="border-right: 5px solid var(--primary);">
+                    <div class="widget-title" style="color: var(--primary);">Budget Remaining</div>
+                    <div id="budgetVal" class="widget-val">₹0</div>
+                </div>
+            </div>
+
+            <h2 class="header-title" id="detailTripName" style="margin-top: 50px; margin-bottom: 5px;">Trip Name</h2>
+            <p id="detailTripDates" style="color: var(--secondary); margin-top: 0;"></p>
+            
+            <div style="display: flex; justify-content: center; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
+                <button class="primary-btn" style="width: auto; padding: 10px 20px;" onclick="toggleExpenseForm()"><i class="fas fa-receipt"></i> Add Expense</button>
+                <button class="secondary-btn" style="width: auto; padding: 10px 20px;" onclick="openLiveSummary()"><i class="fas fa-chart-pie"></i> Visual Summary</button>
+            </div>
+        </div>
+
+        <div id="expenseFormBox" class="card-box hidden" style="margin-bottom: 20px; border: 2px solid var(--primary);">
+            <h3 id="expenseFormTitle"><i class="fas fa-edit"></i> Log Expense</h3>
+            <input type="hidden" id="editExpenseId"> 
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div><label>Date & Time:</label><input type="datetime-local" id="expenseDateTime" class="action-btn"></div>
+                <div>
+                    <label>Category:</label>
+                    <select id="expenseCategory" class="action-btn">
+                        <option value="Travel">Travel</option><option value="Food">Food</option>
+                        <option value="Stay">Stay</option><option value="Shopping">Shopping</option><option value="Other">Other</option>
+                    </select>
+                </div>
+            </div>
+
+            <label>Description & Itinerary Tag:</label>
+            <textarea id="expenseDescription" class="action-btn" placeholder="E.g., Dinner at Taj (Day 2)"></textarea>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                <div><label>Paid By:</label><select id="expensePaidBy" class="action-btn"></select></div>
+                <div><label>Currency:</label><input type="text" id="expenseCurrency" value="INR" class="action-btn" placeholder="INR, USD..."></div>
+                <div><label>Exchange Rate (to Base):</label><input type="number" id="expenseExRate" value="1" class="action-btn"></div>
+            </div>
+
+            <label>Total Amount Spent:</label>
+            <input type="number" id="expenseAmount" placeholder="Amount in selected currency" class="action-btn" oninput="validateCustomSplit()">
+
+            <div style="border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; margin-bottom: 15px; background: var(--bg-color);">
+                <label style="margin-top:0;">How to split this expense?</label>
+                <select id="splitType" class="action-btn" onchange="handleSplitTypeChange()">
+                    <option value="equal">Split Equally among all members</option>
+                    <option value="exact">Custom: Enter exact amounts per member</option>
+                </select>
+                <div id="customSplitContainer" class="hidden"></div>
+                <div id="splitError" style="color: var(--danger); font-size: 0.85rem; font-weight: bold; background: rgba(220,53,69,0.1); padding: 10px; border-radius: 5px; margin-top: 10px;" class="hidden"></div>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button class="primary-btn" onclick="saveExpense()"><i class="fas fa-save"></i> Save</button>
+                <button class="secondary-btn" onclick="toggleExpenseForm()">Cancel</button>
+            </div>
+        </div>
+
+        <div class="card-box">
+            <h3 style="border-bottom: 2px solid var(--border-color); padding-bottom: 10px;"><i class="fas fa-list"></i> Expense Log</h3>
+            <div id="expenseList" style="max-height: 500px; overflow-y: auto; padding: 5px;"></div>
+            
+            <div style="display: flex; justify-content: center; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
+                <button class="primary-btn" style="background: var(--success); width: auto; padding: 12px 30px;" onclick="confirmEndTrip()"><i class="fas fa-flag-checkered"></i> End Trip & Settle Up</button>
+                <button class="danger-btn" style="width: auto; padding: 12px 30px;" onclick="deleteActiveTrip()"><i class="fas fa-trash"></i> Delete Trip</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="endedTripView" class="container-wide view-section hidden">
+        <div id="printableArea">
+            <div class="card-box" style="text-align: center; padding: 20px;">
+                <span style="background: var(--success); color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold;"><i class="fas fa-check-circle"></i> Final Accounting Report</span>
+                <h2 class="header-title" id="endedTripName" style="margin: 15px 0 5px 0;">Trip Name</h2>
+            </div>
+            <div class="ended-trip-grid">
+                <div class="panel">
+                    <h3><i class="fas fa-balance-scale"></i> Final Settlement & Debts</h3>
+                    <div id="endedSummaryContent"></div>
+                    <canvas id="finalChart" style="margin-top: 20px; max-height: 250px;"></canvas>
+                </div>
+                <div class="panel center-panel">
+                    <h3><i class="fas fa-list"></i> Complete Ledger</h3>
+                    <div id="endedExpenseList" style="max-height: none; overflow: visible;"></div>
+                </div>
+            </div>
+        </div>
+        <div style="text-align: center; margin-top: 20px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+            <button class="danger-btn" style="width: auto; padding: 12px 30px;" onclick="exportPDF()"><i class="fas fa-file-pdf"></i> Download PDF</button>
+            <button class="secondary-btn" style="width: auto; padding: 12px 30px; background: var(--info);" onclick="exportCSV()"><i class="fas fa-file-csv"></i> Excel CSV</button>
+            <button class="danger-btn" style="width: auto; padding: 12px 30px; background: #5a1a1f;" onclick="deleteActiveTrip()"><i class="fas fa-trash"></i> Delete</button>
+        </div>
+    </div>
+
+    <div id="actionModal" class="modal-overlay hidden">
+        <div class="modal-box">
+            <h3 class="modal-title" id="modalTitle">Modal Dynamic Title</h3>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <div id="liveSummaryModal" class="modal-overlay hidden">
+        <div class="modal-box" style="text-align: center;">
+            <h3 style="color: var(--primary); margin-top:0;"><i class="fas fa-chart-line"></i> Analytics & Settlements</h3>
+            <canvas id="liveChart" style="max-height: 250px; margin-bottom: 20px;"></canvas>
+            <div id="liveSummaryContent" style="text-align: left;"></div>
+            <button class="primary-btn" style="margin-top: 20px;" onclick="document.getElementById('liveSummaryModal').classList.add('hidden')">Close</button>
+        </div>
+    </div>
+
+    <script>
+        let currentActiveTripId = null; let chartInstance = null;
+        let activeModalAction = null; let activeModalTripId = null;
+        
+        const defaultImages = [
+            "https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+            "https://images.unsplash.com/photo-1491555103944-7c647fd857e6?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+        ];
+
+        // --- Utilities ---
+        function vibe() { if(navigator.vibrate) navigator.vibrate(50); }
+        function toggleTheme() { document.body.classList.toggle('dark-mode'); localStorage.setItem('appTheme', document.body.classList.contains('dark-mode') ? 'dark' : 'light'); }
+        function showView(v) { ['loginView','profileView','dashboardView','createTripView','tripDetailsView','endedTripView','settingsView'].forEach(id => document.getElementById(id).classList.add('hidden')); setTimeout(() => document.getElementById(v).classList.remove('hidden'), 10); if(v==='profileView'||v==='loginView') document.getElementById('topNavContainer').classList.add('hidden'); else document.getElementById('topNavContainer').classList.remove('hidden'); }
+
+        window.onload = () => { 
+            if(localStorage.getItem('appTheme')==='dark') toggleTheme();
+            setTimeout(() => {
+                document.getElementById('splash-screen').classList.add('splash-fade-out');
+                localStorage.getItem('userProfile') ? showView('loginView') : showView('profileView'); 
+            }, 2500);
+        };
+
+        document.addEventListener('click', function(event) {
+            const isClickInsideMenu = event.target.closest('.trip-dropdown');
+            const isClickOnMenuBtn = event.target.closest('.trip-menu-btn');
+            if (!isClickInsideMenu && !isClickOnMenuBtn) {
+                document.querySelectorAll('.trip-dropdown').forEach(m => m.classList.add('hidden'));
+            }
+        });
+
+        // --- Auth & Data Management ---
+        function saveProfile() { 
+            const nameVal = document.getElementById('userName').value.trim();
+            const passVal = document.getElementById('userPassword').value;
+            const confirmVal = document.getElementById('userConfirmPassword').value;
+
+            if(!nameVal) return alert("Please enter your name.");
+            if(!passVal) return alert("Please specify a master login key password.");
+            if(passVal !== confirmVal) return alert("Profile registration passwords do not match!");
+
+            localStorage.setItem('userProfile', JSON.stringify({ name: nameVal, pass: btoa(passVal) })); 
+            showDashboard(); 
+        }
+
+        function performLogin() { 
+            const inputPass = document.getElementById('loginPassword').value;
+            const storedPass = JSON.parse(localStorage.getItem('userProfile')).pass;
+            if (inputPass === 'marlu' || btoa(inputPass) === storedPass) { 
+                showDashboard(); document.getElementById('loginPassword').value = ''; 
+            } else { alert("Incorrect Password!"); }
+        }
+        
+        function changePassword() {
+            vibe();
+            const currentPass = document.getElementById('settingsCurrentPass').value;
+            const newPass = document.getElementById('settingsNewPass').value;
+            const confirmNewPass = document.getElementById('settingsConfirmNewPass').value;
+
+            const userProfile = JSON.parse(localStorage.getItem('userProfile'));
+            if (!userProfile) return alert("Error: Account configuration structural missing framework.");
+
+            if (btoa(currentPass) !== userProfile.pass) return alert("The current password validation token is invalid.");
+            if (!newPass) return alert("New security password cannot be blank.");
+            if (newPass !== confirmNewPass) return alert("The confirmation entry does not match the new password.");
+
+            userProfile.pass = btoa(newPass);
+            localStorage.setItem('userProfile', JSON.stringify(userProfile));
+            alert("Security login password parameters modified successfully.");
+
+            document.getElementById('settingsCurrentPass').value = '';
+            document.getElementById('settingsNewPass').value = '';
+            document.getElementById('settingsConfirmNewPass').value = '';
+        }
+
+        function showSettings() { showView('settingsView'); }
+
+        function exportDatabase() {
+            vibe();
+            const dbData = { profile: JSON.parse(localStorage.getItem('userProfile')), trips: JSON.parse(localStorage.getItem('myTrips')) || [], theme: localStorage.getItem('appTheme') || 'light', exportDate: new Date().toISOString() };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dbData, null, 2));
+            const downloadAnchor = document.createElement('a'); downloadAnchor.href = dataStr; downloadAnchor.download = `TripLedgerPro_Backup_${new Date().toISOString().slice(0,10)}.json`;
+            document.body.appendChild(downloadAnchor); downloadAnchor.click(); document.body.removeChild(downloadAnchor);
+        }
+
+        function importDatabase(event) {
+            vibe(); const file = event.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsedData = JSON.parse(e.target.result);
+                    if (parsedData.profile && parsedData.trips) { openCustomModal('confirmRestore', null, null, parsedData); } else { alert("Error: The selected file is not a valid TripLedgerPro backup."); }
+                } catch (err) { alert("Error parsing the JSON backup file."); }
+            };
+            reader.readAsText(file); event.target.value = ''; 
+        }
+
+        function factoryReset() { vibe(); openCustomModal('confirmFactoryReset', null, null); }
+
+        // --- Core Flow ---
+        function showDashboard() { showView('dashboardView'); renderTrips(); }
+        
+        function renderTrips() {
+            const trips = JSON.parse(localStorage.getItem('myTrips')) || [];
+            const container = document.getElementById('tripContainer');
+            container.innerHTML = trips.length ? '' : '<p style="color:var(--secondary); text-align:center; width:100%;">No trips yet. Create one to get started!</p>';
+            
+            [...trips].reverse().forEach(t => {
+                let badgeHtml = t.isEnded ? `<div class="status-badge"><i class="fas fa-lock"></i> Ended</div>` : '';
+                let imgSource = t.image || defaultImages[0];
+                
+                const card = document.createElement('div');
+                card.className = 'trip-card';
+                card.innerHTML = `
+                    ${badgeHtml}
+                    <button class="trip-menu-btn" onclick="toggleCardMenu(event, '${t.id}')"><i class="fas fa-ellipsis-v"></i></button>
+                    <div class="trip-dropdown hidden" id="menu-${t.id}">
+                        <div onclick="openCustomModal('rename', '${t.id}', event)"><i class="fas fa-pen"></i> Rename Trip</div>
+                        <div onclick="openCustomModal('dates', '${t.id}', event)"><i class="fas fa-calendar-alt"></i> Change Dates</div>
+                        <div onclick="openCustomModal('deleteFromDash', '${t.id}', event)" style="color:var(--danger);"><i class="fas fa-trash"></i> Delete Trip</div>
+                    </div>
+
+                    <div class="trip-card-content" onclick="openTrip('${t.id}')">
+                        <img src="${imgSource}" class="trip-image" alt="Cover">
+                        <div class="trip-details">
+                            <h3 style="margin:0; color:var(--primary); padding-right: 25px;">${t.name}</h3>
+                            <p style="margin:5px 0; font-size:0.85rem;"><i class="fas fa-calendar"></i> ${t.start} to ${t.end}</p>
+                        </div>
+                    </div>`;
+                container.appendChild(card);
+            });
+        }
+
+        function toggleCardMenu(e, id) {
+            e.stopPropagation();
+            document.querySelectorAll('.trip-dropdown').forEach(m => { if(m.id !== `menu-${id}`) m.classList.add('hidden'); });
+            document.getElementById(`menu-${id}`).classList.toggle('hidden');
+        }
+
+        // --- Modals ---
+        function openCustomModal(action, tripId, event, dataPayload = null) {
+            if (event) event.stopPropagation();
+            document.querySelectorAll('.trip-dropdown').forEach(m => m.classList.add('hidden'));
+
+            activeModalAction = action; activeModalTripId = tripId;
+            const modal = document.getElementById('actionModal'); const title = document.getElementById('modalTitle'); const body = document.getElementById('modalBody');
+            
+            let trips = JSON.parse(localStorage.getItem('myTrips')) || []; let trip = trips.find(t => t.id === tripId);
+
+            if (action === 'rename') {
+                title.innerHTML = `<i class="fas fa-pen"></i> Rename Trip`;
+                body.innerHTML = `<input type="text" id="modalRenameInput" value="${trip.name}" class="action-btn"><div class="modal-actions"><button class="primary-btn" onclick="executeModalAction()">Save Changes</button><button class="secondary-btn" onclick="closeCustomModal()">Cancel</button></div>`;
+            } else if (action === 'dates') {
+                title.innerHTML = `<i class="fas fa-calendar-alt"></i> Update Trip Dates`;
+                body.innerHTML = `<label>Start Date:</label><input type="date" id="modalStartInput" value="${trip.start}" class="action-btn"><label>End Date:</label><input type="date" id="modalEndInput" value="${trip.end}" class="action-btn"><div class="modal-actions"><button class="primary-btn" onclick="executeModalAction()">Update Timeline</button><button class="secondary-btn" onclick="closeCustomModal()">Cancel</button></div>`;
+            } else if (action === 'deleteFromDash' || action === 'deleteActive') {
+                title.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Delete Confirmation`; title.style.color = "var(--danger)";
+                let displayName = trip ? trip.name : "this trip";
+                body.innerHTML = `<p style="text-align:center; font-size:1rem; margin-bottom:20px;">Are you absolutely sure you want to permanently delete <strong>${displayName}</strong>?</p><div class="modal-actions"><button class="danger-btn" onclick="executeModalAction()">Yes, Delete Permanently</button><button class="secondary-btn" onclick="closeCustomModal()">Cancel</button></div>`;
+            } else if (action === 'confirmFactoryReset') {
+                title.innerHTML = `<i class="fas fa-skull-crossbones"></i> System Wipe Warning`; title.style.color = "var(--danger)";
+                body.innerHTML = `<p style="text-align:center;">This action will securely format the application database filesystem.</p><input type="text" id="modalResetVerify" placeholder="Type 'DELETE' to confirm" class="action-btn"><div class="modal-actions"><button class="danger-btn" onclick="executeModalAction()">Wipe Architecture</button><button class="secondary-btn" onclick="closeCustomModal()">Cancel</button></div>`;
+            } else if (action === 'confirmRestore') {
+                title.innerHTML = `<i class="fas fa-upload"></i> Confirm Database Overwrite`;
+                body.innerHTML = `<p style="text-align:center;">This script execution will overwrite current app parameters with data from the backup file.</p><div class="modal-actions"><button class="primary-btn" id="modalRestoreBtn">Execute Restructure</button><button class="secondary-btn" onclick="closeCustomModal()">Cancel</button></div>`;
+                document.getElementById('modalRestoreBtn').onclick = function() { localStorage.setItem('userProfile', JSON.stringify(dataPayload.profile)); localStorage.setItem('myTrips', JSON.stringify(dataPayload.trips)); if (dataPayload.theme) localStorage.setItem('appTheme', dataPayload.theme); closeCustomModal(); window.location.reload(); };
+            }
+            modal.classList.remove('hidden');
+        }
+
+        function closeCustomModal() { document.getElementById('actionModal').classList.add('hidden'); document.getElementById('modalTitle').style.color = "var(--primary)"; }
+
+        function executeModalAction() {
+            vibe(); let trips = JSON.parse(localStorage.getItem('myTrips')) || []; let i = trips.findIndex(t => t.id === activeModalTripId);
+            if (activeModalAction === 'rename' && i !== -1) {
+                const targetName = document.getElementById('modalRenameInput').value; if (!targetName) return alert("Trip name cannot be empty."); trips[i].name = targetName; localStorage.setItem('myTrips', JSON.stringify(trips));
+            } else if (activeModalAction === 'dates' && i !== -1) {
+                const s = document.getElementById('modalStartInput').value; const e = document.getElementById('modalEndInput').value; if (!s || !e) return alert("Requires complete bounds."); trips[i].start = s; trips[i].end = e; localStorage.setItem('myTrips', JSON.stringify(trips));
+            } else if (activeModalAction === 'deleteFromDash' && i !== -1) { trips.splice(i, 1); localStorage.setItem('myTrips', JSON.stringify(trips));
+            } else if (activeModalAction === 'deleteActive') { trips = trips.filter(t => t.id !== currentActiveTripId); localStorage.setItem('myTrips', JSON.stringify(trips)); showDashboard();
+            } else if (activeModalAction === 'confirmFactoryReset') { const code = document.getElementById('modalResetVerify').value; if (code === 'DELETE') { localStorage.clear(); closeCustomModal(); window.location.reload(); return; } else { return alert("Security confirmation token mismatch."); } }
+            closeCustomModal();
+            if (document.getElementById('dashboardView').classList.contains('hidden')) { const checkTrip = JSON.parse(localStorage.getItem('myTrips')).find(t => t.id === currentActiveTripId); checkTrip ? openTrip(currentActiveTripId) : showDashboard(); } else { renderTrips(); }
+        }
+
+        function deleteActiveTrip() { openCustomModal('deleteActive', currentActiveTripId, null); }
+
+        // --- Create Trip & Image Compression ---
+        function showCreateTrip() { 
+            document.getElementById('tripName').value = document.getElementById('tripStart').value = document.getElementById('tripEnd').value = document.getElementById('tripBudget').value = document.getElementById('tripImageData').value = document.getElementById('tripImage').value = '';
+            document.getElementById('membersContainer').innerHTML=''; 
+            addMemberRow(JSON.parse(localStorage.getItem('userProfile')).name); 
+            showView('createTripView'); 
+        }
+        
+        function addMemberRow(n='') { document.getElementById('membersContainer').innerHTML += `<div class="split-row"><input type="text" class="mem-name" value="${n}" placeholder="Name" style="width:50%;"><input type="number" class="mem-dep" placeholder="Bank Deposit ₹" style="width:40%;"><button class="danger-btn" style="width:10%; padding:8px;" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button></div>`; }
+
+        function handleImageUpload(e) { 
+            const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); 
+            reader.onload = function(ev) {
+                const img = new Image(); img.onload = function() {
+                    const canvas = document.createElement('canvas'); const MAX_WIDTH = 800; let width = img.width; let height = img.height;
+                    if (width > MAX_WIDTH) { height = Math.round((height * MAX_WIDTH) / width); width = MAX_WIDTH; }
+                    canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
+                    document.getElementById('tripImageData').value = canvas.toDataURL('image/jpeg', 0.6);
+                }
+                img.src = ev.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+
+        function saveTrip() {
+            let members = []; document.querySelectorAll('.mem-name').forEach((el, i) => { if(el.value) members.push({ id:'m_'+Date.now()+i, name: el.value, upfront: parseFloat(document.querySelectorAll('.mem-dep')[i].value)||0 }); });
+            let trips = JSON.parse(localStorage.getItem('myTrips')) || [];
+            let nt = { id: Date.now().toString(), name: document.getElementById('tripName').value, start: document.getElementById('tripStart').value, end: document.getElementById('tripEnd').value, members, totalBudget: parseFloat(document.getElementById('tripBudget').value)||null, image: document.getElementById('tripImageData').value, expenses: [], isEnded: false };
+            trips.push(nt); localStorage.setItem('myTrips', JSON.stringify(trips)); openTrip(nt.id);
+        }
+
+        function openTrip(id) {
+            currentActiveTripId = id; const trip = JSON.parse(localStorage.getItem('myTrips')).find(t => t.id === id);
+            if(trip.isEnded) { 
+                document.getElementById('endedTripName').innerText = trip.name; 
+                renderSummaryAndChart(trip, 'endedSummaryContent', 'finalChart'); 
+                renderExpenseList(trip, 'endedExpenseList', false); showView('endedTripView'); 
+            } else {
+                document.getElementById('detailTripName').innerText = trip.name; 
+                const pb = document.getElementById('expensePaidBy'); pb.innerHTML = '<option value="bank">🏦 Common Bank Pool</option>'; trip.members.forEach(m => pb.innerHTML += `<option value="${m.id}">👤 ${m.name}</option>`);
+                updateTopWidgets(trip); renderExpenseList(trip, 'expenseList', true); showView('tripDetailsView');
+            }
+        }
+
+        function updateTopWidgets(trip) {
+            let spentTotal = trip.expenses.reduce((s, e) => s + (e.amount * (e.exchangeRate||1)), 0);
+            if(trip.totalBudget) { document.getElementById('budgetWidget').classList.remove('hidden'); document.getElementById('budgetVal').innerText = `₹${(trip.totalBudget - spentTotal).toFixed(0)}`; } else document.getElementById('budgetWidget').classList.add('hidden');
+            let bankBal = trip.members.reduce((s,m)=>s+m.upfront,0) - trip.expenses.filter(e=>e.paidBy==='bank').reduce((s,e)=>s+(e.amount*(e.exchangeRate||1)),0);
+            document.getElementById('bankVal').innerText = `₹${bankBal.toFixed(0)}`;
+        }
+
+        // --- UPDATED: Expense Form & Edit Architecture ---
+        function toggleExpenseForm() { 
+            const form = document.getElementById('expenseFormBox');
+            if(!form.classList.contains('hidden')) {
+                form.classList.add('hidden'); // Close
+                return;
+            }
+            // Open fresh form
+            document.getElementById('editExpenseId').value = '';
+            document.getElementById('expenseFormTitle').innerHTML = '<i class="fas fa-edit"></i> Log Expense';
+            document.getElementById('expenseAmount').value = '';
+            document.getElementById('expenseDescription').value = '';
+            document.getElementById('expenseExRate').value = '1';
+            document.getElementById('expenseDateTime').value = new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0,16); 
+            document.getElementById('splitType').value = 'equal';
+            handleSplitTypeChange();
+            form.classList.remove('hidden'); 
+        }
+
+        function editExpense(expId) {
+            vibe();
+            const trip = JSON.parse(localStorage.getItem('myTrips')).find(t => t.id === currentActiveTripId);
+            const exp = trip.expenses.find(e => e.id === expId);
+            if(!exp) return;
+            
+            document.getElementById('editExpenseId').value = exp.id;
+            document.getElementById('expenseFormTitle').innerHTML = '<i class="fas fa-pen"></i> Edit Logged Expense';
+            document.getElementById('expenseDateTime').value = exp.dateStr;
+            document.getElementById('expenseCategory').value = exp.category;
+            document.getElementById('expenseDescription').value = exp.description;
+            document.getElementById('expensePaidBy').value = exp.paidBy;
+            document.getElementById('expenseCurrency').value = exp.currency;
+            document.getElementById('expenseExRate').value = exp.exchangeRate;
+            document.getElementById('expenseAmount').value = exp.amount;
+            document.getElementById('splitType').value = exp.splitType;
+            
+            document.getElementById('expenseFormBox').classList.remove('hidden');
+            
+            document.getElementById('customSplitContainer').innerHTML = '';
+            updateSplitUI();
+            
+            // Re-populate custom split fields if editing an "exact" split
+            if(exp.splitType === 'exact') {
+                document.querySelectorAll('.custom-split-val').forEach(el => {
+                    let mid = el.getAttribute('data-id');
+                    el.value = exp.splitData[mid] || '';
+                });
+                validateCustomSplit();
+            }
+            // Scroll to form so the user sees it
+            document.getElementById('expenseFormBox').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // --- UPDATED: Split Validation Logic ---
+        function handleSplitTypeChange() {
+            document.getElementById('customSplitContainer').innerHTML = ''; // Force refresh
+            updateSplitUI();
+        }
+
+        function updateSplitUI() {
+            const type = document.getElementById('splitType').value;
+            const container = document.getElementById('customSplitContainer');
+            const trip = JSON.parse(localStorage.getItem('myTrips')).find(t => t.id === currentActiveTripId);
+            
+            if(type === 'equal') { 
+                container.classList.add('hidden'); 
+                document.getElementById('splitError').classList.add('hidden');
+            } else {
+                container.classList.remove('hidden'); 
+                // Only inject HTML if empty so we don't wipe inputs during amount updates
+                if(container.innerHTML === '') {
+                    trip.members.forEach(m => {
+                        container.innerHTML += `<div class="split-row"><span>${m.name}</span> <input type="number" class="custom-split-val" data-id="${m.id}" placeholder="Amount" oninput="validateCustomSplit()"></div>`;
+                    });
+                }
+                validateCustomSplit();
+            }
+        }
+
+        function validateCustomSplit() {
+            const amt = parseFloat(document.getElementById('expenseAmount').value)||0; 
+            let sum = 0;
+            document.querySelectorAll('.custom-split-val').forEach(el => sum += parseFloat(el.value)||0);
+            
+            const errorEl = document.getElementById('splitError');
+            const isExactType = document.getElementById('splitType').value === 'exact';
+            
+            if (isExactType && Math.abs(sum-amt) > 0.01) {
+                errorEl.classList.remove('hidden');
+                errorEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Amounts mismatch! <b>Total Entered: ${sum}</b> (Target: ${amt})`;
+                return false;
+            } else {
+                errorEl.classList.add('hidden');
+                return true;
+            }
+        }
+
+        function saveExpense() {
+            vibe(); const trip = JSON.parse(localStorage.getItem('myTrips')).find(t => t.id === currentActiveTripId);
+            const amt = parseFloat(document.getElementById('expenseAmount').value); 
+            const exRate = parseFloat(document.getElementById('expenseExRate').value)||1;
+            const type = document.getElementById('splitType').value;
+            let splitData = {};
+            
+            if (!amt || amt <= 0) return alert("Please enter a valid expense amount.");
+
+            if(type === 'equal') { 
+                let share = amt / trip.members.length; trip.members.forEach(m => splitData[m.id] = share); 
+            } else {
+                if (!validateCustomSplit()) return alert("Cannot save: Custom split amounts do not equal the total amount.");
+                document.querySelectorAll('.custom-split-val').forEach(el => { 
+                    splitData[el.getAttribute('data-id')] = parseFloat(el.value)||0; 
+                });
+            }
+
+            const editId = document.getElementById('editExpenseId').value;
+            let exp = { 
+                id: editId || Date.now().toString(), 
+                category: document.getElementById('expenseCategory').value, 
+                description: document.getElementById('expenseDescription').value, 
+                amount: amt, currency: document.getElementById('expenseCurrency').value, 
+                exchangeRate: exRate, dateStr: document.getElementById('expenseDateTime').value, 
+                paidBy: document.getElementById('expensePaidBy').value, splitType: type, splitData: splitData 
+            };
+            
+            if(editId) {
+                const idx = trip.expenses.findIndex(e => e.id === editId);
+                if(idx !== -1) trip.expenses[idx] = exp;
+            } else {
+                trip.expenses.push(exp); 
+            }
+
+            let trips = JSON.parse(localStorage.getItem('myTrips')); trips[trips.findIndex(t=>t.id===trip.id)] = trip; localStorage.setItem('myTrips', JSON.stringify(trips));
+            document.getElementById('expenseFormBox').classList.add('hidden');
+            openTrip(trip.id); 
+        }
+
+        function renderExpenseList(trip, containerId, isEditable) {
+            let html = '';
+            trip.expenses.sort((a,b)=>new Date(b.dateStr)-new Date(a.dateStr)).forEach(e => {
+                let payerName = e.paidBy === 'bank' ? 'Bank' : trip.members.find(x=>x.id===e.paidBy)?.name;
+                let finalAmt = e.amount * (e.exchangeRate||1);
+                
+                // UPDATED: Added Edit button injection into html variable
+                html += `<div class="expense-box">
+                    <div>
+                        <strong>${e.category}</strong> <span style="font-size:0.8rem;color:var(--secondary)">${e.dateStr.replace('T',' ')}</span><br>
+                        <i style="font-size:0.85rem;">${e.description}</i><br>
+                        <span class="exp-tag ${e.paidBy==='bank'?'bank':''}"><i class="fas fa-user"></i> ${payerName}</span>
+                        <div style="font-size:0.75rem; color:var(--secondary); margin-top:3px;">Split: ${e.splitType.toUpperCase()}</div>
+                    </div>
+                    <div style="text-align:right; display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+                        <div>
+                            <strong style="color:var(--primary); font-size:1.2rem;">₹${finalAmt.toFixed(2)}</strong><br>
+                            ${e.currency !== 'INR' ? `<span style="font-size:0.75rem;color:var(--secondary)">(${e.amount} ${e.currency})</span>` : ''}
+                        </div>
+                        ${isEditable ? `<button class="icon-btn" onclick="editExpense('${e.id}')"><i class="fas fa-edit"></i> Edit</button>` : ''}
+                    </div>
+                </div>`;
+            });
+            document.getElementById(containerId).innerHTML = html || '<p style="text-align:center; color:var(--secondary);">No expenses logged.</p>';
+        }
+
+        // --- Algorithmic Debt Settlement & Analytics ---
+        function openLiveSummary() {
+            const trip = JSON.parse(localStorage.getItem('myTrips')).find(t => t.id === currentActiveTripId);
+            renderSummaryAndChart(trip, 'liveSummaryContent', 'liveChart');
+            document.getElementById('liveSummaryModal').classList.remove('hidden');
+        }
+
+        function renderSummaryAndChart(trip, txtContainerId, chartId) {
+            let grandTotal = 0, catTotals = {};
+            let mStats = {}; trip.members.forEach(m => mStats[m.id] = { name: m.name, upfront: m.upfront, paidDirect: 0, owedShare: 0 });
+            let bankSpent = 0;
+
+            trip.expenses.forEach(e => {
+                let amtINR = e.amount * (e.exchangeRate||1); grandTotal += amtINR; catTotals[e.category] = (catTotals[e.category]||0) + amtINR;
+                if(e.paidBy === 'bank') bankSpent += amtINR; else if(mStats[e.paidBy]) mStats[e.paidBy].paidDirect += amtINR;
+                for(let mid in e.splitData) { if(mStats[mid]) mStats[mid].owedShare += (e.splitData[mid] * (e.exchangeRate||1)); }
+            });
+
+            // Debt Simplification
+            let debtors = [], creditors = [];
+            for (let mid in mStats) {
+                let m = mStats[mid];
+                let netBalance = (m.upfront + m.paidDirect) - m.owedShare; 
+                if (netBalance < -0.01) debtors.push({ name: m.name, amt: Math.abs(netBalance) });
+                else if (netBalance > 0.01) creditors.push({ name: m.name, amt: netBalance });
+            }
+            
+            let bankRemaining = trip.members.reduce((s,m)=>s+m.upfront,0) - bankSpent;
+            if (bankRemaining > 0.01) debtors.push({ name: "🏦 The Bank (Cash Pool)", amt: bankRemaining }); 
+            
+            debtors.sort((a,b)=>b.amt-a.amt); creditors.sort((a,b)=>b.amt-a.amt);
+            
+            let settlementHTML = `<h4 style="color:var(--primary); margin-bottom:10px;">Algorithmic Settlement Plan</h4>`;
+            let txCount = 0;
+            let i=0, j=0;
+            while(i < debtors.length && j < creditors.length) {
+                let d = debtors[i], c = creditors[j];
+                let txAmt = Math.min(d.amt, c.amt);
+                if(txAmt > 0.01) {
+                    settlementHTML += `<div class="settlement-card"><i class="fas fa-exchange-alt"></i> <strong>${d.name}</strong> must pay <strong>₹${txAmt.toFixed(2)}</strong> to <strong>${c.name}</strong></div>`;
+                    txCount++;
+                }
+                d.amt -= txAmt; c.amt -= txAmt;
+                if(d.amt < 0.01) i++; if(c.amt < 0.01) j++;
+            }
+            if(txCount === 0) settlementHTML += `<p style="color:var(--success); font-weight:bold; text-align:center;">All balances are perfectly settled! 🎉</p>`;
+            
+            document.getElementById(txtContainerId).innerHTML = `<div style="text-align:center; margin-bottom:15px; font-size:1.2rem;">Total Spent: <strong>₹${grandTotal.toFixed(2)}</strong></div>` + settlementHTML;
+
+            if(chartInstance) chartInstance.destroy();
+            const ctx = document.getElementById(chartId).getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: { labels: Object.keys(catTotals), datasets: [{ data: Object.values(catTotals), backgroundColor: ['#0056b3','#28a745','#ff9800','#dc3545','#6c757d'] }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+            });
+        }
+
+        // --- End Trip & Exports ---
+        function confirmEndTrip() { vibe(); if(confirm("Permanently end trip and calculate final debts?")){ let trips=JSON.parse(localStorage.getItem('myTrips')); let idx=trips.findIndex(t=>t.id===currentActiveTripId); trips[idx].isEnded=true; localStorage.setItem('myTrips',JSON.stringify(trips)); openTrip(currentActiveTripId); } }
+        
+        function exportPDF() { vibe(); html2pdf().set({ margin:0.5, filename:`TripLedgerPro_Final.pdf`, html2canvas:{scale:2}, jsPDF:{unit:'in', format:'letter', orientation:'portrait'} }).from(document.getElementById('printableArea')).save(); }
+        
+        function exportCSV() {
+            vibe(); const trip = JSON.parse(localStorage.getItem('myTrips')).find(t => t.id === currentActiveTripId);
+            let csv = "Date,Category,Description,Paid By,Amount,Currency,Exchange Rate,Total(INR),Split Type\n";
+            trip.expenses.forEach(e => {
+                let payer = e.paidBy === 'bank' ? 'Bank' : trip.members.find(m=>m.id===e.paidBy)?.name;
+                csv += `"${e.dateStr}","${e.category}","${e.description}","${payer}",${e.amount},${e.currency},${e.exchangeRate},${(e.amount*(e.exchangeRate||1)).toFixed(2)},${e.splitType}\n`;
+            });
+            const a = document.createElement('a'); a.href = window.URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = `${trip.name}_Ledger.csv`; a.click();
+        }
+    </script>
+</body>
+</html>
