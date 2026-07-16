@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Ashtakoot & Manglik Engine</title>
+    <style>
+        :root {
+            --bg-color: #030712;
+            --panel-bg: rgba(17, 24, 39, 0.7);
+            --border-color: #1f2937;
+            --accent-gold: #f1c40f;
+            --accent-red: #ef4444;
+            --accent-green: #10b981;
+            --accent-blue: #3498db;
+            --text-light: #f3f4f6;
+            --text-muted: #9ca3af;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 20% 20%, rgba(31, 41, 55, 0.3) 0, transparent 50%),
+                radial-gradient(at 80% 80%, rgba(17, 24, 39, 0.5) 0, transparent 50%);
+            color: var(--text-light);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            top: 0 !important; /* Prevents Google Translate from pushing body down */
+        }
+
+        /* Hide the Google Translate top frame */
+        .skiptranslate iframe { display: none !important; }
+
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        header {
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 20px;
+            margin-bottom: 10px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.2rem;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 15px rgba(241, 196, 15, 0.3);
+        }
+
+        header p { margin: 5px 0 0 0; color: var(--text-muted); font-size: 1.1rem; }
+
+        .translate-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-top: 15px;
+            min-height: 30px;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 25px;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .panel-boy { border-top: 4px solid var(--accent-blue); }
+        .panel-girl { border-top: 4px solid var(--accent-red); }
+
+        .panel h2 { margin-top: 0; margin-bottom: 20px; font-size: 1.5rem; display: flex; align-items: center; gap: 10px; }
+        .panel-boy h2 { color: var(--accent-blue); }
+        .panel-girl h2 { color: var(--accent-red); }
+
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .full-width { grid-column: span 2; }
+
+        label {
+            display: block; font-size: 0.85rem; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 5px;
+        }
+
+        input[type="text"], input[type="date"], input[type="time"] {
+            width: 100%; padding: 12px 14px; background: rgba(10, 15, 26, 0.8);
+            border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-light);
+            font-size: 0.95rem; box-sizing: border-box; transition: all 0.2s;
+        }
+
+        input:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 8px rgba(241, 196, 15, 0.2); }
+        input[readonly] { background: rgba(31, 41, 55, 0.4); color: var(--text-muted); }
+
+        .search-wrapper { position: relative; width: 100%; }
+        .suggestions {
+            position: absolute; top: 100%; left: 0; width: 100%; background: #0f172a;
+            border: 1px solid #334155; border-top: none; border-radius: 0 0 6px 6px;
+            max-height: 200px; overflow-y: auto; display: none; z-index: 1000; padding: 0; margin: 0;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .suggestions li { padding: 10px 14px; cursor: pointer; font-size: 0.9rem; border-bottom: 1px solid rgba(255,255,255,0.05); list-style: none; }
+        .suggestions li:hover { background-color: var(--accent-gold); color: #000; }
+
+        .btn-submit {
+            width: 100%; padding: 18px; background: linear-gradient(135deg, #c0392b, #922b21);
+            color: white; border: 1px solid #a04000; border-radius: 8px; cursor: pointer;
+            font-size: 1.2rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(192, 57, 43, 0.3); transition: all 0.3s; margin-top: 10px;
+        }
+        .btn-submit:hover:not(:disabled) { background: linear-gradient(135deg, #d94d3d, #c0392b); transform: translateY(-2px); }
+        .btn-submit:disabled { background: #555; cursor: not-allowed; border-color: #444; color: #aaa; }
+
+        #apiStatus { text-align: center; color: var(--accent-gold); font-style: italic; margin-top: 10px; font-weight: bold; }
+
+        .results-container { display: none; flex-direction: column; gap: 30px; margin-top: 20px;}
+        
+        .profile-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .p-card { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border-left: 4px solid var(--accent-gold); display: flex; flex-direction: column; gap: 15px;}
+        .p-card h3 { margin: 0; color: var(--accent-gold); }
+        .p-data { font-size: 0.95rem; line-height: 1.6; }
+
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            width: 100%;
+        }
+        .kundli-wrapper {
+            position: relative;
+            width: 100%;
+            background: rgba(10, 15, 26, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+        .kundli-title {
+            text-align: center; color: var(--accent-gold); font-weight: 700;
+            margin-bottom: 8px; font-size: 1rem; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .bphs-legend {
+            text-align: center; font-size: 0.75rem; color: #f472b6; margin-bottom: 12px; font-style: italic;
+        }
+        
+        .kundli-box {
+            position: relative; width: 100%; padding-bottom: 100%;
+            background: rgba(0,0,0,0.4); border-radius: 4px; 
+            overflow: hidden; 
+        }
+        
+        .kundli-chart-area {
+            position: absolute;
+            top: 8%; left: 8%; width: 84%; height: 84%;
+        }
+        
+        .kundli-svg {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        }
+        
+        .kundli-house-content {
+            position: absolute; transform: translate(-50%, -50%);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; overflow: visible; z-index: 5; pointer-events: none;
+            width: auto;
+        }
+        
+        .k-sign-header {
+            display: flex; gap: 5px; align-items: baseline; justify-content: center;
+            margin-bottom: 4px;
+        }
+        .k-sign-num { font-size: 0.85rem; font-weight: 900; opacity: 0.7; }
+        .k-sign-name { font-size: 0.6rem; text-transform: uppercase; font-weight: 700; opacity: 0.8; letter-spacing: 0.5px; }
+        
+        .k-body {
+            font-size: 0.65rem; white-space: nowrap; line-height: 1.3;
+            background: rgba(0,0,0,0.65); padding: 2px 6px; border-radius: 4px; 
+            margin-bottom: 2px; backdrop-filter: blur(3px);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .k-body strong { font-weight: 800; }
+        .k-body span.deg { font-family: monospace; opacity: 0.9; margin-left: 3px; font-size: 0.6rem;}
+        .k-body span.nak { font-size: 0.55rem; text-transform: uppercase; margin-left: 4px; opacity: 0.8; font-style: italic;}
+
+        .summary-dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+        .score-card { background: radial-gradient(circle at top right, rgba(241, 196, 15, 0.08), transparent); border: 2px solid var(--accent-gold); text-align: center; padding: 30px 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .score-display { font-size: 4rem; font-weight: 800; color: var(--accent-gold); line-height: 1; margin: 10px 0; text-shadow: 0 0 20px rgba(241, 196, 15, 0.4); }
+        .verdict-badge { padding: 6px 16px; border-radius: 20px; font-weight: bold; text-transform: uppercase; font-size: 0.9rem; letter-spacing: 1px; margin-top: 10px; }
+        
+        .verdict-excellent { background-color: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; }
+        .verdict-good { background-color: rgba(52, 152, 219, 0.2); color: #3498db; border: 1px solid #3498db; }
+        .verdict-average { background-color: rgba(241, 196, 15, 0.2); color: #f1c40f; border: 1px solid #f1c40f; }
+        .verdict-notrec { background-color: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid #ef4444; }
+
+        .dosha-card { display: flex; flex-direction: column; justify-content: space-between; }
+        .dosha-status-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed rgba(255,255,255,0.1); }
+        .dosha-status-item:last-child { border-bottom: none; }
+        .status-clear { color: var(--accent-green); font-weight: bold; }
+        .status-blocked { color: var(--accent-red); font-weight: bold; }
+
+        .milan-ledger { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .milan-ledger th, .milan-ledger td { padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        .milan-ledger th { background-color: rgba(10, 15, 26, 0.6); color: var(--accent-gold); font-weight: 600; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px; }
+        .milan-ledger tr:hover td { background-color: rgba(255,255,255,0.02); }
+        
+        .points-pill { display: inline-block; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 0.9rem; }
+        .points-full { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .points-partial { background: rgba(241, 196, 15, 0.15); color: #f1c40f; }
+        .points-zero { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+        .deep-analysis-section { display: flex; flex-direction: column; gap: 20px; }
+        .deep-card { background: linear-gradient(to bottom, rgba(15, 23, 42, 0.8), rgba(10, 15, 26, 0.9)); border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; }
+        .deep-card-header { background-color: rgba(15, 23, 42, 0.9); padding: 16px 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+        .deep-card-header h3 { margin: 0; font-size: 1.2rem; color: var(--text-light); display: flex; align-items: center; gap: 12px; }
+        .deep-card-header h3 span.num { background: rgba(255,255,255,0.05); width: 28px; height: 28px; border-radius: 50%; display: inline-flex; justify-content: center; align-items: center; font-size: 0.9rem; color: var(--accent-gold); border: 1px solid rgba(241, 196, 15, 0.3); }
+        .deep-card-body { padding: 25px; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; border-top: 1px solid rgba(255,255,255,0.02); }
+        
+        .dimension-block { background: rgba(0, 0, 0, 0.2); padding: 18px; border-radius: 8px; border-left: 3px solid var(--border-color); }
+        .dim-astrological { border-left-color: #3498db; }
+        .dim-spiritual { border-left-color: #9b59b6; }
+        .dim-scientific { border-left-color: #2ecc71; }
+        .dimension-block h4 { margin-top: 0; margin-bottom: 10px; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        .dim-astrological h4 { color: #3498db; }
+        .dim-spiritual h4 { color: #9b59b6; }
+        .dim-scientific h4 { color: #2ecc71; }
+        .dimension-block p { margin: 0; font-size: 0.92rem; line-height: 1.6; color: #d1d5db; text-align: justify; }
+
+        .cancellation-log { font-size: 0.85rem; color: #a3e4d7; margin-top: 5px; font-style: italic; display: block; }
+        
+        @media (max-width: 900px) {
+            .profile-summary { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Automated Ashtakoot & Manglik Engine</h1>
+            <p>Match Making</p>
+            <div id="google_translate_element" class="translate-wrapper"></div>
+        </header>
+
+        <div class="input-row">
+            <div class="panel panel-boy">
+                <h2>♂️ Vara (Boy) Birth Data</h2>
+                <div class="form-grid">
+                    <div class="full-width">
+                        <label>Generic Profile Name</label>
+                        <input type="text" id="boyName" value="Vara_Profile" placeholder="Enter name">
+                    </div>
+                    <div>
+                        <label>Date of Birth</label>
+                        <input type="date" id="boyDate" value="2000-01-01">
+                    </div>
+                    <div>
+                        <label>Time of Birth</label>
+                        <input type="time" id="boyTime" step="1" value="12:00:00">
+                    </div>
+                    <div class="full-width">
+                        <label>Place of Birth</label>
+                        <div class="search-wrapper">
+                            <input type="text" id="boyPlace" value="New Delhi, Delhi, India" autocomplete="off">
+                            <ul id="boySuggestions" class="suggestions"></ul>
+                        </div>
+                    </div>
+                    <div class="coords-row full-width">
+                        <div><label>Latitude</label><input type="text" id="boyLat" value="28.6139" readonly></div>
+                        <div><label>Longitude</label><input type="text" id="boyLon" value="77.2090" readonly></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel panel-girl">
+                <h2>♀️ Kanya (Girl) Birth Data</h2>
+                <div class="form-grid">
+                    <div class="full-width">
+                        <label>Generic Profile Name</label>
+                        <input type="text" id="girlName" value="Kanya_Profile" placeholder="Enter name">
+                    </div>
+                    <div>
+                        <label>Date of Birth</label>
+                        <input type="date" id="girlDate" value="2000-01-02">
+                    </div>
+                    <div>
+                        <label>Time of Birth</label>
+                        <input type="time" id="girlTime" step="1" value="12:00:00">
+                    </div>
+                    <div class="full-width">
+                        <label>Place of Birth</label>
+                        <div class="search-wrapper">
+                            <input type="text" id="girlPlace" value="New Delhi, Delhi, India" autocomplete="off">
+                            <ul id="girlSuggestions" class="suggestions"></ul>
+                        </div>
+                    </div>
+                    <div class="coords-row full-width">
+                        <div><label>Latitude</label><input type="text" id="girlLat" value="28.6139" readonly></div>
+                        <div><label>Longitude</label><input type="text" id="girlLon" value="77.2090" readonly></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn-submit" id="calcBtn" onclick="executeCosmicEngine()">⚡ Sync with Cosmos & Calculate</button>
+        <div id="apiStatus"></div>
+
+        <div id="resultsArea" class="results-container">
+            
+            <div class="profile-summary">
+                <div class="p-card panel-boy">
+                    <h3>♂️ Vara Cosmic Blueprint</h3>
+                    <div class="p-data" id="boyAstroData"></div>
+                    <div id="boyCharts" class="charts-container"></div>
+                </div>
+                <div class="p-card panel-girl">
+                    <h3>♀️ Kanya Cosmic Blueprint</h3>
+                    <div class="p-data" id="girlAstroData"></div>
+                    <div id="girlCharts" class="charts-container"></div>
+                </div>
+            </div>
+
+            <div class="summary-dashboard">
+                <div class="panel score-card">
+                    <label style="font-size: 1rem; color: var(--accent-gold);">Ashtakoot Milan Score</label>
+                    <div class="score-display" id="totalScoreOut">0 / 36</div>
+                    <div id="verdictBadge" class="verdict-badge">Calculating...</div>
+                </div>
+
+                <div class="panel dosha-card">
+                    <h3 style="margin: 0 0 15px 0; color: #ef4444; text-transform: uppercase; font-size: 1.1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">🔥 Manglik Dosha Ledger</h3>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <div class="dosha-status-item">
+                            <span>Vara (Boy) Status:</span>
+                            <div style="text-align:right">
+                                <span id="boyManglikStatus">-</span>
+                                <span id="boyManglikLog" class="cancellation-log"></span>
+                            </div>
+                        </div>
+                        <div class="dosha-status-item">
+                            <span>Kanya (Girl) Status:</span>
+                            <div style="text-align:right">
+                                <span id="girlManglikStatus">-</span>
+                                <span id="girlManglikLog" class="cancellation-log"></span>
+                            </div>
+                        </div>
+                        <div class="dosha-status-item" style="margin-top: 5px; padding-top: 10px; border-top: 1px solid var(--border-color);">
+                            <strong>Final Dosha Verdict:</strong>
+                            <span id="finalManglikVerdict">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3 style="margin-top:0; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 1px;">📊 Ashtakoot Guna Breakdowns</h3>
+                <div style="overflow-x: auto;">
+                    <table class="milan-ledger">
+                        <thead>
+                            <tr>
+                                <th>Factor (Koota)</th>
+                                <th>Max</th>
+                                <th>Vara Attribute</th>
+                                <th>Kanya Attribute</th>
+                                <th>Scored</th>
+                                <th>Karmic Friction</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ledgerBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="deep-analysis-section">
+                <h2 style="color: var(--accent-gold); margin: 10px 0 0 0; text-transform: uppercase; text-align: center; letter-spacing: 1px;">🕉️ Multi-Dimensional Analysis</h2>
+                <div id="deepExplanationsContainer"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'en',
+                // hi: Hindi, mr: Marathi, bn: Bengali, te: Telugu, ta: Tamil, gu: Gujarati, kn: Kannada, ml: Malayalam, pa: Punjabi, ur: Urdu, or: Odia, as: Assamese
+                includedLanguages: 'en,hi,mr,bn,te,ta,gu,kn,ml,pa,ur,or,as', 
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+            }, 'google_translate_element');
+        }
+    </script>
+    <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+    <script>
+        const rashiOrder = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"];
+        const rashiLords = { "Aries": "Mars", "Taurus": "Venus", "Gemini": "Mercury", "Cancer": "Moon", "Leo": "Sun", "Virgo": "Mercury", "Libra": "Venus", "Scorpio": "Mars", "Sagittarius": "Jupiter", "Capricorn": "Saturn", "Aquarius": "Saturn", "Pisces": "Jupiter" };
+        
+        const nakshatraShort = [
+            "Asw", "Bha", "Kri", "Roh", "Mrg", "Ard", "Pun", "Pus", "Asl", "Mag",
+            "P. Pha", "U. Pha", "Has", "Chi", "Swa", "Vis", "Anu", "Jye", "Mul",
+            "P. Ash", "U. Ash", "Shr", "Dha", "Sha", "P. Bha", "U. Bha", "Rev"
+        ];
+        
+        const nakshatrasList = [
+            "Ashwini", "Bharani", "Krittika", "Rohini", "Mrigashira", "Ardra", "Punarvasu", "Pushya", "Ashlesha", "Magha", 
+            "Purva Phalguni", "Uttara Phalguni", "Hasta", "Chitra", "Swati", "Vishakha", "Anuradha", "Jyeshtha", "Mula", 
+            "Purva Ashadha", "Uttara Ashadha", "Shravana", "Dhanishta", "Shatabhisha", "Purva Bhadrapada", "Uttara Bhadrapada", "Revati"
+        ];
+
+        const validGrahas = ['Surya', 'Chandra', 'Mangal', 'Budh', 'Guru', 'Shukra', 'Shani', 'Rahu', 'Ketu', 'Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn'];
+        const grahaMap = {
+            'Sun': 'Su', 'Surya': 'Su',
+            'Moon': 'Mo', 'Chandra': 'Mo',
+            'Mars': 'Ma', 'Mangal': 'Ma',
+            'Mercury': 'Me', 'Budh': 'Me',
+            'Jupiter': 'Ju', 'Guru': 'Ju',
+            'Venus': 'Ve', 'Shukra': 'Ve',
+            'Saturn': 'Sa', 'Shani': 'Sa',
+            'Rahu': 'Ra',
+            'Ketu': 'Ke'
+        };
+
+        const houseColors = [
+            "#fca5a5", // H1 
+            "#fdba74", // H2
+            "#fef08a", // H3
+            "#a7f3d0", // H4
+            "#99f6e4", // H5
+            "#bae6fd", // H6
+            "#f472b6", // H7 - Highlight (Spouse)
+            "#c084fc", // H8 - Highlight (Longevity)
+            "#e879f9", // H9
+            "#f87171", // H10
+            "#38bdf8", // H11
+            "#fbbf24"  // H12
+        ];
+
+        const housePolygons = [
+            "50,0 25,25 50,50 75,25", // H1
+            "0,0 50,0 25,25",         // H2
+            "0,0 25,25 0,50",         // H3
+            "0,50 25,25 50,50 25,75", // H4 
+            "0,100 0,50 25,75",       // H5
+            "0,100 25,75 50,100",     // H6
+            "50,100 25,75 50,50 75,75",// H7
+            "100,100 50,100 75,75",   // H8
+            "100,100 75,75 100,50",   // H9
+            "100,50 75,75 50,50 75,25",// H10
+            "100,0 100,50 75,25",     // H11
+            "100,0 75,25 50,0"        // H12
+        ];
+
+        const houseCenters = [ 
+            [50, 25], [25, 8.5], [8.5, 25], [25, 50], [8.5, 75], [25, 91.5], 
+            [50, 75], [75, 91.5], [91.5, 75], [75, 50], [91.5, 25], [75, 8.5] 
+        ];
+
+        function getHouseFill(idx) {
+            if (idx === 6) return "rgba(244, 114, 182, 0.20)"; // H7
+            if (idx === 7) return "rgba(192, 132, 252, 0.20)"; // H8
+            if ([0, 1, 3, 11].includes(idx)) return "rgba(255, 255, 255, 0.03)";
+            return "rgba(0, 0, 0, 0.2)";
+        }
+
+        const nakshatraProperties = {
+            "Ashwini": { varna: "Kshatriya", vashya: "Chatushpad", yoni: "Horse", gana: "Deva", nadi: "Adi" },
+            "Bharani": { varna: "Shudra", vashya: "Manav", yoni: "Elephant", gana: "Manushya", nadi: "Madhya" },
+            "Krittika": { varna: "Brahmin", vashya: "Chatushpad", yoni: "Sheep", gana: "Rakshasa", nadi: "Antya" },
+            "Rohini": { varna: "Brahmin", vashya: "Chatushpad", yoni: "Serpent", gana: "Manushya", nadi: "Antya" },
+            "Mrigashira": { varna: "Servant", vashya: "Chatushpad", yoni: "Serpent", gana: "Deva", nadi: "Madhya" },
+            "Ardra": { varna: "Kshatriya", vashya: "Manav", yoni: "Dog", gana: "Manushya", nadi: "Adi" },
+            "Punarvasu": { varna: "Vaishya", vashya: "Manav", yoni: "Cat", gana: "Deva", nadi: "Adi" },
+            "Pushya": { varna: "Kshatriya", vashya: "Chatushpad", yoni: "Sheep", gana: "Deva", nadi: "Madhya" },
+            "Ashlesha": { varna: "Brahmin", vashya: "Jalachar", yoni: "Cat", gana: "Rakshasa", nadi: "Antya" },
+            "Magha": { varna: "Kshatriya", vashya: "Chatushpad", yoni: "Rat", gana: "Rakshasa", nadi: "Antya" },
+            "Purva Phalguni": { varna: "Shudra", vashya: "Manav", yoni: "Rat", gana: "Manushya", nadi: "Madhya" },
+            "Uttara Phalguni": { varna: "Kshatriya", vashya: "Manav", yoni: "Cow", gana: "Manushya", nadi: "Adi" },
+            "Hasta": { varna: "Vaishya", vashya: "Manav", yoni: "Buffalo", gana: "Deva", nadi: "Adi" },
+            "Chitra": { varna: "Kshatriya", vashya: "Manav", yoni: "Tiger", gana: "Rakshasa", nadi: "Madhya" },
+            "Swati": { varna: "Kshatriya", vashya: "Manav", yoni: "Buffalo", gana: "Deva", nadi: "Antya" },
+            "Vishakha": { varna: "Brahmin", vashya: "Manav", yoni: "Tiger", gana: "Rakshasa", nadi: "Antya" },
+            "Anuradha": { varna: "Shudra", vashya: "Keet", yoni: "Hare", gana: "Deva", nadi: "Madhya" },
+            "Jyeshtha": { varna: "Brahmin", vashya: "Keet", yoni: "Hare", gana: "Rakshasa", nadi: "Adi" },
+            "Mula": { varna: "Kshatriya", vashya: "Manav", yoni: "Dog", gana: "Rakshasa", nadi: "Adi" },
+            "Purva Ashadha": { varna: "Vaishya", vashya: "Jalachar", yoni: "Monkey", gana: "Manushya", nadi: "Madhya" },
+            "Uttara Ashadha": { varna: "Kshatriya", vashya: "Manav", yoni: "Mongoose", gana: "Deva", nadi: "Antya" },
+            "Shravana": { varna: "Brahmin", vashya: "Manav", yoni: "Monkey", gana: "Deva", nadi: "Antya" },
+            "Dhanishta": { varna: "Vaishya", vashya: "Chatushpad", yoni: "Lion", gana: "Rakshasa", nadi: "Madhya" },
+            "Shatabhisha": { varna: "Shudra", vashya: "Manav", yoni: "Horse", gana: "Rakshasa", nadi: "Adi" },
+            "Purva Bhadrapada": { varna: "Brahmin", vashya: "Manav", yoni: "Lion", gana: "Manushya", nadi: "Adi" },
+            "Uttara Bhadrapada": { varna: "Kshatriya", vashya: "Jalachar", yoni: "Cow", gana: "Deva", nadi: "Madhya" },
+            "Revati": { varna: "Vaishya", vashya: "Jalachar", yoni: "Elephant", gana: "Deva", nadi: "Antya" }
+        };
+
+        const planetaryFriendship = {
+            "Sun": { "Sun": 5, "Moon": 5, "Mars": 5, "Mercury": 4, "Jupiter": 5, "Venus": 0, "Saturn": 0 },
+            "Moon": { "Sun": 5, "Moon": 5, "Mars": 4, "Mercury": 5, "Jupiter": 4, "Venus": 1, "Saturn": 1 },
+            "Mars": { "Sun": 5, "Moon": 4, "Mars": 5, "Mercury": 0, "Jupiter": 5, "Venus": 4, "Saturn": 1 },
+            "Mercury": { "Sun": 4, "Moon": 1, "Mars": 1, "Mercury": 5, "Jupiter": 1, "Venus": 5, "Saturn": 4 },
+            "Jupiter": { "Sun": 5, "Moon": 4, "Mars": 5, "Mercury": 0, "Jupiter": 5, "Venus": 0, "Saturn": 4 },
+            "Venus": { "Sun": 0, "Moon": 1, "Mars": 4, "Mercury": 5, "Jupiter": 1, "Venus": 5, "Saturn": 5 },
+            "Saturn": { "Sun": 0, "Moon": 0, "Mars": 0, "Mercury": 5, "Jupiter": 4, "Venus": 5, "Saturn": 5 }
+        };
+
+        const yoniMatrix = {
+            "Horse": { "Horse": 4, "Elephant": 2, "Sheep": 2, "Serpent": 3, "Dog": 1, "Cat": 2, "Rat": 1, "Cow": 2, "Buffalo": 3, "Tiger": 1, "Hare": 2, "Monkey": 3, "Lion": 1, "Mongoose": 2 },
+            "Elephant": { "Horse": 2, "Elephant": 4, "Sheep": 3, "Serpent": 3, "Dog": 2, "Cat": 2, "Rat": 0, "Cow": 2, "Buffalo": 2, "Tiger": 1, "Hare": 2, "Monkey": 2, "Lion": 3, "Mongoose": 2 },
+            "Sheep": { "Horse": 2, "Elephant": 3, "Sheep": 4, "Serpent": 2, "Dog": 1, "Cat": 2, "Rat": 2, "Cow": 3, "Buffalo": 3, "Tiger": 1, "Hare": 2, "Monkey": 2, "Lion": 0, "Mongoose": 2 },
+            "Serpent": { "Horse": 3, "Elephant": 3, "Sheep": 2, "Serpent": 4, "Dog": 2, "Cat": 1, "Rat": 1, "Cow": 1, "Buffalo": 1, "Tiger": 2, "Hare": 2, "Monkey": 2, "Lion": 2, "Mongoose": 0 },
+            "Dog": { "Horse": 1, "Elephant": 2, "Sheep": 1, "Serpent": 2, "Dog": 4, "Cat": 1, "Rat": 2, "Cow": 2, "Buffalo": 1, "Tiger": 1, "Hare": 0, "Monkey": 2, "Lion": 1, "Mongoose": 2 },
+            "Cat": { "Horse": 2, "Elephant": 2, "Sheep": 2, "Serpent": 1, "Dog": 1, "Cat": 4, "Rat": 0, "Cow": 2, "Buffalo": 2, "Tiger": 1, "Hare": 3, "Monkey": 2, "Lion": 1, "Mongoose": 1 },
+            "Rat": { "Horse": 1, "Elephant": 0, "Sheep": 2, "Serpent": 1, "Dog": 2, "Cat": 0, "Rat": 4, "Cow": 2, "Buffalo": 2, "Tiger": 2, "Hare": 2, "Monkey": 1, "Lion": 2, "Mongoose": 2 },
+            "Cow": { "Horse": 2, "Elephant": 2, "Sheep": 3, "Serpent": 1, "Dog": 2, "Cat": 2, "Rat": 2, "Cow": 4, "Buffalo": 3, "Tiger": 0, "Hare": 2, "Monkey": 2, "Lion": 1, "Mongoose": 2 },
+            "Buffalo": { "Horse": 3, "Elephant": 2, "Sheep": 3, "Serpent": 1, "Dog": 1, "Cat": 2, "Rat": 2, "Cow": 3, "Buffalo": 4, "Tiger": 1, "Hare": 2, "Monkey": 2, "Lion": 1, "Mongoose": 2 },
+            "Tiger": { "Horse": 1, "Elephant": 1, "Sheep": 1, "Serpent": 2, "Dog": 1, "Cat": 1, "Rat": 2, "Cow": 0, "Buffalo": 1, "Tiger": 4, "Hare": 1, "Monkey": 1, "Lion": 2, "Mongoose": 2 },
+            "Hare": { "Horse": 2, "Elephant": 2, "Sheep": 2, "Serpent": 2, "Dog": 0, "Cat": 3, "Rat": 2, "Cow": 2, "Buffalo": 2, "Tiger": 1, "Hare": 4, "Monkey": 2, "Lion": 1, "Mongoose": 2 },
+            "Monkey": { "Horse": 3, "Elephant": 2, "Sheep": 2, "Serpent": 2, "Dog": 2, "Cat": 2, "Rat": 1, "Cow": 2, "Buffalo": 2, "Tiger": 1, "Hare": 2, "Monkey": 4, "Lion": 1, "Mongoose": 3 },
+            "Lion": { "Horse": 1, "Elephant": 3, "Sheep": 0, "Serpent": 2, "Dog": 1, "Cat": 1, "Rat": 2, "Cow": 1, "Buffalo": 1, "Tiger": 2, "Hare": 1, "Monkey": 1, "Lion": 4, "Mongoose": 2 },
+            "Mongoose": { "Horse": 2, "Elephant": 2, "Sheep": 2, "Serpent": 0, "Dog": 2, "Cat": 1, "Rat": 2, "Cow": 2, "Buffalo": 2, "Tiger": 2, "Hare": 2, "Monkey": 3, "Lion": 2, "Mongoose": 4 }
+        };
+
+        const varnaPoints = { "Brahmin": 4, "Kshatriya": 3, "Vaishya": 2, "Shudra": 1 };
+
+        function attachAutocomplete(inputId, suggestionsId, latId, lonId) {
+            const searchInput = document.getElementById(inputId);
+            const suggestionsList = document.getElementById(suggestionsId);
+            let debounceTimer;
+
+            searchInput.addEventListener('input', function() {
+                clearTimeout(debounceTimer);
+                if (this.value.trim().length < 3) { suggestionsList.style.display = 'none'; return; }
+
+                debounceTimer = setTimeout(async () => {
+                    try {
+                        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(this.value.trim())}&limit=5`);
+                        const data = await res.json();
+                        suggestionsList.innerHTML = '';
+                        
+                        if (data && data.length > 0) {
+                            suggestionsList.style.display = 'block';
+                            data.forEach(place => {
+                                const li = document.createElement('li');
+                                li.innerText = place.display_name;
+                                li.onclick = function() {
+                                    searchInput.value = place.name || place.display_name.split(',')[0];
+                                    document.getElementById(latId).value = parseFloat(place.lat).toFixed(4);
+                                    document.getElementById(lonId).value = parseFloat(place.lon).toFixed(4);
+                                    suggestionsList.style.display = 'none';
+                                };
+                                suggestionsList.appendChild(li);
+                            });
+                        } else { suggestionsList.style.display = 'none'; }
+                    } catch (err) { suggestionsList.style.display = 'none'; }
+                }, 600);
+            });
+            document.addEventListener('click', e => { if (e.target !== searchInput) suggestionsList.style.display = 'none'; });
+        }
+
+        window.onload = function() {
+            attachAutocomplete('boyPlace', 'boySuggestions', 'boyLat', 'boyLon');
+            attachAutocomplete('girlPlace', 'girlSuggestions', 'girlLat', 'girlLon');
+        };
+
+        async function fetchKundliData(prefix) {
+            const date = document.getElementById(prefix + 'Date').value;
+            let time = document.getElementById(prefix + 'Time').value;
+            if (time.split(':').length === 2) time += ":00";
+            const lat = document.getElementById(prefix + 'Lat').value;
+            const lon = document.getElementById(prefix + 'Lon').value;
+
+            const res = await fetch('https://eprashala.pythonanywhere.com/calculate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ date, time, lat, lon })
+            });
+            const data = await res.json();
+            if (data.status !== 'success') throw new Error(`Server Error for ${prefix}`);
+            return data;
+        }
+
+        function extractAstroDetails(data) {
+            let allBodies = [];
+            data.houses.forEach(h => h.forEach(b => { if (b.abs_deg !== undefined) allBodies.push(b); }));
+            
+            const moon = allBodies.find(b => b.name === 'Chandra' || b.name === 'Moon');
+            const mars = allBodies.find(b => b.name === 'Mangal' || b.name === 'Mars');
+            
+            const ascBody = allBodies.find(b => b.name === 'Ascendant' || b.name === 'Lagna' || b.name.includes('Asc'));
+            const ascDeg = ascBody ? ascBody.abs_deg : null;
+
+            const moonRashiNum = Math.floor(moon.abs_deg / 30) + 1;
+            const nakIdx = Math.floor(moon.abs_deg / (360/27));
+            const lagnaNum = data.asc_sign;
+            
+            const marsSignNum = Math.floor(mars.abs_deg / 30) + 1;
+            const marsHouse = (marsSignNum - lagnaNum + 12) % 12 + 1;
+
+            return {
+                rashiName: rashiOrder[moonRashiNum - 1],
+                nakName: nakshatrasList[nakIdx],
+                nakIdx: nakIdx,
+                lagnaNum: lagnaNum,
+                ascDeg: ascDeg,
+                marsHouse: marsHouse,
+                marsSign: marsSignNum,
+                allBodies: allBodies
+            };
+        }
+
+        function buildKundliSVGChart(allBodies, lagnaSign, isD9, ascDeg, title) {
+            let houses = Array(12).fill(null).map(() => ({ signNum: 0, signName: '', bodies: [] }));
+            
+            let currentLagnaSign = lagnaSign;
+            if (isD9) {
+                let absoluteAsc = ascDeg !== null ? ascDeg : ((lagnaSign - 1) * 30 + 15);
+                currentLagnaSign = (Math.floor(absoluteAsc / (10/3)) % 12) + 1;
+            }
+
+            for (let i = 0; i < 12; i++) {
+                let sNum = (currentLagnaSign + i - 1) % 12 + 1;
+                houses[i].signNum = sNum;
+                houses[i].signName = rashiOrder[sNum - 1];
+            }
+
+            allBodies.forEach(b => {
+                if (!validGrahas.includes(b.name)) return;
+                
+                let pSignNum, pDegree;
+                
+                if (isD9) {
+                    pSignNum = (Math.floor(b.abs_deg / (10/3)) % 12) + 1;
+                    pDegree = (b.abs_deg % (10/3)) * 9; 
+                } else {
+                    pSignNum = Math.floor(b.abs_deg / 30) + 1;
+                    pDegree = b.abs_deg % 30;
+                }
+                
+                let hIndex = (pSignNum - currentLagnaSign + 12) % 12;
+                
+                let deg = Math.floor(pDegree);
+                let min = Math.floor((pDegree - deg) * 60);
+                let degStr = `${deg}°${min}'`;
+                
+                let nakIdx = Math.floor(b.abs_deg / (360/27));
+                
+                houses[hIndex].bodies.push({
+                    abbr: grahaMap[b.name] || b.name.substring(0,2),
+                    degStr: degStr,
+                    nakName: nakshatraShort[nakIdx]
+                });
+            });
+
+            let svgContent = `<svg class="kundli-svg" viewBox="0 0 100 100" preserveAspectRatio="none">`;
+            houses.forEach((h, idx) => {
+                let pts = housePolygons[idx];
+                let strokeCol = houseColors[idx];
+                let fillCol = getHouseFill(idx);
+                svgContent += `<polygon points="${pts}" fill="${fillCol}" stroke="${strokeCol}" stroke-width="0.7" opacity="0.9"/>`;
+            });
+            svgContent += `</svg>`;
+
+            let html = `
+                <div class="kundli-wrapper">
+                    <div class="kundli-title" translate="no">${title}</div>
+                    <div class="bphs-legend">BPHS Context: H7 (Kalatra) & H8 (Mangalya) Highlighted</div>
+                    <div class="kundli-box">
+                        <div class="kundli-chart-area">
+                            ${svgContent}
+            `;
+
+            houses.forEach((h, idx) => {
+                let pos = houseCenters[idx];
+                let strokeCol = houseColors[idx];
+                
+                let bodyHtml = h.bodies.map(b => 
+                    `<div class="k-body" style="color: ${strokeCol}; border-color: ${strokeCol}40;">
+                        <strong>${b.abbr}</strong> 
+                        <span class="deg" style="color: ${strokeCol}e6">${b.degStr}</span>
+                        <span class="nak" style="color: ${strokeCol}cc">${b.nakName}</span>
+                    </div>`
+                ).join('');
+                
+                html += `
+                    <div class="kundli-house-content" style="left: ${pos[0]}%; top: ${pos[1]}%;">
+                        <div class="k-sign-header" style="color: ${strokeCol}">
+                            <span class="k-sign-num">${h.signNum}</span>
+                            <span class="k-sign-name">${h.signName}</span>
+                        </div>
+                        ${bodyHtml}
+                    </div>
+                `;
+            });
+
+            html += `</div></div></div>`;
+            return html;
+        }
+
+        async function executeCosmicEngine() {
+            const btn = document.getElementById('calcBtn');
+            const statusMsg = document.getElementById('apiStatus');
+            btn.disabled = true;
+            statusMsg.innerText = "Consulting astronomical coordinates via pythonanywhere server...";
+            document.getElementById('resultsArea').style.display = 'none';
+
+            try {
+                const [boyRes, girlRes] = await Promise.all([ fetchKundliData('boy'), fetchKundliData('girl') ]);
+                
+                const bDetails = extractAstroDetails(boyRes);
+                const gDetails = extractAstroDetails(girlRes);
+
+                document.getElementById('boyAstroData').innerHTML = `
+                    <strong>Moon Rashi:</strong> ${bDetails.rashiName}<br>
+                    <strong>Nakshatra:</strong> ${bDetails.nakName}<br>
+                    <strong>Lagna:</strong> ${rashiOrder[bDetails.lagnaNum - 1]}<br>
+                    <strong>Mars:</strong> House ${bDetails.marsHouse} (in ${rashiOrder[bDetails.marsSign - 1]})
+                `;
+                document.getElementById('girlAstroData').innerHTML = `
+                    <strong>Moon Rashi:</strong> ${gDetails.rashiName}<br>
+                    <strong>Nakshatra:</strong> ${gDetails.nakName}<br>
+                    <strong>Lagna:</strong> ${rashiOrder[gDetails.lagnaNum - 1]}<br>
+                    <strong>Mars:</strong> House ${gDetails.marsHouse} (in ${rashiOrder[gDetails.marsSign - 1]})
+                `;
+
+                document.getElementById('boyCharts').innerHTML = 
+                    buildKundliSVGChart(bDetails.allBodies, bDetails.lagnaNum, false, bDetails.ascDeg, '♂️ Vara D1 Rasi') +
+                    buildKundliSVGChart(bDetails.allBodies, bDetails.lagnaNum, true, bDetails.ascDeg, '♂️ Vara D9 Navamsa');
+
+                document.getElementById('girlCharts').innerHTML = 
+                    buildKundliSVGChart(gDetails.allBodies, gDetails.lagnaNum, false, gDetails.ascDeg, '♀️ Kanya D1 Rasi') +
+                    buildKundliSVGChart(gDetails.allBodies, gDetails.lagnaNum, true, gDetails.ascDeg, '♀️ Kanya D9 Navamsa');
+
+                const ashtakootResult = calculateAshtakoot(bDetails, gDetails);
+                renderAshtakoot(ashtakootResult);
+                
+                const bManglik = evaluateManglikDosha(bDetails);
+                const gManglik = evaluateManglikDosha(gDetails);
+                renderManglik(bManglik, gManglik);
+
+                generateDeepExplanations(ashtakootResult.details);
+
+                document.getElementById('resultsArea').style.display = 'flex';
+                document.getElementById('resultsArea').scrollIntoView({ behavior: 'smooth' });
+            } catch (err) {
+                console.error(err);
+                alert("Failed to connect to the backend server. Make sure your PythonAnywhere app is active and allows CORS.");
+            } finally {
+                btn.disabled = false;
+                statusMsg.innerText = "";
+            }
+        }
+
+        function calculateAshtakoot(bDetails, gDetails) {
+            const b = nakshatraProperties[bDetails.nakName];
+            const g = nakshatraProperties[gDetails.nakName];
+            let details = [];
+            let aggregate = 0;
+
+            let varnaScored = (varnaPoints[b.varna] >= varnaPoints[g.varna]) ? 1 : 0;
+            aggregate += varnaScored;
+            details.push({ name: "Varna (वर्ण)", max: 1, boy: b.varna, girl: g.varna, score: varnaScored });
+
+            let vashyaScored = 0;
+            if (b.vashya === g.vashya) vashyaScored = 2;
+            else if ((b.vashya === "Manav" && g.vashya === "Chatushpad") || (b.vashya === "Chatushpad" && g.vashya === "Jalachar")) vashyaScored = 1;
+            aggregate += vashyaScored;
+            details.push({ name: "Vashya (वश्य)", max: 2, boy: b.vashya, girl: g.vashya, score: vashyaScored });
+
+            const countBtoG = ((gDetails.nakIdx - bDetails.nakIdx + 27) % 9) || 9;
+            const countGtoB = ((bDetails.nakIdx - gDetails.nakIdx + 27) % 9) || 9;
+            const bad = [3, 5, 7];
+            let taraScored = (!bad.includes(countBtoG) && !bad.includes(countGtoB)) ? 3 : (!bad.includes(countBtoG) || !bad.includes(countGtoB) ? 1.5 : 0);
+            aggregate += taraScored;
+            details.push({ name: "Tara (तारा)", max: 3, boy: `Rem ${countBtoG}`, girl: `Rem ${countGtoB}`, score: taraScored });
+
+            let yoniScored = yoniMatrix[b.yoni][g.yoni];
+            aggregate += yoniScored;
+            details.push({ name: "Yoni (योनि)", max: 4, boy: b.yoni, girl: g.yoni, score: yoniScored });
+
+            const bLord = rashiLords[bDetails.rashiName];
+            const gLord = rashiLords[gDetails.rashiName];
+            let maitriScored = 0;
+            if (bLord === gLord) maitriScored = 5;
+            else {
+                const bg = planetaryFriendship[bLord][gLord];
+                const gb = planetaryFriendship[gLord][bLord];
+                if (bg === 5 && gb === 5) maitriScored = 5;
+                else if ((bg === 5 && gb === 4) || (bg === 4 && gb === 5) || (bg === 4 && gb === 4)) maitriScored = 4;
+                else if (bg >= 4 || gb >= 4) maitriScored = 3;
+                else if (bg === 1 && gb === 1) maitriScored = 1;
+            }
+            aggregate += maitriScored;
+            details.push({ name: "Graha Maitri (मैत्री)", max: 5, boy: bLord, girl: gLord, score: maitriScored });
+
+            let ganaScored = 0, ganaDosha = false;
+            if (b.gana === g.gana) ganaScored = 6;
+            else if ((b.gana === "Deva" && g.gana === "Manushya") || (b.gana === "Manushya" && g.gana === "Deva")) ganaScored = 5;
+            else if (b.gana === "Deva" && g.gana === "Rakshasa") { ganaScored = 1; ganaDosha = true; }
+            else if (b.gana === "Manushya" && g.gana === "Rakshasa") { ganaDosha = true; }
+            aggregate += ganaScored;
+            details.push({ name: "Gana (गण)", max: 6, boy: b.gana, girl: g.gana, score: ganaScored, dosha: ganaDosha });
+
+            const bIdx = rashiOrder.indexOf(bDetails.rashiName);
+            const gIdx = rashiOrder.indexOf(gDetails.rashiName);
+            const diff = ((gIdx - bIdx + 12) % 12) + 1;
+            let bhakootScored = 7, bhakootDosha = false;
+            if ([2, 12, 5, 9, 6, 8].includes(diff)) {
+                if (bLord !== gLord) { bhakootScored = 0; bhakootDosha = true; }
+            }
+            aggregate += bhakootScored;
+            details.push({ name: "Bhakoot (भकूट)", max: 7, boy: bDetails.rashiName, girl: gDetails.rashiName, score: bhakootScored, dosha: bhakootDosha });
+
+            let nadiScored = (b.nadi === g.nadi) ? 0 : 8;
+            let nadiDosha = (b.nadi === g.nadi);
+            aggregate += nadiScored;
+            details.push({ name: "Nadi (नाड़ी)", max: 8, boy: b.nadi, girl: g.nadi, score: nadiScored, dosha: nadiDosha });
+
+            return { aggregate, details, nadiDosha, bhakootDosha, ganaDosha };
+        }
+
+        function evaluateManglikDosha(profile) {
+            const doshaHouses = [1, 2, 4, 7, 8, 12];
+            let isPlacedInDoshaHouse = doshaHouses.includes(profile.marsHouse);
+            
+            let status = isPlacedInDoshaHouse ? "Active Dosha" : "Non-Manglik";
+            let type = "Non-Manglik";
+            let active = isPlacedInDoshaHouse;
+            let logs = [];
+
+            if (isPlacedInDoshaHouse) {
+                if ([1, 7, 8].includes(profile.marsHouse)) type = "Poorna Manglik (Strong)";
+                else type = "Anshik Manglik (Mild)";
+
+                if ([1, 8, 10].includes(profile.marsSign)) {
+                    active = false; status = "Cancelled";
+                    logs.push("Cancelled: Mars is in its Own (Swa) or Exalted (Ucha) Rashi.");
+                }
+                else if (profile.lagnaNum === 11 && profile.marsHouse === 8) {
+                    active = false; status = "Cancelled";
+                    logs.push("Cancelled: Parashari Kumbh Lagna exception for 8th house Mars.");
+                }
+                else {
+                    const jup = profile.allBodies.find(b => b.name === 'Guru' || b.name === 'Jupiter');
+                    const ven = profile.allBodies.find(b => b.name === 'Shukra' || b.name === 'Venus');
+                    
+                    if (jup) {
+                        const jupSign = Math.floor(jup.abs_deg / 30) + 1;
+                        const jupAspects = [(jupSign + 4)%12||12, (jupSign + 6)%12||12, (jupSign + 8)%12||12];
+                        if (jupAspects.includes(profile.marsSign)) {
+                            active = false; status = "Cancelled";
+                            logs.push("Cancelled: Powerful benefic aspect of Jupiter on Mars.");
+                        }
+                    }
+                    if (active && ven) {
+                        const venSign = Math.floor(ven.abs_deg / 30) + 1;
+                        const venAspects = [(venSign + 6)%12||12]; 
+                        if (venAspects.includes(profile.marsSign)) {
+                            active = false; status = "Cancelled";
+                            logs.push("Cancelled: Benefic aspect of Venus on Mars.");
+                        }
+                    }
+                }
+            }
+
+            return { isPlacedInDoshaHouse, active, type, status, logs };
+        }
+
+        function renderAshtakoot(res) {
+            const badge = document.getElementById('verdictBadge');
+            document.getElementById('totalScoreOut').innerText = `${res.aggregate} / 36`;
+            
+            if (res.aggregate >= 32) { badge.innerText = "Excellent (उत्तम)"; badge.className = "verdict-badge verdict-excellent"; }
+            else if (res.aggregate >= 25) { badge.innerText = "Good (शुभ)"; badge.className = "verdict-badge verdict-good"; }
+            else if (res.aggregate >= 18) { badge.innerText = "Average (सामान्य)"; badge.className = "verdict-badge verdict-average"; }
+            else { badge.innerText = "Not Recommended (अशुभ)"; badge.className = "verdict-badge verdict-notrec"; }
+
+            const tbody = document.getElementById('ledgerBody');
+            tbody.innerHTML = '';
+            res.details.forEach(item => {
+                let pClass = item.score === item.max ? 'points-full' : (item.score > 0 ? 'points-partial' : 'points-zero');
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${item.name}</strong></td>
+                        <td>${item.max}</td>
+                        <td style="color:var(--accent-blue)">${item.boy}</td>
+                        <td style="color:var(--accent-red)">${item.girl}</td>
+                        <td><span class="points-pill ${pClass}">${item.score}</span></td>
+                        <td style="font-size:0.85rem; color:var(--text-muted)">${item.dosha ? '⚠️ High Friction' : 'Balanced'}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderManglik(b, g) {
+            document.getElementById('boyManglikStatus').innerText = b.type;
+            document.getElementById('boyManglikStatus').className = b.active ? "status-blocked" : "status-clear";
+            document.getElementById('boyManglikLog').innerText = b.logs.join(' ');
+
+            document.getElementById('girlManglikStatus').innerText = g.type;
+            document.getElementById('girlManglikStatus').className = g.active ? "status-blocked" : "status-clear";
+            document.getElementById('girlManglikLog').innerText = g.logs.join(' ');
+
+            let finalV = document.getElementById('finalManglikVerdict');
+            if (b.active && g.active) {
+                finalV.innerText = "Safe: Dosha Neutralized (Both are Active Manglik)";
+                finalV.className = "status-clear";
+            } else if (!b.active && !g.active) {
+                finalV.innerText = "Safe: Clear Compatibility";
+                finalV.className = "status-clear";
+            } else {
+                finalV.innerText = "⚠️ Conflict: One partner has un-cancelled Dosha. Friction predicted.";
+                finalV.className = "status-blocked";
+            }
+        }
+
+        const analyticalExplanations = {
+            "Varna (वर्ण)": {
+                astrological: "Measures ego alignment and inherent life focus across traditional energetic divisions (Brahmin, Kshatriya, Vaishya, Shudra). Full resonance is established when the Vara's energetic capacity naturally supports or matches the Kanya's, ensuring leadership roles aren't inherently contested.",
+                spiritual: "Determines the evolutionary resonance of both souls. Correct alignment prevents subtle, destructive energetic clashes between the core egos, allowing mutual spiritual pursuits.",
+                scientific: "Correlates closely with psychological archetype frameworks (like MBTI) and career orientations. Matching ensures common cognitive values and information processing habits."
+            },
+            "Vashya (वश्य)": {
+                astrological: "Identifies interpersonal power dynamics using archetypes (Manav, Chatushpad, Jalachar, etc.). It calculates magnetic control—who holds the instinctual upper hand, or if mutual surrender is astrologically viable.",
+                spiritual: "Signifies magnetic etheric attraction between auric fields. Compatibility here allows both individualities to blend without generating toxic patterns of emotional codependency.",
+                scientific: "Represents subconscious dominance-submission psychological models and natural conflict resolution strategies essential for peaceful domestic management."
+            },
+            "Tara (तारा)": {
+                astrological: "Calculates destiny alignment by evaluating the relative distances between natal Moons across nine cosmic categories. It intercepts specific toxic currents (Vipat, Pratyari, Vadha) which trigger sudden misfortune or health crashes.",
+                spiritual: "Tracks karmic intersections and 'timing' synchronization. Ensures the life paths and planetary dashas flow constructively rather than repeatedly blocking each other.",
+                scientific: "Reflects biological circadian rhythms and neurological adaptability to stress, indicating whether partners will neurologically exhaust each other over decades."
+            },
+            "Yoni (योनि)": {
+                astrological: "Classifies physical intimacy compatibility based on 14 animal archetypes mapped directly to Nakshatras. It is the fundamental check against natural biological animosity (e.g., Cow-Tiger, Dog-Hare).",
+                spiritual: "Anchors the primeval, terrestrial life-force elements. Complete compatibility facilitates profound energetic merging during physical vulnerability.",
+                scientific: "Directly mirrors immunological fit (MHC complex) and pheromonal attraction, critical for robust sexual dynamics and positive neurochemical dopamine loops."
+            },
+            "Graha Maitri (मैत्री)": {
+                astrological: "The psychological pillar. Evaluates planetary friendships of both Moon sign lords (e.g., Sun and Mars are friends, Mercury and Mars are enemies). It checks if their base emotional operating systems are hostile or allied.",
+                spiritual: "Indicates how transparently partners perceive each other's inner emotional reality, nurturing shared philosophical and ethical values.",
+                scientific: "Correlates with long-term intellectual alignment, shared linguistic processing speeds, and the ability to sustain deep communicative intimacy without exhaustion."
+            },
+            "Gana (गण)": {
+                astrological: "Analyzes the tripartite temperament: Deva (Sattvic/Divine), Manushya (Rajasic/Human), Rakshasa (Tamasic/Fierce). A Deva-Rakshasa mismatch triggers severe volatility due to opposing baseline worldviews.",
+                spiritual: "Reflects the soul's energetic frequency response. Matching prevents ambient energetic friction and secures long-term household peace.",
+                scientific: "Maps to fundamental neuro-behavioral baselines, primarily the amygdala's threat-response thresholds. Mismatches mean partners fundamentally misunderstand each other's stress triggers."
+            },
+            "Bhakoot (भकूट)": {
+                astrological: "Evaluates the Zodiacal geometry between Moons. Destructive angles like Shadashtak (6-8 axis) breed disease/debt, while Dwindwadasa (2-12 axis) creates severe financial hemorrhaging and emotional isolation.",
+                spiritual: "Measures mutual aura amplification. Positive geometric angles ensure that bringing the auras together generates abundance rather than energetic depletion.",
+                scientific: "Mirrors macro-behavioral dynamics regarding resource sharing, long-term financial planning, and household risk management."
+            },
+            "Nadi (नाड़ी)": {
+                astrological: "The ultimate 8-point parameter evaluating nervous system baselines: Adi (Vata), Madhya (Pitta), Antya (Kapha). Identical Nadis cause Nadi Dosha, which Parashara states threatens health and progeny.",
+                spiritual: "Determines the foundational 'Pranic' flow. Opposing nadis create a complete circuit, while identical ones cause the circuit to short, draining vital life-force.",
+                scientific: "Acts as a sophisticated ancient framework for genetic diversification. Asserts that similar bio-electrical constitutions lack the necessary variance for robust offspring immunity."
+            }
+        };
+
+        function generateDeepExplanations(details) {
+            const container = document.getElementById('deepExplanationsContainer');
+            container.innerHTML = '';
+            details.forEach((koota, index) => {
+                const expData = analyticalExplanations[koota.name];
+                if (!expData) return;
+
+                let pClass = koota.score === koota.max ? 'points-full' : (koota.score > 0 ? 'points-partial' : 'points-zero');
+                container.innerHTML += `
+                    <div class="deep-card">
+                        <div class="deep-card-header">
+                            <h3><span class="num">${index + 1}</span> ${koota.name}</h3>
+                            <span class="points-pill ${pClass}">Score: ${koota.score} / ${koota.max}</span>
+                        </div>
+                        <div class="deep-card-body">
+                            <div class="dimension-block dim-astrological">
+                                <h4>🔭 Astrological Rule</h4><p>${expData.astrological}</p>
+                            </div>
+                            <div class="dimension-block dim-spiritual">
+                                <h4>🕉️ Spiritual Reality</h4><p>${expData.spiritual}</p>
+                            </div>
+                            <div class="dimension-block dim-scientific">
+                                <h4>🧬 Scientific Correlation</h4><p>${expData.scientific}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ashtakavarga Engine - BPHS</title>
+    <style>
+        :root { --bg-color: #f4f6f9; --panel-bg: white; --text-color: #2c3e50; --accent: #d35400; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); margin: 0; padding: 20px; color: var(--text-color); }
+        
+        .header { text-align: center; margin-bottom: 25px; }
+        .header h1 { margin: 0; color: #2980b9; text-transform: uppercase; letter-spacing: 2px; }
+        .header p { color: #7f8c8d; margin-top: 5px; font-weight: bold; }
+        
+        .dashboard { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; max-width: 1400px; margin: 0 auto; }
+        
+        .panel { background: var(--panel-bg); padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .panel h3 { margin-top: 0; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; color: var(--accent); }
+        
+        .sav-container { display: flex; flex-direction: column; align-items: center; }
+        .sav-stats { display: flex; gap: 10px; margin-top: 15px; font-size: 13px; font-weight: bold; flex-wrap: wrap; justify-content: center; }
+        .stat-badge { padding: 6px 12px; border-radius: 20px; color: white; }
+        
+        .bav-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; }
+        .bav-card { display: flex; flex-direction: column; align-items: center; background: #fdfaf6; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .bav-card h4 { margin: 0 0 10px 0; color: #2c3e50; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+        
+        canvas { max-width: 100%; height: auto; }
+        
+        #loading { text-align: center; font-size: 18px; color: #e67e22; font-weight: bold; padding: 40px; grid-column: 1 / -1; }
+        
+        @media (max-width: 900px) {
+            .dashboard { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Ashtakavarga Engine</h1>
+        <p id="nativeContext">Initializing Cosmic Data...</p>
+    </div>
+
+    <div id="loading">Calculating 337 Bindus across 8 dimensions... Please wait.</div>
+
+    <div class="dashboard" id="mainDashboard" style="display: none;">
+        <div class="panel sav-container">
+            <h3>Sarvashtakavarga (SAV)</h3>
+            <canvas id="savCanvas" width="400" height="400"></canvas>
+            <div class="sav-stats" style="margin-bottom: 15px;">
+                <div class="stat-badge" style="background: #27ae60;">> 30: Auspicious</div>
+                <div class="stat-badge" style="background: #f39c12;">25-30: Average</div>
+                <div class="stat-badge" style="background: #c0392b;">< 25: Friction</div>
+            </div>
+            
+            <h3 style="margin-top: 10px; width: 100%; font-size: 16px;">BAV Legend (Individual Planets)</h3>
+            <div class="sav-stats" style="margin-top: 0;">
+                <div class="stat-badge" style="background: #27ae60;">5 to 8 Bindus: Thriving</div>
+                <div class="stat-badge" style="background: #f39c12;">4 Bindus: Neutral</div>
+                <div class="stat-badge" style="background: #c0392b;">0 to 3 Bindus: Weak/Starved</div>
+            </div>
+            
+            <p style="font-size: 13px; color: #7f8c8d; text-align: center; margin-top: 20px; line-height: 1.5; padding-top: 15px; border-top: 1px solid #eee;">
+                The <strong>SAV chart</strong> shows the sum of benefics for each sign. Transits through high-bindu signs (>30) yield excellent results.<br><br>
+                The <strong>BAV charts</strong> show a specific planet's power. If a planet holds 5+ bindus in a sign, it acts as a strong benefic there, even if debilitated. If it holds 1-3 bindus, it struggles to deliver positive results.
+            </p>
+        </div>
+
+        <div class="panel">
+            <h3>Bhinnashtakavarga (BAV) Breakdowns</h3>
+            <div class="bav-grid" id="bavGridContainer">
+                </div>
+        </div>
+    </div>
+	
+	<div class="panel" style="grid-column: 1 / -1; margin-top: 10px; border-left: 4px solid #27ae60;">
+            <h3 style="margin-bottom: 5px; color: #27ae60;">🤖 AI Consultation Prompt Builder</h3>
+            <p style="font-size: 13px; color: #7f8c8d; margin-top: 0; margin-bottom: 15px;">Ask a specific question about these scores (e.g., "How will Saturn's upcoming Gochar through Pisces affect my career given its BAV bindus?").</p>
+            
+            <div style="display: flex; gap: 15px; align-items: stretch; flex-wrap: wrap;">
+                <textarea id="aiQuestion" placeholder="Enter your specific question regarding transits or Ashtakavarga..." style="flex: 1; min-width: 300px; padding: 12px; border: 1px solid #bdc3c7; border-radius: 6px; font-family: inherit; font-size: 14px; resize: vertical; min-height: 50px; outline: none;"></textarea>
+                <button onclick="generateAshtakavargaPrompt()" style="background: #27ae60; color: white; border: none; padding: 0 25px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.3s; white-space: nowrap; box-shadow: 0 4px 6px rgba(39, 174, 96, 0.2);">✨ Copy Prompt for Gemini 3.1</button>
+            </div>
+        </div>
+
+<script>
+
+// --- Add these variables near the top of your script ---
+let globalSavArray = [];
+let globalBavResults = {};
+let globalAscSign = 1;
+
+// ==========================================
+// 1. CLASSICAL BPHS BINDU TABLES (Total: 337)
+// ==========================================
+const bphsTables = {
+    'Surya': { 
+        'Surya':[1,2,4,7,8,9,10,11], 'Chandra':[3,6,10,11], 'Mangal':[1,2,4,7,8,9,10,11], 
+        'Budh':[3,5,6,9,10,11,12], 'Guru':[5,6,9,11], 'Shukra':[6,7,12], 'Shani':[1,2,4,7,8,9,10,11], 'Lagna':[3,4,6,10,11,12] 
+    },
+    'Chandra': { 
+        'Surya':[3,6,7,8,10,11], 'Chandra':[1,3,6,7,10,11], 'Mangal':[2,3,5,6,9,10,11], 
+        'Budh':[1,3,4,5,7,8,10,11], 'Guru':[1,4,7,8,10,11,12], 'Shukra':[3,4,5,7,9,10,11], 'Shani':[3,5,6,11], 'Lagna':[3,6,10,11] 
+    },
+    'Mangal': { 
+        'Surya':[3,5,6,10,11], 'Chandra':[3,6,11], 'Mangal':[1,2,4,7,8,9,10,11], 
+        'Budh':[3,5,6,11], 'Guru':[6,10,11,12], 'Shukra':[6,8,11,12], 'Shani':[1,4,7,8,9,10,11], 'Lagna':[1,3,6,10,11] 
+    },
+    'Budh': { 
+        'Surya':[5,6,9,11,12], 'Chandra':[2,4,6,8,10,11], 'Mangal':[1,2,4,7,8,9,10,11], 
+        'Budh':[1,3,5,6,9,10,11,12], 'Guru':[6,8,11,12], 'Shukra':[1,2,3,4,5,8,9,11], 'Shani':[1,2,4,7,8,9,10,11], 'Lagna':[1,2,4,6,8,10,11] 
+    },
+    'Guru': { 
+        'Surya':[1,2,3,4,7,8,9,10,11], 'Chandra':[2,5,7,9,11], 'Mangal':[1,2,4,7,8,10,11], 
+        'Budh':[1,2,4,5,6,9,10,11], 'Guru':[1,2,3,4,7,8,10,11], 'Shukra':[2,5,6,9,10,11], 'Shani':[3,5,6,12], 'Lagna':[1,2,4,5,6,7,9,10,11] 
+    },
+    'Shukra': { 
+        'Surya':[8,11,12], 'Chandra':[1,2,3,4,5,8,9,11,12], 'Mangal':[3,5,6,9,11,12], 
+        'Budh':[3,5,6,9,11], 'Guru':[5,8,9,10,11], 'Shukra':[1,2,3,4,5,8,9,10,11], 'Shani':[3,4,5,8,9,10,11], 'Lagna':[1,2,3,4,5,8,9,11] 
+    },
+    'Shani': { 
+        'Surya':[1,2,4,7,8,10,11], 'Chandra':[3,6,11], 'Mangal':[3,5,6,10,11], 
+        'Budh':[6,8,9,10,11,12], 'Guru':[5,6,11,12], 'Shukra':[6,11,12], 'Shani':[3,5,6,11], 'Lagna':[1,3,4,6,10,11] 
+    }
+};
+
+const planetOrder = ['Surya', 'Chandra', 'Mangal', 'Budh', 'Guru', 'Shukra', 'Shani'];
+const pColors = { 'Surya':'#f39c12', 'Chandra':'#7f8c8d', 'Mangal':'#e74c3c', 'Budh':'#27ae60', 'Guru':'#d35400', 'Shukra':'#8e44ad', 'Shani':'#2c3e50' };
+const pSymbols = { 'Surya':'☉', 'Chandra':'☽', 'Mangal':'♂', 'Budh':'☿', 'Guru':'♃', 'Shukra':'♀', 'Shani':'♄' };
+
+// ==========================================
+// 2. INITIALIZATION & DATA FETCHING
+// ==========================================
+window.onload = async () => {
+    const name = localStorage.getItem('ashName') || 'Native';
+    const date = localStorage.getItem('ashDate');
+    const time = localStorage.getItem('ashTime');
+    const lat = localStorage.getItem('ashLat');
+    const lon = localStorage.getItem('ashLon');
+
+    if (!date) {
+        document.getElementById('loading').innerHTML = "No chart data found. Please calculate a chart in the main engine first.";
+        return;
+    }
+
+    document.getElementById('nativeContext').innerText = `${name} | ${date} | ${time}`;
+    await fetchChartData(date, time, lat, lon);
+};
+
+async function fetchChartData(date, time, lat, lon) {
+    try {
+        const response = await fetch('https://eprashala.pythonanywhere.com/calculate', { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({ date, time, lat, lon }) 
+        });
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            processAshtakavarga(data.houses, data.asc_sign);
+        } else {
+            document.getElementById('loading').innerText = "API Error: " + data.message;
+        }
+    } catch (err) {
+        document.getElementById('loading').innerText = "Network Error: Cannot connect to Eprashala Backend.";
+    }
+}
+
+// ==========================================
+// 3. CORE ASHTAKAVARGA MATH
+// ==========================================
+function processAshtakavarga(housesData, ascSign) {
+    let positions = { 'Lagna': ascSign };
+    
+    housesData.forEach(houseArr => {
+        houseArr.forEach(body => {
+            if (planetOrder.includes(body.name)) {
+                positions[body.name] = Math.floor(body.abs_deg / 30) + 1;
+            }
+        });
+    });
+
+    let savArray = new Array(12).fill(0); 
+    let bavResults = {};
+
+    planetOrder.forEach(targetPlanet => {
+        let bavArray = new Array(12).fill(0); 
+        const sources = ['Surya', 'Chandra', 'Mangal', 'Budh', 'Guru', 'Shukra', 'Shani', 'Lagna'];
+        
+        sources.forEach(sourceName => {
+            const sourceRashi = positions[sourceName];
+            const beneficHouses = bphsTables[targetPlanet][sourceName];
+            
+            beneficHouses.forEach(houseOffset => {
+                let targetRashi = (sourceRashi + houseOffset - 2) % 12 + 1; 
+                bavArray[targetRashi - 1] += 1; 
+                savArray[targetRashi - 1] += 1; 
+            });
+        });
+        
+        bavResults[targetPlanet] = bavArray;
+    });
+	
+	// --- Add this block inside processAshtakavarga ---
+    globalSavArray = savArray;
+    globalBavResults = bavResults;
+    globalAscSign = ascSign;
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('mainDashboard').style.display = 'grid';
+    
+    drawDiamondChart('savCanvas', 'Sarvashtakavarga (SAV)', savArray, ascSign, true);
+    
+    const bavGrid = document.getElementById('bavGridContainer');
+    bavGrid.innerHTML = '';
+    
+    planetOrder.forEach(planet => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'bav-card';
+        // Header with Symbol
+        wrapper.innerHTML = `
+            <h4 style="color:${pColors[planet]}">
+                <span style="font-size:22px;">${pSymbols[planet]}</span> ${planet} BAV
+            </h4>
+            <canvas id="bav_${planet}" width="220" height="220"></canvas>
+        `;
+        bavGrid.appendChild(wrapper);
+        
+        drawDiamondChart(`bav_${planet}`, planet, bavResults[planet], ascSign, false);
+    });
+}
+
+// ==========================================
+// 4. CHART DRAWING LOGIC (North Indian)
+// ==========================================
+function drawDiamondChart(canvasId, title, rashiBindusArray, ascSign, isSav) {
+    const canvas = document.getElementById(canvasId);
+    if(!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width;
+    const pad = 20;
+    
+    ctx.clearRect(0, 0, w, w);
+    
+    ctx.strokeStyle = '#34495e'; 
+    ctx.lineWidth = isSav ? 2.5 : 1.5;
+    ctx.beginPath(); 
+    ctx.rect(pad, pad, w - 2*pad, w - 2*pad);
+    ctx.moveTo(pad, pad); ctx.lineTo(w - pad, w - pad); 
+    ctx.moveTo(w - pad, pad); ctx.lineTo(pad, w - pad);
+    ctx.moveTo(w/2, pad); ctx.lineTo(w - pad, w/2); 
+    ctx.lineTo(w/2, w - pad); ctx.lineTo(pad, w/2);
+    ctx.closePath(); 
+    ctx.stroke();
+
+    const coords = [
+        {x: w/2, y: w*0.25},    // H1 (Center Top)
+        {x: w*0.25, y: w*0.12}, // H2
+        {x: w*0.12, y: w*0.25}, // H3
+        {x: w*0.25, y: w*0.5},  // H4
+        {x: w*0.12, y: w*0.75}, // H5
+        {x: w*0.25, y: w*0.88}, // H6
+        {x: w/2, y: w*0.75},    // H7 (Center Bottom)
+        {x: w*0.75, y: w*0.88}, // H8
+        {x: w*0.88, y: w*0.75}, // H9
+        {x: w*0.75, y: w*0.5},  // H10
+        {x: w*0.88, y: w*0.25}, // H11
+        {x: w*0.75, y: w*0.12}  // H12
+    ];
+
+    for(let houseIdx = 0; houseIdx < 12; houseIdx++) {
+        const rashiInHouse = (ascSign + houseIdx - 1) % 12 + 1; 
+        const bindus = rashiBindusArray[rashiInHouse - 1]; 
+        
+        const cx = coords[houseIdx].x;
+        const cy = coords[houseIdx].y;
+        
+        let textColor = '#2c3e50';
+        
+        // Exact Color Logic as requested
+        if (isSav) {
+            if (bindus >= 30) textColor = '#27ae60';      
+            else if (bindus < 25) textColor = '#c0392b';  
+        } else {
+            if (bindus >= 5) textColor = '#27ae60';       // Green for 5 and above
+            else if (bindus === 4) textColor = '#f39c12'; // Orange for exactly 4
+            else if (bindus <= 3) textColor = '#c0392b';  // Red for 1-3 (or 0)
+        }
+
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillStyle = textColor;
+        ctx.font = `bold ${isSav ? 32 : 22}px Arial`;
+        ctx.fillText(bindus.toString(), cx, cy);
+        
+        ctx.fillStyle = '#7f8c8d';
+        ctx.font = `bold ${isSav ? 12 : 10}px Arial`;
+        let rX = cx; let rY = cy + (isSav ? 25 : 18);
+        if([2,3,5,6,8,9,11,12].includes(houseIdx+1)) rY = cy + (isSav ? 18 : 12); 
+        
+        ctx.fillText(`[${rashiInHouse}]`, rX, rY);
+    }
+}
+
+// ==========================================
+// 5. AI PROMPT GENERATOR
+// ==========================================
+function generateAshtakavargaPrompt() {
+    if (!globalSavArray || globalSavArray.length === 0) {
+        alert("Please wait for the chart to finish calculating.");
+        return;
+    }
+
+    const question = document.getElementById('aiQuestion').value.trim();
+    const name = localStorage.getItem('ashName') || 'Native';
+    const date = localStorage.getItem('ashDate') || 'Unknown Date';
+    const time = localStorage.getItem('ashTime') || 'Unknown Time';
+
+    const rashis = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
+    const ascName = rashis[globalAscSign - 1];
+
+    let prompt = `SYSTEM PROTOCOL: INCOGNITO MODE. Act as Maharishi Parashara and an expert in Vedic Jyotish Ashtakavarga evaluation.\n\n`;
+    prompt += `I am presenting the high-precision Ashtakavarga data for ${name} (Born: ${date} at ${time}).\n\n`;
+
+    if (question) {
+        prompt += `### THE CLIENT'S PRIMARY QUESTION:\n"${question}"\n\nPlease structure your analysis to directly answer this question using the astrological data below.\n\n`;
+    }
+
+    prompt += `### ASHTAKAVARGA DATA (Calculated via 337-Bindu BPHS Matrix)\n`;
+    prompt += `Ascendant (Lagna): Sign ${globalAscSign} (${ascName})\n\n`;
+
+    prompt += `SARVASHTAKAVARGA (SAV) TOTAL BINDUS PER RASHI:\n`;
+    for (let i = 0; i < 12; i++) {
+        // Displaying in House order (from Ascendant onwards)
+        const rashiNum = (globalAscSign + i - 1) % 12 + 1;
+        prompt += `House ${i + 1} (Sign ${rashiNum} - ${rashis[rashiNum-1]}): ${globalSavArray[rashiNum-1]} Bindus\n`;
+    }
+
+    prompt += `\nBHINNASHTAKAVARGA (BAV) BINDUS (Format -> Sign Number: Bindus):\n`;
+    const planets = ['Surya', 'Chandra', 'Mangal', 'Budh', 'Guru', 'Shukra', 'Shani'];
+    
+    planets.forEach(p => {
+        let bindusList = [];
+        // Map 1-12 signs
+        for(let i = 1; i <= 12; i++) {
+            bindusList.push(`S${i}:${globalBavResults[p][i-1]}`);
+        }
+        prompt += `- ${p}: ${bindusList.join(' | ')}\n`;
+    });
+
+    prompt += `\nINSTRUCTIONS FOR ANALYSIS:
+1. Evaluate the SAV strength for relevant transits or natal houses related to the question.
+2. Identify where specific planets (BAV) are thriving (5+ bindus) or starved (0-3 bindus) and how that impacts the Gochar.
+3. Conclude with a definitive, actionable answer based strictly on these mathematical weights.`;
+
+    navigator.clipboard.writeText(prompt).then(() => {
+        alert("Prompt copied to clipboard! Paste this into Gemini 3.1 for your expert reading.");
+    }).catch(err => {
+        console.error("Clipboard write failed", err);
+        alert("Failed to copy prompt. Please check your browser permissions.");
+    });
+}
+
+
+</script>
+</body>
+</html>
