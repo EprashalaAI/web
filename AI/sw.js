@@ -4,6 +4,7 @@ const ASSETS_TO_CACHE = [
     '/index.html',
     '/in.js',
     '/intry.js',
+	'/intry3.js',
     '/swar.js',
     '/swara.js',
     '/tools.html',
