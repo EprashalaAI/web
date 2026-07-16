@@ -1,0 +1,2155 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>संपूर्ण वैदिक पंचांग आणि विज्ञान - गुरुजी</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.8.0/suncalc.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Baloo+Bhai+2:wght@400;600;700&family=Mukta:wght@300;400;600;700&display=swap');
+        
+        body { 
+            font-family: 'Mukta', sans-serif; 
+            background-color: #fffaf0; 
+            background-image: url('https://www.transparenttextures.com/patterns/cream-paper.png');
+        }
+        h1, h2, h3, h4, .title-font { font-family: 'Baloo Bhai 2', sans-serif; line-height: 1.4; }
+        
+        .bhagwa-gradient { background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%); }
+        .science-box { background: #f0fdf4; border-left: 4px solid #16a34a; }
+        .danger-science-box { background: #fef2f2; border-left: 4px solid #dc2626; }
+        .astro-box { background: #fff7ed; border-left: 4px solid #ea580c; }
+        
+        .card {
+            background: white; border-top: 4px solid #ea580c;
+            box-shadow: 0 10px 25px -5px rgba(234, 88, 12, 0.1), 0 8px 10px -6px rgba(234, 88, 12, 0.1);
+        }
+        
+        .suggestions-box {
+            position: absolute; top: 100%; left: 0; right: 0; background: white;
+            border: 1px solid #ea580c; border-radius: 0.5rem; z-index: 50; max-height: 200px;
+            overflow-y: auto; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); display: none;
+        }
+        .suggestion-item { padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #fbd38d; }
+        .suggestion-item:hover { background-color: #fffaf0; color: #ea580c; font-weight: bold; }
+        
+        .loader {
+            border: 4px solid #fed7aa; border-top: 4px solid #ea580c; border-radius: 50%;
+            width: 40px; height: 40px; animation: spin 1s linear infinite; display: none; margin: 0 auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Ninad AI UI Styles */
+        .ai-floating-btn {
+            position: fixed; bottom: 30px; right: 30px; width: 65px; height: 65px;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            font-size: 28px; box-shadow: 0 10px 25px rgba(124, 58, 237, 0.5); cursor: pointer; z-index: 100;
+            transition: all 0.3s ease; border: 3px solid #ddd6fe;
+        }
+        .ai-floating-btn:hover { transform: scale(1.1); box-shadow: 0 15px 35px rgba(124, 58, 237, 0.6); }
+        .ai-floating-btn.listening { animation: pulse-glow 1.5s infinite; background: #dc2626; border-color: #fca5a5; }
+        
+        .ai-chat-panel {
+            position: fixed; bottom: 110px; right: 30px; width: 350px; background: white;
+            border-radius: 1rem; box-shadow: 0 20px 40px rgba(0,0,0,0.2); z-index: 99;
+            display: none; flex-direction: column; border: 2px solid #ddd6fe; overflow: hidden;
+        }
+        .ai-header { background: #4f46e5; color: white; padding: 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+        .ai-body { padding: 15px; max-height: 300px; overflow-y: auto; background: #fafafa; font-size: 0.95rem; }
+        .ai-input-area { display: flex; padding: 10px; border-top: 1px solid #e5e7eb; background: white; }
+        .ai-input { flex-grow: 1; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 20px; outline: none; }
+        
+        .api-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6);
+            display: none; justify-content: center; align-items: center; z-index: 1000;
+        }
+        .api-modal-content { background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 400px; }
+        
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+            70% { box-shadow: 0 0 0 20px rgba(220, 38, 38, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+        }
+		
+		/* Floating Language Selector UI */
+.lang-floating-box {
+    position: fixed; 
+    bottom: 30px; 
+    left: 30px; 
+    background: white;
+    border: 2px solid #ea580c; 
+    border-radius: 30px; 
+    padding: 8px 16px;
+    box-shadow: 0 10px 25px rgba(234, 88, 12, 0.3); 
+    z-index: 100;
+    display: flex; 
+    align-items: center; 
+    gap: 10px;
+    transition: all 0.3s ease;
+}
+
+.lang-floating-box:hover {
+    transform: scale(1.05); 
+    box-shadow: 0 15px 35px rgba(234, 88, 12, 0.4);
+}
+
+.lang-floating-box select {
+    border: none; 
+    outline: none; 
+    background: transparent;
+    font-weight: bold; 
+    color: #ea580c; 
+    cursor: pointer; 
+    font-size: 16px;
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 5px;
+}
+/* Mobile Responsiveness for Floating Buttons */
+@media (max-width: 768px) {
+    /* 1. Shrink the Language Box and push it closer to the left edge */
+    .lang-floating-box {
+        bottom: 20px; 
+        left: 15px; 
+        padding: 5px 12px; 
+        gap: 5px; 
+    }
+    
+    /* 2. Reduce the text size inside the dropdown */
+    .lang-floating-box select {
+        font-size: 13px; 
+        max-width: 100px; /* Prevents long language names from stretching it too far */
+    }
+
+    /* 3. Reduce the size of the language icon */
+    .lang-floating-box .fa-language {
+        font-size: 1.2rem; 
+    }
+
+    /* 4. Optional: Shrink the Ninad AI button slightly for perfect symmetry */
+    .ai-floating-btn {
+        bottom: 20px; 
+        right: 15px; 
+        width: 55px; 
+        height: 55px; 
+        font-size: 22px; 
+    }
+}
+/* Prevent Google Translate from shifting the body down */
+body {
+    top: 0px !important;
+}
+
+/* Hide the default Google Translate top banner */
+.goog-te-banner-frame.skiptranslate {
+    display: none !important;
+}
+
+/* Hide the Google Translate tooltip that appears on hover */
+.goog-tooltip {
+    display: none !important;
+}
+.goog-tooltip:hover {
+    display: none !important;
+}
+.goog-text-highlight {
+    background-color: transparent !important;
+    border: none !important; 
+    box-shadow: none !important;
+}
+
+
+
+    </style>
+</head>
+<body class="text-gray-800 min-h-screen pb-10 relative">
+
+<header class="bhagwa-gradient text-white py-6 shadow-lg mb-8 text-center relative overflow-hidden">
+        
+        <!-- Left Side: 3D Khagol Button -->
+        <a href="tm3.html" class="absolute top-4 left-4 md:top-6 md:left-8 bg-white/20 hover:bg-white/30 text-white border border-white/40 px-3 py-2 rounded-xl font-bold transition-all duration-300 flex items-center gap-2 backdrop-blur-md shadow-md z-10 hover:scale-105" title="३D खगोल दर्शन">
+            <i class="fas fa-globe-asia text-lg md:text-xl text-yellow-200"></i> 
+            <span class="text-sm md:text-base hidden sm:inline">३D खगोल</span>
+        </a>
+
+        <!-- Center Text (Pushed down slightly on mobile so it doesn't hit the buttons) -->
+        <div class="container mx-auto px-4 mt-10 sm:mt-0 relative z-0">
+            <p class="text-yellow-200 text-lg md:text-xl font-bold mb-3 tracking-widest drop-shadow-md">।। श्री गणेशाय नमः ।।</p>
+            <h1 class="text-4xl md:text-5xl font-bold mb-2">संपूर्ण वैदिक पंचांग आणि विज्ञान</h1>
+            <p class="text-orange-100 text-lg">।। महर्षी पराशर आणि सूर्य सिद्धांतावर आधारित ।।</p>
+        </div>
+
+        <!-- Right Side: Kundli Button -->
+        <a href="kundli.html" class="absolute top-4 right-4 md:top-6 md:right-8 bg-white/20 hover:bg-white/30 text-white border border-white/40 px-3 py-2 rounded-xl font-bold transition-all duration-300 flex items-center gap-2 backdrop-blur-md shadow-md z-10 hover:scale-105" title="कुंडली">
+            <i class="fas fa-scroll text-lg md:text-xl text-yellow-200"></i> 
+            <span class="text-sm md:text-base hidden sm:inline">कुंडली</span>
+        </a>
+
+    </header>
+
+    <div class="container mx-auto px-4 max-w-6xl">
+
+        <div class="card rounded-xl p-5 mb-8 bg-gradient-to-r from-orange-50 to-white flex flex-col md:flex-row justify-between items-center border border-orange-200 shadow-sm">
+            <div class="text-center md:text-left mb-4 md:mb-0 w-full md:w-1/2 border-b md:border-b-0 md:border-r border-orange-200 pr-4">
+                <h3 class="text-orange-800 font-bold text-xl mb-1">सध्याची वेळ (इंग्रजी)</h3>
+                <p id="clock-gregorian" class="text-2xl font-semibold text-gray-800 tracking-wide">लोड होत आहे...</p>
+                <!-- Hora Single Line -->
+        <div class="mt-3 flex flex-wrap items-center justify-center md:justify-start gap-3">
+            <p class="text-md text-orange-900 font-bold bg-orange-100/80 px-3 py-1 rounded border border-orange-200 m-0">सध्याची होरा (Hora): <span id="current-hora" class="text-red-700">...</span></p>
+            <a href="#" onclick="showHoraList(); return false;" class="text-sm text-indigo-600 hover:text-indigo-800 hover:underline transition-colors font-semibold"><i class="fas fa-list-ul mr-1"></i>संपूर्ण दिवसाची होरा पहा</a>
+        </div>
+        <!-- Yamardha Single Line -->
+        <div class="mt-3 flex flex-wrap items-center justify-center md:justify-start gap-3">
+            <p class="text-md text-green-900 font-bold bg-green-100/80 px-3 py-1 rounded border border-green-200 shadow-sm m-0">सध्याचा यामार्ध (Shift): <span id="current-yamardha" class="text-green-700 font-extrabold">...</span></p>
+            <a href="#" onclick="showYamardhaList(); return false;" class="text-sm text-green-600 hover:text-green-800 hover:underline transition-colors font-semibold"><i class="fas fa-sun mr-1"></i>संपूर्ण दिवसाचे ८ यामार्ध पहा</a>
+        </div>
+			</div>
+            <div class="text-center md:text-right w-full md:w-1/2 pl-4">
+                <h3 class="text-orange-800 font-bold text-xl mb-1">सध्याची वेळ (हिंदू वैदिक)</h3>
+                <p id="clock-hindu" class="text-lg font-bold text-red-700">लोड होत आहे...</p>
+			<p class="text-sm text-gray-600 mt-1">सूर्योदयापासून मोजलेली: घटी (२४ मि), पळे (२४ से), विपळे (०.४ से)</p>
+			 <div class="mt-2 bg-indigo-50 inline-block px-4 py-2 rounded-xl border border-indigo-200 text-center shadow-sm w-full max-w-sm">
+				<p class="text-md text-indigo-800 font-bold mb-1">तात्कालिक लग्न (Rashi): <span id="live-lagna" class="text-indigo-950 text-lg">...</span></p>
+				<div id="live-lagna-details" class="flex justify-center items-center gap-1 hidden flex-wrap">
+					<span id="live-lagna-lord" class="text-[11px] px-2 py-0.5 rounded border shadow-sm text-indigo-800 bg-white border-indigo-200 font-bold"></span>
+					<span id="live-lagna-tattva" class="text-[11px] px-2 py-0.5 rounded border shadow-sm font-bold flex items-center justify-center"></span>
+					<span id="live-lagna-swabhava" class="text-[11px] px-2 py-0.5 rounded border shadow-sm font-bold flex items-center justify-center"></span>
+				</div>
+				
+				<div class="border-t border-indigo-200 pt-2 mt-2">
+					<p class="text-sm text-indigo-800 font-bold mb-1">लग्न नक्षत्र: <span id="live-lagna-nak" class="text-indigo-950 text-base">...</span></p>
+					<div id="live-nak-details" class="flex justify-center items-center gap-1 hidden flex-wrap">
+						<span id="live-nak-lord" class="text-[11px] px-2 py-0.5 rounded border shadow-sm text-indigo-800 bg-white border-indigo-200 font-bold"></span>
+						<span id="live-nak-tattva" class="text-[11px] px-2 py-0.5 rounded border shadow-sm font-bold flex items-center justify-center"></span>
+						<span id="live-nak-mukha" class="text-[11px] px-2 py-0.5 rounded border shadow-sm text-gray-800 bg-gray-100 border-gray-300 font-bold flex items-center justify-center"></span>
+					</div>
+				</div>
+			</div>
+            </div>
+        </div>
+        
+        <div class="card rounded-xl p-6 mb-8 text-center relative">
+            <p class="mb-4 text-gray-600 font-medium text-lg">दिनांक, शहर आणि तुमचे जन्म नक्षत्र निवडा</p>
+            <div class="flex flex-col md:flex-row gap-4 justify-center items-center relative w-full md:w-11/12 mx-auto mb-4">
+                <input type="date" id="dateInput" class="w-full md:w-1/4 px-4 py-3 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 bg-orange-50 font-semibold outline-none">
+                
+                <div class="relative w-full md:w-1/4 text-left">
+                    <input type="text" id="cityInput" placeholder="शहराचे नाव टाईप करा..." autocomplete="off" class="w-full px-4 py-3 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 bg-orange-50 font-semibold outline-none">
+                    <div id="suggestions" class="suggestions-box"></div>
+                </div>
+
+                <select id="userRashi" class="w-full md:w-1/4 px-4 py-3 border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-indigo-50 font-semibold outline-none">
+                    <option value="">तुमची जन्म रास (Optional)</option>
+                </select>
+                <select id="userNakshatra" class="w-full md:w-1/4 px-4 py-3 border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-indigo-50 font-semibold outline-none">
+                    <option value="">तुमचे जन्म नक्षत्र (Optional)</option>
+                </select>
+            </div>
+            
+            <button onclick="calculateAndLoadModules()" class="w-full md:w-1/3 bhagwa-gradient text-white px-8 py-3 rounded-lg font-bold hover:shadow-lg transition-transform transform hover:-translate-y-1 mt-2">पंचांग पहा</button>
+            
+            <div id="loading" class="mt-6"><div class="loader"></div></div>
+            <p id="error-msg" class="text-red-500 mt-4 font-bold hidden"></p>
+        </div>
+
+        <div id="results" class="hidden space-y-6">
+            
+            <div id="personal-strength-banner" class="hidden card p-4 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 border-l-8 border-indigo-500 shadow-md mb-6">
+                </div>
+
+            <div class="text-center mb-6 border-b-2 border-orange-200 pb-4">
+                <h2 id="display-date-city" class="text-3xl font-bold text-orange-700 title-font mb-2"></h2>
+                <p class="text-gray-600 font-semibold text-lg">अक्षांश: <span id="r-lat" class="text-gray-800"></span> | रेखांश: <span id="r-lon" class="text-gray-800"></span></p>
+            </div>
+
+            <div id="module-festival" style="display: none;">
+                <div class="card p-6 rounded-xl bg-purple-50 border-t-4 border-purple-600 mb-6 shadow-md">
+                    <h3 class="text-3xl text-purple-800 font-bold title-font mb-2">✨ आजचा महायोग: <span id="fest-name"></span></h3>
+                    <div class="space-y-4 mt-4 text-gray-800">
+                        <div class="bg-white p-4 rounded-lg border border-purple-200 shadow-sm">
+                            <h4 class="text-purple-900 font-bold text-lg mb-1 flex items-center gap-2">📜 या तिथीचा इतिहास आणि संदर्भ</h4>
+                            <p class="text-sm"><strong>संदर्भ ग्रंथ:</strong> <span id="fest-ancient" class="text-purple-700 font-semibold"></span></p>
+                            <p class="text-sm mt-2"><strong>काय घडले होते?</strong> <span id="fest-history"></span></p>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="astro-box p-4 rounded-lg border shadow-sm bg-orange-50">
+                                <h4 class="text-orange-900 font-bold text-lg mb-1">🪐 खगोलीय घटना (Astronomy)</h4>
+                                <p class="text-sm text-orange-800" id="fest-astrology"></p>
+                            </div>
+                            <div class="science-box p-4 rounded-lg border shadow-sm bg-green-50">
+                                <h4 class="text-green-900 font-bold text-lg mb-1">🔬 वैज्ञानिक प्रभाव (Bio-Physics)</h4>
+                                <p class="text-sm text-green-800" id="fest-science"></p>
+                            </div>
+                        </div>
+                        <div class="bg-yellow-100 p-4 rounded-lg border border-yellow-300 mt-3 shadow-sm">
+                            <h4 class="text-yellow-900 font-bold text-lg mb-1">✅ आजच्या दिवशी काय करावे:</h4>
+                            <p class="text-sm text-yellow-800" id="fest-goodfor"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-5 rounded-xl bg-orange-100/50 border border-orange-200 mb-6 text-center shadow-inner">
+                <h3 class="text-xl text-orange-800 font-bold mb-3 title-font">वैदिक संवत्सर आणि मास</h3>
+                <div class="flex flex-wrap justify-center gap-4 text-sm md:text-base font-semibold text-gray-800">
+                    <span class="bg-white px-4 py-2 rounded-lg shadow-sm border border-orange-100">विक्रम संवत: <span id="r-vikram" class="text-orange-700"></span></span>
+                    <span class="bg-white px-4 py-2 rounded-lg shadow-sm border border-orange-100">शक संवत: <span id="r-shaka" class="text-orange-700"></span></span>
+                    <span class="bg-white px-4 py-2 rounded-lg shadow-sm border border-orange-100">संवत्सर (वर्ष): <span id="r-samvatsara" class="text-orange-700 font-bold"></span></span>
+					<span class="bg-white px-4 py-2 rounded-lg shadow-sm border border-orange-100">अयन: <span id="r-ayana" class="text-orange-700"></span></span>
+                    <span class="bg-white px-4 py-2 rounded-lg shadow-sm border border-orange-100">ऋतू: <span id="r-ritu" class="text-orange-700"></span></span>
+                   	<span class="bg-white px-4 py-2 rounded-lg shadow-sm border border-orange-100 text-center">
+    <span class="block text-orange-800 font-bold"><span id="r-maas-north"></span> (उत्तर भारतीय)</span>
+    <span class="block text-sm text-indigo-700 font-semibold border-t border-orange-100 mt-1 pt-1"><span id="r-maas-south"></span> (दक्षिण भारतीय / अमांत)</span>
+</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="card p-4 rounded-xl text-center">
+                    <h3 class="text-orange-600 font-bold mb-2 border-b border-orange-100 pb-1 title-font">सूर्य व चंद्र काळ</h3>
+                    <p class="text-sm mb-2">सूर्योदय: <span id="r-sunrise" class="font-bold text-gray-900 text-base"></span></p>
+                    <p class="text-sm mb-2">सूर्यास्त: <span id="r-sunset" class="font-bold text-gray-900 text-base"></span></p>
+                    <p class="text-sm text-blue-800 mb-2">चंद्रोदय: <span id="r-moonrise" class="font-bold text-base"></span></p>
+                    <p class="text-sm text-blue-800">चंद्रास्त: <span id="r-moonset" class="font-bold text-base"></span></p>
+                </div>
+				 <div class="card p-4 rounded-xl text-center flex flex-col justify-center h-full">
+					<h3 class="text-orange-600 font-bold mb-3 border-b border-orange-100 pb-1 title-font">पंचांग अंग</h3>
+					
+				<div class="flex justify-center items-center gap-4 mb-2">
+						<p class="text-sm text-gray-700">पक्ष: <span id="r-paksha" class="font-bold text-gray-900"></span></p>
+						<div class="flex items-center gap-1">
+							<p class="text-sm text-gray-700">तिथी: <span id="r-tithi" class="font-bold text-gray-900"></span></p>
+							<span id="r-tithi-class" class="hidden text-[11px] px-2 py-0.5 rounded border shadow-sm font-bold flex items-center justify-center cursor-help"></span>
+						</div>
+					</div>
+					
+					<p class="text-sm mb-3 text-gray-700">वार: <span id="r-vaar" class="font-bold text-gray-900"></span></p>
+					
+					<!-- Nakshatra Cluster Box -->
+					<div class="bg-orange-50/50 rounded-lg p-3 border border-orange-100 mb-3 mx-auto w-full max-w-[260px] shadow-sm">
+						<p class="text-sm mb-2 text-gray-700">नक्षत्र: <span id="r-nakshatra" class="font-bold text-gray-900 text-base"></span></p>
+						
+						<div class="flex flex-wrap justify-center items-center gap-2 mb-2">
+							<span id="r-nakshatra-lord" class="text-[11px] px-2 py-0.5 rounded border shadow-sm text-indigo-800 bg-indigo-50 border-indigo-200 font-bold hidden transition-all"></span>
+							<span id="r-nakshatra-tattva" class="hidden transition-all"></span>
+						</div>
+						
+						<div class="flex justify-center">
+							<span id="r-rain-vahan" class="hidden transition-all"></span>
+						</div>
+					</div>
+					
+					<p class="text-sm mt-auto text-gray-700">योग: <span id="r-yoga" class="font-bold text-gray-900"></span></p>
+				</div>
+                <div class="card p-4 rounded-xl text-center flex flex-col justify-center h-full">
+				<h3 class="text-orange-600 font-bold mb-3 border-b border-orange-100 pb-1 title-font">राशी आणि करण</h3>
+				
+				<div class="bg-orange-50/50 rounded-lg p-2 border border-orange-100 mb-2 mx-auto w-full max-w-[260px] shadow-sm">
+					<p class="text-sm mb-1 text-gray-700">सूर्य रास: <span id="r-sunsign" class="font-bold text-orange-700 text-base"></span></p>
+					<div class="flex justify-center items-center gap-1">
+						<span id="r-sunsign-lord" class="text-[11px] px-1.5 py-0.5 rounded border shadow-sm text-indigo-800 bg-white border-indigo-200 font-bold hidden"></span>
+						<span id="r-sunsign-tattva" class="hidden text-[11px] px-1.5 py-0.5 rounded border shadow-sm font-bold flex items-center justify-center"></span>
+					</div>
+				</div>
+
+				<div class="bg-blue-50/50 rounded-lg p-2 border border-blue-100 mb-3 mx-auto w-full max-w-[260px] shadow-sm">
+					<p class="text-sm mb-1 text-gray-700">चंद्र रास: <span id="r-moonsign" class="font-bold text-blue-700 text-base"></span></p>
+					<div class="flex justify-center items-center gap-1">
+						<span id="r-moonsign-lord" class="text-[11px] px-1.5 py-0.5 rounded border shadow-sm text-indigo-800 bg-white border-indigo-200 font-bold hidden"></span>
+						<span id="r-moonsign-tattva" class="hidden text-[11px] px-1.5 py-0.5 rounded border shadow-sm font-bold flex items-center justify-center"></span>
+					</div>
+				</div>
+				
+				<div class="flex justify-center gap-3 mt-auto border-t border-orange-100 pt-2">
+					<p class="text-sm text-gray-700">१ले करण: <span id="r-karana1" class="font-bold text-gray-900"></span></p>
+					<p class="text-sm text-gray-700">२रे करण: <span id="r-karana2" class="font-bold text-gray-900"></span></p>
+				</div>
+			</div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                <div class="card p-5 rounded-xl bg-blue-50 border-t-4 border-blue-500 shadow-sm">
+                    <h3 class="text-lg font-bold text-blue-900 border-b border-blue-200 pb-2 mb-3 flex items-center gap-2"><i class="fas fa-compass"></i> दिशाशूळ (प्रवास विचार)</h3>
+                    <p class="text-sm text-gray-700 mb-2">आज <strong><span id="r-dishashool-dir" class="text-red-600 font-bold"></span></strong> दिशेला प्रवास करणे टाळावे.</p>
+                    <div class="bg-white p-3 rounded border border-blue-100 text-xs">
+                        <strong class="text-blue-800">🪐 विज्ञान:</strong> <span id="r-dishashool-sci"></span><br><br>
+                        <strong class="text-green-700">📿 उपाय:</strong> जर जाणे गरजेचे असेलच तर, <span id="r-dishashool-rem" class="font-semibold text-gray-800"></span>
+                    </div>
+                </div>
+
+                <div class="card p-5 rounded-xl bg-orange-50 border-t-4 border-orange-500 shadow-sm">
+                    <h3 class="text-lg font-bold text-orange-900 border-b border-orange-200 pb-2 mb-3 flex items-center gap-2"><i class="fas fa-fire"></i> अग्निवास आणि शिववास</h3>
+                    <p class="text-sm text-gray-700 mb-2">आजचा अग्निवास: <strong><span id="r-agnivasa" class="font-bold text-lg"></span></strong></p>
+                    <div id="r-agnivasa-desc" class="bg-white p-3 rounded border border-orange-100 text-xs text-gray-700">
+                        </div>
+                </div>
+
+                <div class="card p-5 rounded-xl bg-green-50 border-t-4 border-green-500 shadow-sm">
+                    <h3 class="text-lg font-bold text-green-900 border-b border-green-200 pb-2 mb-3 flex items-center gap-2"><i class="fas fa-leaf"></i> आयुर्वेद आणि ऋतुचर्या</h3>
+                    <p class="text-sm text-gray-700 mb-2">सध्या <strong><span id="r-ritu-name" class="text-green-700 font-bold"></span></strong> ऋतू सुरू आहे.</p>
+                    <div class="bg-white p-3 rounded border border-green-100 text-xs">
+                        <strong class="text-green-800">शरीरातील दोष:</strong> <span id="r-ayurveda-dosha"></span><br><br>
+                        <strong class="text-indigo-700">आहार सल्ला:</strong> <span id="r-ayurveda-diet"></span>
+                    </div>
+                </div>
+            </div>
+
+           <div class="card p-6 rounded-xl bg-white border-t-4 border-indigo-600 shadow-lg mt-6 mb-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 border-b-2 border-indigo-100 pb-2">
+                    <h3 class="text-2xl text-indigo-800 font-bold title-font">दैनिक सूक्ष्म काळ आणि वैदिक रहस्ये</h3>
+                    <button id="chrono-toggle-btn" onclick="toggleChronologicalView()" class="mt-2 md:mt-0 bg-indigo-100 hover:bg-indigo-200 text-indigo-800 font-bold px-4 py-2 rounded-lg transition-colors border border-indigo-300 flex items-center shadow-sm">
+                        <i class="fas fa-list-ol mr-2"></i> कालक्रमानुसार पहा
+                    </button>
+                </div>
+                
+                <div id="chrono-view-container" class="hidden space-y-2 mt-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-2"></div>
+
+                <div id="normal-view-container" class="space-y-6">
+                    
+                    <div class="bg-orange-50 rounded-lg p-4 border border-orange-200">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-3">
+                            <h4 class="text-lg font-bold text-orange-900 flex items-center">🌅 ब्राह्म मुहूर्त (Brahma Muhurat)</h4>
+                            <span id="r-brahma" class="mt-2 md:mt-0 bg-white px-3 py-1 rounded-md font-bold text-orange-700 border border-orange-300 shadow-sm"></span>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                            <div><strong class="text-purple-700">🕉️ अध्यात्म:</strong> हा देव-देवतांच्या जागृतीचा काळ आहे. या वेळी ध्यान आणि मंत्रजप केल्यास तो थेट ईश्वरापर्यंत पोहोचतो आणि बुद्धी जागृत होते.</div>
+                            <div><strong class="text-blue-700">🪐 खगोलशास्त्र:</strong> सूर्योदयापूर्वी बरोबर २ मुहूर्त (९६ मिनिटे) आधी सुरू होतो. पृथ्वीची स्वतःभोवती फिरण्याची गती आणि सूर्याच्या किरणांचा कोन अत्यंत संतुलित असतो.</div>
+                            <div><strong class="text-green-700">🔬 विज्ञान:</strong> या वेळेत वातावरणात 'नॅसेंट ऑक्सिजन' (Nascent Oxygen) सर्वाधिक असते. मेंदूमधील पिनियल ग्रंथी मेलाटोनिन कमी करून सेरोटोनिन वाढवते, ज्यामुळे स्मरणशक्ती अफाट वाढते.</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-indigo-50 rounded-lg p-4 border border-indigo-200">
+                        <h4 class="text-lg font-bold text-indigo-900 mb-3 flex items-center">⏳ त्रिसंध्या काळ (Tri-Sandhya)</h4>
+                        <div class="flex flex-wrap gap-3 mb-3">
+                            <span class="bg-white px-2 py-1 rounded text-sm border border-indigo-300 font-semibold">प्रातः संध्या: <span id="r-pratah-sandhya" class="text-indigo-700"></span></span>
+                            <span class="bg-white px-2 py-1 rounded text-sm border border-indigo-300 font-semibold">मध्यान्ह संध्या: <span id="r-madhyahna-sandhya" class="text-indigo-700"></span></span>
+                            <span class="bg-white px-2 py-1 rounded text-sm border border-indigo-300 font-semibold">सायं संध्या: <span id="r-sayam-sandhya" class="text-indigo-700"></span></span>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                            <div><strong class="text-purple-700">🕉️ अध्यात्म:</strong> तिन्ही सांजा या प्रकृती आणि परमात्म्याच्या मिलनाची वेळ आहे. सात्विक लहरी जागृत होतात. 'गायत्री मंत्राचा' जप आणि अर्घ्य देण्यासाठी हा काळ सर्वोत्तम आहे.</div>
+                            <div><strong class="text-blue-700">🪐 खगोलशास्त्र:</strong> सूर्य आणि पृथ्वीच्या क्षितिजावरील (Horizon) तीन मुख्य अवस्था—उदय, मध्य (Zenith), आणि अस्त. टर्मिनेटर लाईन (Twilight zone) आपल्यावरून जाते.</div>
+                            <div><strong class="text-green-700">🔬 विज्ञान:</strong> या काळात वातावरणातील तापमान, हवेचा दाब आणि UV किरणांचे प्रमाण वेगाने बदलते. शरीराच्या 'बायोलॉजिकल क्लॉक'ला निसर्गाशी जुळवून घेण्यासाठी या काळात जेवण किंवा झोप टाळून ध्यान करावे.</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-red-50 rounded-lg p-4 border border-red-200">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-3">
+                            <h4 class="text-lg font-bold text-red-900 flex items-center">🐄 गोधूलि काळ (Godhuli Kaal)</h4>
+                            <span id="r-godhuli" class="mt-2 md:mt-0 bg-white px-3 py-1 rounded-md font-bold text-red-700 border border-red-300 shadow-sm"></span>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                            <div><strong class="text-purple-700">🕉️ अध्यात्म:</strong> विवाह आणि गृहप्रवेशासाठी जर पंचांगात कोणताही शुभ मुहूर्त सापडत नसेल, तर गोधूलि काळ नेहमी निर्दोष आणि ग्राह्य धरला जातो.</div>
+                            <div><strong class="text-blue-700">🪐 खगोलशास्त्र:</strong> सूर्याची तबकडी (Solar Disk) क्षितिजाला स्पर्श करते. सूर्यास्ताच्या बरोबर १२ मिनिटे आधी आणि १२ मिनिटे नंतरचा (१ घटी) हा काळ आहे.</div>
+                            <div><strong class="text-green-700">🔬 विज्ञान:</strong> तिरप्या किरणांमुळे 'Rayleigh Scattering' होते व आकाश लालसर दिसते. प्राचीन काळी गायींच्या खुरांनी उडणाऱ्या धुळीमध्ये जंतूनाशक घटक असत, जे या वेळेतील वाढणाऱ्या विषाणूंना नष्ट करत असत. वात आणि कफ दोषांचे संतुलन होते.</div>
+                        </div>
+                    </div>
+
+                    <div id="r-gandant-container" class="rounded-lg p-4 border transition-all"></div>
+
+                </div>
+            </div>
+
+            <div class="card p-5 rounded-xl bg-orange-50 border-t-4 border-red-500 shadow-md mt-4">
+                <h3 class="text-red-700 font-bold mb-2 border-b border-red-200 pb-1 title-font text-xl">विशेष योग, भद्रा आणि पंचक विचार</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
+                    <div id="r-bhadra-container" class="p-3 bg-white rounded-lg border border-gray-200 shadow-sm h-full"></div>
+                    <div id="r-panchak-container" class="p-3 bg-white rounded-lg border border-gray-200 shadow-sm h-full"></div>
+                    <div id="r-grahan-container" class="p-3 bg-white rounded-lg border border-gray-200 shadow-sm h-full transition-all duration-300">
+                        <p class="text-sm font-medium mb-1 text-gray-700">ग्रहण योग:</p>
+                        <span id="r-grahan" class="text-gray-900 font-bold text-lg"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="module-science"></div>
+            <div id="module-conclusion"></div>
+
+        </div>
+    </div>
+	
+	<!-- Floating Language Selector -->
+<div class="lang-floating-box" title="भाषा निवडा / Choose Language">
+    <i class="fas fa-language text-orange-600 text-xl"></i>
+    <select id="appLang" onchange="translatePage(this.value)">
+        <!-- The values are Google Translate ISO codes -->
+        <option value="mr" selected>मराठी (Marathi)</option>
+        <option value="hi">हिंदी (Hindi)</option>
+        <option value="sa">संस्कृत (Sanskrit)</option>
+        <option value="gu">ગુજરાતી (Gujarati)</option>
+        <option value="ta">தமிழ் (Tamil)</option>
+        <option value="te">తెలుగు (Telugu)</option>
+        <option value="kn">ಕನ್ನಡ (Kannada)</option>
+        <option value="ml">മലയാളം (Malayalam)</option>
+        <option value="bn">বাংলা (Bengali)</option>
+        <option value="pa">ਪੰਜਾਬੀ (Punjabi)</option>
+        <option value="ur">اردو (Urdu)</option>
+        <option value="or">ଓଡ଼ିଆ (Odia)</option>
+        <option value="as">অসমীয়া (Assamese)</option>
+        <option value="mai">मैथिली (Maithili)</option>
+        <option value="doi">डोगरी (Dogri)</option>
+        <option value="kok">कोंकणी (Konkani)</option>
+        <option value="ne">नेपाली (Nepali)</option>
+        <option value="sd">सिंधी (Sindhi)</option>
+        <option value="mni">ꯃꯤꯇꯩꯂꯣꯟ (Manipuri)</option>
+        <option value="en">English</option>
+    </select>
+    <i class="fas fa-chevron-down text-orange-600 text-sm ml-1"></i>
+</div>
+
+<!-- Hidden Google Translate Element -->
+<div id="google_translate_element" style="position: absolute; top: -9999px; left: -9999px; width: 1px; height: 1px; overflow: hidden;"></div>
+
+	<div id="ninad-btn" class="ai-floating-btn" onclick="toggleChat()" title="निनाद AI शी बोला">
+        <i class="fas fa-microphone"></i>
+    </div>
+    <div id="ninad-chat" class="ai-chat-panel">
+        <div class="ai-header">
+            <span><i class="fas fa-robot mr-2"></i> निनाद AI (वैदिक असिस्टंट)</span>
+            <div>
+                <i class="fas fa-cog cursor-pointer mr-3" onclick="openApiModal()" title="API Key Settings"></i>
+                <i class="fas fa-times cursor-pointer" onclick="toggleChat()"></i>
+            </div>
+        </div>
+        <div id="ninad-body" class="ai-body">
+            <p class="text-gray-600 mb-2">नमस्कार प्रमोद! मी 'निनाद'. आजच्या पंचांगावर आधारित तुमचा कोणताही प्रश्न विचारा. (उदा. "आज गाडी घेणे शुभ आहे का?")</p>
+        </div>
+        <div class="ai-input-area">
+            <input type="text" id="ninad-input" class="ai-input" placeholder="प्रश्न टाईप करा किंवा माईक दाबा..." onkeypress="if(event.key === 'Enter') sendNinadMsg()">
+            <button onclick="startVoiceInput()" class="ml-2 text-indigo-600 hover:text-indigo-800 p-2"><i class="fas fa-microphone"></i></button>
+            <button onclick="sendNinadMsg()" class="ml-1 text-white bg-indigo-600 hover:bg-indigo-700 rounded-full w-9 h-9 flex items-center justify-center"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <div id="api-modal" class="api-modal">
+        <div class="api-modal-content">
+            <h3 class="text-xl font-bold mb-3 text-indigo-800">Gemini API Key सेटअप</h3>
+            <p class="text-sm text-gray-600 mb-4">'निनाद' AI वापरण्यासाठी तुमची Google Gemini 2.5 API Key एंटर करा. ही Key फक्त तुमच्या ब्राउझरमध्ये सेव्ह राहील.</p>
+            <input type="password" id="api-key-input" class="w-full px-3 py-2 border rounded-lg mb-4 outline-none focus:border-indigo-500" placeholder="AIzaSy...">
+            <div class="flex justify-end gap-2">
+                <button onclick="closeApiModal()" class="px-4 py-2 bg-gray-200 rounded-lg text-gray-800 font-semibold">रद्द करा</button>
+                <button onclick="saveApiKey()" class="px-4 py-2 bg-indigo-600 rounded-lg text-white font-semibold">सेव्ह करा</button>
+            </div>
+        </div>
+    </div>
+	<div id="hora-modal" class="fixed top-0 left-0 w-full h-full bg-black/70 hidden justify-center items-center z-[1000]" onclick="if(event.target === this) this.style.display='none'">
+        <div class="bg-white p-4 rounded-xl w-11/12 max-w-md max-h-[90vh] flex flex-col relative shadow-2xl border-t-4 border-orange-500">
+            <div class="flex justify-between items-center mb-3 border-b pb-2">
+                <h3 class="text-xl font-bold text-orange-800 title-font"><i class="fas fa-clock mr-2"></i>संपूर्ण दिवसाची होरा</h3>
+                <button onclick="document.getElementById('hora-modal').style.display='none'" class="text-gray-500 hover:text-red-500 transition-colors"><i class="fas fa-times text-2xl"></i></button>
+            </div>
+            
+            <div id="hora-list-container" class="overflow-y-auto pr-1 custom-scrollbar flex-grow pb-2 space-y-2"></div>
+        </div>
+    </div>
+	<div id="yamardha-modal" class="fixed top-0 left-0 w-full h-full bg-black/70 hidden justify-center items-center z-[1000]" onclick="if(event.target === this) { this.classList.add('hidden'); this.classList.remove('flex'); }">
+    <div class="bg-white p-5 rounded-xl w-11/12 max-w-md max-h-[90vh] flex flex-col relative shadow-2xl border-t-4 border-green-500">
+        <div class="flex justify-between items-center mb-3 border-b pb-2">
+            <h3 class="text-xl font-bold text-green-800 title-font"><i class="fas fa-clock mr-2"></i>BPHS यामार्ध (८ प्रहर)</h3>
+            <button onclick="document.getElementById('yamardha-modal').classList.add('hidden'); document.getElementById('yamardha-modal').classList.remove('flex');" class="text-gray-500 hover:text-red-500 transition-colors"><i class="fas fa-times text-2xl"></i></button>
+        </div>
+        <p class="text-xs text-gray-600 mb-3 bg-gray-50 p-2 rounded border border-gray-200"><strong>पंचांग रहस्य:</strong> महर्षी पराशरांनुसार दिनमान आणि रात्रीमानाचे प्रत्येकी ८ भाग केले जातात. ८ वा प्रहर नेहमी <strong>निरीश्वर (स्वामीहीन)</strong> असतो, जो भौतिक कार्यांसाठी वर्ज्य मानला जातो.</p>
+        <div id="yamardha-list-container" class="overflow-y-auto pr-1 custom-scrollbar flex-grow pb-2 space-y-2"></div>
+    </div>
+	</div>
+    <script>
+	// --- GOOGLE TRANSLATE LOGIC ---
+        const googleTranslateScript = document.createElement('script');
+        googleTranslateScript.type = 'text/javascript';
+        googleTranslateScript.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+        document.head.appendChild(googleTranslateScript);
+
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'mr', // Base language is Marathi
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+
+        function translatePage(langCode) {
+            let selectField = document.querySelector('.goog-te-combo');
+            if (selectField) {
+                selectField.value = langCode;
+                selectField.dispatchEvent(new Event('change'));
+            } else {
+                // In case the widget takes a second to load
+                setTimeout(() => translatePage(langCode), 500);
+            }
+        }
+        // ------------------------------
+	
+        const TITHIS = ["प्रतिपदा", "द्वितीया", "तृतीया", "चतुर्थी", "पंचमी", "षष्ठी", "सप्तमी", "अष्टमी", "नवमी", "दशमी", "एकादशी", "द्वादशी", "त्रयोदशी", "चतुर्दशी", "पौर्णिमा", "प्रतिपदा", "द्वितीया", "तृतीया", "चतुर्थी", "पंचमी", "षष्ठी", "सप्तमी", "अष्टमी", "नवमी", "दशमी", "एकादशी", "द्वादशी", "त्रयोदशी", "चतुर्दशी", "अमावास्या"];
+        const NAKSHATRAS = ["अश्विनी", "भरणी", "कृत्तिका", "रोहिणी", "मृगशीर्ष", "आर्द्रा", "पुनर्वसु", "पुष्य", "आश्लेषा", "मघा", "पूर्वा फाल्गुनी", "उत्तरा फाल्गुनी", "हस्त", "चित्रा", "स्वाती", "विशाखा", "अनुराधा", "ज्येष्ठा", "मूळ", "पूर्वाषाढा", "उत्तराषाढा", "श्रवण", "धनिष्ठा", "शततारका", "पूर्वा भाद्रपदा", "उत्तरा भाद्रपदा", "रेवती"];
+        const RASHIS = ["मेष", "वृषभ", "मिथुन", "कर्क", "सिंह", "कन्या", "तूळ", "वृश्चिक", "धनु", "मकर", "कुंभ", "मीन"];
+        const RASHI_LORDS = ["मंगळ", "शुक्र", "बुध", "चंद्र", "सूर्य", "बुध", "शुक्र", "मंगळ", "गुरू", "शनी", "शनी", "गुरू"];
+
+		const RASHI_TATTVAS = [
+			{ name: "अग्नि (Fire)", style: "text-red-700 bg-red-100 border-red-300" },      // Mesha (0)
+			{ name: "पृथ्वी (Earth)", style: "text-green-800 bg-green-100 border-green-400" }, // Vrishabha (1)
+			{ name: "वायू (Air)", style: "text-gray-700 bg-gray-100 border-gray-300" },       // Mithuna (2)
+			{ name: "जल (Water)", style: "text-blue-700 bg-blue-100 border-blue-300" },      // Karka (3)
+			{ name: "अग्नि (Fire)", style: "text-red-700 bg-red-100 border-red-300" },      // Simha (4)
+			{ name: "पृथ्वी (Earth)", style: "text-green-800 bg-green-100 border-green-400" }, // Kanya (5)
+			{ name: "वायू (Air)", style: "text-gray-700 bg-gray-100 border-gray-300" },       // Tula (6)
+			{ name: "जल (Water)", style: "text-blue-700 bg-blue-100 border-blue-300" },      // Vrishchika (7)
+			{ name: "अग्नि (Fire)", style: "text-red-700 bg-red-100 border-red-300" },      // Dhanu (8)
+			{ name: "पृथ्वी (Earth)", style: "text-green-800 bg-green-100 border-green-400" }, // Makara (9)
+			{ name: "वायू (Air)", style: "text-gray-700 bg-gray-100 border-gray-300" },       // Kumbha (10)
+			{ name: "जल (Water)", style: "text-blue-700 bg-blue-100 border-blue-300" }       // Meena (11)
+		];
+		
+		const RASHI_SWABHAVA = [
+    { name: "चर (Movable)", style: "text-teal-800 bg-teal-100 border-teal-300" },      // Index % 3 === 0
+    { name: "स्थिर (Fixed)", style: "text-rose-800 bg-rose-100 border-rose-300" },     // Index % 3 === 1
+    { name: "द्विस्वभाव (Dual)", style: "text-amber-800 bg-amber-100 border-amber-300" } // Index % 3 === 2
+	];
+	
+		const NAK_LORDS_GLOBAL = ["केतू", "शुक्र", "सूर्य", "चंद्र", "मंगळ", "राहू", "गुरू", "शनी", "बुध"];
+
+		const NAK_TATTVAS_GLOBAL = [
+			{ name: "वायू (Air)", style: "text-gray-700 bg-gray-100 border-gray-300" },      // Ketu
+			{ name: "जल (Water)", style: "text-blue-700 bg-blue-100 border-blue-300" },     // Venus
+			{ name: "अग्नि (Fire)", style: "text-red-700 bg-red-100 border-red-300" },      // Sun
+			{ name: "जल (Water)", style: "text-blue-700 bg-blue-100 border-blue-300" },     // Moon
+			{ name: "अग्नि (Fire)", style: "text-red-700 bg-red-100 border-red-300" },      // Mars
+			{ name: "वायू (Air)", style: "text-gray-700 bg-gray-100 border-gray-300" },       // Rahu
+			{ name: "आकाश (Ether)", style: "text-purple-700 bg-purple-100 border-purple-300" }, // Jupiter
+			{ name: "वायू (Air)", style: "text-gray-700 bg-gray-100 border-gray-300" },       // Saturn
+			{ name: "पृथ्वी (Earth)", style: "text-green-800 bg-green-100 border-green-400" } // Mercury
+		];
+
+		const NAKSHATRA_MUKHA = [
+			{ name: "तिर्यङ्मुख (Forward)", icon: "➡️" }, // Ashwini
+			{ name: "अधोमुख (Downward)", icon: "⬇️" }, // Bharani
+			{ name: "अधोमुख (Downward)", icon: "⬇️" }, // Krittika
+			{ name: "ऊर्ध्वमुख (Upward)", icon: "⬆️" }, // Rohini
+			{ name: "तिर्यङ्मुख (Forward)", icon: "➡️" }, // Mrigashira
+			{ name: "ऊर्ध्वमुख (Upward)", icon: "⬆️" }, // Ardra
+			{ name: "तिर्यङ्मुख (Forward)", icon: "➡️" }, // Punarvasu
+			{ name: "ऊर्ध्वमुख (Upward)", icon: "⬆️" }, // Pushya
+			{ name: "अधोमुख (Downward)", icon: "⬇️" }, // Ashlesha
+			{ name: "अधोमुख (Downward)", icon: "⬇️" }, // Magha
+			{ name: "अधोमुख (Downward)", icon: "⬇️" }, // P.Phalguni
+			{ name: "ऊर्ध्वमुख (Upward)", icon: "⬆️" }, // U.Phalguni
+			{ name: "तिर्यङ्मुख (Forward)", icon: "➡️" }, // Hasta
+			{ name: "तिर्यङ्मुख (Forward)", icon: "➡️" }, // Chitra
+			{ name: "तिर्यङ्मुख (Forward)", icon: "➡️" }, // Swati
+			{ name: "अधोमुख (Downward)", icon: "⬇️" }, // Vishakha
+			{ name: "तिर्यङ्मुख (Forward)", icon: "➡️" }, // Anuradha
+			{ name: "तिर्यङ्मुख (Forward)", icon: "➡️" }, // Jyeshtha
+			{ name: "अधोमुख (Downward)", icon: "⬇️" }, // Moola
+			{ name: "अधोमुख (Downward)", icon: "⬇️" }, // P.Ashadha
+			{ name: "ऊर्ध्वमुख (Upward)", icon: "⬆️" }, // U.Ashadha
+			{ name: "ऊर्ध्वमुख (Upward)", icon: "⬆️" }, // Shravana
+			{ name: "ऊर्ध्वमुख (Upward)", icon: "⬆️" }, // Dhanishta
+			{ name: "ऊर्ध्वमुख (Upward)", icon: "⬆️" }, // Shatabhisha
+			{ name: "अधोमुख (Downward)", icon: "⬇️" }, // P.Bhadrapada
+			{ name: "ऊर्ध्वमुख (Upward)", icon: "⬆️" }, // U.Bhadrapada
+			{ name: "तिर्यङ्मुख (Forward)", icon: "➡️" }  // Revati
+		];
+			const TITHI_CLASSIFICATION = [
+		{ name: "नंदा (Nanda)", style: "text-green-800 bg-green-100 border-green-300", desc: "आनंद आणि सुखाची कामे" },
+		{ name: "भद्रा (Bhadra)", style: "text-blue-800 bg-blue-100 border-blue-300", desc: "कल्याणकारी कामे" },
+		{ name: "जया (Jaya)", style: "text-yellow-800 bg-yellow-100 border-yellow-300", desc: "विजय आणि स्पर्धा" },
+		{ name: "रिक्ता (Rikta)", style: "text-red-800 bg-red-100 border-red-400", desc: "रिक्त/वर्ज्य (शुभ कार्यासाठी टाळा)" },
+		{ name: "पूर्णा (Purna)", style: "text-purple-800 bg-purple-100 border-purple-300", desc: "पूर्णता आणि मांगलिक कार्ये" }
+			];
+		const YOGAS = ["विष्कंभ", "प्रीती", "आयुष्मान", "सौभाग्य", "शोभन", "अतिगंड", "सुकर्मा", "धृती", "शूल", "गंड", "वृद्धी", "ध्रुव", "व्याघात", "हर्षण", "वज्र", "सिद्धी", "व्यतिपात", "वरीयान", "परिघ", "शिव", "सिद्ध", "साध्य", "शुभ", "शुक्ल", "ब्रह्म", "ऐंद्र", "वैधृती"];
+        const KARANAS = ["बव", "बालव", "कौलव", "तैतिल", "गर", "वणिज", "विष्टी", "शकुनी", "चतुष्पाद", "नाग", "किंस्तुघ्न"];
+        const VAAR = ["रविवार", "सोमवार", "मंगळवार", "बुधवार", "गुरुवार", "शुक्रवार", "शनिवार"];
+        const MONTHS = ["चैत्र", "वैशाख", "ज्येष्ठ", "आषाढ", "श्रावण", "भाद्रपद", "अश्विन", "कार्तिक", "मार्गशीर्ष", "पौष", "माघ", "फाल्गुन"];
+        const CHOGHADIYA_NAMES = ["उद्वेग", "चल", "लाभ", "अमृत", "काळ", "शुभ", "रोग"];
+        const GANDMOOL_NAKSHATRAS = ["अश्विनी", "आश्लेषा", "मघा", "ज्येष्ठा", "मूळ", "रेवती"];
+        const SAMVATSARAS = [
+			"प्रभव", "विभव", "शुक्ल", "प्रमोद", "प्रजापती", "अंगिरा", "श्रीमुख", "भाव", "युवा", "धाता",
+			"ईश्वर", "बहुधान्य", "प्रमाथी", "विक्रम", "वृष", "चित्रभानू", "सुभानू", "तारण", "पार्थिव", "व्यय",
+			"सर्वजित", "सर्वधारी", "विरोधी", "विकृती", "खर", "नंदन", "विजय", "जय", "मन्मथ", "दुर्मुख",
+			"हेमलंब", "विलंब", "विकारी", "शर्वरी", "प्लव", "शुभकृत", "शोभन", "क्रोधी", "विश्वावसु", "पराभव",
+			"प्लवंग", "कीलक", "सौम्य", "साधारण", "विरोधकृत", "परिधावी", "प्रमादी", "आनंद", "राक्षस", "नल",
+			"पिंगल", "कालयुक्त", "सिद्धार्थी", "रौद्र", "दुर्मती", "दुंदुभी", "रुधिरोद्गारी", "रक्ताक्षी", "क्रोधन", "क्षय"
+		];
+        const CHOGHADIYA_BENEFITS = {
+            "अमृत": "वाहने खरेदी, प्रवास, विद्यारंभ आणि शुभ कामे करण्यासाठी सर्वोत्तम.",
+            "शुभ": "विवाह, वास्तू शांती, देवकार्य, आणि नवीन घर खरेदीसाठी लाभदायक.",
+            "लाभ": "आर्थिक व्यवहार, नवीन व्यवसाय सुरू करणे, आणि गुंतवणुकीसाठी फायदेशीर."
+        };
+
+        const DISHA_SHOOL = [
+            { dir: "पश्चिम (West)", remedy: "घरातून निघताना थोडे तूप खावे.", science: "रविवारी सूर्याच्या उष्णतेने पश्चिमेकडील चुंबकीय क्षेत्रात अस्थिरता असते." },
+            { dir: "पूर्व (East)", remedy: "आरशात चेहरा पाहून किंवा दूध पिऊन निघावे.", science: "सोमवारी चंद्राचा प्रभाव पूर्वेकडील जल-तत्त्वावर जास्त असतो." },
+            { dir: "उत्तर (North)", remedy: "गुळाचा खडा खाऊन निघावे.", science: "मंगळ ग्रहाच्या इलेक्ट्रोमॅग्नेटिक लहरी उत्तरेकडून जास्त प्रभावी असतात." },
+            { dir: "उत्तर (North)", remedy: "धणे किंवा तीळ खाऊन निघावे.", science: "बुध ग्रहाची दिशा उत्तरेकडे असल्याने प्रवाहाविरुद्ध जाणे टाळावे." },
+            { dir: "दक्षिण (South)", remedy: "थोडे दही खाऊन किंवा जीरे खाऊन निघावे.", science: "गुरु ग्रहाचा विस्तार आणि दक्षिणेकडील यम लहरींचा संघर्ष होतो." },
+            { dir: "पश्चिम (West)", remedy: "जवस किंवा राई खाऊन निघावे.", science: "शुक्राची ऊर्जा पश्चिमेकडे केंद्रित असल्याने दिशाभूल होण्याची शक्यता." },
+            { dir: "पूर्व (East)", remedy: "आले किंवा उडीद खाऊन प्रवासाला निघावे.", science: "शनिची वक्र दृष्टी सूर्याच्या उगवत्या दिशेच्या विरुद्ध असते." }
+        ];
+
+        const RITU_AYURVEDA = {
+            "वसंत": { dosha: "कफ (Kapha) प्रकुपित होतो.", diet: "कडू, तिखट आणि तुरट रसांचे सेवन करावे. गोड आणि आंबट पदार्थ टाळावेत. जुने धान्य खावे." },
+            "ग्रीष्म": { dosha: "वात (Vata) साचतो, शरीरातील ओलावा कमी होतो.", diet: "गोड, स्निग्ध (तूप) आणि थंड पदार्थ खावेत. ताक, पन्हे, लिंबू पाणी उत्तम. तिखट टाळावे." },
+            "वर्षा": { dosha: "वात (Vata) प्रकुपित होतो, पचनशक्ती सर्वात कमकुवत असते.", diet: "गरम, ताजे आणि पचायला हलके अन्न खावे. पाणी उकळून प्यावे. सूप आणि आले फायदेशीर." },
+            "शरद": { dosha: "पित्त (Pitta) प्रकुपित होतो.", diet: "गोड, कडू आणि थंड रसाचे पदार्थ खावेत. तूप, दूध, खडीसाखर उत्तम. तिखट आणि तेलकट पूर्ण टाळा." },
+            "हेमंत": { dosha: "पचनशक्ती (अग्नी) अतिशय प्रबळ असते.", diet: "पौष्टिक, गोड आणि स्निग्ध पदार्थ भरपूर खावेत. दूध, गूळ, तीळ, आणि नवीन धान्य पचते." },
+            "शिशिर": { dosha: "कफ (Kapha) साचायला सुरुवात होते.", diet: "हेमंत ऋतूप्रमाणेच आहार घ्यावा, पण थोडे गरम आणि मसालेदार (आले, लसूण) पदार्थ आहारात ठेवावेत." }
+        };
+
+        const TARA_NAMES = ["जन्म", "संपत", "विपत", "क्षेम", "प्रत्यरी", "साधक", "निधन", "मित्र", "अतिमित्र"];
+
+        const FESTIVALS = {
+            "श्रावण_शुक्ल पक्ष_पौर्णिमा": {
+                name: "रक्षाबंधन / नारळी पौर्णिमा",
+                ancient: "भविष्य पुराण आणि स्कंद पुराण.",
+                history: "बहीण-भावाच्या पवित्र प्रेमाचे प्रतीक. बळीराजा आणि वामन अवताराची कथा.",
+                astrology: "चंद्र 'श्रवण' नक्षत्रात असतो, ज्याचा स्वामी चंद्रच आहे.",
+                science: "पावसाळ्यामुळे समुद्रातील पाण्याचे प्रवाह अस्थिर असतात. पूर्ण चंद्राचे गुरुत्वाकर्षण या दिवशी समुद्राच्या लाटांचे संतुलन राखते.",
+                goodFor: "कौटुंबिक सलोखा वाढवणे, आणि जलमार्गाचे व्यापार सुरू करण्यास उत्तम."
+            },
+            "भाद्रपद_शुक्ल पक्ष_चतुर्थी": {
+                name: "गणेश चतुर्थी",
+                ancient: "गणेश पुराण आणि मुद्गल पुराण",
+                history: "बुद्धी आणि विघ्नहर्ता भगवान श्री गणेशाचा प्रकट दिन.",
+                astrology: "गणपती हा 'बुध' ग्रहाचा कारक मानला जातो. या काळात सूर्य कन्या राशीत प्रवेश करण्याच्या मार्गावर असतो.",
+                science: "भाद्रपद महिन्यात वातावरण 'इलेक्ट्रोमॅग्नेटिक' दृष्ट्या संवेदनशील असते. मातीची मूर्ती आणि दुर्वा वातावरणातील 'नेगेटिव्ह आयन्स' शोषून घेते.",
+                goodFor: "नवीन विद्येचा आरंभ, गृहप्रवेश, नवीन वाहन खरेदी."
+            }
+        };
+
+        const SOLAR_FESTIVALS = {
+            "मकर संक्रांती": {
+                name: "मकर संक्रांती",
+                ancient: "सूर्य सिद्धांत आणि महाभारत",
+                history: "भीष्म पितामहांनी आपला देह त्यागण्यासाठी याच मंगल काळाची वाट पाहिली होती.",
+                astrology: "सूर्य देव धनु राशीतून मकर राशीत (उत्तरायण) प्रवेश करतात.",
+                science: "पृथ्वीचा उत्तर गोलार्ध सूर्याकडे झुकण्यास सुरुवात होते. तिळाच्या स्निग्धतेमुळे आणि गुळाच्या उष्णतेमुळे शरीराचे तापमान संतुलित राहते.",
+                goodFor: "तीळ-गुळाचे दान, सूर्यनमस्कार, नवीन शेती किंवा जमिनीची खरेदी."
+            }
+        };
+
+        const OVERRIDES_2026 = {
+            "2026-03-03": {
+                name: "होळी / होलिका दहन (धर्मसिंधू नियमानुसार)",
+                ancient: "निर्णयसिंधू आणि भविष्य पुराण",
+                history: "भक्त प्रल्हादाचे रक्षण आणि होलिका दहन.",
+                astrology: "सूर्य आणि चंद्र एकमेकांच्या अगदी समसप्तक (१८०° अंशावर) असतात.",
+                science: "💡 <strong>पंचांग रहस्य:</strong> उद्या (४ मार्च) उदया तिथी पौर्णिमा आहे, मात्र होळीचे दहन 'प्रदोष काळात' (रात्री) केले जाते. ३ मार्च रोजी रात्री पौर्णिमा तिथी असल्यामुळे होळी ३ मार्चलाच साजरी केली जाईल.<br><br><strong>🔬 विज्ञान:</strong> उन्हाळ्याची चाहूल लागते. अग्नीच्या उष्णतेमुळे हवेतील साचलेले जंतू (Pathogens) नष्ट होतात.",
+                goodFor: "नकारात्मक विचार जाळून टाकणे आणि अग्निहोत्र करणे."
+            },
+            "2026-03-19": {
+                name: "गुढीपाडवा (धर्मसिंधू नियमानुसार)",
+                ancient: "धर्मसिंधू आणि ब्रह्म पुराण",
+                history: "ब्रह्मदेवाने सृष्टीची निर्मिती केली. शालिवाहन शकाचा आरंभ.",
+                astrology: "सूर्य आणि चंद्र 'मीना-मेष' संधिकालात एकत्र येतात (Cosmic Reset).",
+                science: "💡 <strong>पंचांग रहस्य:</strong> खगोलशास्त्रानुसार २० तारखेला उदया तिथी प्रतिपदा असली तरी, १९ तारखेला दुपारी प्रतिपदेचा प्रवेश होतो. 'धर्मसिंधू' नुसार नववर्षाची सुरुवात प्रतिपदेच्या पहिल्या प्रहरात साजरी करणे उत्तम मानले जाते.<br><br><strong>🔬 विज्ञान:</strong> वसंत ऋतूचा आरंभ. कडुनिंबाच्या पानांचे सेवन केल्याने वाढणाऱ्या जीवाणूंपासून शरीराला संरक्षण मिळते.",
+                goodFor: "नवीन व्यवसाय, सोने/वाहन खरेदी, आणि नवीन संकल्प करण्यासाठी शुभ."
+            },
+            "2026-04-19": {
+                name: "अक्षय्य तृतीया (धर्मसिंधू नियमानुसार)",
+                ancient: "निर्णयसिंधू आणि मत्स्य पुराण",
+                history: "भगवान परशुरामांचा जन्म आणि त्रेतायुगाचा आरंभ.",
+                astrology: "सूर्य (मेष) आणि चंद्र (वृषभ) दोघेही 'उच्च' (Exalted) स्थितीत.",
+                science: "💡 <strong>पंचांग रहस्य:</strong> २० एप्रिलला सूर्योदयाला तृतीया आहे, पण ती सकाळी ०७:२७ लाच संपते. 'निर्णयसिंधू'नुसार अक्षय्य तृतीया 'मध्यान्ह' (दुपार) व्यापिनी असावी लागते. १९ एप्रिलला तृतीया दुपारी अस्तित्वात असल्याने ती सणासाठी ग्राह्य मानली आहे.<br><br><strong>🔬 विज्ञान:</strong> सूर्य आणि चंद्राची गुरुत्वाकर्षण शक्ती अत्यंत संतुलित असते. मानसिक स्थिरता सर्वोच्च असते.",
+                goodFor: "सुवर्ण खरेदी, शाश्वत गुंतवणूक, विवाह, दान, आणि गृहप्रवेश."
+            },
+            "2026-10-19": {
+                name: "विजयादशमी / दसरा (धर्मसिंधू नियमानुसार)",
+                ancient: "निर्णयसिंधू आणि वाल्मिकी रामायण",
+                history: "प्रभू रामांचा रावणावर विजय. देवी दुर्गेने महिषासुराचा वध केला.",
+                astrology: "दशमी तिथी आणि 'श्रवण' नक्षत्राचा योग विजयासाठी शक्तिशाली मानला जातो.",
+                science: "💡 <strong>पंचांग रहस्य:</strong> २० ऑक्टोबरला उदया तिथी दशमी असली तरी ती दुपारी संपते. दसऱ्याचे 'सीमोल्लंघन' आणि पूजा दुपारच्या 'अपराह्न' काळात केली जाते. १९ ऑक्टोबरला दशमी 'अपराह्न व्यापिनी' असल्याने दसरा याच दिवशी साजरा होतो.<br><br><strong>🔬 विज्ञान:</strong> 'शमी' आणि 'आपटा' वृक्षांच्या पानांमध्ये वातावरणातील इलेक्ट्रीकल एनर्जी (Static electricity) साठवण्याची क्षमता असते.",
+                goodFor: "नवीन विद्या शिकणे (सीमोल्लंघन), शस्त्रास्त्र खरेदी आणि व्यवसायाचे उद्घाटन."
+            },
+            "2026-11-08": {
+                name: "लक्ष्मीपूजन / दिवाळी (धर्मसिंधू नियमानुसार)",
+                ancient: "निर्णयसिंधू आणि पद्म पुराण",
+                history: "समुद्रमंथनातून माता लक्ष्मीचे प्रकटीकरण.",
+                astrology: "सूर्य आणि चंद्र दोघेही 'तुळ' (Libra) राशीत एकत्र असतात.",
+                science: "💡 <strong>पंचांग रहस्य:</strong> ९ नोव्हेंबरला उदया तिथी अमावास्या असली तरी ती दिवसा संपते. लक्ष्मीपूजन 'प्रदोष आणि निशीथ' (रात्रीच्या) काळात केले जाते. ८ नोव्हेंबरला रात्री अमावास्या असल्याने लक्ष्मीपूजन ८ तारखेलाच केले जाईल.<br><br><strong>🔬 विज्ञान:</strong> दिव्यांच्या प्रकाशाने आणि नादाने वातावरणातील जडत्व नष्ट होते.",
+                goodFor: "आर्थिक हिशोब (चोपडी पूजन), नवीन व्यापारी करार, लक्ष्मी उपासना."
+            }
+        };
+		
+		
+        const STORAGE_KEY_CITY = 'panchang_last_city';
+        const STORAGE_KEY_LAT = 'panchang_last_lat';
+        const STORAGE_KEY_LON = 'panchang_last_lon';
+
+        let currentLat = localStorage.getItem(STORAGE_KEY_LAT) ? parseFloat(localStorage.getItem(STORAGE_KEY_LAT)) : 18.5204; 
+        let currentLon = localStorage.getItem(STORAGE_KEY_LON) ? parseFloat(localStorage.getItem(STORAGE_KEY_LON)) : 73.8567;
+        let todaySunrise = null;
+        let globalPanchangContext = "";
+
+        function populateSelects() {
+            const rashiSelect = document.getElementById('userRashi');
+            RASHIS.forEach(r => rashiSelect.add(new Option(r, r)));
+            
+            const nakSelect = document.getElementById('userNakshatra');
+            NAKSHATRAS.forEach(n => nakSelect.add(new Option(n, n)));
+        }
+
+        async function loadModule(id, file) {
+            try {
+                const response = await fetch(file);
+                if (!response.ok) return false;
+                const html = await response.text();
+                if(document.getElementById(id)) document.getElementById(id).innerHTML = html;
+                return true;
+            } catch (error) { return false; }
+        }
+
+		function getCurrentLagna(now, lat, lon) {
+            // 1. Calculate exact Julian Date (JD) for the current millisecond
+            const jd = (now.getTime() / 86400000) + 2440587.5;
+            const d = jd - 2451545.0; // Days since J2000.0 epoch
+
+            // 2. Greenwich Mean Sidereal Time (GMST) in degrees
+            let gmst = (280.46061837 + 360.98564736629 * d) % 360;
+            if (gmst < 0) gmst += 360;
+
+            // 3. Local Sidereal Time (LST) based on user's exact longitude
+            let lst = (gmst + lon) % 360;
+            if (lst < 0) lst += 360;
+
+            const rad = Math.PI / 180;
+            let lstRad = lst * rad;
+            let latRad = lat * rad;
+
+            // 4. Obliquity of the Ecliptic (Earth's exact axial tilt)
+            let ecl = (23.4392911 - 0.00000036 * d) * rad;
+
+            // 5. Exact Spherical Trigonometry for Ascendant (Oblique Ascension)
+            // This replaces the flawed "15 degrees per hour" logic and accounts for Rasimana (Sign rise times)
+            let y = Math.cos(lstRad);
+            let x = -(Math.sin(lstRad) * Math.cos(ecl) + Math.tan(latRad) * Math.sin(ecl));
+            
+            let ascendantTropical = Math.atan2(y, x) / rad;
+            if (ascendantTropical < 0) ascendantTropical += 360;
+
+            // 6. Precise True Lahiri Ayanamsa (Chitrapaksha) Calculation
+            // This replaces the linear approximation with the polynomial formula for higher accuracy
+            const t = d / 36525; // Julian centuries since J2000
+            const ayanamsa = 23.858123 + (1.396041 * t) + (0.000308 * t * t);
+
+            // 7. Calculate Sidereal (Nirayana) Lagna
+            let ascendantSidereal = (ascendantTropical - ayanamsa + 360) % 360;
+
+            // 8. Calculate Rashi and Nakshatra boundaries
+            let ascendantIndex = Math.floor(ascendantSidereal / 30);
+            let nakshatraIndex = Math.floor(ascendantSidereal / (360 / 27));
+
+            return { rashiIdx: ascendantIndex, nakIdx: nakshatraIndex };
+        }
+
+        async function init() {
+            populateSelects();
+            document.getElementById('dateInput').valueAsDate = new Date();
+            
+            const savedCity = localStorage.getItem(STORAGE_KEY_CITY);
+            if (savedCity) document.getElementById('cityInput').value = savedCity;
+
+            await loadModule('module-science', 'science.html');
+            await loadModule('module-conclusion', 'conclusion.html');
+            
+            startClocks(); 
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(async (position) => {
+                    currentLat = position.coords.latitude;
+                    currentLon = position.coords.longitude;
+                    localStorage.setItem(STORAGE_KEY_LAT, currentLat);
+                    localStorage.setItem(STORAGE_KEY_LON, currentLon);
+                    updateTodaySunrise(); 
+
+                    try {
+                        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${currentLat}&lon=${currentLon}`);
+                        const data = await res.json();
+                        if (data && data.address) {
+                            const city = data.address.city || data.address.town || data.address.county || data.address.state_district || "Current Location";
+                            document.getElementById('cityInput').value = city;
+                            localStorage.setItem(STORAGE_KEY_CITY, city);
+                        }
+                    } catch (e) {}
+                }, (error) => {});
+            }
+        }
+
+        function updateTodaySunrise() {
+            const today = new Date(); 
+            const times = SunCalc.getTimes(today, currentLat, currentLon);
+            todaySunrise = times.sunrise;
+        }
+
+		function startClocks() {
+            updateTodaySunrise();
+            
+            setInterval(() => {
+                const now = new Date(); 
+                
+                const clockGreg = document.getElementById('clock-gregorian');
+                if(clockGreg) clockGreg.innerText = now.toLocaleString('mr-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+
+                if (todaySunrise) {
+                    let msSinceSunriseHora = now.getTime() - todaySunrise.getTime();
+                    let currentDayOfWeek = todaySunrise.getDay();
+                    
+                    if (msSinceSunriseHora < 0) {
+                        const yesterday = new Date(now.getTime() - 86400000);
+                        const yTimes = SunCalc.getTimes(yesterday, currentLat, currentLon);
+                        msSinceSunriseHora = now.getTime() - yTimes.sunrise.getTime();
+                        currentDayOfWeek = yesterday.getDay();
+                    }
+
+                    const horaLords = ["सूर्य", "शुक्र", "बुध", "चंद्र", "शनि", "गुरु", "मंगळ"];
+                    const dayToStartLordIndex = [0, 3, 6, 2, 5, 1, 4]; 
+                    const hoursElapsed = Math.floor(msSinceSunriseHora / 3600000); 
+                    const startLordIndex = dayToStartLordIndex[currentDayOfWeek];
+                    const currentHoraLord = horaLords[(startLordIndex + hoursElapsed) % 7];
+
+                    const horaElem = document.getElementById('current-hora');
+                    if (horaElem) horaElem.innerText = currentHoraLord;
+                }
+                
+                // === BPHS YAMARDHA (8 SHIFTS) LOGIC ===
+                if (todaySunrise) {
+                    let timesCurrent = SunCalc.getTimes(now, currentLat, currentLon);
+                    let baseDate = now;
+                    
+                    // If we are in the pre-dawn hours, the Vedic day technically started yesterday
+                    if (now < timesCurrent.sunrise) {
+                        baseDate = new Date(now.getTime() - 86400000);
+                    }
+                    
+                    let timesVedicDay = SunCalc.getTimes(baseDate, currentLat, currentLon);
+                    let timesVedicNextDay = SunCalc.getTimes(new Date(baseDate.getTime() + 86400000), currentLat, currentLon);
+
+                    let dayStart = timesVedicDay.sunrise;
+                    let dayEnd = timesVedicDay.sunset;
+                    let nightStart = timesVedicDay.sunset;
+                    let nightEnd = timesVedicNextDay.sunrise;
+
+                    let isDayTime = now >= dayStart && now < dayEnd;
+                    let shiftStartTime, totalDurationMs, startLordIndex;
+                    let weekday = dayStart.getDay(); 
+
+                    if (isDayTime) {
+                        shiftStartTime = dayStart;
+                        totalDurationMs = dayEnd.getTime() - dayStart.getTime();
+                        startLordIndex = weekday; // Daytime starts with weekday lord
+                    } else {
+                        shiftStartTime = nightStart;
+                        totalDurationMs = nightEnd.getTime() - nightStart.getTime();
+                        startLordIndex = (weekday + 4) % 7; // Nighttime starts from 5th day lord
+                    }
+
+                    const yamardhaLordsSequence = ["सूर्य", "चंद्र", "मंगळ", "बुध", "गुरु", "शुक्र", "शनि"];
+                    const shiftDurationMs = totalDurationMs / 8;
+                    const timeElapsedMs = Math.max(0, now.getTime() - shiftStartTime.getTime());
+                    const currentShiftIndex = Math.floor(timeElapsedMs / shiftDurationMs);
+
+                    let currentYamardhaLord = "";
+                    if (currentShiftIndex >= 7) {
+                        currentYamardhaLord = "निरीश्वर (रिकामा)";
+                    } else {
+                        currentYamardhaLord = yamardhaLordsSequence[(startLordIndex + currentShiftIndex) % 7];
+                    }
+
+                    const yamardhaElem = document.getElementById('current-yamardha');
+                    if (yamardhaElem) {
+                        yamardhaElem.innerText = currentYamardhaLord;
+                        if(currentShiftIndex >= 7) yamardhaElem.className = "text-red-600 font-extrabold";
+                        else yamardhaElem.className = "text-green-800 font-extrabold";
+                    }
+                }
+// === LIVE LAGNA & HINDU CLOCK LOGIC ===
+				const clockHindu = document.getElementById('clock-hindu');
+                if(clockHindu && todaySunrise) {
+                    let msSinceSunrise = now.getTime() - todaySunrise.getTime();
+                    if (msSinceSunrise < 0) {
+                        const yesterday = new Date(now.getTime() - 86400000);
+                        const yTimes = SunCalc.getTimes(yesterday, currentLat, currentLon);
+                        msSinceSunrise = now.getTime() - yTimes.sunrise.getTime();
+                    }
+					const ghati = Math.floor(msSinceSunrise / 1440000);
+                    const msRemainingAfterGhati = msSinceSunrise % 1440000;
+                    
+                    const pala = Math.floor(msRemainingAfterGhati / 24000);
+                    const msRemainingAfterPala = msRemainingAfterGhati % 24000;
+                    
+                    const vipala = Math.floor(msRemainingAfterPala / 400);
+                    
+                    // 1 Muhurta = 2,880,000 ms (48 minutes)
+                    const muhurta = Math.floor(msSinceSunrise / 2880000) + 1; 
+
+                    clockHindu.innerText = `${ghati} घटी, ${pala} पळे, ${vipala} विपळे | ${muhurta} वा मुहूर्त`;
+                }
+                const liveLagnaElem = document.getElementById('live-lagna');
+                const liveLagnaLord = document.getElementById('live-lagna-lord');
+                const liveLagnaTattva = document.getElementById('live-lagna-tattva');
+                const liveLagnaSwabhava = document.getElementById('live-lagna-swabhava');
+                const liveLagnaDetails = document.getElementById('live-lagna-details');
+
+                // Nakshatra elements
+                const liveNakElem = document.getElementById('live-lagna-nak');
+                const liveNakLord = document.getElementById('live-nak-lord');
+                const liveNakTattva = document.getElementById('live-nak-tattva');
+                const liveNakMukha = document.getElementById('live-nak-mukha');
+                const liveNakDetails = document.getElementById('live-nak-details');
+
+                if (liveLagnaElem && todaySunrise) {
+                    let lagnaData = getCurrentLagna(now, currentLat, currentLon);
+                    
+                    if (lagnaData === "अज्ञात") {
+                        liveLagnaElem.innerText = "अज्ञात";
+                        liveNakElem.innerText = "अज्ञात";
+                    } else {
+                        let lagnaIdx = lagnaData.rashiIdx;
+                        let nakIdx = lagnaData.nakIdx;
+
+                        // 1. Rashi Logic
+                        liveLagnaElem.innerText = RASHIS[lagnaIdx];
+                        if(liveLagnaDetails) {
+                            liveLagnaLord.innerText = `स्वामी: ${RASHI_LORDS[lagnaIdx]}`;
+                            
+                            liveLagnaTattva.innerText = `तत्त्व: ${RASHI_TATTVAS[lagnaIdx].name}`;
+                            liveLagnaTattva.className = `text-[11px] px-2 py-0.5 rounded border shadow-sm font-bold flex items-center justify-center ${RASHI_TATTVAS[lagnaIdx].style}`;
+                            
+                            let swabhavaIdx = lagnaIdx % 3;
+                            liveLagnaSwabhava.innerText = `स्वभाव: ${RASHI_SWABHAVA[swabhavaIdx].name}`;
+                            liveLagnaSwabhava.className = `text-[11px] px-2 py-0.5 rounded border shadow-sm font-bold flex items-center justify-center ${RASHI_SWABHAVA[swabhavaIdx].style}`;
+                            
+                            liveLagnaDetails.classList.remove('hidden');
+                        }
+
+                        // 2. Nakshatra Logic
+                        liveNakElem.innerText = NAKSHATRAS[nakIdx];
+                        if(liveNakDetails) {
+                            let lordIdx = nakIdx % 9;
+                            
+                            liveNakLord.innerText = `स्वामी: ${NAK_LORDS_GLOBAL[lordIdx]}`;
+                            
+                            liveNakTattva.innerText = `तत्त्व: ${NAK_TATTVAS_GLOBAL[lordIdx].name}`;
+                            liveNakTattva.className = `text-[11px] px-2 py-0.5 rounded border shadow-sm font-bold flex items-center justify-center ${NAK_TATTVAS_GLOBAL[lordIdx].style}`;
+                            
+                            let mukha = NAKSHATRA_MUKHA[nakIdx];
+                            liveNakMukha.innerHTML = `मुख: ${mukha.name} ${mukha.icon}`;
+                            
+                            liveNakDetails.classList.remove('hidden');
+                        }
+                    }
+                }
+            }, 1000);
+        }
+
+        let searchTimeout = null;
+        const cityInput = document.getElementById('cityInput');
+        const suggestionsBox = document.getElementById('suggestions');
+
+        cityInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
+            if(query.length < 3) { suggestionsBox.style.display = 'none'; return; }
+            
+            searchTimeout = setTimeout(async () => {
+                try {
+                    const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&addressdetails=1`);
+                    const data = await res.json();
+                    suggestionsBox.innerHTML = '';
+                    if(data.length > 0) {
+                        data.forEach(item => {
+                            const div = document.createElement('div');
+                            div.className = 'suggestion-item';
+                            const state = item.address.state ? `, ${item.address.state}` : '';
+                            const country = item.address.country ? `, ${item.address.country}` : '';
+                            const fullCityName = `${item.name}${state}${country}`;
+                            div.innerText = fullCityName;
+                            
+                            div.onclick = () => {
+                                cityInput.value = fullCityName;
+                                currentLat = parseFloat(item.lat);
+                                currentLon = parseFloat(item.lon);
+                                localStorage.setItem(STORAGE_KEY_CITY, fullCityName);
+                                localStorage.setItem(STORAGE_KEY_LAT, currentLat);
+                                localStorage.setItem(STORAGE_KEY_LON, currentLon);
+                                suggestionsBox.style.display = 'none';
+                            };
+                            suggestionsBox.appendChild(div);
+                        });
+                        suggestionsBox.style.display = 'block';
+                    }
+                } catch(e) {}
+            }, 600);
+        });
+
+        document.addEventListener('click', function(e) {
+            if (e.target !== cityInput && e.target !== suggestionsBox) {
+                suggestionsBox.style.display = 'none';
+            }
+        });
+
+        function formatTimeWithDate(timeObj, baseDate) {
+            if (!timeObj || isNaN(timeObj)) return "--:--";
+            let timeStr = timeObj.toLocaleTimeString('mr-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+            if (timeObj.getDate() !== baseDate.getDate() || timeObj.getMonth() !== baseDate.getMonth()) {
+                const nextDayStr = timeObj.toLocaleDateString('mr-IN', { day: 'numeric', month: 'short' });
+                timeStr += ` <span class="text-xs bg-red-100 text-red-800 border border-red-200 px-2 py-0.5 rounded font-bold ml-1 inline-block mt-1 md:mt-0">पुढील दिन: ${nextDayStr}</span>`;
+            }
+            return timeStr;
+        }
+
+ function calculateExactAstrologyFromAPI(apiData, date, lat, lon) {
+    // 1. Extract exact Nirayana (Sidereal) degrees from your Python server
+    const surya = apiData.grahas_data.find(g => g.name === 'Surya');
+    const chandra = apiData.grahas_data.find(g => g.name === 'Chandra');
+    
+    let sun_nirayana = surya.abs_deg;
+    let moon_nirayana = chandra.abs_deg;
+
+    // 2. Exact Tithi Calculation
+    let diff = moon_nirayana - sun_nirayana;
+    if (diff < 0) diff += 360;
+    let tithiIndex = Math.floor(diff / 12);
+    let paksha = tithiIndex < 15 ? "शुक्ल पक्ष" : "कृष्ण पक्ष";
+    let tithiName = TITHIS[tithiIndex];
+
+    // 3. Exact Nakshatra and Yoga Calculations
+    let nakshatraIndex = Math.floor(moon_nirayana / (360/27));
+    let yogaIndex = Math.floor(((sun_nirayana + moon_nirayana) % 360) / (360/27));
+
+    // 4. Exact Karana Calculation
+    let karanaIndex = Math.floor(diff / 6);
+    let k1_name, k2_name;
+    if (karanaIndex === 0) { k1_name = "किंस्तुघ्न"; k2_name = "बव"; }
+    else if (karanaIndex >= 57) {
+        let endKaranas = ["शकुनी", "चतुष्पाद", "नाग", "किंस्तुघ्न"];
+        k1_name = endKaranas[karanaIndex - 57];
+        k2_name = (karanaIndex === 59) ? "किंस्तुघ्न" : endKaranas[karanaIndex - 56];
+    } else {
+        k1_name = KARANAS[(karanaIndex - 1) % 7];
+        k2_name = KARANAS[karanaIndex % 7];
+    }
+
+// 5. Exact Lunar Month Logic (Purnimanta vs Amanta)
+    // BUG FIX: We cannot use the instantaneous 'surya.sign' because the Chandramana month 
+    // is anchored to the Sun's position at the PREVIOUS New Moon (Amavasya).
+    
+    // The Moon gains approx 12.19° on the Sun per day, while the Sun moves 0.9856°.
+    // We calculate exactly how many degrees the Sun has traveled since the last Amavasya.
+    let sun_travel_since_amavasya = diff * (0.9856 / 12.19);
+    
+    // Back-project to find the Sun's exact longitude and Rashi at the last Amavasya.
+    let sun_at_last_amavasya = (sun_nirayana - sun_travel_since_amavasya + 360) % 360;
+    let rashi_at_last_amavasya = Math.floor(sun_at_last_amavasya / 30);
+    
+    // The Amanta month remains constant for all 30 tithis based on that starting Rashi.
+    let amantaMonthIdx = (rashi_at_last_amavasya + 1) % 12; 
+    let purnimantaMonthIdx = amantaMonthIdx;
+    
+    // In the Purnimanta system, the Krishna Paksha shifts forward to the next month's name.
+    if (paksha === "कृष्ण पक्ष") {
+        purnimantaMonthIdx = (amantaMonthIdx + 1) % 12;
+    }
+    
+    // In the Purnimanta system, the Krishna Paksha shifts forward to the next month's name.
+    if (paksha === "कृष्ण पक्ष") {
+        purnimantaMonthIdx = (amantaMonthIdx + 1) % 12;
+    }
+    
+    let calcTime = new Date(date);
+    
+    // --- Tropical (Sayana) Sun for Rutu ---
+    // Your server uses Lahiri Ayanamsa (approx 24 degrees). We add it back to get the Tropical Sun.
+    const currentAyanamsa = 24.11 + ((calcTime.getFullYear() - 2024) * 0.01396);
+    let sun_true = (sun_nirayana + currentAyanamsa) % 360;
+			// --- 6. Parjanya (Rainfall) Vahan Calculation ---
+    let sunNakshatraIndex = Math.floor(sun_nirayana / (360/27));
+    
+    // Formula: (Moon Nakshatra - Sun Nakshatra + 1) mod 9
+    let parjanyaCalc = (nakshatraIndex - sunNakshatraIndex + 1) % 9;
+    if (parjanyaCalc <= 0) parjanyaCalc += 9; // Handle JavaScript's negative modulo
+
+    const PARJANYA_DATA = {
+        1: { name: "घोडा", prediction: "पर्वतावर पाऊस पडेल", style: "text-orange-700 bg-orange-100 border-orange-300" },
+        2: { name: "कोल्हा", prediction: "अत्यल्प पाऊस", style: "text-red-700 bg-red-100 border-red-300" },
+        3: { name: "बेडूक", prediction: "जोरदार वृष्टी", style: "text-blue-700 bg-blue-100 border-blue-300" },
+        4: { name: "मेंढा", prediction: "अत्यल्प पाऊस", style: "text-red-700 bg-red-100 border-red-300" },
+        5: { name: "मोर", prediction: "अनियमित पाऊस", style: "text-yellow-700 bg-yellow-100 border-yellow-300" },
+        6: { name: "उंदीर", prediction: "अल्प पाऊस", style: "text-yellow-700 bg-yellow-100 border-yellow-300" },
+        7: { name: "म्हैस", prediction: "जोरदार वृष्टी", style: "text-blue-700 bg-blue-100 border-blue-300" },
+        8: { name: "गाढव", prediction: "अनियमित पाऊस", style: "text-yellow-700 bg-yellow-100 border-yellow-300" },
+        9: { name: "हत्ती", prediction: "जोरदार वृष्टी", style: "text-blue-700 bg-blue-100 border-blue-300" }
+    };
+
+// 7. BPHS Nakshatra Lord and Exact Pancha Mahabhuta (Tattva) Logic
+    const NAKSHATRA_LORDS = ["केतू", "शुक्र", "सूर्य", "चंद्र", "मंगळ", "राहू", "गुरू", "शनी", "बुध"];
+    
+    // Applying the precise elemental nature of the ruling planets.
+    // Rahu and Ketu are both 'Chhaya Grahas' (Shadows) and rule the Vayu (Air) element.
+    const NAKSHATRA_TATTVAS = [
+        { name: "वायू (Air)", style: "text-gray-700 bg-gray-100 border-gray-300" },      // Ketu
+        { name: "जल (Water)", style: "text-blue-700 bg-blue-100 border-blue-300" },     // Venus
+        { name: "अग्नि (Fire)", style: "text-red-700 bg-red-100 border-red-300" },      // Sun
+        { name: "जल (Water)", style: "text-blue-700 bg-blue-100 border-blue-300" },     // Moon
+        { name: "अग्नि (Fire)", style: "text-red-700 bg-red-100 border-red-300" },      // Mars
+        { name: "वायू (Air)", style: "text-gray-700 bg-gray-100 border-gray-300" },       // Rahu
+        { name: "आकाश (Ether)", style: "text-purple-700 bg-purple-100 border-purple-300" }, // Jupiter
+        { name: "वायू (Air)", style: "text-gray-700 bg-gray-100 border-gray-300" },       // Saturn
+        { name: "पृथ्वी (Earth)", style: "text-green-800 bg-green-100 border-green-400" } // Mercury
+    ];
+
+    let lordIndex = nakshatraIndex % 9;
+    let nLord = NAKSHATRA_LORDS[lordIndex];
+    let nTattva = NAKSHATRA_TATTVAS[lordIndex].name;
+    let nTattvaStyle = NAKSHATRA_TATTVAS[lordIndex].style;
+	let tithiClassIndex = tithiIndex % 5;
+    let tClass = TITHI_CLASSIFICATION[tithiClassIndex];
+	
+    return {
+        sun_true: sun_true,
+        tithiIndex: tithiIndex,
+        tithi: tithiName, 
+		tithiClassification: tClass.name,    // ADD THIS
+        tithiClassStyle: tClass.style,       // ADD THIS
+        tithiClassDesc: tClass.desc,
+        paksha: paksha, 
+        nakshatraIndex: nakshatraIndex,
+        nakshatra: NAKSHATRAS[nakshatraIndex],
+        yoga: YOGAS[yogaIndex], 
+        karana1: k1_name, 
+        karana2: k2_name,
+        sunSign: RASHIS[surya.sign], 
+        moonSign: RASHIS[chandra.sign],
+        amantaMonth: MONTHS[amantaMonthIdx], 
+        purnimantaMonth: MONTHS[purnimantaMonthIdx],
+        vaar: VAAR[calcTime.getDay()], 
+        dayOfWeek: calcTime.getDay(),
+        nakshatraLord: nLord,                 
+        nakshatraTattva: nTattva, 
+		sunSignIndex: surya.sign,       // ADD THIS
+        moonSignIndex: chandra.sign,		
+        nakshatraTattvaStyle: nTattvaStyle,   
+        isBhadra: (k1_name === "विष्टी" || k2_name === "विष्टी"),
+        eclipseType: "none", 
+        exactLagna: RASHIS[apiData.asc_sign - 1], 
+        rainVahan: PARJANYA_DATA[parjanyaCalc]
+    };
+
+
+
+}
+
+        function calculateMuhurats(baseDate, lat, lon, dayOfWeek) {
+            const times = SunCalc.getTimes(baseDate, lat, lon);
+            if(!times.sunrise || !times.sunset || !times.solarNoon) return null;
+            
+            const segmentMs = (times.sunset.getTime() - times.sunrise.getTime()) / 8; 
+            const addTime = (start, ms) => new Date(start.getTime() + ms);
+            const formatPeriod = (start, end) => `${formatTimeWithDate(start, baseDate)} ते ${formatTimeWithDate(end, baseDate)}`;
+
+            const minMs = 60000;
+            const brahmaStart = addTime(times.sunrise, -96 * minMs);
+            const brahmaEnd = addTime(times.sunrise, -48 * minMs);
+            const pratahSandhyaStart = addTime(times.sunrise, -48 * minMs);
+            const pratahSandhyaEnd = times.sunrise;
+            const madhyahnaSandhyaStart = addTime(times.solarNoon, -24 * minMs);
+            const madhyahnaSandhyaEnd = addTime(times.solarNoon, +24 * minMs);
+            const sayamSandhyaStart = times.sunset;
+            const sayamSandhyaEnd = addTime(times.sunset, +48 * minMs);
+            const godhuliStart = addTime(times.sunset, -12 * minMs);
+            const godhuliEnd = addTime(times.sunset, +12 * minMs);
+
+            const rahuSeg = [8, 2, 7, 5, 6, 4, 3][dayOfWeek]; 
+            const yamaSeg = [5, 4, 3, 2, 1, 7, 6][dayOfWeek];
+            const gulikaSeg = [7, 6, 5, 4, 3, 2, 1][dayOfWeek];
+
+            const abhijitStart = new Date(times.solarNoon.getTime() - 1440000);
+            const abhijitEnd = new Date(times.solarNoon.getTime() + 1440000);
+
+            const duruSeg1 = [9, 6, 3, 6, 4, 4, 2][dayOfWeek]; 
+            const muhuratMs = (times.sunset.getTime() - times.sunrise.getTime()) / 15;
+            const getDuru = (seg) => formatPeriod(addTime(times.sunrise, (seg-1)*muhuratMs), addTime(times.sunrise, seg*muhuratMs));
+
+            // --- CHRONOLOGICAL DATA ENGINE ---
+            let rawEvents = [];
+            const addEv = (n, s, e, t, sev) => { if(s && e) rawEvents.push({name: n, start: s, end: e, type: t, severity: sev}); };
+
+            addEv("ब्राह्म मुहूर्त", brahmaStart, brahmaEnd, "मुहूर्त", "अति शुभ");
+            addEv("गोधूलि काळ", godhuliStart, godhuliEnd, "मुहूर्त", "शुभ");
+            addEv("राहु काळ", addTime(times.sunrise, (rahuSeg-1)*segmentMs), addTime(times.sunrise, rahuSeg*segmentMs), "दोष", "अति अशुभ");
+            addEv("यमगंड", addTime(times.sunrise, (yamaSeg-1)*segmentMs), addTime(times.sunrise, yamaSeg*segmentMs), "दोष", "अशुभ");
+            addEv("गुलिक काळ", addTime(times.sunrise, (gulikaSeg-1)*segmentMs), addTime(times.sunrise, gulikaSeg*segmentMs), "दोष", "अशुभ");
+            addEv("अभिजित मुहूर्त", abhijitStart, abhijitEnd, "मुहूर्त", "अति शुभ");
+
+            // Choghadiyas Logic
+            let choghadiyas = [];
+            const chSev = {"अमृत": "अति शुभ", "शुभ": "शुभ", "लाभ": "शुभ", "चल": "मध्यम", "उद्वेग": "अशुभ", "रोग": "अशुभ", "काळ": "अति अशुभ"};
+            const choghadiyaStartIdx = [0, 3, 6, 2, 5, 1, 4][dayOfWeek]; 
+            for(let i=0; i<8; i++) {
+                let name = CHOGHADIYA_NAMES[(choghadiyaStartIdx + i) % 7];
+                let segStart = addTime(times.sunrise, i * segmentMs);
+                let segEnd = addTime(times.sunrise, (i + 1) * segmentMs);
+                
+                addEv(name + " चौघडिया", segStart, segEnd, "चौघडिया", chSev[name]);
+
+                if(["अमृत", "शुभ", "लाभ"].includes(name)) {
+                    let overlapDanger = "";
+                    if ((i+1) === rahuSeg) overlapDanger = "राहु काळ";
+                    else if ((i+1) === yamaSeg) overlapDanger = "यमगंड";
+                    else if ((i+1) === gulikaSeg) overlapDanger = "गुलिक काळ";
+                    let isMahaYoga = (segStart < abhijitEnd && segEnd > abhijitStart) && !overlapDanger;
+                    choghadiyas.push({ name: name, time: formatPeriod(segStart, segEnd), benefit: CHOGHADIYA_BENEFITS[name], overlap: overlapDanger, isMahaYoga: isMahaYoga });
+                }
+            }
+
+            // Horas Logic
+            const horaLords = ["सूर्य", "शुक्र", "बुध", "चंद्र", "शनि", "गुरु", "मंगळ"];
+            const horaSev = {"गुरु":"अति शुभ", "शुक्र":"अति शुभ", "चंद्र":"अति शुभ", "बुध":"शुभ", "सूर्य":"शुभ", "मंगळ":"मध्यम", "शनि":"अति अशुभ"};
+            let hStartIdx = [0, 3, 6, 2, 5, 1, 4][dayOfWeek];
+            for(let i=0; i<24; i++) {
+                let hStart = new Date(times.sunrise.getTime() + (i * 3600000));
+                let hEnd = new Date(hStart.getTime() + 3600000);
+                let lord = horaLords[(hStartIdx + i) % 7];
+                addEv(lord + " होरा", hStart, hEnd, "होरा", horaSev[lord]);
+            }
+
+            // Sort everything strictly by time
+            rawEvents.sort((a, b) => a.start.getTime() - b.start.getTime());
+
+            return {
+                brahma: formatPeriod(brahmaStart, brahmaEnd),
+                pratahSandhya: formatPeriod(pratahSandhyaStart, pratahSandhyaEnd),
+                madhyahnaSandhya: formatPeriod(madhyahnaSandhyaStart, madhyahnaSandhyaEnd),
+                sayamSandhya: formatPeriod(sayamSandhyaStart, sayamSandhyaEnd),
+                godhuli: formatPeriod(godhuliStart, godhuliEnd),
+                rahu: formatPeriod(addTime(times.sunrise, (rahuSeg-1)*segmentMs), addTime(times.sunrise, rahuSeg*segmentMs)), 
+                yama: formatPeriod(addTime(times.sunrise, (yamaSeg-1)*segmentMs), addTime(times.sunrise, yamaSeg*segmentMs)), 
+                gulika: formatPeriod(addTime(times.sunrise, (gulikaSeg-1)*segmentMs), addTime(times.sunrise, gulikaSeg*segmentMs)),
+                duru: getDuru(duruSeg1), 
+                ardha: formatPeriod(addTime(times.sunrise, Math.max(0, (rahuSeg-2))*segmentMs), addTime(times.sunrise, Math.max(1, (rahuSeg-1))*segmentMs)),
+                mrityu: formatPeriod(addTime(times.sunrise, Math.max(0, yamaSeg)*segmentMs), addTime(times.sunrise, Math.max(1, yamaSeg+1)*segmentMs)), 
+                abhijit: formatPeriod(abhijitStart, abhijitEnd),
+                goodChoghadiyas: choghadiyas,
+                rawEvents: rawEvents
+            };
+        }
+	
+		const PYTHON_SERVER_URL = "https://eprashala.pythonanywhere.com/calculate";
+
+		async function fetchExactPanchangData(dateStr, lat, lon) {
+		try {
+        // We calculate for 12:00 PM (Midday) for the standard daily Panchang
+        const response = await fetch(PYTHON_SERVER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                date: dateStr, 
+                time: "12:00:00", 
+                lat: lat, 
+                lon: lon 
+            })
+        });
+        
+        if (!response.ok) throw new Error("Server communication failed");
+        return await response.json();
+    } catch (error) {
+        console.error("API Error:", error);
+        return null;
+    }
+}
+
+        async function calculateAndLoadModules() {
+            const dateVal = document.getElementById('dateInput').value;
+            const cityVal = document.getElementById('cityInput').value;
+            const errorMsg = document.getElementById('error-msg');
+            const uRashi = document.getElementById('userRashi').value;
+            const uNak = document.getElementById('userNakshatra').value;
+
+            if (!dateVal || !cityVal) {
+                errorMsg.textContent = "कृपया तारीख आणि शहर दोन्ही टाका.";
+                errorMsg.classList.remove('hidden'); return;
+            }
+
+            localStorage.setItem(STORAGE_KEY_CITY, cityVal);
+            errorMsg.classList.add('hidden');
+            document.getElementById('results').classList.remove('hidden');
+            document.getElementById('loading').style.display = 'block';
+
+            try {
+                const parts = dateVal.split('-');
+                const targetDate = new Date(parts[0], parts[1]-1, parts[2], 12, 0, 0); 
+                const times = SunCalc.getTimes(targetDate, currentLat, currentLon);
+                let moonTimes = SunCalc.getMoonTimes(targetDate, currentLat, currentLon);
+                
+                let mRise = moonTimes.rise || SunCalc.getMoonTimes(new Date(targetDate.getTime() + 86400000), currentLat, currentLon).rise;
+                let mSet = moonTimes.set || SunCalc.getMoonTimes(new Date(targetDate.getTime() + 86400000), currentLat, currentLon).set;
+
+                // Fetch the absolute truth from the Python server
+			const apiResponse = await fetchExactPanchangData(parts.join('-'), currentLat, currentLon);
+
+			if (!apiResponse || apiResponse.status !== 'success') {
+			document.getElementById('loading').style.display = 'none';
+			errorMsg.textContent = "सर्व्हरवरून माहिती मिळवण्यात त्रुटी आली. कृपया थोड्या वेळाने प्रयत्न करा.";
+			errorMsg.classList.remove('hidden');
+			return;
+		}
+
+		// Map the absolute backend data to the frontend variables
+				const vedic = calculateExactAstrologyFromAPI(apiResponse, targetDate, currentLat, currentLon);
+				const muhurats = calculateMuhurats(targetDate, currentLat, currentLon, vedic.dayOfWeek);
+                globalPanchangContext = `तारीख: ${dateVal}, वार: ${vedic.vaar}, तिथी: ${vedic.tithi}, नक्षत्र: ${vedic.nakshatra}, चंद्र रास: ${vedic.moonSign}. भद्रा: ${vedic.isBhadra ? 'आहे' : 'नाही'}. राहु काळ: ${muhurats ? muhurats.rahu : 'अज्ञात'}.`;
+
+                // --- 1. Personal Tarabal & Chandrabal ---
+                const pBanner = document.getElementById('personal-strength-banner');
+                if (uRashi && uNak) {
+                    let uNakIdx = NAKSHATRAS.indexOf(uNak);
+                    let distance = (vedic.nakshatraIndex - uNakIdx + 27) % 27 + 1;
+                    let taraGroup = distance % 9;
+                    if(taraGroup === 0) taraGroup = 9;
+                    let taraName = TARA_NAMES[taraGroup - 1];
+                    let isTaraGood = [2, 4, 6, 8, 9].includes(taraGroup);
+
+                    let uRashiIdx = RASHIS.indexOf(uRashi);
+                    let cRashiIdx = RASHIS.indexOf(vedic.moonSign);
+                    let chandraDist = (cRashiIdx - uRashiIdx + 12) % 12 + 1;
+                    let isChandraGood = [1, 3, 6, 7, 10, 11].includes(chandraDist);
+                    let isChandraBad = [4, 8, 12].includes(chandraDist);
+
+                    let taraHtml = isTaraGood ? `<span class="text-green-600 font-bold">उत्तम (${taraName})</span>` : `<span class="text-red-600 font-bold">कष्टदायक (${taraName})</span>`;
+                    let chandraHtml = isChandraGood ? `<span class="text-green-600 font-bold">शुभ (लाभदायक)</span>` : (isChandraBad ? `<span class="text-red-600 font-bold">अशुभ (घातक)</span>` : `<span class="text-yellow-600 font-bold">सामान्य</span>`);
+
+                    pBanner.innerHTML = `
+                        <h3 class="text-lg font-bold text-indigo-900 mb-1">✨ तुमचे वैयक्तिक पंचांग बळ</h3>
+                        <p class="text-sm text-gray-700">तुमची जन्म रास <strong>${uRashi}</strong> आणि नक्षत्र <strong>${uNak}</strong> नुसार आजचे बल:</p>
+                        <div class="mt-2 flex gap-4 text-sm">
+                            <div class="bg-white px-3 py-2 rounded border border-indigo-200">ताराबळ: ${taraHtml}</div>
+                            <div class="bg-white px-3 py-2 rounded border border-indigo-200">चंद्रबळ: ${chandraHtml}</div>
+                        </div>
+                    `;
+                    pBanner.classList.remove('hidden');
+                    globalPanchangContext += ` युझरची जन्म रास ${uRashi} व नक्षत्र ${uNak} आहे. ताराबळ ${taraName} आणि चंद्रबळ ${chandraDist} वे आहे.`;
+                } else {
+                    pBanner.classList.add('hidden');
+                }
+
+                // --- 2. सण आणि उत्सव तपासणी ---
+                let festivalData = OVERRIDES_2026[dateVal]; 
+                if (!festivalData) {
+                    if (targetDate.getMonth() === 0 && (targetDate.getDate() === 14 || targetDate.getDate() === 15)) {
+                        festivalData = SOLAR_FESTIVALS["मकर संक्रांती"];
+                    } else {
+                        let festKey = `${vedic.amantaMonth}_${vedic.paksha}_${vedic.tithi}`;
+                        festivalData = FESTIVALS[festKey];
+                    }
+                }
+
+                const festModule = document.getElementById('module-festival');
+                if (festivalData && document.getElementById('fest-name')) {
+                    document.getElementById('fest-name').innerText = festivalData.name;
+                    if(document.getElementById('fest-ancient')) document.getElementById('fest-ancient').innerText = festivalData.ancient;
+                    if(document.getElementById('fest-history')) document.getElementById('fest-history').innerText = festivalData.history;
+                    if(document.getElementById('fest-astrology')) document.getElementById('fest-astrology').innerHTML = festivalData.astrology || "ग्रहांची विशिष्ट स्थिती.";
+                    if(document.getElementById('fest-science')) document.getElementById('fest-science').innerHTML = festivalData.science;
+                    if(document.getElementById('fest-goodfor')) document.getElementById('fest-goodfor').innerText = festivalData.goodFor;
+                    festModule.style.display = 'block';
+                } else if (festModule) {
+                    festModule.style.display = 'none';
+                }
+
+                // --- 3. Basic Panchang Info ---
+                document.getElementById('display-date-city').innerText = `${targetDate.toLocaleDateString('mr-IN', {day:'numeric', month:'long', year:'numeric'})} | ${cityVal.split(',')[0]}`;
+                document.getElementById('r-lat').innerText = currentLat.toFixed(4);
+                document.getElementById('r-lon').innerText = currentLon.toFixed(4);
+                document.getElementById('r-sunrise').innerHTML = formatTimeWithDate(times.sunrise, targetDate);
+                document.getElementById('r-sunset').innerHTML = formatTimeWithDate(times.sunset, targetDate);
+                document.getElementById('r-moonrise').innerHTML = formatTimeWithDate(mRise, targetDate);
+                document.getElementById('r-moonset').innerHTML = formatTimeWithDate(mSet, targetDate);
+                document.getElementById('r-maas-north').innerText = vedic.purnimantaMonth;
+				document.getElementById('r-maas-south').innerText = vedic.amantaMonth;
+                document.getElementById('r-paksha').innerText = vedic.paksha;
+                document.getElementById('r-tithi').innerText = vedic.tithi;
+				const tithiClassSpan = document.getElementById('r-tithi-class');
+                if (tithiClassSpan && vedic.tithiClassification) {
+                    tithiClassSpan.innerHTML = vedic.tithiClassification;
+                    tithiClassSpan.title = vedic.tithiClassDesc; // Adds a hover tooltip!
+                    tithiClassSpan.className = `text-[11px] px-2 py-0.5 rounded border shadow-sm font-bold flex items-center justify-center cursor-help ${vedic.tithiClassStyle}`;
+                    tithiClassSpan.classList.remove('hidden');
+                }
+                document.getElementById('r-nakshatra').innerText = vedic.nakshatra;
+				
+				const lordSpan = document.getElementById('r-nakshatra-lord');
+				if (lordSpan && vedic.nakshatraLord) {
+					lordSpan.innerHTML = `स्वामी: ${vedic.nakshatraLord}`;
+					lordSpan.classList.remove('hidden');
+				}
+
+				const tattvaSpan = document.getElementById('r-nakshatra-tattva');
+                if (tattvaSpan && vedic.nakshatraTattva) {
+                    tattvaSpan.innerHTML = `तत्त्व: ${vedic.nakshatraTattva}`;
+                    // Removed ml-1, added px-2 and justify-center
+                    tattvaSpan.className = `text-[11px] px-2 py-0.5 rounded border shadow-sm font-bold flex items-center justify-center ${vedic.nakshatraTattvaStyle}`;
+                    tattvaSpan.classList.remove('hidden');
+                }
+                
+                const rainSpan = document.getElementById('r-rain-vahan');
+                if(rainSpan && vedic.rainVahan) {
+                    rainSpan.innerHTML = `🌧️ पर्जन्य वाहन: ${vedic.rainVahan.name} - <strong>${vedic.rainVahan.prediction}</strong>`;
+                    // Removed ml-1, added px-2, py-1, and w-full for a neat horizontal badge
+                    rainSpan.className = `text-[11px] px-2 py-1 rounded border shadow-sm flex items-center justify-center w-full ${vedic.rainVahan.style}`;
+                    rainSpan.classList.remove('hidden');
+                }
+                document.getElementById('r-yoga').innerText = vedic.yoga;
+                document.getElementById('r-vaar').innerText = vedic.vaar;
+// --- Sun Sign Binding ---
+                document.getElementById('r-sunsign').innerText = vedic.sunSign;
+                const sunLordSpan = document.getElementById('r-sunsign-lord');
+                if(sunLordSpan) {
+                    sunLordSpan.innerText = `स्वामी: ${RASHI_LORDS[vedic.sunSignIndex]}`;
+                    sunLordSpan.classList.remove('hidden');
+                }
+                const sunTattvaSpan = document.getElementById('r-sunsign-tattva');
+                if(sunTattvaSpan) {
+                    sunTattvaSpan.innerText = `तत्त्व: ${RASHI_TATTVAS[vedic.sunSignIndex].name}`;
+                    sunTattvaSpan.className = `text-[11px] px-2 py-0.5 rounded border shadow-sm font-bold flex items-center justify-center ${RASHI_TATTVAS[vedic.sunSignIndex].style}`;
+                    sunTattvaSpan.classList.remove('hidden');
+                }
+
+                // --- Moon Sign Binding ---
+                document.getElementById('r-moonsign').innerText = vedic.moonSign;
+                const moonLordSpan = document.getElementById('r-moonsign-lord');
+                if(moonLordSpan) {
+                    moonLordSpan.innerText = `स्वामी: ${RASHI_LORDS[vedic.moonSignIndex]}`;
+                    moonLordSpan.classList.remove('hidden');
+                }
+                const moonTattvaSpan = document.getElementById('r-moonsign-tattva');
+                if(moonTattvaSpan) {
+                    moonTattvaSpan.innerText = `तत्त्व: ${RASHI_TATTVAS[vedic.moonSignIndex].name}`;
+                    moonTattvaSpan.className = `text-[11px] px-2 py-0.5 rounded border shadow-sm font-bold flex items-center justify-center ${RASHI_TATTVAS[vedic.moonSignIndex].style}`;
+                    moonTattvaSpan.classList.remove('hidden');
+                }
+                document.getElementById('r-karana1').innerText = vedic.karana1;
+                document.getElementById('r-karana2').innerText = vedic.karana2;
+
+             // --- 4. Ritu ---
+                // ऋतू नेहमी 'सायना' (Tropical) सूर्यावर अवलंबून असतात.
+                let sayanaSunSignIdx = Math.floor(vedic.sun_true / 30);
+                let ritu = "";
+                if (sayanaSunSignIdx === 11 || sayanaSunSignIdx === 0) ritu = "वसंत";      // मीन, मेष
+                else if (sayanaSunSignIdx === 1 || sayanaSunSignIdx === 2) ritu = "ग्रीष्म";  // वृषभ, मिथुन
+                else if (sayanaSunSignIdx === 3 || sayanaSunSignIdx === 4) ritu = "वर्षा";   // कर्क, सिंह
+                else if (sayanaSunSignIdx === 5 || sayanaSunSignIdx === 6) ritu = "शरद";   // कन्या, तूळ
+                else if (sayanaSunSignIdx === 7 || sayanaSunSignIdx === 8) ritu = "हेमंत";   // वृश्चिक, धनु
+                else if (sayanaSunSignIdx === 9 || sayanaSunSignIdx === 10) ritu = "शिशिर"; // मकर, कुंभ
+
+				// --- 4.5 Samvatsara & Year Logic (Handling Chaitra overlap) ---
+					let shakaYear = targetDate.getFullYear() - 78;
+					let vikramYear = targetDate.getFullYear() + 57;
+					
+					// Vedic year changes on Chaitra. If the Gregorian month is Jan/Feb/Mar 
+					// but the Amanta month is late in the cycle (Pausha, Magha, Phalguna), 
+					// the Vedic year has not changed yet. We must hold it back.
+					let isPreChaitra = ["पौष", "माघ", "फाल्गुन"].includes(vedic.amantaMonth);
+					if (targetDate.getMonth() < 3 && isPreChaitra) {
+						shakaYear -= 1;
+						vikramYear -= 1;
+					}
+					
+					document.getElementById('r-vikram').innerText = vikramYear;
+					document.getElementById('r-shaka').innerText = shakaYear;
+					
+					// The Samvatsara calculation (60-year Jovian cycle offset mathematically)
+					let samvatsaraIndex = (shakaYear + 11) % 60;
+					document.getElementById('r-samvatsara').innerText = SAMVATSARAS[samvatsaraIndex];
+					
+                // उत्तरायण मकर संक्रांतीपासून सुरू होते (मकर ते मिथुन रास)
+				let isUttarayana = ["मकर", "कुंभ", "मीन", "मेष", "वृषभ", "मिथुन"].includes(vedic.sunSign);
+				document.getElementById('r-ayana').innerText = isUttarayana ? "उत्तरायण" : "दक्षिणायन";
+                document.getElementById('r-ritu').innerText = ritu;
+
+                // --- 5. Disha Shool ---
+                if(DISHA_SHOOL[vedic.dayOfWeek]) {
+                    const ds = DISHA_SHOOL[vedic.dayOfWeek];
+                    document.getElementById('r-dishashool-dir').innerText = ds.dir;
+                    document.getElementById('r-dishashool-sci').innerText = ds.science;
+                    document.getElementById('r-dishashool-rem').innerText = ds.remedy;
+                }
+
+                // --- 6. Agnivasa ---
+                let tithiNum = vedic.tithiIndex + 1;
+                let vaarNum = vedic.dayOfWeek + 1; 
+                let agniVasaVal = (tithiNum + vaarNum + 1) % 3;
+                let agniText = "", agniDesc = "";
+                if(agniVasaVal === 0) {
+                    agniText = "पृथ्वीवर (शुभ)";
+                    agniDesc = "✅ <strong>उत्तम काळ:</strong> आज होम, हवन आणि यज्ञासाठी अग्नीचा वास पृथ्वीवर आहे. सर्व पूजा आणि अनुष्ठाने सफल होतील.";
+                } else if(agniVasaVal === 1) {
+                    agniText = "आकाशात (अशुभ)";
+                    agniDesc = "❌ <strong>वर्ज्य:</strong> आज अग्नी आकाशात आहे. आज हवन केल्यास प्राणास धोका किंवा घरातील सुख-शांती नष्ट होऊ शकते.";
+                } else {
+                    agniText = "पाताळात (अशुभ)";
+                    agniDesc = "❌ <strong>वर्ज्य:</strong> आज अग्नी पाताळात आहे. आज हवन केल्यास धनहानी आणि प्रचंड आर्थिक नुकसान संभवते.";
+                }
+                document.getElementById('r-agnivasa').innerText = agniText;
+                document.getElementById('r-agnivasa-desc').innerHTML = agniDesc;
+                if(agniVasaVal !== 0) document.getElementById('r-agnivasa').classList.add('text-red-600');
+                else document.getElementById('r-agnivasa').classList.replace('text-red-600', 'text-green-600');
+
+                // --- 7. Ayurveda ---
+                document.getElementById('r-ritu-name').innerText = ritu;
+                if(RITU_AYURVEDA[ritu]) {
+                    document.getElementById('r-ayurveda-dosha').innerText = RITU_AYURVEDA[ritu].dosha;
+                    document.getElementById('r-ayurveda-diet').innerText = RITU_AYURVEDA[ritu].diet;
+                } else {
+                    document.getElementById('r-ayurveda-dosha').innerText = "माहिती उपलब्ध नाही";
+                    document.getElementById('r-ayurveda-diet').innerText = "माहिती उपलब्ध नाही";
+                }
+
+                // --- 8. Micro Timings ---
+                if (muhurats) {
+                    document.getElementById('r-brahma').innerHTML = muhurats.brahma;
+                    document.getElementById('r-pratah-sandhya').innerHTML = muhurats.pratahSandhya;
+                    document.getElementById('r-madhyahna-sandhya').innerHTML = muhurats.madhyahnaSandhya;
+                    document.getElementById('r-sayam-sandhya').innerHTML = muhurats.sayamSandhya;
+                    document.getElementById('r-godhuli').innerHTML = muhurats.godhuli;
+                }
+
+                // --- 9. Gandant, Bhadra & Panchak ---
+                const gandantContainer = document.getElementById('r-gandant-container');
+                if (GANDMOOL_NAKSHATRAS.includes(vedic.nakshatra)) {
+                    gandantContainer.className = "bg-red-50 rounded-lg p-4 border border-red-300 shadow-inner";
+                    gandantContainer.innerHTML = `<h4 class="text-lg font-bold text-red-900 mb-2 flex items-center">⚠️ गंडांत / गंडमूळ नक्षत्र: ${vedic.nakshatra}</h4><p class="text-sm text-red-800 bg-red-100 p-2 rounded"><strong>आज गंडमूळ नक्षत्र आहे!</strong> जल आणि अग्नी तत्त्वाच्या राशींच्या मिलनाचा हा काळ आहे. मोठा निर्णय घेऊ नये.</p>`;
+                } else {
+                    gandantContainer.className = "bg-green-50 rounded-lg p-4 border border-green-200";
+                    gandantContainer.innerHTML = `<h4 class="text-md font-bold text-green-800">✅ गंडांत / गंडमूळ नक्षत्र: नाही (शुभ काळ)</h4>`;
+                }
+
+                // --- 9. भद्रा आणि पंचक ---
+                const bhadraContainer = document.getElementById('r-bhadra-container');
+                if(vedic.isBhadra) {
+                    bhadraContainer.className = "p-4 bg-red-50 rounded-lg border border-red-400 shadow-md h-full col-span-1 md:col-span-3 transition-all";
+                    bhadraContainer.innerHTML = `
+                        <h4 class="text-xl font-bold text-red-900 mb-3 flex items-center">🌋 विष्टी करण (भद्रा काळ) सुरू आहे</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div class="border-l-2 border-purple-400 pl-3">
+                                <strong class="text-purple-800 block mb-1">🕉️ अध्यात्म आणि रहस्य:</strong>भद्रा ही सूर्यदेव आणि माता छायेची कन्या व शनीची बहीण आहे. तिचा स्वभाव अत्यंत क्रोधी आणि विध्वंसक असल्याने ब्रह्मदेवाने तिला 'विष्टी' करणात स्थान दिले. या काळात केलेले कोणतेही शुभ कार्य निर्फळ ठरते.
+                            </div>
+                            <div class="border-l-2 border-blue-400 pl-3">
+                                <strong class="text-blue-800 block mb-1">🪐 खगोलशास्त्र:</strong>पंचांगातील करण म्हणजे तिथीचा अर्धा भाग. जेव्हा चंद्र आणि सूर्याच्या कोनीय अंतरातील विशिष्ट ६ अंशांचा टप्पा येतो, तेव्हा विष्टी करण होते. हे ग्रहांचे अत्यंत तणावपूर्ण 'अँगल' मानले जाते.
+                            </div>
+                            <div class="border-l-2 border-green-500 pl-3">
+                                <strong class="text-green-800 block mb-1">🔬 विज्ञान आणि उपाय:</strong>या विशिष्ट वेळेत चंद्र-सूर्याची गुरुत्वाकर्षण शक्ती (Tidal forces) पृथ्वीच्या इलेक्ट्रोमॅग्नेटिक फील्डमध्ये 'डिस्ट्रक्टिव्ह रेझोनन्स' निर्माण करते. यामुळे मानवीConfig मज्जासंस्थेवर ताण येऊन निर्णय चुकतात. <br><strong class="text-red-700 mt-1 inline-block">📿 उपाय:</strong> तातडीच्या कामासाठी भद्रेच्या १२ नावांचे स्मरण करावे किंवा भगवान शिवाची आराधना करावी.
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    bhadraContainer.className = "p-3 bg-white rounded-lg border border-gray-200 shadow-sm h-full transition-all";
+                    bhadraContainer.innerHTML = `
+                        <div class="flex flex-col justify-center h-full">
+                            <p class="text-sm font-medium text-gray-700">विष्टी (भद्रा काळ):</p>
+                            <span class="text-green-600 font-bold text-lg mt-1">❌ नाही (शुभ काळ)</span>
+                        </div>
+                    `;
+                }
+                
+                const panchakContainer = document.getElementById('r-panchak-container');
+                let isPanchak = (vedic.moonSign === "कुंभ" || vedic.moonSign === "मीन");
+                if(isPanchak) {
+                    panchakContainer.className = "p-4 bg-purple-50 rounded-lg border border-purple-400 shadow-md h-full col-span-1 md:col-span-3 transition-all";
+                    if(!vedic.isBhadra) panchakContainer.classList.add("mt-4"); 
+
+                    panchakContainer.innerHTML = `
+                        <h4 class="text-xl font-bold text-purple-900 mb-3 flex items-center">⭐ पंचक काळ सुरू आहे</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div class="border-l-2 border-purple-400 pl-3">
+                                <strong class="text-purple-800 block mb-1">🕉️ अध्यात्म आणि रहस्य:</strong>पाच नक्षत्रांच्या या समूहात कोणतेही शुभ किंवा अशुभ कार्य केल्यास त्याची ५ पटीने पुनरावृत्ती होते अशी मान्यता आहे. या काळात दक्षिणेकडे प्रवास, घराचे छत टाकणे, लाकूड/इंधन गोळा करणे आणि पलंग बनवणे पूर्णपणे वर्ज्य आहे.
+                            </div>
+                            <div class="border-l-2 border-blue-400 pl-3">
+                                <strong class="text-blue-800 block mb-1">🪐 खगोलशास्त्र:</strong>जेव्हा चंद्र धनिष्ठा नक्षत्राच्या तिसऱ्या चरणातून रेवती नक्षत्राच्या संपेपर्यंत (शेवटची ५ नक्षत्रे) प्रवास करतो, तेव्हा पंचक असते. हे कुंभ आणि मीन राशीच्या बरोबर ३६० अंशांच्या शेवटी येते.
+                            </div>
+                            <div class="border-l-2 border-green-500 pl-3">
+                                <strong class="text-green-800 block mb-1">🔬 विज्ञान आणि उपाय:</strong>या काळात चंद्राचे 'Gravitational Pull' पृथ्वीच्या उत्तर आणि दक्षिण ध्रुवांवर अत्यंत अस्थिर असते. 'अपान वायू'चा प्रभाव वाढल्याने स्ट्रक्चरल कामांमध्ये (उदा. छत टाकणे) अपघात होण्याची शक्यता वाढते. <br><strong class="text-purple-700 mt-1 inline-block">📿 उपाय:</strong> 'पंचक शांती' पूजा करावी. नवीन लाकूड खरेदी करणे व साठवणे टाळावे.
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    panchakContainer.className = "p-3 bg-white rounded-lg border border-gray-200 shadow-sm h-full transition-all";
+                    panchakContainer.innerHTML = `
+                        <div class="flex flex-col justify-center h-full">
+                            <p class="text-sm font-medium text-gray-700">पंचक काळ:</p>
+                            <span class="text-green-600 font-bold text-lg mt-1">❌ नाही</span>
+                        </div>
+                    `;
+                }
+                
+                // --- 9.5 ग्रहण लॉजिक ---
+                const grahanContainer = document.getElementById('r-grahan-container');
+                if (vedic.eclipseType === "solar") {
+                    grahanContainer.className = "p-4 bg-red-50 rounded-lg border border-red-400 shadow-md h-full col-span-1 md:col-span-3 transition-all";
+                    grahanContainer.innerHTML = `
+                        <h4 class="text-xl font-bold text-red-900 mb-3 flex items-center">🌑 सूर्यग्रहण (Solar Eclipse)</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div class="border-l-2 border-purple-400 pl-3">
+                                <strong class="text-purple-800 block mb-1">🕉️ अध्यात्म आणि रहस्य:</strong>जेव्हा राहु किंवा केतू सूर्याला ग्रासतात, तेव्हा सूर्याची चैतन्यदायी ऊर्जा खंडित होते. हा आत्मचिंतन आणि मंत्र सिद्धीसाठी वर्षातील सर्वात मोठा व प्रबळ काळ मानला जातो.
+                            </div>
+                            <div class="border-l-2 border-blue-400 pl-3">
+                                <strong class="text-blue-800 block mb-1">🪐 खगोलशास्त्र:</strong>आज अमावास्या आहे आणि सूर्य-चंद्र हे राहु/केतूच्या अक्षावर (Nodes) अगदी १८ अंशांच्या आत आले आहेत. पृथ्वी, चंद्र आणि सूर्य एका सरळ रेषेत (Syzygy) आहेत.
+                            </div>
+                            <div class="border-l-2 border-green-500 pl-3">
+                                <strong class="text-green-800 block mb-1">🔬 विज्ञान आणि उपाय:</strong>सूर्याची अतिनील (UV) किरणे विस्कळीत होतात व वातावरणात जिवाणूंची वाढ वेगाने होते. <br><strong class="text-red-700">उपाय:</strong> ग्रहण काळात अन्न ग्रहण करू नये. अन्नात तुळशीपत्र टाकावे. थेट सूर्याकडे पाहू नये.
+                            </div>
+                        </div>
+                    `;
+                } else if (vedic.eclipseType === "lunar") {
+                    grahanContainer.className = "p-4 bg-indigo-50 rounded-lg border border-indigo-400 shadow-md h-full col-span-1 md:col-span-3 transition-all";
+                    grahanContainer.innerHTML = `
+                        <h4 class="text-xl font-bold text-indigo-900 mb-3 flex items-center">🌕 चंद्रग्रहण (Lunar Eclipse)</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div class="border-l-2 border-purple-400 pl-3">
+                                <strong class="text-purple-800 block mb-1">🕉️ अध्यात्म आणि रहस्य:</strong>चंद्र हा मनाचा कारक आहे. ग्रहणात चंद्रावर राहु/केतूचा प्रभाव पडल्याने मानवी मन आणि भावना अत्यंत अस्थिर होतात. साधनेसाठी व नामस्मरणासाठी हा उत्कृष्ट काळ आहे.
+                            </div>
+                            <div class="border-l-2 border-blue-400 pl-3">
+                                <strong class="text-blue-800 block mb-1">🪐 खगोलशास्त्र:</strong>आज पौर्णिमा असून चंद्र हा पृथ्वीच्या सावलीतून (Umbra/Penumbra) जात आहे. राहु-केतू अक्षावर चंद्र आल्याने हा योग जुळून आला आहे.
+                            </div>
+                            <div class="border-l-2 border-green-500 pl-3">
+                                <strong class="text-green-800 block mb-1">🔬 विज्ञान आणि उपाय:</strong>पृथ्वीच्या गुरुत्वाकर्षणात आणि समुद्राच्या भरतीत मोठे बदल होतात, जे मानवी शरीरातील 'पाण्यावर' प्रभाव टाकतात (Bio-rhythm disturbance). <br><strong class="text-indigo-700">उपाय:</strong> ध्यान करावे, प्रवासात व मोठ्या निर्णयात काळजी घ्यावी.
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    grahanContainer.className = "p-3 bg-white rounded-lg border border-gray-200 shadow-sm h-full transition-all";
+                    grahanContainer.innerHTML = `
+                        <div class="flex flex-col justify-center h-full">
+                            <p class="text-sm font-medium text-gray-700">ग्रहण योग:</p>
+                            <span class="text-green-600 font-bold text-lg mt-1">❌ नाही</span>
+                        </div>
+                    `;
+                }
+
+                // --- 10. विज्ञान आणि मुहूर्त ---
+                let mahaDoshaList = [];
+                let mahaYogaList = [];
+
+                if(document.getElementById('t-rahu') && muhurats) {
+                    document.getElementById('t-rahu').innerHTML = muhurats.rahu;
+                    document.getElementById('t-yama').innerHTML = muhurats.yama;
+                    document.getElementById('t-gulika').innerHTML = muhurats.gulika;
+                    document.getElementById('t-duru').innerHTML = muhurats.duru;
+                    document.getElementById('t-ardha').innerHTML = muhurats.ardha;
+                    document.getElementById('t-mrityu').innerHTML = muhurats.mrityu;
+                    
+                    if(vedic.dayOfWeek === 3) {
+                        document.getElementById('t-abhijit').innerHTML = "<span class='text-red-600'>बुधवारी अभिजित मुहूर्त ग्राह्य नसतो.</span>";
+                    } else {
+                        document.getElementById('t-abhijit').innerHTML = muhurats.abhijit;
+                    }
+
+                    const chList = document.getElementById('choghadiya-list');
+                    if(chList) {
+                        chList.innerHTML = '';
+                        muhurats.goodChoghadiyas.forEach(c => {
+                            let extraHtml = "";
+                            let bgClass = "bg-white border-green-200";
+                            let opacityClass = "";
+
+                            if (c.overlap) {
+                                bgClass = "bg-red-50 border-red-400";
+                                opacityClass = "opacity-90";
+                                mahaDoshaList.push(`'${c.name} चौघडिया' आणि '${c.overlap}'`);
+                                extraHtml = `
+                                    <div class="text-xs text-red-900 bg-red-100 p-3 rounded mt-2 font-bold border border-red-300 shadow-inner">
+                                        ⚠️ महादोष (अतिक्रूर काळ): हा '${c.name}' चौघडिया '${c.overlap}' शी ओव्हरलॅप होत आहे!
+                                        <p class="font-normal mt-1 text-red-800"><strong>🔬 विज्ञान:</strong> दोन विरुद्ध ऊर्जा लहरींचे (Destructive Resonance) येथे घर्षण होत आहे. निर्णयक्षमता पूर्णपणे बिघडते.</p>
+                                        <p class="font-normal mt-1 text-red-700"><strong>❌ वर्ज्य:</strong> प्रवास, आर्थिक व्यवहार, नवीन सुरुवात पूर्णपणे टाळा.</p>
+                                        <p class="font-semibold text-orange-900 mt-2 bg-orange-100 inline-block px-2 py-1 rounded"><strong>📿 उपाय:</strong> शांत बसावे व 'ॐ नमः शिवाय' चा जप करावा.</p>
+                                    </div>`;
+                            } else if (c.isMahaYoga) {
+                                bgClass = "bg-yellow-50 border-yellow-400 shadow-md";
+                                mahaYogaList.push(`'${c.name} चौघडिया' आणि 'अभिजित मुहूर्त'`);
+                                extraHtml = `
+                                    <div class="text-xs text-green-900 bg-green-100 p-3 rounded mt-2 font-bold border border-green-300 shadow-inner">
+                                        🌟 महायोग (सुवर्णकाळ): हा चौघडिया 'अभिजित मुहूर्ता'शी ओव्हरलॅप होत आहे!
+                                        <p class="font-normal mt-1 text-green-800"><strong>🔬 विज्ञान:</strong> कॉस्मिक लहरी आणि चुंबकीय क्षेत्र पूर्णतः संतुलित (Constructive Resonance). मेंदूची एकाग्रता सर्वोच्च शिखरावर असते.</p>
+                                        <p class="font-bold mt-1 text-green-700"><strong>✅ सर्वोत्तम:</strong> सर्व प्रकारच्या नवीन, धाडसी आणि शुभ कामांसाठी (खरेदी, करार) हा सुवर्णकाळ आहे.</p>
+                                    </div>`;
+                            } else {
+                                extraHtml = `<div class="science-box p-2 mt-2 rounded bg-green-50 border-l-4 border-green-500"><p class="text-xs text-green-900"><strong>🔬 विज्ञान:</strong> या काळात ग्रहांचे गुरुत्वाकर्षण रक्तप्रवाहावर सुसंवादी प्रभाव टाकते.</p></div>`;
+                            }
+                            
+                            chList.innerHTML += `
+                                <div class="${bgClass} p-4 rounded-lg border shadow-sm ${opacityClass} mt-3 transition-all hover:shadow-lg">
+                                    <div class="flex flex-col xl:flex-row xl:justify-between font-bold text-green-800 border-b border-green-100 pb-2">
+                                        <span class="${c.overlap ? 'line-through text-red-500' : 'text-lg'}">${c.name} चौघडिया:</span> 
+                                        <span class="text-gray-800 text-lg">${c.time}</span>
+                                    </div>
+                                    <p class="text-sm text-green-700 mt-2"><strong>लाभ:</strong> ${c.benefit}</p>
+                                    ${extraHtml}
+                                </div>`;
+                        });
+                    }
+                }
+
+                // --- 11. निष्कर्ष मॉड्युल (Conclusion & BPHS Rules) ---
+                if(document.getElementById('conc-summary')) {
+                    let summaryText = `आज ${targetDate.toLocaleDateString('mr-IN')} रोजी चंद्र <strong>${vedic.moonSign}</strong> राशीत आणि <strong>${vedic.nakshatra}</strong> नक्षत्रात आहे. एकंदर ग्रहांची स्थिती पाहता दिवस सामान्य स्वरूपाचा आहे.`;
+                    let dosText = "महत्त्वाची कामे अभिजित मुहूर्त किंवा शुभ चौघडियामध्ये पूर्ण करावीत.";
+                    let dontsText = `राहु काळ (${muhurats ? muhurats.rahu : '-'}) आणि यमगंड (${muhurats ? muhurats.yama : '-'}) यामध्ये नवीन कामे किंवा प्रवास सुरू करू नये.`;
+
+                    if (festivalData) {
+                        summaryText = `आज <strong>${festivalData.name}</strong> असल्यामुळे हा दिवस अतिशय ऊर्जावान आणि पवित्र आहे. निसर्गातील बदल मानवी शरीराला अनुकूल आहेत.`;
+                        dosText = festivalData.goodFor;
+                    }
+
+                    // --- BPHS Overlap Engine (Hora + Period) ---
+                    let bphsDoshas = [];
+                    let bphsYogas = [];
+                    
+                    if (muhurats && muhurats.rawEvents) {
+                        let rahuEvent = muhurats.rawEvents.find(e => e.name === "राहु काळ");
+                        let abhijitEvent = muhurats.rawEvents.find(e => e.name === "अभिजित मुहूर्त");
+
+                        if (rahuEvent) {
+                            let badHoras = muhurats.rawEvents.filter(e => e.type === "होरा" && e.severity.includes("अशुभ") && e.start < rahuEvent.end && e.end > rahuEvent.start);
+                            badHoras.forEach(h => bphsDoshas.push(`'${h.name}' आणि 'राहु काळ'`));
+                        }
+                        if (abhijitEvent) {
+                            let goodHoras = muhurats.rawEvents.filter(e => e.type === "होरा" && e.severity === "अति शुभ" && e.start < abhijitEvent.end && e.end > abhijitEvent.start);
+                            goodHoras.forEach(h => bphsYogas.push(`'${h.name}' आणि 'अभिजित मुहूर्त'`));
+                        }
+                    }
+
+                    // Append Overlaps to UI
+                    if (mahaYogaList.length > 0) {
+                        summaryText += `<br><br><span class="bg-yellow-100 text-yellow-900 px-3 py-2 rounded-lg block border border-yellow-400 mt-2 shadow-sm">🌟 <strong>महायोग (शुभ + शुभ):</strong> आज <strong>${mahaYogaList.join(' तसेच ')}</strong> एकत्र येत आहेत. या काळात घेतलेले निर्णय १००% यशस्वी होतात.</span>`;
+                    }
+                    if (bphsYogas.length > 0) {
+                        summaryText += `<br><br><span class="bg-green-100 text-green-900 px-3 py-2 rounded-lg block border border-green-500 mt-2 shadow-sm">👑 <strong>BPHS राजयोग:</strong> आज <strong>${bphsYogas.join(', ')}</strong> एकत्र येत आहेत. पराशर होरा शास्त्रानुसार हा काळ सर्व कार्य सिद्धीस नेणारा 'सुवर्णकाळ' आहे!</span>`;
+                    }
+                    
+                    if (mahaDoshaList.length > 0) {
+                        summaryText += `<br><br><span class="bg-orange-100 text-orange-900 px-3 py-2 rounded-lg block border border-orange-400 mt-2 shadow-sm">⚠️ <strong>अतिक्रूर काळ (शुभ + अशुभ):</strong> आज <strong>${mahaDoshaList.join(' तसेच ')}</strong> एकत्र येत आहेत. दोन विरुद्ध ऊर्जा लहरींचे घर्षण होत आहे.</span>`;
+                    }
+                    if (bphsDoshas.length > 0) {
+                        summaryText += `<br><br><span class="bg-red-100 text-red-900 px-3 py-2 rounded-lg block border border-red-500 mt-2 shadow-sm">☠️ <strong>BPHS महादोष:</strong> आज <strong>${bphsDoshas.join(', ')}</strong> एकत्र येत आहेत. पराशर होरा शास्त्रानुसार हा काळ अत्यंत विनाशकारी आहे. या काळात कोणताही मोठा निर्णय घेऊ नये!</span>`;
+                    }
+
+                    document.getElementById('conc-summary').innerHTML = summaryText;
+                    document.getElementById('conc-dos').innerHTML = dosText;
+                    document.getElementById('conc-donts').innerHTML = dontsText;
+                }
+
+                // --- Generate Chronological View UI ---
+                if (muhurats && muhurats.rawEvents) {
+                    let chronoHtml = '';
+                    const sevColors = {
+                        "अति शुभ": "bg-green-50 text-green-900 border-green-500",
+                        "शुभ": "bg-blue-50 text-blue-900 border-blue-400",
+                        "मध्यम": "bg-yellow-50 text-yellow-900 border-yellow-400",
+                        "अशुभ": "bg-orange-50 text-orange-900 border-orange-400",
+                        "अति अशुभ": "bg-red-50 text-red-900 border-red-500"
+                    };
+                    const sevIcons = { "अति शुभ": "🌟", "शुभ": "✅", "मध्यम": "⚖️", "अशुभ": "⚠️", "अति अशुभ": "🚨" };
+
+                    muhurats.rawEvents.forEach(ev => {
+                        let tStart = formatTimeWithDate(ev.start, targetDate);
+                        let tEnd = formatTimeWithDate(ev.end, targetDate);
+                        let cClass = sevColors[ev.severity] || "bg-gray-50 border-gray-400 text-gray-800";
+                        let icon = sevIcons[ev.severity] || "🔹";
+
+                        chronoHtml += `
+                            <div class="flex justify-between items-center p-3 rounded-lg border-l-[5px] shadow-sm ${cClass} transition-all hover:shadow-md">
+                                <div class="flex-1 pr-2">
+                                    <strong class="text-base md:text-lg block text-gray-900">${icon} ${ev.name} <span class="text-xs opacity-70 font-normal ml-1">(${ev.type})</span></strong>
+                                    <span class="text-xs md:text-sm font-semibold opacity-80">${tStart} - ${tEnd}</span>
+                                </div>
+                                <div class="font-bold px-3 py-1.5 bg-white/80 rounded-md border border-current text-[11px] md:text-xs shadow-sm whitespace-nowrap text-right uppercase tracking-wide">
+                                    ${ev.severity}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    document.getElementById('chrono-view-container').innerHTML = chronoHtml;
+                }
+
+                document.getElementById('loading').style.display = 'none';
+
+            } catch (error) {
+                console.error("Error in calculateAndLoadModules:", error);
+                document.getElementById('loading').style.display = 'none';
+                errorMsg.textContent = "माहिती मिळवताना त्रुटी आली. कृपया इंटरनेट तपासा. (" + error.message + ")";
+                errorMsg.classList.remove('hidden');
+            }
+        }
+
+        // --- NINAD AI LOGIC ---
+        function toggleChat() {
+            const chat = document.getElementById('ninad-chat');
+            chat.style.display = chat.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        function openApiModal() { document.getElementById('api-modal').style.display = 'flex'; }
+        function closeApiModal() { document.getElementById('api-modal').style.display = 'none'; }
+        function saveApiKey() {
+            const key = document.getElementById('api-key-input').value;
+            if(key) { localStorage.setItem('gemini_api_key', key); alert('API Key यशस्वीरित्या सेव्ह झाली!'); closeApiModal(); }
+        }
+
+        function addChatMessage(sender, text) {
+            const body = document.getElementById('ninad-body');
+            const align = sender === 'You' ? 'text-right' : 'text-left';
+            const bg = sender === 'You' ? 'bg-indigo-100 text-indigo-900' : 'bg-white border border-gray-200 text-gray-800';
+            body.innerHTML += `<div class="mb-3 ${align}"><span class="inline-block p-2 rounded-lg ${bg} max-w-[85%] text-sm">${text}</span></div>`;
+            body.scrollTop = body.scrollHeight;
+        }
+
+        async function sendNinadMsg() {
+            const input = document.getElementById('ninad-input');
+            const question = input.value.trim();
+            if(!question) return;
+
+            const apiKey = localStorage.getItem('gemini_api_key');
+            if(!apiKey) { openApiModal(); return; }
+
+            addChatMessage('You', question);
+            input.value = '';
+            const btn = document.getElementById('ninad-btn');
+            btn.classList.add('listening');
+
+			try {
+                // Get the actual text name of the language, not the 2-letter code
+                const langDropdown = document.getElementById('appLang');
+                const selectedLangText = langDropdown.options[langDropdown.selectedIndex].text;
+                
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: `तू 'निनाद' नावाचा एक नम्र आणि हुशार वैदिक ज्योतिष AI असिस्टंट आहेस. आजचा पंचांग डेटा: [${globalPanchangContext}]. युझरचे नाव प्रमोद आहे. युझरचा प्रश्न: "${question}". पंचांग डेटा वापरून अतिशय थोडक्यात (२-३ ओळीत), अचूक आणि ${selectedLangText} भाषेत उत्तर दे.` }] }]
+                    })
+                });
+                
+                const data = await res.json();
+                btn.classList.remove('listening');
+
+                if(data.candidates && data.candidates.length > 0) {
+                    const ans = data.candidates[0].content.parts[0].text;
+                    addChatMessage('Ninad', ans);
+                    speakText(ans);
+                } else {
+                    addChatMessage('Ninad', "माफ करा, मला उत्तर शोधण्यात अडचण आली. API Key तपासा.");
+                }
+            } catch (err) {
+                btn.classList.remove('listening');
+                addChatMessage('Ninad', "इंटरनेट किंवा API त्रुटी. कृपया तुमची API Key तपासा.");
+            }
+        }
+
+        function startVoiceInput() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) { alert("तुमचा ब्राउझर व्हॉइस रेकग्निशनला सपोर्ट करत नाही."); return; }
+            
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'mr-IN';
+            
+            recognition.onstart = function() {
+                document.getElementById('ninad-btn').classList.add('listening');
+                document.getElementById('ninad-input').placeholder = "ऐकत आहे...";
+            };
+            
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript;
+                document.getElementById('ninad-input').value = transcript;
+                sendNinadMsg();
+            };
+            
+            recognition.onerror = function(event) {
+                document.getElementById('ninad-btn').classList.remove('listening');
+                document.getElementById('ninad-input').placeholder = "प्रश्न टाईप करा...";
+            };
+            
+            recognition.onspeechend = function() { recognition.stop(); };
+            recognition.start();
+        }
+
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'mr-IN'; 
+                utterance.rate = 0.9;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        const HORA_DATA = {
+            "गुरु": { color: "bg-yellow-400 text-yellow-900 border-yellow-500", catName: "अति शुभ", desc: "नवीन नोकरी, शिक्षण, कायदेशीर बाबी आणि सोने खरेदीसाठी उत्तम." },
+            "शुक्र": { color: "bg-pink-500 text-white border-pink-600", catName: "अति शुभ", desc: "विवाह, प्रणय, चैनीच्या वस्तू खरेदी आणि सर्जनशील कामासाठी शुभ." },
+            "चंद्र": { color: "bg-white text-gray-800 border-gray-300", catName: "अति शुभ", desc: "बागकाम, शेती, प्रवास, भावनिक आणि सर्जनशील कामासाठी चांगले." },
+            "बुध": { color: "bg-green-500 text-white border-green-600", catName: "शुभ", desc: "व्यापार, व्यवसाय, कागदपत्रांवर स्वाक्षरी आणि शिक्षणासाठी उत्तम." },
+            "सूर्य": { color: "bg-orange-500 text-white border-orange-600", catName: "शुभ", desc: "सरकारी कामे, नेतृत्व आणि नवीन प्रकल्प सुरू करण्यासाठी फायदेशीर." },
+            "मंगळ": { color: "bg-red-500 text-white border-red-600", catName: "मध्यम", desc: "तातडीची कामे, स्पर्धा, खेळ किंवा शस्त्रक्रियेसाठी चांगले. (नवीन सुरुवातीसाठी कठोर)" },
+            "शनि": { color: "bg-blue-900 text-white border-blue-950", catName: "अशुभ", desc: "नवीन प्रकल्पांसाठी वर्ज्य. केवळ मजुरी, लोखंड/तेल विक्री आणि प्रलंबित कामांसाठी योग्य." }
+        };
+
+        function showHoraList() {
+            if (!todaySunrise) {
+                alert("सूर्योदयाची वेळ अद्याप निश्चित झालेली नाही. कृपया प्रतीक्षा करा.");
+                return;
+            }
+
+            const horaLords = ["सूर्य", "शुक्र", "बुध", "चंद्र", "शनि", "गुरु", "मंगळ"];
+            const dayToStartLordIndex = [0, 3, 6, 2, 5, 1, 4];
+            
+            let currentDayOfWeek = todaySunrise.getDay();
+            let startLordIndex = dayToStartLordIndex[currentDayOfWeek];
+            
+            let html = '';
+            let baseDate = todaySunrise.getDate();
+            let now = new Date();
+
+            for (let i = 0; i < 24; i++) {
+                let horaStartTime = new Date(todaySunrise.getTime() + (i * 3600000));
+                let horaEndTime = new Date(horaStartTime.getTime() + 3600000);
+                
+                let currentLord = horaLords[(startLordIndex + i) % 7];
+                let lordData = HORA_DATA[currentLord];
+                
+                let timeStrStart = horaStartTime.toLocaleTimeString('mr-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+                let timeStrEnd = horaEndTime.toLocaleTimeString('mr-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+                
+                let nextDayMarker = "";
+                if (horaStartTime.getDate() !== baseDate) {
+                    nextDayMarker = `<span class="text-[9px] bg-black/20 text-current px-1.5 py-0.5 rounded font-bold ml-1">पुढील दिवस</span>`;
+                }
+
+                let isCurrent = (now >= horaStartTime && now < horaEndTime);
+                let activeStyle = isCurrent ? "border-l-[6px] border-r-[6px] shadow-lg transform scale-[1.02] my-3" : "border";
+                let indicator = isCurrent ? `<span class="text-[10px] bg-white/90 text-black px-2 py-0.5 rounded-full ml-1 shadow animate-pulse">सध्या सुरू</span>` : "";
+
+                html += `
+                    <div class="flex flex-col p-3 rounded-lg ${activeStyle} ${lordData.color} transition-all">
+                        <div class="flex justify-between items-start mb-1">
+                            <div class="text-sm font-semibold flex flex-col">
+                                <span>${timeStrStart} - ${timeStrEnd}</span>
+                                <div>${nextDayMarker}</div>
+                            </div>
+                            <div class="text-base font-bold text-right flex flex-col items-end">
+                                <span>${lordData.catName} - ${currentLord}</span>
+                                <div class="mt-1">${indicator}</div>
+                            </div>
+                        </div>
+                        <hr class="my-1.5 border-current opacity-20">
+                        <div class="text-[13px] leading-snug opacity-95">
+                            ${lordData.desc}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('hora-list-container').innerHTML = html;
+            document.getElementById('hora-modal').style.display = 'flex';
+        }
+        
+        function toggleChronologicalView() {
+            const normalView = document.getElementById('normal-view-container');
+            const chronoView = document.getElementById('chrono-view-container');
+            const btn = document.getElementById('chrono-toggle-btn');
+
+            if(chronoView.classList.contains('hidden')) {
+                normalView.classList.add('hidden');
+                chronoView.classList.remove('hidden');
+                btn.innerHTML = '<i class="fas fa-th-large mr-2"></i> सामान्य दृश्य पहा (Normal)';
+                btn.classList.replace('bg-indigo-100', 'bg-orange-100');
+                btn.classList.replace('text-indigo-800', 'text-orange-900');
+            } else {
+                chronoView.classList.add('hidden');
+                normalView.classList.remove('hidden');
+                btn.innerHTML = '<i class="fas fa-list-ol mr-2"></i> कालक्रमानुसार पहा (Chronological)';
+                btn.classList.replace('bg-orange-100', 'bg-indigo-100');
+                btn.classList.replace('text-orange-900', 'text-indigo-800');
+            }
+        }
+        
+function showYamardhaList() {
+            if (!todaySunrise) {
+                alert("सूर्योदयाची वेळ अद्याप निश्चित झालेली नाही. कृपया प्रतीक्षा करा.");
+                return;
+            }
+
+            const yamardhaLordsSequence = ["सूर्य", "चंद्र", "मंगळ", "बुध", "गुरु", "शुक्र", "शनि"];
+            const now = new Date();
+            
+            // Vedic Day logic to ensure pre-dawn checks load the correct night sequence
+            let timesCurrent = SunCalc.getTimes(now, currentLat, currentLon);
+            let baseDate = now;
+            if (now < timesCurrent.sunrise) {
+                baseDate = new Date(now.getTime() - 86400000);
+            }
+            
+            let timesVedicDay = SunCalc.getTimes(baseDate, currentLat, currentLon);
+            let timesVedicNextDay = SunCalc.getTimes(new Date(baseDate.getTime() + 86400000), currentLat, currentLon);
+
+            let dayStart = timesVedicDay.sunrise;
+            let dayEnd = timesVedicDay.sunset;
+            let nightStart = timesVedicDay.sunset;
+            let nightEnd = timesVedicNextDay.sunrise;
+
+            let weekday = dayStart.getDay(); 
+            let dayLordIdx = weekday;
+            let nightLordIdx = (weekday + 4) % 7; 
+
+            let dayShiftMs = (dayEnd.getTime() - dayStart.getTime()) / 8;
+            let nightShiftMs = (nightEnd.getTime() - nightStart.getTime()) / 8;
+
+            let html = '<h4 class="font-bold text-orange-800 mb-2 border-b-2 border-orange-200 pb-1 flex items-center"><i class="fas fa-sun mr-2"></i> दिनमान यामार्ध (Day Shifts)</h4>';
+
+            // Calculate 8 Daytime Shifts
+            for(let i=0; i<8; i++) {
+                let sTime = new Date(dayStart.getTime() + (i * dayShiftMs));
+                let eTime = new Date(dayStart.getTime() + ((i+1) * dayShiftMs));
+                let isEighth = (i === 7);
+                let lord = isEighth ? "निरीश्वर (स्वामीहीन)" : yamardhaLordsSequence[(dayLordIdx + i) % 7];
+                
+                let isCurrent = (now >= sTime && now < eTime);
+                let bgClass = isCurrent ? "bg-orange-100 border-orange-500 shadow-md transform scale-[1.02] border-l-[6px] border-r-[6px]" : "bg-white border-gray-200";
+                let textClass = isEighth ? "text-red-600" : "text-orange-900";
+                let icon = isEighth ? "⚠️" : "🪐";
+
+                html += `
+                <div class="flex justify-between items-center p-3 rounded-lg border ${bgClass} mb-2 transition-all">
+                    <span class="text-sm font-semibold text-gray-700">${sTime.toLocaleTimeString('mr-IN', {hour:'2-digit', minute:'2-digit'})} ते ${eTime.toLocaleTimeString('mr-IN', {hour:'2-digit', minute:'2-digit'})}</span>
+                    <span class="text-sm font-bold ${textClass}">${icon} ${lord} ${isCurrent ? '<span class="ml-2 text-[10px] bg-red-600 text-white px-2 py-0.5 rounded-full animate-pulse shadow">सुरू</span>' : ''}</span>
+                </div>`;
+            }
+
+            html += '<h4 class="font-bold text-indigo-800 mb-2 mt-5 border-b-2 border-indigo-200 pb-1 flex items-center"><i class="fas fa-moon mr-2"></i> रात्रीमान यामार्ध (Night Shifts)</h4>';
+
+            // Calculate 8 Nighttime Shifts
+            for(let i=0; i<8; i++) {
+                let sTime = new Date(nightStart.getTime() + (i * nightShiftMs));
+                let eTime = new Date(nightStart.getTime() + ((i+1) * nightShiftMs));
+                let isEighth = (i === 7);
+                let lord = isEighth ? "निरीश्वर (स्वामीहीन)" : yamardhaLordsSequence[(nightLordIdx + i) % 7];
+                
+                let isCurrent = (now >= sTime && now < eTime);
+                let bgClass = isCurrent ? "bg-indigo-100 border-indigo-500 shadow-md transform scale-[1.02] border-l-[6px] border-r-[6px]" : "bg-white border-gray-200";
+                let textClass = isEighth ? "text-red-600" : "text-indigo-900";
+                let icon = isEighth ? "⚠️" : "✨";
+
+                html += `
+                <div class="flex justify-between items-center p-3 rounded-lg border ${bgClass} mb-2 transition-all">
+                    <span class="text-sm font-semibold text-gray-700">${sTime.toLocaleTimeString('mr-IN', {hour:'2-digit', minute:'2-digit'})} ते ${eTime.toLocaleTimeString('mr-IN', {hour:'2-digit', minute:'2-digit'})}</span>
+                    <span class="text-sm font-bold ${textClass}">${icon} ${lord} ${isCurrent ? '<span class="ml-2 text-[10px] bg-red-600 text-white px-2 py-0.5 rounded-full animate-pulse shadow">सुरू</span>' : ''}</span>
+                </div>`;
+            }
+
+            document.getElementById('yamardha-list-container').innerHTML = html;
+            
+            // Tailwind specific visibility toggle
+            let modal = document.getElementById('yamardha-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

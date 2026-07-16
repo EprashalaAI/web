@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Marrvish - Absolute Truth Scanner</title>
+    <style>
+        :root {
+            --primary: #1F2937; --secondary: #4B5563; --accent: #D97706; 
+            --bg: #F9FAFB; --text: #111827; --white: #FFFFFF; --danger: #DC2626;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Georgia', serif; }
+        body { background-color: var(--bg); color: var(--text); overflow-x: hidden; }
+        .container { max-width: 650px; margin: 0 auto; padding: 25px 20px; text-align: center; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; position: relative;}
+        
+        h1 { color: var(--primary); margin-bottom: 10px; font-size: 28px; font-weight: bold; letter-spacing: -0.5px;}
+        h3 { color: var(--secondary); margin-bottom: 15px; font-size: 18px; }
+        p { margin-bottom: 20px; line-height: 1.6; font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 15px; }
+
+        input[type="text"], input[type="number"], select, input[type="password"] { width: 100%; max-width: 300px; padding: 14px; margin-bottom: 15px; border: 1px solid #D1D5DB; border-radius: 8px; font-size: 16px; font-family: 'Segoe UI', sans-serif; background: var(--white); outline: none;}
+        input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.2); }
+        
+        .btn { background-color: var(--primary); color: var(--white); border: 2px solid var(--primary); padding: 15px 25px; font-size: 16px; border-radius: 8px; cursor: pointer; margin: 10px 5px; width: 100%; max-width: 300px; font-weight: bold; transition: all 0.2s ease; display: inline-flex; justify-content: center; align-items: center; }
+        .btn:active { transform: scale(0.97); }
+        .btn-upload { background-color: var(--bg); color: var(--primary); border: 2px dashed var(--primary); }
+        .btn-ai { background: linear-gradient(135deg, #1F2937, #D97706); color: white; border: none; }
+        .btn-print { background-color: #111827; color: white; border: none; }
+        .btn-listen { background-color: #2563EB; color: white; border: none; width: auto; padding: 12px 20px; border-radius: 8px; font-family: 'Segoe UI', sans-serif;}
+
+        .settings-btn { position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 24px; cursor: pointer; z-index: 100; transition: transform 0.3s; }
+        .settings-btn:hover { transform: rotate(90deg); }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 30px; border-radius: 12px; max-width: 400px; width: 90%; text-align: left; }
+
+        .step { display: none; width: 100%; }
+        .step.active { display: block; animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        .instruction-box { background: #FEF3C7; border-left: 5px solid var(--accent); padding: 20px; text-align: left; margin-bottom: 25px; border-radius: 0 8px 8px 0; }
+        
+        #camera-container { position: relative; width: 100%; max-width: 350px; aspect-ratio: 3/4; margin: 0 auto 20px auto; background: #000; border-radius: 12px; overflow: hidden; border: 3px solid var(--accent); display: none; box-shadow: 0 10px 25px rgba(0,0,0,0.1);}
+        #camera-stream { width: 100%; height: 100%; object-fit: cover; transform: scale(2); }
+        .overlay-guide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); display: flex; align-items: center; justify-content: center; pointer-events: none; }
+        .cutout { width: 130px; height: 190px; border: 2px dashed var(--accent); border-radius: 50% 50% 45% 45%; box-shadow: 0 0 0 9999px rgba(0,0,0,0.6); position: relative; }
+        .cutout::after { content: ''; position: absolute; top: 50%; left: -15px; right: -15px; height: 1px; background: rgba(217, 119, 6, 0.8); } 
+
+        #reports-list { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; }
+        .report-card { background: var(--white); border: 1px solid #E5E7EB; border-radius: 8px; padding: 15px; text-align: left; border-left: 4px solid var(--secondary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .report-card h2 { color: var(--primary); font-size: 16px; margin-bottom: 8px; display: flex; justify-content: space-between;}
+        
+        #capture-canvas { display: none; width: 100%; max-width: 180px; border-radius: 12px; margin: 0 auto; border: 3px solid var(--accent); }
+        input[type="file"] { display: none; }
+        .loader { border: 6px solid #F3F4F6; border-top: 6px solid var(--accent); border-radius: 50%; width: 55px; height: 55px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Deep AI Markdown Styles */
+        .ai-content { font-family: 'Segoe UI', sans-serif; text-align: left; line-height: 1.8; font-size: 15.5px; padding: 20px; background: var(--white); border-radius: 12px; border: 1px solid #E5E7EB; margin-top: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05);}
+        .ai-content h2 { color: var(--primary); margin-top: 25px; margin-bottom: 15px; font-family: 'Georgia', serif; font-size: 22px; border-bottom: 2px solid #F3F4F6; padding-bottom: 8px;}
+        .ai-content h3 { color: var(--accent); margin-top: 20px; margin-bottom: 10px; font-size: 18px;}
+        .ai-content h4 { color: var(--secondary); margin-top: 15px; margin-bottom: 5px; font-size: 16px; background: #F9FAFB; padding: 10px; border-radius: 6px;}
+        .ai-content strong { color: var(--primary); }
+        .ai-content ul { padding-left: 20px; margin-bottom: 15px; }
+        .toolbar { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; background: #F3F4F6; padding: 15px; border-radius: 12px;}
+        .metric-box { background: #FEF3C7; padding: 15px; border-radius: 8px; margin-top: 10px; border: 1px solid #FDE68A;}
+
+        @media print {
+            body { background: white; color: black; font-size: 12pt; }
+            .container { max-width: 100%; padding: 0; display: block; }
+            .btn, .instruction-box, #camera-container, .toolbar, .settings-btn { display: none !important; }
+            .report-card, .ai-content { break-inside: avoid; border: 1px solid #000; box-shadow: none; margin-bottom: 20px; border-top: 4px solid #000; }
+            h1 { text-align: center; font-size: 24pt; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px;}
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <button class="settings-btn" onclick="openSettings()">⚙️</button>
+
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 style="color: var(--primary); margin-bottom: 10px;">System Settings</h2>
+            <p style="font-family: 'Segoe UI'; font-size: 14px; color: var(--secondary);">Enter your private Gemini API key to bypass Marrvish server rate limits.</p>
+            <input type="password" id="custom-api-key" placeholder="AIzaSy...">
+            <div style="display: flex; gap: 10px;">
+                <button class="btn" style="padding: 10px;" onclick="saveSettings()">Save Key</button>
+                <button class="btn btn-upload" style="padding: 10px;" onclick="closeSettings()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="step-intake" class="step active">
+        <h1 style="color: var(--accent);">Marrvish.com</h1>
+        <h1>Absolute Truth Scanner</h1>
+        
+        <input type="text" id="user-name" placeholder="Enter Full Name" required>
+        <input type="number" id="user-age" placeholder="Enter Age" required>
+
+        <h3 style="margin-top: 15px;">Select Active Hand:</h3>
+        <p style="font-size: 13px; margin-top: -10px; margin-bottom: 15px; color: var(--secondary);">(Male = Right Hand, Female = Left Hand)</p>
+        <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 20px;">
+            <button class="btn" style="padding: 12px 20px; max-width: 150px;" onclick="initializeScanner('Male')">Male (Right)</button>
+            <button class="btn" style="padding: 12px 20px; max-width: 150px;" onclick="initializeScanner('Female')">Female (Left)</button>
+        </div>
+    </div>
+
+    <div id="step-capture-choice" class="step">
+        <h1 id="header-user-info">Scanner Preparation</h1>
+        <h3 id="hand-target" style="color: var(--danger); font-weight: bold; font-size: 24px; margin: 20px 0;"></h3>
+        
+        <div class="instruction-box">
+            <ul>
+                <li><strong>Upload Method:</strong> Rub ink on finger, press on paper, upload photo.</li>
+                <li><strong>Camera Method:</strong> Hold phone 4 inches away. Use bright side-lighting.</li>
+            </ul>
+        </div>
+        
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
+            <label for="file-upload" class="btn btn-upload">📁 Upload Impression</label>
+            <input type="file" id="file-upload" accept="image/*">
+            <button class="btn" onclick="startCamera()">📷 Open Live Scanner</button>
+            
+            <div style="margin-top: 20px; width: 100%; max-width: 300px; border-top: 1px solid #E5E7EB; padding-top: 20px;">
+                <h4 style="color: var(--secondary); margin-bottom: 10px; font-size: 14px;">Manual Override (If Scan Fails):</h4>
+                <select id="manual-pattern-select">
+                    <option value="" disabled selected>Select Pattern Manually...</option>
+                    <optgroup label="Chakra (Whorls)">
+                        <option value="Plain Whorl">🎯 Plain Whorl (Concentric Circles)</option>
+                        <option value="Central Pocket Whorl">🌀 Central Pocket Whorl</option>
+                        <option value="Double Loop Whorl">☯️ Double Loop Whorl (Yin-Yang)</option>
+                        <option value="Accidental Whorl">🧩 Accidental Whorl (Complex)</option>
+                    </optgroup>
+                    <optgroup label="Shankha (Loops)">
+                        <option value="Ulnar Loop">🌊 Ulnar Loop (Opens to Pinky)</option>
+                        <option value="Radial Loop">🔙 Radial Loop (Opens to Thumb)</option>
+                    </optgroup>
+                    <optgroup label="Seep (Arches)">
+                        <option value="Plain Arch">丘 Plain Arch (Gentle Hill)</option>
+                        <option value="Tented Arch">⛺ Tented Arch (Sharp Spike)</option>
+                    </optgroup>
+                </select>
+                <button class="btn" style="background-color: var(--secondary); border-color: var(--secondary);" onclick="submitManualPattern()">Verify Manually</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="step-camera" class="step">
+        <h1 id="cam-target-title">Align Print</h1>
+        <div id="camera-container">
+            <video id="camera-stream" autoplay playsinline></video>
+            <div class="overlay-guide"><div class="cutout"></div></div>
+        </div>
+        <button class="btn" onclick="captureFromVideo()">Extract Biometrics</button>
+        <button class="btn btn-upload" style="border: none; margin-top: 10px;" onclick="stopCamera(); showStep('capture-choice');">Cancel</button>
+    </div>
+
+    <div id="step-loading-local" class="step">
+        <h1>Local Extraction</h1>
+        <div class="loader"></div>
+        <p style="font-weight: bold; color: var(--secondary);">Running Image Clarity & Preliminary Extraction...</p>
+        <canvas id="capture-canvas"></canvas>
+    </div>
+    
+    <div id="step-loading-ai" class="step">
+        <h1>Marrvish AI Core</h1>
+        <div class="loader"></div>
+        <p style="font-weight: bold; color: var(--accent);">Transmitting all 5 macro images for Professional Forensic Synthesis...</p>
+    </div>
+
+    <div id="step-progress" class="step">
+        <h1 id="print-header">Scanning Progress</h1>
+        <p style="font-weight: bold; font-size: 16px; margin-bottom: 20px; color: var(--secondary);" id="results-user-info"></p>
+        
+        <div id="reports-list"></div>
+        
+        <div id="action-buttons-container" style="margin-top: 25px; border-top: 1px solid #E5E7EB; padding-top: 25px;">
+            <button id="btn-next" class="btn" onclick="prepareNextFinger()"></button>
+            <button id="btn-deep-ai" class="btn btn-ai" style="display:none; width: 100%; max-width: 100%;" onclick="generateBatchAI()">🔮 Generate Absolute Truth Report</button>
+        </div>
+    </div>
+
+    <div id="step-deep-ai" class="step">
+        <h1 style="color: var(--accent);">Absolute Truth Blueprint</h1>
+        <h3 id="deep-title" style="color: var(--secondary); margin-bottom: 15px;"></h3>
+        
+        <div class="toolbar">
+            <select id="language-selector" onchange="translateDeepAI()" style="margin: 0; width: auto; min-width: 200px;">
+                <optgroup label="Default">
+                    <option value="English">English</option>
+                </optgroup>
+                <optgroup label="Indian Languages">
+                    <option value="Hindi">Hindi (हिंदी)</option>
+                    <option value="Bengali">Bengali (বাংলা)</option>
+                    <option value="Telugu">Telugu (తెలుగు)</option>
+                    <option value="Marathi">Marathi (मराठी)</option>
+                    <option value="Tamil">Tamil (தமிழ்)</option>
+                    <option value="Urdu">Urdu (اردو)</option>
+                    <option value="Gujarati">Gujarati (ગુજરાતી)</option>
+                    <option value="Kannada">Kannada (ಕನ್ನಡ)</option>
+                    <option value="Odia">Odia (ଓଡ଼ିଆ)</option>
+                    <option value="Malayalam">Malayalam (മലയാളം)</option>
+                    <option value="Punjabi">Punjabi (ਪੰਜਾਬੀ)</option>
+                    <option value="Assamese">Assamese (অসমীয়া)</option>
+                    <option value="Sanskrit">Sanskrit (संस्कृतम्)</option>
+                    <option value="Maithili">Maithili (मैथिली)</option>
+                    <option value="Santali">Santali (ᱥᱟᱱᱛᱟᱲᱤ)</option>
+                    <option value="Kashmiri">Kashmiri (कॉशुर)</option>
+                    <option value="Nepali">Nepali (नेपाली)</option>
+                    <option value="Sindhi">Sindhi (سنڌي)</option>
+                    <option value="Dogri">Dogri (डोगरी)</option>
+                    <option value="Konkani">Konkani (कोंकणी)</option>
+                    <option value="Manipuri">Manipuri (ꯃꯤꯇꯩꯂꯣꯟ)</option>
+                    <option value="Bodo">Bodo (बड़ो)</option>
+                </optgroup>
+            </select>
+            <button id="btn-listen" class="btn btn-listen" onclick="toggleSpeech('deep-content')">🔊 Listen</button>
+        </div>
+
+        <div class="ai-content" id="deep-content"></div>
+        
+        <div style="display: flex; gap: 10px; justify-content: center; margin-top: 25px; flex-wrap: wrap;">
+            <button class="btn btn-print" onclick="window.print()">🖨️ Print Absolute Truth</button>
+            <button class="btn btn-upload" onclick="location.reload()">Start New Scan</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+// --- CENTRAL PROXY ROUTER ---
+    const PROXY_BASE_URL = "https://eprashala-proxy-511804777001.asia-south1.run.app";
+    const OPENCV_API_URL = `${PROXY_BASE_URL}/api/analyze_fingerprint`;
+
+    async function fetchGeminiChat(payloadObject) {
+        const userKey = localStorage.getItem('marrvish_gemini_key') || '';
+
+        // TIER 1: User has their own key -> Direct browser handoff to Google
+        if (userKey && userKey.trim().length > 10) {
+            try {
+                console.log("Direct Route Active: Targeting gemini-flash-latest...");
+                const primaryUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${userKey.trim()}`;
+                const response = await fetch(primaryUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payloadObject)
+                });
+                
+                if (!response.ok) throw new Error(`Primary model status: ${response.status}`);
+                return response;
+
+            } catch (error) {
+                console.warn("Primary channel busy/unavailable. Re-routing to fallback...", error);
+                const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${userKey.trim()}`;
+                return await fetch(fallbackUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payloadObject)
+                });
+            }
+        } 
+        
+        // TIER 2: No personal key provided -> Route to your centralized Mumbai server
+        else {
+            console.log("Proxy Route Active: Routing through centralized server...");
+            return await fetch(`${PROXY_BASE_URL}/api/chat`, {
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payloadObject)
+            });
+        }
+    }
+    
+    let videoStream = null;
+    let isSpeaking = false;
+    let userData = { name: '', age: '', handSide: '', finalReportHTML: '', currentLanguageHTML: '' };
+    
+    let collectedFingers = [];
+    
+    const fingerSequence = [
+        { name: "Thumb", sanskrit: "Angustha", planet: "Soul & Willpower" },
+        { name: "Index Finger", sanskrit: "Tarjani", planet: "Jupiter (Dharma)" },
+        { name: "Middle Finger", sanskrit: "Madhyama", planet: "Saturn (Karma)" },
+        { name: "Ring Finger", sanskrit: "Anamika", planet: "Sun (Fame)" },
+        { name: "Little Finger", sanskrit: "Kanishthika", planet: "Mercury (Wealth)" }
+    ];
+    let currentFingerIdx = 0;
+
+    // --- SETTINGS MANAGEMENT ---
+    window.onload = () => {
+        const savedKey = localStorage.getItem('marrvish_gemini_key');
+        if (savedKey) document.getElementById('custom-api-key').value = savedKey;
+    };
+    function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; }
+    function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
+    function saveSettings() {
+        const key = document.getElementById('custom-api-key').value.trim();
+        localStorage.setItem('marrvish_gemini_key', key);
+        closeSettings();
+        alert("API Key saved locally.");
+    }
+    function getAuthHeaders() {
+        const headers = { 'Content-Type': 'application/json' };
+        const savedKey = localStorage.getItem('marrvish_gemini_key');
+        if (savedKey && savedKey.length > 10) headers['X-Custom-Api-Key'] = savedKey;
+        return headers;
+    }
+
+    function showStep(stepId) {
+        document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+        document.getElementById('step-' + stepId).classList.add('active');
+    }
+
+    function initializeScanner(gender) {
+        const nameVal = document.getElementById('user-name').value.trim();
+        const ageVal = document.getElementById('user-age').value.trim();
+        if(!nameVal || !ageVal) { alert("Please enter Full Name and Age."); return; }
+        
+        userData.name = nameVal; userData.age = ageVal; userData.handSide = gender === 'Male' ? 'Right' : 'Left';
+        document.getElementById('results-user-info').innerText = `Client: ${userData.name} | Age: ${userData.age} | Hand: ${userData.handSide}`;
+        
+        currentFingerIdx = 0;
+        collectedFingers = [];
+        document.getElementById('reports-list').innerHTML = ''; 
+        showCaptureChoice();
+    }
+
+    function showCaptureChoice() {
+        const targetFinger = fingerSequence[currentFingerIdx];
+        document.getElementById('hand-target').innerText = `SCANNING:\n${userData.handSide.toUpperCase()} ${targetFinger.name.toUpperCase()}`;
+        showStep('capture-choice');
+    }
+
+    // --- CAPTURE LOGIC ---
+    document.getElementById('file-upload').addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() { processImageCapture(img, false); }
+            img.src = e.target.result;
+        }
+        reader.readAsDataURL(file);
+        event.target.value = '';
+    });
+
+    async function startCamera() {
+        showStep('camera');
+        document.getElementById('camera-container').style.display = 'block';
+        try {
+            videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1920 } } });
+            document.getElementById('camera-stream').srcObject = videoStream;
+        } catch (error) { alert("Camera access denied."); showCaptureChoice(); }
+    }
+    function stopCamera() {
+        if (videoStream) { videoStream.getTracks().forEach(track => track.stop()); videoStream = null; }
+        document.getElementById('camera-container').style.display = 'none';
+    }
+    function captureFromVideo() {
+        stopCamera();
+        processImageCapture(document.getElementById('camera-stream'), true);
+    }
+
+    // MICRO-MACRO CROP LOGIC
+    function processImageCapture(source, isVideo) {
+        const canvas = document.getElementById('capture-canvas');
+        const ctx = canvas.getContext('2d');
+        let sWidth = isVideo ? source.videoWidth : source.width;
+        let sHeight = isVideo ? source.videoHeight : source.height;
+
+        let cropW, cropH, sX, sY;
+
+        if (isVideo) {
+            cropW = sWidth * 0.35;
+            cropH = sHeight * 0.35;
+            sX = (sWidth - cropW) / 2;
+            sY = (sHeight - cropH) / 2;
+        } else {
+            cropW = sWidth;
+            cropH = sHeight;
+            sX = 0;
+            sY = 0;
+        }
+
+        canvas.width = 400; 
+        canvas.height = 400 * (cropH / cropW);
+        ctx.drawImage(source, sX, sY, cropW, cropH, 0, 0, canvas.width, canvas.height);
+        canvas.style.display = 'block';
+        
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        let brightnessSum = 0;
+        for (let i = 0; i < imgData.length; i += 4) {
+            brightnessSum += (imgData[i] + imgData[i+1] + imgData[i+2]) / 3;
+        }
+        const avgBrightness = brightnessSum / (imgData.length / 4);
+        
+        if (avgBrightness < 30 || avgBrightness > 230) {
+            alert("Image Quality Error: The image is either completely black or washed out by glare. Please adjust lighting and try again.");
+            canvas.style.display = 'none';
+            showCaptureChoice();
+            return;
+        }
+
+        const base64 = canvas.toDataURL('image/jpeg', 0.9);
+        analyzeWithOpenCV(base64);
+    }
+
+    // --- LOCAL OPENCV EXTRACTION (UI Only) ---
+    async function analyzeWithOpenCV(base64Image) {
+        showStep('loading-local');
+        const currentFinger = fingerSequence[currentFingerIdx];
+
+        try {
+            const response = await fetch(OPENCV_API_URL, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ finger: currentFinger.name, image: base64Image })
+            });
+
+            if(!response.ok) throw new Error("OpenCV Offline");
+            const data = await response.json();
+
+            collectedFingers.push({
+                fingerData: currentFinger,
+                image: base64Image.split(',')[1] 
+            });
+
+            const cardHTML = `
+                <div class="report-card">
+                    <h2 style="font-size:14px; margin:0;">✅ ${currentFinger.name} Captured 
+                    <span style="font-size:12px; color:var(--accent);">(Basic Shape Detected)</span></h2>
+                </div>
+            `;
+            document.getElementById('reports-list').innerHTML += cardHTML;
+            
+            updateActionButtons();
+            showStep('progress');
+
+        } catch (error) {
+            collectedFingers.push({
+                fingerData: currentFinger, image: base64Image.split(',')[1]
+            });
+            document.getElementById('reports-list').innerHTML += `<div class="report-card"><h2>✅ ${currentFinger.name} Captured</h2></div>`;
+            updateActionButtons();
+            showStep('progress');
+        }
+    }
+
+    // --- MANUAL OVERRIDE LOGIC ---
+    function submitManualPattern() {
+        const selectElement = document.getElementById('manual-pattern-select');
+        const selectedPattern = selectElement.value;
+        
+        if (!selectedPattern) {
+            alert("Please select a pattern from the dropdown first.");
+            return;
+        }
+
+        const currentFinger = fingerSequence[currentFingerIdx];
+
+        // Push data WITHOUT an image, but WITH the manual override string
+        collectedFingers.push({
+            fingerData: currentFinger,
+            image: null, 
+            manualOverride: selectedPattern
+        });
+
+        // Add to UI log
+        const cardHTML = `
+            <div class="report-card">
+                <h2 style="font-size:14px; margin:0; color: var(--accent);">✍️ ${currentFinger.name} (Manual Override)
+                <span style="font-size:12px; color:var(--secondary); display:block; margin-top:4px;">Pattern: ${selectedPattern}</span></h2>
+            </div>
+        `;
+        document.getElementById('reports-list').innerHTML += cardHTML;
+        
+        // Reset dropdown for the next finger
+        selectElement.selectedIndex = 0; 
+
+        updateActionButtons();
+        showStep('progress');
+    }
+
+    function updateActionButtons() {
+        const btnNext = document.getElementById('btn-next');
+        const btnDeepAI = document.getElementById('btn-deep-ai');
+        
+        if (currentFingerIdx < 4) {
+            btnNext.style.display = 'inline-flex';
+            btnNext.innerText = `Scan Next: ${fingerSequence[currentFingerIdx + 1].name}`;
+            btnDeepAI.style.display = 'none';
+        } else {
+            btnNext.style.display = 'none';
+            btnDeepAI.style.display = 'inline-flex';
+        }
+    }
+
+    function prepareNextFinger() {
+        currentFingerIdx++;
+        document.getElementById('capture-canvas').style.display = 'none';
+        showCaptureChoice();
+    }
+
+    // --- BULLETPROOF PROFESSIONAL FORENSIC GEMINI ENGINE ---
+    async function generateBatchAI() {
+        showStep('loading-ai');
+
+        let textPrompt = `
+        You are a brutally honest, uncompromising master of Samudrika Shastra acting as the core engine for Marrvish.com.
+        
+        Client Details: Name: ${userData.name}, Age: ${userData.age}, Target Hand: ${userData.handSide} Hand.
+        
+        Attached are 5 highly-detailed, tightly cropped macro images of the user's actual fingertips in this specific order:
+        `;
+
+        let partsArray = [{ "text": "" }]; 
+
+        collectedFingers.forEach((item, index) => {
+            if (item.manualOverride) {
+                // If user bypassed the scanner, force Gemini to use their exact text
+                textPrompt += `\n${index+1}. ${item.fingerData.name} (${item.fingerData.planet}): [USER MANUALLY OVERRODE SCANNER - THE PATTERN IS STRICTLY: "${item.manualOverride}"]`;
+            } else {
+                // Standard image processing
+                textPrompt += `\n${index+1}. ${item.fingerData.name} (${item.fingerData.planet}): [Image Attached]`;
+                partsArray.push({ "inlineData": { "mimeType": "image/jpeg", "data": item.image } });
+            }
+        });
+
+        // THE ADVANCED FORENSIC PROTOCOL
+        textPrompt += `
+        \n\nTHE ADVANCED FORENSIC & VEDIC PROTOCOL:
+        You must visually analyze the 5 attached images WITHOUT any bias. DO NOT GUESS. The previous local sensor only detected basic shapes; you must OVERRIDE it. Classify each print into one of the following highly specific forensic categories, and map it to its Vedic archetype:
+        
+        1. WHORLS (Chakra):
+           - Plain Whorl: Complete, closed concentric circles or spirals.
+           - Central Pocket Whorl: A loop with a whorl trapped at its core.
+           - Double Loop Whorl: Two separate loop formations intertwining (Yin-Yang shape).
+           - Accidental Whorl: Irregular, complex combination of multiple patterns.
+           
+        2. LOOPS (Shankha):
+           - Left-Opening Loop: Ridges enter from the left, curve, and exit left.
+           - Right-Opening Loop: Ridges enter from the right, curve, and exit right.
+           (Determine Ulnar vs Radial Vedic meaning based on the fact this is the ${userData.handSide} Hand).
+           
+        3. ARCHES (Seep):
+           - Plain Arch: Gentle, wave-like flow from one side to the other.
+           - Tented Arch: Sharp, vertical upward spike in the center like a tent pole.
+        
+        CRITICAL RULE 1: Provide a brutally honest karmic reading based on the actual visual patterns. Tie the specific forensic sub-type (e.g., 'Double Loop' vs 'Plain Whorl') to deep ancient Vedic Samudrika Shastra principles. Do NOT flatter the user.
+        CRITICAL RULE 2: In the 'Finger Breakdown' section, you MUST explicitly declare the highly specific forensic pattern you identified (e.g., "Right-Opening Loop (Shankha)", "Tented Arch (Seep)", "Double Loop Whorl (Chakra)") right next to the finger name so the user can verify it physically.
+        
+        You MUST respond ONLY with a valid JSON object. 
+        CRITICAL JSON FORMATTING RULE: The "deep_reading_html" value MUST be a single, continuous string. Do NOT use actual line breaks (newlines) or tabs inside the string. Use standard HTML tags for formatting.
+        
+        Format required:
+        {
+            "deep_reading_html": "<h2>Holistic Marrvish Synthesis</h2><p>One brutal, honest paragraph summarizing the combined energy.</p><div class='metric-box'><h3>Absolute Truth Metrics & Percentages</h3><ul><li><b>The 4 Purusharthas:</b> Dharma X%, Artha X%, Kama X%, Moksha X%</li><li><b>The 5 Enemies:</b> Kama X%, Krodha X%, Moha X%, Mada X%, Matsarya X%</li><li><b>Traits:</b> Honesty X%, Reliability X%, Hardworking X%, Punctuality X%, Accountability X%</li></ul></div><h3>Finger-by-Finger Breakdown</h3><h4>1. Thumb - Pattern Found: [Insert Specific Pattern Here]</h4><p>Deep Vedic analysis based on this specific pattern...</p><h4>2. Index Finger - Pattern Found: [Insert Specific Pattern Here]</h4><p>Deep Vedic analysis...</p><h4>3. Middle Finger - Pattern Found: [Insert Specific Pattern Here]</h4><p>Deep Vedic analysis...</p><h4>4. Ring Finger - Pattern Found: [Insert Specific Pattern Here]</h4><p>Deep Vedic analysis...</p><h4>5. Little Finger - Pattern Found: [Insert Specific Pattern Here]</h4><p>Deep Vedic analysis...</p>"
+        }
+        `;
+
+        partsArray[0].text = textPrompt;
+
+        const payload = {
+            "contents": [{ "parts": partsArray }],
+            "generationConfig": { "temperature": 0.1 } 
+        };
+
+		try {
+            const response = await fetchGeminiChat(payload);
+
+            if (!response.ok) throw new Error(`HTTP ${response.status}: Marrvish AI Core unavailable.`);
+            
+            const rawText = await response.text();
+            let data;
+            try { data = JSON.parse(rawText); } catch(e) { throw new Error(rawText); }
+
+            if (data.candidates && data.candidates[0].content) {
+                let aiText = data.candidates[0].content.parts[0].text;
+                
+                let cleanText = aiText.replace(/```json/g, '').replace(/```html/g, '').replace(/```/g, '').trim();
+                cleanText = cleanText.replace(/[\r\n\t]+/g, ' '); 
+
+                let resultObj;
+                try {
+                    resultObj = JSON.parse(cleanText);
+                } catch (e) {
+                    throw new Error("API Intercept: " + cleanText);
+                }
+                
+                if (!resultObj.deep_reading_html) throw new Error("Missing 'deep_reading_html' in AI response.");
+
+                userData.finalReportHTML = resultObj.deep_reading_html;
+                userData.currentLanguageHTML = userData.finalReportHTML;
+                
+                document.getElementById('deep-title').innerText = `Report for ${userData.name} (Age: ${userData.age})`;
+                document.getElementById('deep-content').innerHTML = userData.currentLanguageHTML;
+                showStep('deep-ai');
+            } else {
+                throw new Error("Gemini AI timeout or rate limit reached. Try using a custom API Key in Settings.");
+            }
+        } catch (error) {
+            alert("DIAGNOSTIC ERROR:\n" + error.message);
+            showStep('progress');
+        }
+    }
+
+    // --- ROBUST TRANSLATOR PROXY ---
+    async function translateDeepAI() {
+        const targetLang = document.getElementById('language-selector').value;
+        if(isSpeaking) toggleSpeech('deep-content'); 
+
+        if (targetLang === 'English') {
+            document.getElementById('deep-content').innerHTML = userData.finalReportHTML;
+            return;
+        }
+
+        const contentBox = document.getElementById('deep-content');
+        contentBox.innerHTML = `<div class="loader"></div><p style="text-align:center; font-weight:bold;">Translating absolute truth into ${targetLang}...</p>`;
+
+        const prompt = `Translate this HTML into ${targetLang}. Preserve ALL tags EXACTLY. Do NOT wrap in markdown. \n\n ${userData.finalReportHTML}`;
+
+		try {
+            const payloadObject = { "contents": [{ "parts": [{ "text": prompt }] }], "generationConfig": { "temperature": 0.1 } };
+            const response = await fetchGeminiChat(payloadObject);
+            const data = await response.json();
+            
+            if (data.candidates && data.candidates[0].content) {
+                let translatedText = data.candidates[0].content.parts[0].text.replace(/```html/g, '').replace(/```/g, '').trim();
+                userData.currentLanguageHTML = translatedText;
+                contentBox.innerHTML = userData.currentLanguageHTML;
+            }
+        } catch (e) {
+            alert("Translation failed. Restoring English.");
+            document.getElementById('language-selector').value = "English";
+            contentBox.innerHTML = userData.finalReportHTML;
+        }
+    }
+
+    // --- FLAWLESS TTS (SENTENCE CHUNKING) ---
+    function toggleSpeech(elementId) {
+        if (isSpeaking) {
+            window.speechSynthesis.cancel();
+            isSpeaking = false;
+            document.getElementById('btn-listen').innerText = '🔊 Listen';
+            return;
+        }
+
+        const contentBox = document.getElementById(elementId);
+        const textToRead = contentBox.innerText || contentBox.textContent;
+        if (!textToRead) return;
+
+        const sentences = textToRead.match(/[^.!?\n]+[.!?\n]+/g) || [textToRead];
+        const targetLang = document.getElementById('language-selector').value;
+        let langCode = 'en-IN'; 
+        const langMap = { 'Hindi': 'hi-IN', 'Marathi': 'mr-IN', 'Tamil': 'ta-IN', 'Telugu': 'te-IN', 'Gujarati': 'gu-IN', 'Kannada': 'kn-IN', 'Malayalam': 'ml-IN', 'Bengali': 'bn-IN', 'Urdu': 'ur-IN' };
+        if(langMap[targetLang]) langCode = langMap[targetLang];
+
+        window.speechSynthesis.getVoices();
+        isSpeaking = true;
+        document.getElementById('btn-listen').innerText = '⏹ Stop Audio';
+
+        sentences.forEach((sentence, index) => {
+            if (sentence.trim().length === 0) return;
+            const utterance = new SpeechSynthesisUtterance(sentence.trim());
+            utterance.lang = langCode;
+            utterance.rate = 0.90; 
+            
+            if (index === sentences.length - 1) {
+                utterance.onend = () => { isSpeaking = false; document.getElementById('btn-listen').innerText = '🔊 Listen'; };
+            }
+            utterance.onerror = () => { isSpeaking = false; document.getElementById('btn-listen').innerText = '🔊 Listen'; }
+            window.speechSynthesis.speak(utterance);
+        });
+    }
+
+    window.onbeforeunload = () => { window.speechSynthesis.cancel(); };
+</script>
+</body>
+</html>

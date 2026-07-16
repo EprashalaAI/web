@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vedic Tools Library</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@300;400;600&display=swap');
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            touch-action: manipulation; 
+            user-select: none;
+        }
+        
+        h1, .cinzel { font-family: 'Cinzel', serif; }
+
+        /* Glassmorphism containers */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .tool-card {
+            background: rgba(2, 6, 23, 0.6);
+            border: 1px solid rgba(8, 145, 178, 0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .tool-card:hover {
+            border-color: rgba(250, 204, 21, 0.6); /* Yellow glow on hover */
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), inset 0 0 15px rgba(250, 204, 21, 0.05);
+            background: rgba(15, 23, 42, 0.9);
+        }
+
+        .tool-icon {
+            text-shadow: 0 0 10px rgba(250, 204, 21, 0.4);
+        }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+
+        /* Golden Text Gradient */
+        .text-gold-gradient {
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            background-image: linear-gradient(to right, #fde047, #ca8a04);
+        }
+    </style>
+</head>
+
+<body class="bg-[#020617] text-white flex flex-col items-center h-screen overflow-hidden">
+
+    <div class="flex flex-col w-full h-full max-w-2xl relative shadow-2xl bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]">
+        
+        <!-- HEADER -->
+        <header class="flex-shrink-0 pt-6 pb-4 px-4 glass-panel z-20 rounded-b-3xl relative shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
+            
+            <!-- Back Button to return to index.html -->
+            <a href="index.html" class="absolute top-6 left-5 z-50 text-slate-400 hover:text-cyan-400 transition-colors" title="Back to Library">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            </a>
+
+            <div class="flex flex-col items-center justify-center mb-2">
+                <div class="text-3xl mb-1 tool-icon">🧰</div>
+                <h1 class="text-2xl md:text-3xl font-bold tracking-widest text-center uppercase">
+                    <span class="text-cyan-400">Vedic</span> 
+                    <span class="text-gold-gradient">Tools</span>
+                </h1>
+                <p class="text-xs text-slate-400 tracking-wide mt-1 uppercase">Select an instrument of wisdom</p>
+            </div>
+        </header>
+
+        <!-- TOOLS GRID -->
+        <main class="flex-1 overflow-y-auto p-4 space-y-4 pb-10 scroll-smooth">
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                
+                <!-- Panchang -->
+                <a href="panchang.html" class="tool-card rounded-2xl p-4 flex items-start gap-4 cursor-pointer no-underline">
+                    <div class="text-3xl mt-1 tool-icon">📅</div>
+                    <div>
+                        <h2 class="text-lg font-bold text-cyan-400 cinzel">Panchang</h2>
+                        <p class="text-xs text-slate-300 mt-1 leading-relaxed">Scientific Vedic Indian calendar and time calculation system.</p>
+                    </div>
+                </a>
+
+                <!-- Kundli -->
+                <a href="kundli.html" class="tool-card rounded-2xl p-4 flex items-start gap-4 cursor-pointer no-underline">
+                    <div class="text-3xl mt-1 tool-icon">♈</div>
+                    <div>
+                        <h2 class="text-lg font-bold text-cyan-400 cinzel">Kundli</h2>
+                        <p class="text-xs text-slate-300 mt-1 leading-relaxed">The most highly scientific and precise Kundli software.</p>
+                    </div>
+                </a>
+				
+			<a href="prashna.html" class="tool-card rounded-2xl p-4 flex items-start gap-4 cursor-pointer no-underline">
+				<div class="text-3xl mt-1 tool-icon">🧭</div>
+				<div>
+					<h2 class="text-lg font-bold text-cyan-400 cinzel">Spashtha Prashna Recovery</h2>
+					<p class="text-xs text-slate-300 mt-1 leading-relaxed">Locate lost objects or missing persons using precision astrological event charts and AI.</p>
+				</div>
+			</a>
+
+			<a href="swapna.html" class="tool-card rounded-2xl p-4 flex items-start gap-4 cursor-pointer no-underline">
+				<div class="text-3xl mt-1 tool-icon">🌙</div>
+				<div>
+					<h2 class="text-lg font-bold text-cyan-400 cinzel">AI Dream Interpreter</h2>
+					<p class="text-xs text-slate-300 mt-1 leading-relaxed">
+						Discover the hidden meanings of your dreams through AI-powered analysis inspired by psychology, symbolism, and ancient wisdom.
+					</p>
+				</div>
+			</a>
+			<a href="career.html" class="tool-card rounded-2xl p-4 flex items-start gap-4 cursor-pointer no-underline">
+				<div class="text-3xl mt-1 tool-icon">🎓</div>
+				<div>
+					<h2 class="text-lg font-bold text-cyan-400 cinzel">Vedic Career Guide</h2>
+					<p class="text-xs text-slate-300 mt-1 leading-relaxed">
+						Discover your ideal career path through Vedic astrology, natural talents, planetary influences, & timeless wisdom.
+					</p>
+				</div>
+			</a>
+			
+			<a href="santan.html" class="tool-card rounded-2xl p-4 flex items-start gap-4 cursor-pointer no-underline">
+				<div class="text-3xl mt-1 tool-icon">👶</div>
+				<div>
+					<h2 class="text-lg font-bold text-cyan-400 cinzel">Santati Yoga & Birth Muhurta</h2>
+					<p class="text-xs text-slate-300 mt-1 leading-relaxed">
+						Plan conception with Vedic astrology. Find the best Garbhadhana Muhurta, analyze Beej & Kshetra Sphuta.
+					</p>
+				</div>
+			</a>
+			
+
+                <!-- 3D Cosmic Clock -->
+                <a href="tm3.html" class="tool-card rounded-2xl p-4 flex items-start gap-4 cursor-pointer no-underline">
+                    <div class="text-3xl mt-1 tool-icon">🌌</div>
+                    <div>
+                        <h2 class="text-lg font-bold text-cyan-400 cinzel">Cosmic Clock</h2>
+                        <p class="text-xs text-slate-300 mt-1 leading-relaxed">Interactive 3D representation of cosmic time and planetary positions.</p>
+                    </div>
+                </a>
+
+                <!-- Face Reading -->
+                <a href="face.html" class="tool-card rounded-2xl p-4 flex items-start gap-4 cursor-pointer no-underline">
+                    <div class="text-3xl mt-1 tool-icon">🧑</div>
+                    <div>
+                        <h2 class="text-lg font-bold text-cyan-400 cinzel">Face Reading</h2>
+                        <p class="text-xs text-slate-300 mt-1 leading-relaxed">Analysis using the ancient Mukha Samudrika Shashtra.</p>
+                    </div>
+                </a>
+				<a href="pastlife.html" class="tool-card rounded-2xl p-4 flex items-start gap-4 cursor-pointer no-underline">
+					<div class="text-3xl mt-1 tool-icon">🕉️</div>
+					<div>
+						<h2 class="text-lg font-bold text-cyan-400 cinzel"> Past Life & Dharma Guide</h2>
+						<p class="text-xs text-slate-300 mt-1 leading-relaxed">
+							Discover your past-life karmic influences, understand the lessons your soul carries, & uncover your true Dharma & life purpose through Vedic astrology.
+						</p>
+					</div>
+				</a>
+
+                <!-- Finger Print Reader -->
+                <a href="finger.html" class="tool-card rounded-2xl p-4 flex items-start gap-4 cursor-pointer no-underline">
+                    <div class="text-3xl mt-1 tool-icon">🪪</div>
+                    <div>
+                        <h2 class="text-lg font-bold text-cyan-400 cinzel">Fingerprints</h2>
+                        <p class="text-xs text-slate-300 mt-1 leading-relaxed">Deep analysis via the Vedic fingerprint reader technology.</p>
+                    </div>
+                </a>
+
+                <!-- Palmistry -->
+                <a href="palm.html" class="tool-card rounded-2xl p-4 flex items-start gap-4 cursor-pointer no-underline">
+                    <div class="text-3xl mt-1 tool-icon">✋</div>
+                    <div>
+                        <h2 class="text-lg font-bold text-cyan-400 cinzel">Palmistry</h2>
+                        <p class="text-xs text-slate-300 mt-1 leading-relaxed">Digital Vedic palmistry software for life path insights.</p>
+                    </div>
+                </a>
+
+                <!-- Foot Analysis -->
+                <a href="pada.html" class="tool-card rounded-2xl p-4 flex items-start gap-4 cursor-pointer no-underline">
+                    <div class="text-3xl mt-1 tool-icon">👣</div>
+                    <div>
+                        <h2 class="text-lg font-bold text-cyan-400 cinzel">Pada Analysis</h2>
+                        <p class="text-xs text-slate-300 mt-1 leading-relaxed">Vedic foot analysis observing structural destinies.</p>
+                    </div>
+                </a>
+
+                <!-- Mind Reading -->
+                <a href="mind.html" class="tool-card rounded-2xl p-4 flex items-start gap-4 cursor-pointer no-underline">
+                    <div class="text-3xl mt-1 tool-icon">🧠</div>
+                    <div>
+                        <h2 class="text-lg font-bold text-cyan-400 cinzel">Mind Reader</h2>
+                        <p class="text-xs text-slate-300 mt-1 leading-relaxed">Advanced Vedic mind reading and psychological software.</p>
+                    </div>
+                </a>
+
+                <!-- Numerology -->
+                <a href="sankhya.html" class="tool-card rounded-2xl p-4 flex items-start gap-4 cursor-pointer no-underline">
+                    <div class="text-3xl mt-1 tool-icon">🔢</div>
+                    <div>
+                        <h2 class="text-lg font-bold text-cyan-400 cinzel">Sankhya</h2>
+                        <p class="text-xs text-slate-300 mt-1 leading-relaxed">Vedic Numerology software mapping cosmic numerical vibrations.</p>
+                    </div>
+                </a>
+
+                <!-- Vastu -->
+                <a href="vastu.html" class="tool-card rounded-2xl p-4 flex items-start gap-4 cursor-pointer no-underline">
+                    <div class="text-3xl mt-1 tool-icon">🏠</div>
+                    <div>
+                        <h2 class="text-lg font-bold text-cyan-400 cinzel">Vastu Shastra</h2>
+                        <p class="text-xs text-slate-300 mt-1 leading-relaxed">Architectural harmony analysis using Vedic Vastushastra.</p>
+                    </div>
+                </a>
+				<a href="swara.html" class="tool-card rounded-2xl p-4 flex items-start gap-4 cursor-pointer no-underline">
+                    <div class="text-3xl mt-1 tool-icon">🌬️</div>
+                    <div>
+                        <h2 class="text-lg font-bold text-cyan-400 cinzel">Swara Forensics</h2>
+                        <p class="text-xs text-slate-300 mt-1 leading-relaxed">Advanced Vedic swara forensic tools for voice analysis.</p>
+                    </div>
+                </a>
+                <!-- Tarot -->
+                <a href="tarot.html" class="tool-card rounded-2xl p-4 flex items-start gap-4 cursor-pointer no-underline">
+                    <div class="text-3xl mt-1 tool-icon">🃏</div>
+                    <div>
+                        <h2 class="text-lg font-bold text-cyan-400 cinzel">Tarot Reader</h2>
+                        <p class="text-xs text-slate-300 mt-1 leading-relaxed">Digital Tarot card reader bridging symbolism and intuition.</p>
+                    </div>
+                </a>
+
+            </div>
+
+            <!-- Bottom spacing element so last card isn't cut off by screen edge -->
+            <div class="h-6"></div>
+        </main>
+    </div>
+
+</body>
+</html>

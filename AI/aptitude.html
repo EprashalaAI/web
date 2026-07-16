@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dhwani AI - Eprashala Aptitude Test</title>
+    
+    <script src="qa.js"></script>
+    <script src="qm.js"></script>
+    <script src="qb.js"></script>
+    <script src="qbm.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 0; display: flex; justify-content: center; height: 100dvh; box-sizing: border-box; }
+        .container { background: white; max-width: 800px; width: 100%; box-shadow: 0 4px 20px rgba(0,0,0,0.05); display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        
+        button { background: #2980b9; color: white; border: none; padding: 14px 20px; font-size: 16px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; transition: 0.2s; }
+        button:hover { background: #1c5980; }
+        button:disabled { background: #bdc3c7; cursor: not-allowed; }
+        
+        .btn-green { background: #27ae60; } .btn-green:hover { background: #219653; }
+        .btn-purple { background: #8e44ad; } .btn-purple:hover { background: #732d91; }
+        .btn-orange { background: #f39c12; } .btn-orange:hover { background: #d68910; }
+        
+        input[type="text"], input[type="number"], input[type="password"], select { width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; margin-bottom: 10px; }
+        input[type="file"] { width: 100%; padding: 10px; border: 1px dashed #2980b9; border-radius: 8px; background: #f9fbfc; cursor: pointer; }
+        
+        #setup-screen, #api-key-screen { padding: 40px 20px; text-align: center; overflow-y: auto; height: 100%; }
+        #api-key-screen { display: none; position: relative; } 
+        
+        #test-screen { display: none; flex-direction: column; height: 100%; }
+        .header { background: #2c3e50; color: white; padding: 15px; text-align: center; font-size: 15px; }
+        #stage-indicator { background: #e67e22; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: bold; display: inline-block; margin-top: 5px; }
+        
+        #chat-history { flex: 1; padding: 20px; overflow-y: auto; background: #fafafa; }
+        .message { margin-bottom: 15px; max-width: 90%; padding: 14px; border-radius: 10px; font-size: 15px; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; }
+        .bot-msg { background: #e3f2fd; color: #0b3c7c; align-self: flex-start; border-bottom-left-radius: 0; border: 1px solid #bbdefb; }
+        .user-msg { background: #27ae60; color: white; align-self: flex-end; margin-left: auto; border-bottom-right-radius: 0; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .typing-indicator { font-style: italic; color: #7f8c8d; animation: pulse 1.5s infinite; }
+        
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+        
+        .controls-area { padding: 15px; background: white; border-top: 1px solid #eee; padding-bottom: max(15px, env(safe-area-inset-bottom)); }
+        .input-row { display: flex; gap: 10px; align-items: center; }
+        
+        .mic-btn { background: #e67e22; width: 50px; height: 50px; border-radius: 50%; font-size: 20px; flex-shrink: 0; border: none; padding: 0; transition: 0.2s; user-select: none; touch-action: none; }
+        .mic-btn.listening { background: #e74c3c; box-shadow: 0 0 15px rgba(231, 76, 60, 0.6); transform: scale(1.08); }
+        
+        #full-loader { display: none; position: absolute; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); z-index: 100; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; box-sizing: border-box;}
+        
+        /* Fixed Report Screen Scrolling */
+        #report-screen { display: none; flex-direction: column; height: 100%; background: white; overflow-y: auto; scroll-behavior: smooth; }
+        
+        /* Premium Report Styling */
+        #report-wrapper { padding: 30px 20px; background: #ffffff; color: #333; }
+        .report-header-title { color: #2c3e50; border-bottom: 2px solid #2980b9; padding-bottom: 10px; margin-bottom: 20px; }
+        .report-card { background: #ffffff; border-left: 5px solid #2980b9; padding: 20px; margin-bottom: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-top: 1px solid #f0f0f0; border-right: 1px solid #f0f0f0; border-bottom: 1px solid #f0f0f0; }
+        .report-card b { color: #2c3e50; font-size: 1.1em; display: block; margin-bottom: 8px; }
+        
+        #consult-area { background: #eef2f5; padding: 20px; border-top: 2px solid #ddd; }
+        #consult-history { max-height: 250px; overflow-y: auto; margin-bottom: 10px; background: white; padding: 15px; border-radius: 8px; border: 1px solid #ddd;}
+        
+        /* FLOATING TTS WIDGET */
+        #floating-tts-widget {
+            display: none; 
+            position: fixed; 
+            bottom: 30px; 
+            right: 20px; 
+            z-index: 9999; 
+            background: #8e44ad; 
+            color: white; 
+            border-radius: 30px; 
+            padding: 12px 20px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); 
+            cursor: pointer; 
+            font-weight: bold; 
+            transition: 0.3s; 
+            align-items: center; 
+            gap: 8px;
+        }
+        #floating-tts-widget:hover { background: #732d91; transform: scale(1.05); }
+
+        /* Proxy & Developer Settings UI Elements */
+        .settings-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            color: #7f8c8d;
+            padding: 0;
+            width: auto;
+            margin: 0;
+            transition: 0.2s;
+            box-shadow: none;
+        }
+        .settings-btn:hover { 
+            background: none; 
+            color: #2c3e50; 
+            transform: rotate(90deg);
+        }
+        #api-key-container { 
+            display: none; 
+            margin-bottom: 25px; 
+            text-align: left;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="setup-screen">
+        <h2>Dhwani AI - Aptitude Test</h2>
+        <p style="color: #666; font-size: 14px;">Eprashala Multilingual Architecture</p>
+        <input type="text" id="childName" placeholder="Student's Name" required>
+        <input type="number" id="childAge" placeholder="Age (e.g., 14)" required>
+        <input type="text" id="childCity" placeholder="City/Town (e.g., Pune)" required>
+        
+        <label style="display:block; text-align:left; font-size:12px; color:#666; margin-left:5px; margin-top:10px;">Assessment Language / परीक्षेची भाषा:</label>
+        <select id="testLang">
+            <option value="en-IN">English (India)</option>
+            <option value="mr-IN">Marathi (मराठी)</option>
+        </select>
+
+        <button onclick="startTest()">Begin Assessment (Offline)</button>
+
+        <hr style="border:0; border-top:1px dashed #ccc; margin: 30px 0 20px 0;">
+        <p style="color: #666; font-size: 14px; margin-bottom: 10px;">Already took the test? Skip directly to the report generation.</p>
+        <button onclick="skipToUpload()" class="btn-orange" style="margin-top: 0;">⏭️ Skip to Upload Assessment</button>
+    </div>
+
+    <div id="test-screen">
+        <div class="header">
+            <div id="test-header">Dhwani Session</div>
+            <div id="stage-indicator">Welcome</div>
+        </div>
+        <div id="chat-history"></div>
+        <div class="controls-area">
+            <p id="mic-status" style="font-size: 11px; color: #7f8c8d; margin: 0 0 5px 0; text-align: center;">Hold mic to speak. Auto-sends on release.</p>
+            <div class="input-row">
+                <button id="micBtn" class="mic-btn">🎤</button>
+                <input type="text" id="userInput" placeholder="Type or hold mic..." onkeypress="handleEnter(event)">
+                <button id="sendBtn" onclick="submitAnswer()" style="display: none;">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="api-key-screen">
+        <button class="settings-btn" onclick="toggleApiKeyInput()" title="Settings">⚙️</button>
+        
+        <h2>Assessment Complete!</h2>
+        <div style="background: #fff3cd; border-left: 4px solid #f39c12; padding: 15px; text-align: left; margin-bottom: 20px; border-radius: 4px;">
+            <p style="color: #d35400; font-weight: bold; font-size: 14px; margin-top:0;">⚠️ IMPORTANT BACKUP REQUIRED</p>
+            <p style="color: #555; font-size: 13px; margin-bottom: 10px;">Please download your raw transcript. If the AI server fails, you can upload this file to try again without retaking the test.</p>
+            <button onclick="downloadRawTranscript()" class="btn-green" style="margin-top: 0;">⬇️ Download Raw Transcript</button>
+        </div>
+        
+        <div style="text-align: left; margin-bottom: 25px;">
+            <p style="color: #666; font-size: 13px; font-weight: bold;">Restore Previous Session:</p>
+            <input type="file" id="transcriptUpload" accept=".txt" onchange="uploadRawTranscript(event)">
+        </div>
+
+        <div id="api-key-container">
+            <p style="color: #2c3e50; font-size: 14px; font-weight: bold; margin-top: 0;">Developer Settings</p>
+            <p style="color: #666; font-size: 12px; margin-bottom: 10px;">Enter your own Gemini API Key to bypass the default Eprashala proxy server (Optional).</p>
+            <input type="password" id="apiKey" placeholder="Leave blank to use default server">
+        </div>
+
+        <button onclick="generateFinalReport()">Generate Final Report</button>
+    </div>
+
+    <div id="report-screen">
+        <div id="report-wrapper">
+            <h2 class="report-header-title" id="pdf-report-title">Eprashala Expert Report</h2>
+            <div id="report-content" style="line-height: 1.6;"></div>
+        </div>
+        
+        <div style="padding: 0 20px; background: white;">
+            <button onclick="downloadPDFReport()" style="background: #e74c3c; margin-bottom: 20px;">📄 Download Report as PDF</button>
+        </div>
+
+        <div id="consult-area">
+            <h3 style="margin-top:0; color:#2c3e50;" id="consult-title">Consult Dhwani AI</h3>
+            <div id="consult-history"></div>
+            <div class="input-row">
+                <button id="consultMicBtn" class="mic-btn">🎤</button>
+                <input type="text" id="consultInput" placeholder="Ask about colleges, streams..." onkeypress="if(event.key === 'Enter') sendConsult()">
+                <button onclick="sendConsult()" style="width: auto; margin:0;">Ask</button>
+            </div>
+            <button onclick="downloadFullSession()" class="btn-green" style="margin-top:15px;">⬇️ Export Entire Q&A Data (TXT)</button>
+        </div>
+    </div>
+
+    <div id="floating-tts-widget" onclick="toggleReportAudio()">
+        <span id="floating-tts-icon">▶️</span>
+        <span id="floating-tts-text">Read Report</span>
+    </div>
+
+    <div id="full-loader">
+        <h2 id="loader-text">Dhwani is analyzing...</h2>
+    </div>
+</div>
+
+<script>
+    // --- CENTRAL PROXY ROUTER ---
+    const PROXY_BASE_URL = "https://eprashala-proxy-511804777001.asia-south1.run.app";
+
+    async function fetchGeminiChat(payloadObject) {
+        const userKey = document.getElementById('apiKey').value.trim() || '';
+
+        // TIER 1: User has their own key -> Direct browser handoff to Google
+        if (userKey && userKey.length > 10) {
+            try {
+                console.log("Direct Route Active: Targeting gemini-2.5-flash...");
+                const primaryUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${userKey}`;
+                const response = await fetch(primaryUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payloadObject)
+                });
+                
+                if (!response.ok) throw new Error(`Primary model status: ${response.status}`);
+                return response;
+
+            } catch (error) {
+                console.warn("Primary channel busy/unavailable. Re-routing to fallback...", error);
+                const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${userKey}`;
+                return await fetch(fallbackUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payloadObject)
+                });
+            }
+        } 
+        
+        // TIER 2: No personal key provided -> Route to your centralized Mumbai server
+        else {
+            console.log("Proxy Route Active: Routing through centralized server...");
+            return await fetch(`${PROXY_BASE_URL}/api/chat`, {
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payloadObject)
+            });
+        }
+    }
+
+    let childData = { name: "", age: 0, city: "", lang: "en-IN", langName: "English" };
+    let apiKey = "";
+    
+    let currentStage = 0;
+    let questionCount = 0;
+    const questionsPerStage = 10; 
+    let fullTranscript = ""; 
+    let generatedReportHtml = ""; 
+    let lastBotQuestion = ""; 
+    let consultHistory = [];
+    let isProcessing = false;
+    let questionStartTime = 0; 
+    let currentSpeechUtterance = null; 
+
+    const STAGES_EN = ["Stage 0: Basics", "Stage 1: Quick Fire", "Stage 2: Short Thoughts", "Stage 3: Exploration", "Stage 4: Stress Test"];
+    const STAGES_MR = ["टप्पा 0: मूलभूत माहिती", "टप्पा 1: जलद उत्तरे", "टप्पा 2: थोडक्यात विचार", "टप्पा 3: सखोल विचार", "टप्पा 4: तणाव चाचणी"];
+    let STAGE_NAMES = STAGES_EN;
+    let activeQuestionQueues = {};
+
+    function toggleApiKeyInput() {
+        const container = document.getElementById('api-key-container');
+        container.style.display = container.style.display === 'block' ? 'none' : 'block';
+    }
+
+    // --- SCREEN WAKE LOCK API (Persistent) ---
+    let wakeLock = null;
+    async function requestWakeLock() {
+        try {
+            if ('wakeLock' in navigator) {
+                wakeLock = await navigator.wakeLock.request('screen');
+                console.log('Screen Wake Lock is active. Screen will not sleep.');
+            }
+        } catch (err) {
+            console.error('Wake Lock failed:', err.message);
+        }
+    }
+    // Re-acquire wake lock if user switches tabs and comes back
+    document.addEventListener('visibilitychange', async () => {
+        if (wakeLock !== null && document.visibilityState === 'visible') {
+            requestWakeLock();
+        }
+    });
+
+    // --- BACKGROUND INTERRUPTION (Pause TTS on app switch/phone call) ---
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden && isPlayingReport) {
+            if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+                window.speechSynthesis.pause();
+                updateTTSUI(true); // Update UI to show Paused state
+            }
+        }
+    });
+
+    function initializeQuestionQueues(bank) {
+        for (let stage in bank) {
+            activeQuestionQueues[stage] = [...bank[stage]].sort(() => 0.5 - Math.random());
+        }
+    }
+
+    function skipToUpload() {
+        document.getElementById('setup-screen').style.display = 'none';
+        document.getElementById('api-key-screen').style.display = 'block';
+    }
+
+    // --- TEST PUSH-TO-TALK LOGIC ---
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition;
+    let isButtonHeld = false; 
+    let committedText = ""; 
+
+    if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.continuous = false; 
+        recognition.interimResults = true; 
+        
+        recognition.onstart = () => { 
+            document.getElementById('micBtn').classList.add('listening'); 
+            document.getElementById('mic-status').innerText = childData.lang === 'mr-IN' ? "ऐकत आहे... पाठवण्यासाठी सोडा." : "Listening... Release to send.";
+            document.getElementById('userInput').placeholder = childData.lang === 'mr-IN' ? "ऐकत आहे..." : "Listening...";
+        };
+        
+        recognition.onresult = (e) => { 
+            let interimTranscript = '';
+            let finalTranscript = '';
+            for (let i = e.resultIndex; i < e.results.length; ++i) {
+                if (e.results[i].isFinal) finalTranscript += e.results[i][0].transcript;
+                else interimTranscript += e.results[i][0].transcript;
+            }
+            if (finalTranscript) {
+                if (committedText.length > 0 && !committedText.endsWith(' ') && !finalTranscript.startsWith(' ')) committedText += ' ';
+                committedText += finalTranscript;
+            }
+            document.getElementById('userInput').value = committedText + interimTranscript;
+        };
+
+        recognition.onend = () => { 
+            if (isButtonHeld) { try { recognition.start(); } catch(err) {} } 
+            else {
+                stopListeningUI();
+                setTimeout(() => {
+                    const inputVal = document.getElementById('userInput').value.trim();
+                    if (inputVal.length > 0) submitAnswer();
+                }, 500);
+            }
+        };
+        recognition.onerror = (e) => { if (e.error !== 'no-speech') stopListeningUI(); };
+    }
+
+    const micBtn = document.getElementById('micBtn');
+    function startListening(e) {
+        if (e) e.preventDefault();
+        if (isProcessing || isButtonHeld || !recognition) return;
+        isButtonHeld = true;
+        committedText = document.getElementById('userInput').value;
+        if (committedText.length > 0 && !committedText.endsWith(' ')) committedText += ' ';
+        try { recognition.start(); } catch(err) {}
+    }
+
+    function stopListening(e) {
+        if (e) e.preventDefault();
+        if (!isButtonHeld) return;
+        isButtonHeld = false; 
+        try { recognition.stop(); } catch(err) {} 
+    }
+
+    micBtn.addEventListener('touchstart', startListening, { passive: false });
+    micBtn.addEventListener('touchend', stopListening);
+    micBtn.addEventListener('mousedown', startListening);
+    micBtn.addEventListener('mouseup', stopListening);
+    micBtn.addEventListener('mouseleave', stopListening);
+
+    function stopListeningUI() {
+        document.getElementById('micBtn').classList.remove('listening'); 
+        document.getElementById('mic-status').innerText = childData.lang === 'mr-IN' ? "बोलण्यासाठी माईक दाबून ठेवा." : "Hold mic to speak. Auto-sends on release.";
+        document.getElementById('userInput').placeholder = childData.lang === 'mr-IN' ? "टाईप करा किंवा माईक वापरा..." : "Type or hold mic...";
+    }
+
+    // --- CONSULTATION PUSH-TO-TALK LOGIC ---
+    let consultRecognition;
+    if (SpeechRecognition) {
+        consultRecognition = new SpeechRecognition();
+        consultRecognition.continuous = false;
+        consultRecognition.interimResults = true;
+
+        consultRecognition.onstart = () => {
+            document.getElementById('consultMicBtn').classList.add('listening');
+            document.getElementById('consultInput').placeholder = childData.lang === 'mr-IN' ? "ऐकत आहे..." : "Listening...";
+        };
+
+        consultRecognition.onresult = (e) => {
+            let finalTranscript = '';
+            let interimTranscript = '';
+            for (let i = e.resultIndex; i < e.results.length; ++i) {
+                if (e.results[i].isFinal) finalTranscript += e.results[i][0].transcript;
+                else interimTranscript += e.results[i][0].transcript;
+            }
+            if (finalTranscript) {
+                let currentVal = document.getElementById('consultInput').value;
+                document.getElementById('consultInput').value = currentVal + (currentVal.length > 0 && !currentVal.endsWith(' ') ? ' ' : '') + finalTranscript;
+            }
+        };
+
+        consultRecognition.onend = () => {
+            document.getElementById('consultMicBtn').classList.remove('listening');
+            document.getElementById('consultInput').placeholder = childData.lang === 'mr-IN' ? "करिअर, कॉलेज बद्दल विचारा..." : "Ask about colleges, streams...";
+        };
+    }
+
+    const cMicBtn = document.getElementById('consultMicBtn');
+    if(cMicBtn) {
+        cMicBtn.addEventListener('mousedown', () => { if(consultRecognition){ consultRecognition.lang = childData.lang; consultRecognition.start(); }});
+        cMicBtn.addEventListener('mouseup', () => { if(consultRecognition) consultRecognition.stop(); });
+        cMicBtn.addEventListener('touchstart', (e) => { e.preventDefault(); if(consultRecognition){ consultRecognition.lang = childData.lang; consultRecognition.start(); }});
+        cMicBtn.addEventListener('touchend', () => { if(consultRecognition) consultRecognition.stop(); });
+    }
+
+    // --- TTS SETUP ---
+    function unlockAndroidAudio() {
+        const silentUtterance = new SpeechSynthesisUtterance('');
+        silentUtterance.volume = 0;
+        window.speechSynthesis.speak(silentUtterance);
+    }
+// --- TTS DEEP SANITIZATION ENGINE ---
+    function cleanTextForTTS(text) {
+        if (!text) return "";
+        // Deep target replacement for: * < > # - ; : [ ] { } ( )
+        // Replaces them with a space so words don't merge, then collapses extra spaces
+        return text.replace(/[\*<>\#\-;:\[\]{}\(\)]/g, ' ')
+                   .replace(/\s+/g, ' ')
+                   .trim();
+    }
+	
+
+
+	function speakDhwaniResponse(text, onCompleteCallback = null) {
+        if (!('speechSynthesis' in window)) {
+            if (onCompleteCallback) setTimeout(onCompleteCallback, text.length * 50);
+            return;
+        }
+        
+        window.speechSynthesis.cancel(); 
+        
+        // Apply deep sanitization before speaking
+        const safeText = cleanTextForTTS(text);
+        currentSpeechUtterance = new SpeechSynthesisUtterance(safeText);
+        
+        let voices = window.speechSynthesis.getVoices();
+        let targetVoice = voices.find(v => v.lang === childData.lang) || 
+                          voices.find(v => v.lang.includes(childData.lang.split('-')[0])) ||
+                          voices.find(v => v.lang.includes('hi-IN')); 
+        
+        if (targetVoice) currentSpeechUtterance.voice = targetVoice;
+        currentSpeechUtterance.rate = 0.85; 
+
+        if (onCompleteCallback) {
+            currentSpeechUtterance.onend = function() { setTimeout(onCompleteCallback, 500); };
+            currentSpeechUtterance.onerror = function(e) { setTimeout(onCompleteCallback, 500); };
+        }
+        window.speechSynthesis.speak(currentSpeechUtterance);
+    }
+
+    // --- CORE LOGIC & BEHAVIORAL TRACKING ---
+    function startTest() {
+        childData.name = document.getElementById('childName').value.trim();
+        childData.age = parseInt(document.getElementById('childAge').value);
+        childData.city = document.getElementById('childCity').value.trim();
+        childData.lang = document.getElementById('testLang').value;
+        childData.langName = childData.lang === 'mr-IN' ? "Marathi" : "English";
+
+        if(!childData.name || !childData.age || !childData.city) { alert("Please fill all fields."); return; }
+
+        if (recognition) recognition.lang = childData.lang;
+        STAGE_NAMES = childData.lang === 'mr-IN' ? STAGES_MR : STAGES_EN;
+        
+        let bank;
+        if (childData.age < 18) {
+            bank = (childData.lang === 'mr-IN' && typeof QUESTION_BANK_TEEN_MR !== 'undefined') ? QUESTION_BANK_TEEN_MR : (typeof QUESTION_BANK_TEEN !== 'undefined' ? QUESTION_BANK_TEEN : null);
+        } else {
+            bank = (childData.lang === 'mr-IN' && typeof QUESTION_BANK_MR !== 'undefined') ? QUESTION_BANK_MR : (typeof QUESTION_BANK !== 'undefined' ? QUESTION_BANK : null);
+        }
+        
+        if (!bank) { alert("Error: Question bank not found! Ensure all 4 JS files are linked."); return; }
+
+        // Start Persistent Wake Lock
+        requestWakeLock();
+        unlockAndroidAudio(); 
+        initializeQuestionQueues(bank); 
+        
+        document.getElementById('setup-screen').style.display = 'none';
+        document.getElementById('test-screen').style.display = 'flex';
+        
+        if(childData.lang === 'mr-IN') {
+            document.getElementById('consult-title').innerText = "ध्वनी AI सल्लागार";
+            document.getElementById('consultInput').placeholder = "करिअर, कॉलेज बद्दल विचारा...";
+            document.getElementById('pdf-report-title').innerText = "ई-प्रशाला तज्ञ अहवाल: " + childData.name;
+        } else {
+            document.getElementById('pdf-report-title').innerText = "Eprashala Expert Report: " + childData.name;
+        }
+
+        isProcessing = true;
+        let introMsg = childData.lang === 'mr-IN' ? 
+            `नमस्ते ${childData.name}. ई-प्रशाला कलचाचणी मध्ये तुमचे स्वागत आहे. मी ध्वनी आहे. कृपया दीर्घ श्वास घ्या आणि शांत रहा. या चाचणीसाठी सुमारे ३० मिनिटे लागतील. कृपया कोणाच्याही प्रभावाखाली न येता तुमच्या मनात स्वाभाविकपणे येणारी उत्तरे द्या. आपण टप्पा शून्य पासून सुरुवात करूया.` :
+            `Namaste ${childData.name}. Welcome to the Eprashala Aptitude Assessment. I am Dhwani. Please take a deep breath, relax, and stay calm. This test will take about 30 minutes. Please give the answers that naturally come to your mind without the influence of any person in or around you. Let's begin with Stage 0.`;
+        
+        addMessage(introMsg, 'bot', 'chat-history');
+        speakDhwaniResponse(introMsg, () => { isProcessing = false; askNextLocalQuestion(); });
+    }
+
+    function askNextLocalQuestion() {
+        document.getElementById('stage-indicator').innerText = STAGE_NAMES[currentStage];
+        let nextQuestion = activeQuestionQueues[currentStage].pop();
+        
+        if (!nextQuestion) nextQuestion = childData.lang === 'mr-IN' ? "कृपया मला तुमच्याबद्दल अधिक सांगा." : "Please tell me a bit more about yourself.";
+
+        lastBotQuestion = nextQuestion;
+        addMessage(nextQuestion, 'bot', 'chat-history');
+        speakDhwaniResponse(nextQuestion);
+        questionStartTime = Date.now();
+    }
+
+    function submitAnswer() {
+        if (isProcessing) return;
+        if (isButtonHeld) { isButtonHeld = false; try { recognition.stop(); } catch(e){} }
+
+        const input = document.getElementById('userInput');
+        const answerTxt = input.value.trim();
+        if (!answerTxt) return;
+        
+        isProcessing = true; 
+        
+        // --- DYNAMIC STAGE-BASED BEHAVIORAL TRACKING (Updated Professional Vocabulary) ---
+        let responseTimeSecs = (Date.now() - questionStartTime) / 1000;
+        let cognitiveTrait = "";
+        
+        if (currentStage === 0 || currentStage === 1) {
+            if (responseTimeSecs < 2) cognitiveTrait = "Hasty (Did not process question)";
+            else if (responseTimeSecs < 5) cognitiveTrait = "Impulsive / Very Fast";
+            else if (responseTimeSecs < 15) cognitiveTrait = "Stable / Calculated";
+            else if (responseTimeSecs < 30) cognitiveTrait = "Hesitant / Overthinking";
+            else cognitiveTrait = "Distracted / Extended Struggle (Took over 30s)";
+            
+        } else if (currentStage === 2) {
+            if (responseTimeSecs < 3) cognitiveTrait = "Hasty / Skipped thinking completely";
+            else if (responseTimeSecs < 10) cognitiveTrait = "Impulsive / Fast Typing";
+            else if (responseTimeSecs < 25) cognitiveTrait = "Stable / Measured Response";
+            else if (responseTimeSecs < 45) cognitiveTrait = "Deep Thinking / Hesitant";
+            else cognitiveTrait = "Extended Struggle (Took over 45s)";
+            
+        } else if (currentStage === 3) {
+            if (responseTimeSecs < 8) cognitiveTrait = "Highly Reactive / Hasty (Did not think through scenario)";
+            else if (responseTimeSecs < 20) cognitiveTrait = "Impulsive / Quick Judgement";
+            else if (responseTimeSecs < 45) cognitiveTrait = "Stable / Calculated / Good Focus";
+            else if (responseTimeSecs < 60) cognitiveTrait = "Deep Thinking / Analyzing";
+            else cognitiveTrait = "Unacceptable Delay / Lost Focus (Took over 1 minute)";
+            
+        } else if (currentStage === 4) {
+            if (responseTimeSecs < 10) cognitiveTrait = "Extremely Reactive / Defensive (Answered without processing)";
+            else if (responseTimeSecs < 30) cognitiveTrait = "Impulsive / Quick to argue";
+            else if (responseTimeSecs < 120) cognitiveTrait = "Stable / Thoughtful / Focused";
+            else if (responseTimeSecs < 300) cognitiveTrait = "Deep Thinking / Careful Construction";
+            else cognitiveTrait = "Unacceptable Delay / Evading (Took over 5 minutes)";
+        }
+        
+        addMessage(answerTxt, 'user', 'chat-history');
+        fullTranscript += `Stage ${currentStage} - Q: ${lastBotQuestion}\nUser (${childData.name}) [Response Time: ${responseTimeSecs.toFixed(1)}s - Behavior: ${cognitiveTrait}]: ${answerTxt}\n\n`;
+
+        input.value = '';
+        committedText = ''; 
+        questionCount++;
+        
+        if (questionCount >= questionsPerStage) {
+            currentStage++;
+            questionCount = 0;
+            
+            const chat = document.getElementById('chat-history');
+            const divider = document.createElement('div');
+            divider.innerHTML = `<hr style="border:0; border-top:1px dashed #ccc; margin: 20px 0;">`;
+            chat.appendChild(divider);
+
+            if (currentStage > 4) {
+                document.getElementById('test-screen').style.display = 'none';
+                document.getElementById('api-key-screen').style.display = 'block';
+                let endMsg = childData.lang === 'mr-IN' ? "ऑफलाइन चाचणी पूर्ण झाली आहे. कृपया तुमची बॅकअप फाइल डाउनलोड करा आणि अहवालासाठी API की प्रविष्ट करा." : "The offline assessment is complete. Please download your backup file and generate the report.";
+                speakDhwaniResponse(endMsg);
+                // NOT releasing wake lock so screen stays on during report phase
+                return;
+            } else {
+                let transitionMsg = "";
+                if (childData.age < 18) {
+                    if (childData.lang === 'mr-IN') {
+                        if (currentStage === 1) transitionMsg = `छान! आपण आता टप्पा 1 कडे वळूया. येथे तुम्हाला फक्त 'होय' किंवा 'नाही', किंवा 'खरे' किंवा 'खोटे' मध्ये उत्तर द्यायचे आहे. जास्त विचार करू नका, पटकन सांगा.`;
+                        else if (currentStage === 2) transitionMsg = `उत्तम. आता टप्पा 2. येथे मला तुमची उत्तरे फक्त एका स्पष्ट वाक्यात हवी आहेत.`;
+                        else if (currentStage === 3) transitionMsg = `आता टप्पा 3. येथे तुम्हाला परिस्थितीशी सामना करायचा आहे. तुमची विचारप्रक्रिया मला २ ते ३ वाक्यांत स्पष्ट करा.`;
+                        else if (currentStage === 4) transitionMsg = `तुम्ही अंतिम टप्प्यात पोहोचला आहात. टप्पा 4: तणाव चाचणी. पुढील प्रश्न मुद्दाम निराशाजनक आणि तुमच्या विचारधारेला आव्हान देणारे असतील. शांत राहा आणि तुमची खरी उत्तरे द्या. सुरु करूया.`;
+                    } else {
+                        if (currentStage === 1) transitionMsg = `Well done! We will now move on to Stage 1. Answer strictly with 'Yes' or 'No', or 'True' or 'False'. Do not overthink, just answer quickly.`;
+                        else if (currentStage === 2) transitionMsg = `Good. Now Stage 2. Summarize your answers in exactly one clear sentence.`;
+                        else if (currentStage === 3) transitionMsg = `We are entering Stage 3. This will test how you handle situations. I want 2 to 3 sentences explaining your analytical reasoning.`;
+                        else if (currentStage === 4) transitionMsg = `You have reached the final stage. Stage 4 is the Stress Test. The upcoming questions will challenge your core beliefs and may feel unfair or frustrating. Stay calm, and defend your real opinions. Let's begin.`;
+                    }
+                } else {
+                    if (childData.lang === 'mr-IN') {
+                        if (currentStage === 1) transitionMsg = `अभिनंदन! आपण आता टप्पा 1 कडे वळूया: जलद उत्तरे. येथे तुम्हाला फक्त 'होय' किंवा 'नाही' मध्ये उत्तर द्यायचे आहे.`;
+                        else if (currentStage === 2) transitionMsg = `खूप छान! आता टप्पा 2: थोडक्यात विचार. येथे मला तुमची उत्तरे फक्त एका स्पष्ट वाक्यात हवी आहेत.`;
+                        else if (currentStage === 3) transitionMsg = `उत्तम कामगिरी. आता टप्पा 3: सखोल विचार. यासाठी वेळ घ्या. तुमची विचारप्रक्रिया मला २ ते ३ वाक्यांत स्पष्ट करा.`;
+                        else if (currentStage === 4) transitionMsg = `तुम्ही अंतिम टप्प्यात पोहोचला आहात. टप्पा 4: तणाव चाचणी. शांत राहा आणि तुमची खरी उत्तरे द्या. सुरु करूया.`;
+                    } else {
+                        if (currentStage === 1) transitionMsg = `Congratulations! We will now move on to Stage 1: Quick Fire. Answer strictly with 'Yes' or 'No'.`;
+                        else if (currentStage === 2) transitionMsg = `Well done! Now Stage 2: Short Thoughts. Summarize your answers in exactly one clear sentence.`;
+                        else if (currentStage === 3) transitionMsg = `Excellent. Stage 3: Exploration. Take your time. I want 2 to 3 sentences explaining your analytical reasoning.`;
+                        else if (currentStage === 4) transitionMsg = `You have reached the final stage. Stage 4 is the Stress Test. Stay calm, and give honest answers. Let's begin.`;
+                    }
+                }
+
+                addMessage(transitionMsg, 'bot', 'chat-history');
+                speakDhwaniResponse(transitionMsg, () => { isProcessing = false; askNextLocalQuestion(); });
+                return;
+            }
+        }
+
+        setTimeout(() => { isProcessing = false; askNextLocalQuestion(); }, 500);
+    }
+
+    function handleEnter(e) { if (e.key === 'Enter') submitAnswer(); }
+
+    // --- TRANSCRIPT BACKUP & RESTORE ---
+    function downloadRawTranscript() {
+        if (!fullTranscript) return alert("The transcript is empty.");
+        let header = `--- EPRASHALA RAW ASSESSMENT BACKUP ---\nLanguage: ${childData.langName}\nName: ${childData.name}\nAge: ${childData.age}\nCity: ${childData.city}\n\n`;
+        triggerDownload(header + fullTranscript, `Dhwani_Backup_${childData.name}.txt`);
+    }
+
+    function uploadRawTranscript(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            fullTranscript = e.target.result;
+            const nameMatch = fullTranscript.match(/Name: (.*)/);
+            const langMatch = fullTranscript.match(/Language: (.*)/);
+            if(nameMatch) childData.name = nameMatch[1].trim();
+            if(langMatch) {
+                childData.langName = langMatch[1].trim();
+                childData.lang = childData.langName === "Marathi" ? "mr-IN" : "en-IN";
+            }
+            alert("Backup successfully loaded! You can now generate the report.");
+        };
+        reader.readAsText(file);
+    }
+
+    // --- GEMINI API: MASTER CAREER ANALYTICS REPORT GENERATOR ---
+    async function generateFinalReport() {
+        apiKey = document.getElementById('apiKey').value.trim();
+        if (!fullTranscript) return alert("No transcript found!");
+
+        setLoading(true, childData.lang === 'mr-IN' ? "ध्वनी क्लाउड अहवाल तयार करत आहे..." : "Eprashala Analytics Engine is processing...");
+        
+        // Dynamic Age-Based Instruction Logic
+        let ageInstruction = "";
+        let roadmapTitle = "";
+        if (childData.age < 18) {
+            ageInstruction = "The user is UNDER 18. You MUST suggest high school study streams (Science, Commerce, Arts), competitive exam preparations (like JEE, NEET, NDA, CLAT), and undergraduate degree paths. The 'Development Roadmap' must cover the next 3 years of their schooling and exam prep.";
+            roadmapTitle = "Development Roadmap (Next 3 Years of Schooling/Exams)";
+        } else if (childData.age >= 18 && childData.age <= 24) {
+            ageInstruction = "The user is 18-24. You MUST suggest HIGHER STUDIES options (Masters, MBA, specialized tech certifications) and early-career entry strategies (internships, junior roles). The 'Development Roadmap' must cover post-grad prep, skill building, and entering the job market.";
+            roadmapTitle = "Higher Studies & Early Career Roadmap (Next 2-3 Years)";
+        } else {
+            ageInstruction = "The user is 25 OR OLDER. You MUST suggest strictly CAREER-ORIENTED options, job roles, professional upskilling, pivoting strategies, and leadership tracks. The 'Development Roadmap' must cover immediate professional milestones, promotions, or business strategies.";
+            roadmapTitle = "Professional Career Roadmap (Next 2-3 Years)";
+        }
+
+        if (childData.lang === 'mr-IN') {
+            document.getElementById('pdf-report-title').innerText = "ई-प्रशाला तज्ञ कलचाचणी अहवाल: " + childData.name;
+        } else {
+            document.getElementById('pdf-report-title').innerText = "Eprashala Career Analytics Report: " + childData.name;
+        }
+
+        const reportPrompt = `You are the Lead Master Career Counselor and Psychometrician for the 'Eprashala Career Analytics System'.
+        Analyze the following aptitude test transcript for: Name: ${childData.name}, Age: ${childData.age}, Location: ${childData.city}.
+        
+        CRITICAL INSTRUCTION 1: Evaluate the transcript's answers and their associated "Behavior" (Response Times like Hasty, Deep Thinking, Impulsive). Use this data to infer realistic percentage scores for their cognitive domains. 
+        CRITICAL INSTRUCTION 2: ${ageInstruction}
+        CRITICAL INSTRUCTION 3: You MUST generate the ENTIRE report perfectly in ${childData.langName}. If Marathi is selected, write absolutely EVERYTHING in pure, professional Marathi script (Devanagari).
+        
+        Format the output STRICTLY as clean HTML (using <h3>, <p>, <ul>, <li>, and a clean <table border='1' style='width:100%; border-collapse:collapse; text-align:left;'> for the snapshot). DO NOT use markdown ticks (\`\`\`).
+        
+        Use EXACTLY this structure (translate headings to Marathi if required):
+        
+        <h3>🧠 APTITUDE ASSESSMENT REPORT</h3>
+        <p><b>Student Name:</b> ${childData.name}<br>
+        <b>Age:</b> ${childData.age} Years<br>
+        <b>Assessment Type:</b> Multi-Dimensional Career Aptitude Evaluation<br>
+        <b>Report Generated By:</b> Eprashala Career Analytics System</p>
+
+        <h3>📊 Overall Aptitude Snapshot</h3>
+        (Create a 3-column HTML table with headers: Domain | Score (%) | Strength Level. Infer scores for: Logical & Analytical, Numerical, Verbal & Communication, Creative Thinking, Emotional Intelligence, Stress Resilience. Base this on how they handled the test.)
+
+        <h3>🧩 Detailed Section Analysis</h3>
+        (For each domain from the table above, provide an Observation, Behavioral Indicators based on the transcript, and Suggested Fields)
+
+        <h3>🧠 Personality Interpretation (Behavioral Pattern)</h3>
+        (Deep dive into their reaction times. Did they panic? Were they stable? Are they introverted thinkers or impulsive action-takers?)
+
+        <h3>🎯 Top 5 Career Recommendations (Ranked)</h3>
+        (Provide a ranked numbered list of 5 specific careers/paths strictly tailored to their age bracket and transcript logic.)
+
+        <h3>🚫 Careers NOT Highly Suitable</h3>
+        (List 3-4 fields they should avoid based on their weak points in the test.)
+
+        <h3>📈 ${roadmapTitle}</h3>
+        (Provide a structured timeline roadmap specifically designed for a ${childData.age}-year-old based on the age instructions.)
+
+        <h3>🧾 Advisory Note</h3>
+        (A final, realistic note to the parents/user about their potential and warnings about forcing the wrong path.)
+        
+        <h3>🏁 Final Aptitude Conclusion</h3>
+        <p><b>Core Brain Type:</b> (e.g., Technical Analytical Architect, Creative Diplomat)<br>
+        <b>Career Direction:</b> (e.g., Applied Sciences, Humanities, Corporate Management)</p>
+        
+        TRANSCRIPT TO ANALYZE:
+        ${fullTranscript}`;
+
+		const payload = { contents: [{ role: "user", parts: [{ text: reportPrompt }] }] };
+        
+        try {
+            const response = await fetchGeminiChat(payload);
+
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error?.message || "Failed");
+
+            let rawHtml = data.candidates[0].content.parts[0].text;
+            rawHtml = rawHtml.replace(/^```html\n|```\n?$/gm, '').trim();
+            
+            // Clean up table CSS for PDF
+            rawHtml = rawHtml.replace(/<table/g, "<table style='width:100%; border-collapse: collapse; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);'");
+            rawHtml = rawHtml.replace(/<th/g, "<th style='background-color: #2c3e50; color: white; padding: 12px; border: 1px solid #ddd;'");
+            rawHtml = rawHtml.replace(/<td/g, "<td style='padding: 10px; border: 1px solid #ddd;'");
+
+            generatedReportHtml = rawHtml; 
+
+            document.getElementById('api-key-screen').style.display = 'none';
+            document.getElementById('report-screen').style.display = 'flex';
+            document.getElementById('report-content').innerHTML = rawHtml;
+            
+            // Show Floating TTS Widget
+            document.getElementById('floating-tts-widget').style.display = 'flex';
+            
+            let readyMsg = childData.lang === 'mr-IN' ? "तुमचा अंतिम अहवाल तयार आहे. तुम्ही तो ऐकू शकता किंवा खाली मला प्रश्न विचारू शकता." : "Your final report is ready. You can listen to it or consult me below.";
+            speakDhwaniResponse(readyMsg);
+        } catch (e) { 
+            alert(`Error: ${e.message}`); 
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    // --- PROFESSIONAL PDF DOWNLOAD LOGIC ---
+    function downloadPDFReport() {
+        const element = document.getElementById('report-wrapper');
+        const opt = {
+            margin:       [0.5, 0.5, 0.5, 0.5],
+            filename:     `Eprashala_Report_${childData.name}.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(element).save();
+    }
+
+    // --- REPORT TTS PLAYBACK WITH FLOATING WIDGET & AUTO-SCROLL ---
+    let reportChunks = [];
+    let currentChunkIndex = 0;
+    let isPlayingReport = false;
+    let reportUtterance = null;
+
+    function updateTTSUI(isPaused) {
+        const icon = document.getElementById('floating-tts-icon');
+        const text = document.getElementById('floating-tts-text');
+        const widget = document.getElementById('floating-tts-widget');
+        
+        if (isPaused) {
+            icon.innerText = "▶️";
+            text.innerText = childData.lang === 'mr-IN' ? "पुढे सुरू करा" : "Resume Report";
+            widget.style.background = "#8e44ad"; // Purple
+        } else {
+            icon.innerText = "⏸️";
+            text.innerText = childData.lang === 'mr-IN' ? "अहवाल थांबवा" : "Pause Report";
+            widget.style.background = "#e67e22"; // Orange
+        }
+    }
+
+    function toggleReportAudio() {
+        if (!('speechSynthesis' in window)) return alert("Speech Synthesis not supported."); 
+
+        if (window.speechSynthesis.paused) {
+            window.speechSynthesis.resume();
+            updateTTSUI(false);
+            return;
+        }
+        
+        if (window.speechSynthesis.speaking) {
+            window.speechSynthesis.pause();
+            updateTTSUI(true);
+            return;
+        }
+
+        const pureText = document.getElementById('report-content').innerText;
+        if (!pureText) return;
+
+        window.speechSynthesis.cancel(); 
+        reportChunks = pureText.match(/[^.!?।]+[.!?।]+/g) || [pureText];
+        currentChunkIndex = 0;
+        isPlayingReport = true;
+
+        updateTTSUI(false);
+        setTimeout(playNextReportChunk, 50); 
+    }
+
+	function playNextReportChunk() {
+        if (!isPlayingReport || currentChunkIndex >= reportChunks.length) {
+            isPlayingReport = false;
+            updateTTSUI(true);
+            document.getElementById('floating-tts-icon').innerText = "▶️";
+            document.getElementById('floating-tts-text').innerText = childData.lang === 'mr-IN' ? "अहवाल पुन्हा ऐका" : "Read Report Again";
+            return;
+        }
+
+        // --- Auto Scrolling Logic ---
+        const container = document.getElementById('report-screen');
+        const percent = currentChunkIndex / reportChunks.length;
+        // Scroll proportionally through the container height
+        const targetScroll = (container.scrollHeight - container.clientHeight) * percent;
+        container.scrollTo({ top: targetScroll, behavior: 'smooth' });
+
+        // Apply deep sanitization to the chunk before speaking
+        const safeChunkText = cleanTextForTTS(reportChunks[currentChunkIndex]);
+        reportUtterance = new SpeechSynthesisUtterance(safeChunkText);
+        reportUtterance.onerror = () => { currentChunkIndex++; playNextReportChunk(); };
+
+        window.speechSynthesis.speak(reportUtterance);
+    }
+
+    // --- GEMINI API: MULTILINGUAL CONSULTATION WITH TYPING INDICATOR ---
+    async function sendConsult() {
+        const input = document.getElementById('consultInput');
+        const text = input.value.trim();
+        if (!text) return;
+        
+        addMessage(text, 'user', 'consult-history');
+        consultHistory.push({ role: "user", parts: [{ text: text }] });
+        input.value = '';
+        
+        const chat = document.getElementById('consult-history');
+        const typingDiv = document.createElement('div');
+        typingDiv.id = 'dhwani-typing';
+        typingDiv.className = 'message bot-msg typing-indicator';
+        typingDiv.innerText = childData.lang === 'mr-IN' ? "ध्वनी विचार करत आहे... ⏳" : "Dhwani is thinking... ⏳";
+        chat.appendChild(typingDiv);
+        chat.scrollTop = chat.scrollHeight;
+
+        const systemPrompt = `You are Dhwani, an expert career consultant for Eprashala. 
+        CRITICAL INSTRUCTION: You MUST converse perfectly in ${childData.langName}. 
+        Based on their test transcript:\n${fullTranscript}\n
+        Give practical, realistic advice. Reply in plain text. NO MARKDOWN.`;
+
+	const payload = { 
+            system_instruction: { parts: [{ text: systemPrompt }] }, 
+            contents: consultHistory 
+        };
+
+        try {
+            const response = await fetchGeminiChat(payload);
+            const data = await response.json();
+            if (!response.ok) throw new Error("API Error");
+            
+            document.getElementById('dhwani-typing').remove();
+
+            const reply = data.candidates[0].content.parts[0].text.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*/g, '');
+            consultHistory.push({ role: "model", parts: [{ text: reply }] });
+            addMessage(reply, 'bot', 'consult-history');
+            speakDhwaniResponse(reply); 
+        } catch(e) { 
+            if(document.getElementById('dhwani-typing')) document.getElementById('dhwani-typing').remove();
+            alert(`Error: ${e.message}. Please check your connection or Python backend.`); 
+            consultHistory.pop(); 
+        }
+    }
+
+    // --- EXPORT OPTIONS ---
+    function downloadFullSession() {
+        let cleanSummary = generatedReportHtml.replace(/<[^>]*>?/gm, ''); 
+        let textToSave = `--- FULL SESSION: ${childData.name} ---\n\n--- TRANSCRIPT ---\n${fullTranscript}\n\n--- SUMMARY ---\n${cleanSummary}\n\n--- CONSULTATION ---\n`;
+        consultHistory.forEach(msg => { textToSave += `${msg.role === 'user' ? childData.name : 'Dhwani'}: ${msg.parts[0].text}\n\n`; });
+        triggerDownload(textToSave, `Full_Session_${childData.name}.txt`);
+    }
+
+    function triggerDownload(content, filename) {
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(new Blob([content], { type: "text/plain" }));
+        link.download = filename;
+        link.click();
+    }
+
+    function addMessage(text, sender, containerId) {
+        const chat = document.getElementById(containerId);
+        const div = document.createElement('div');
+        div.className = `message ${sender}-msg`;
+        div.innerText = text;
+        chat.appendChild(div);
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    function setLoading(show, text="") {
+        document.getElementById('full-loader').style.display = show ? 'flex' : 'none';
+        document.getElementById('loader-text').innerText = text;
+    }
+</script>
+</body>
+</html>

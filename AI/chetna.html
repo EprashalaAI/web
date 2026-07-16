@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chetna - Ekagrachita Training</title>
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --text-color: #1e293b;
+            --primary: #0f172a;
+            --accent: #0ea5e9;
+            --success: #10b981;
+            --danger: #ef4444;
+            --card-bg: #ffffff;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            max-width: 650px;
+            width: 100%;
+            text-align: center;
+            margin-top: 20px;
+        }
+        h1 { color: var(--primary); font-size: 2.5rem; margin-bottom: 5px; }
+        h2 { color: var(--accent); font-weight: 500; margin-top: 0; }
+        
+        .screen { display: none; animation: fadeIn 0.4s ease-in-out; }
+        .screen.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .form-group { text-align: left; margin-bottom: 20px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 0.9rem; color: #475569; }
+        .form-group input, .form-group select {
+            width: 100%; padding: 12px; border: 2px solid #cbd5e1; border-radius: 8px; font-size: 1rem; box-sizing: border-box;
+        }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--accent); }
+
+        #flash-area {
+            font-size: 3.5rem;
+            font-weight: 800;
+            letter-spacing: 6px;
+            min-height: 100px;
+            margin: 40px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: monospace;
+            word-break: break-all;
+        }
+        
+        .input-area { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
+        input[type="text"].game-input {
+            font-size: 2rem; padding: 15px; border: 3px solid #cbd5e1; border-radius: 8px; text-align: center; font-family: monospace;
+        }
+        input[type="text"].game-input:focus { outline: none; border-color: var(--accent); }
+        
+        button {
+            background-color: var(--accent); color: white; border: none; padding: 14px 28px; font-size: 1.1rem;
+            border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.2s; width: 100%; margin-bottom: 10px;
+        }
+        button:hover { background-color: #0284c7; transform: translateY(-2px); }
+        button:disabled { background-color: #94a3b8; cursor: not-allowed; transform: none; }
+        .btn-danger { background-color: var(--danger); }
+        .btn-danger:hover { background-color: #b91c1c; }
+        .btn-dark { background-color: var(--primary); }
+        .btn-dark:hover { background-color: #000; }
+
+        .stats { display: flex; justify-content: space-between; margin-bottom: 20px; font-weight: bold; color: #64748b; font-size: 1.1rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;}
+        #instruction-text { font-size: 1.3rem; color: var(--danger); font-weight: bold; min-height: 35px; }
+
+        .history-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9rem; }
+        .history-table th, .history-table td { border: 1px solid #e2e8f0; padding: 10px; text-align: left; }
+        .history-table th { background-color: #f8fafc; color: #475569; }
+        
+        .ai-box { margin-top:25px; padding:20px; background:#f0f9ff; border-left: 5px solid var(--accent); text-align:left; border-radius: 0 8px 8px 0; font-size: 1.05rem; line-height: 1.6;}
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="screen-profile" class="screen active">
+        <h1>Chetna</h1>
+        <h2>Ekagrachita (Concentration) Trainer</h2>
+        <p style="color: #64748b; margin-bottom: 30px;">Track your progress and push your cognitive limits.</p>
+        
+        <div class="form-group">
+            <label>Name</label>
+            <input type="text" id="user-name" placeholder="Enter your name">
+        </div>
+        <div style="display: flex; gap: 15px;">
+            <div class="form-group" style="flex: 1;">
+                <label>Age</label>
+                <input type="number" id="user-age" placeholder="Age">
+            </div>
+            <div class="form-group" style="flex: 1;">
+                <label>Gender</label>
+                <select id="user-sex">
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Starting Level (Skip early rounds if you are advanced)</label>
+            <input type="number" id="start-level" value="1" min="1" max="10">
+        </div>
+        
+        <button onclick="initTest()">Begin Training Session</button>
+        <button class="btn-dark" onclick="showHistoryOnly()" style="margin-top: 10px;">View Past History</button>
+    </div>
+
+    <div id="screen-game" class="screen">
+        <div class="stats">
+            <span id="round-display">Level: 1</span>
+            <span id="question-display">Q: 1/10</span>
+        </div>
+        <div id="instruction-text"></div>
+        <div id="flash-area"></div>
+        
+        <div id="input-section" class="input-area" style="display: none;">
+            <input type="text" id="user-input" class="game-input" autocomplete="off" onkeypress="handleEnter(event)" spellcheck="false">
+            <button id="submit-btn" onclick="submitAnswer()">Submit</button>
+        </div>
+    </div>
+
+    <div id="screen-round-result" class="screen">
+        <h2>Level <span id="completed-level-text"></span> Complete</h2>
+        <div id="round-summary-text" style="font-size: 1.2rem; margin: 20px 0;"></div>
+        <button id="next-round-btn" onclick="startNextRound()">Proceed to Next Level</button>
+        <button class="btn-danger" onclick="endTestEarly()">End Session & Analyze</button>
+    </div>
+
+    <div id="screen-final-result" class="screen">
+        <h2>Session Report</h2>
+        <div id="final-summary"></div>
+        
+        <button class="btn-dark" id="expert-btn" onclick="sendToExpertAnalysis()" style="margin-top: 30px;">🧠 Request AI Expert Analysis</button>
+        <button onclick="location.reload()" style="margin-top: 10px;">Return to Home</button>
+        
+        <p id="api-status" style="margin-top: 15px; font-weight: bold;"></p>
+        <div id="ai-response-area"></div>
+    </div>
+
+    <div id="screen-history" class="screen">
+        <h2>Your Training History</h2>
+        <div id="history-table-container"></div>
+        <button onclick="location.reload()" style="margin-top: 20px;">Back</button>
+    </div>
+</div>
+
+<script>
+    // --- Application State ---
+    const MAX_ROUNDS = 10;
+    const QUESTIONS_PER_ROUND = 10;
+    const FLASH_DURATION = 2000; 
+    const PROXY_URL = "https://eprashala.pythonanywhere.com/api/chat";
+    
+    let userProfile = { name: "", age: "", sex: "" };
+    let currentRound = 1;
+    let currentQuestion = 1;
+    let gameHistory = []; 
+    let roundStats = { correct: 0, total: 0 };
+    let currentTask = {}; 
+    let synth = window.speechSynthesis;
+
+    // --- Initialization & Local Storage ---
+    window.onload = () => {
+        const savedProfile = localStorage.getItem('chetna_profile');
+        if (savedProfile) {
+            const p = JSON.parse(savedProfile);
+            document.getElementById('user-name').value = p.name;
+            document.getElementById('user-age').value = p.age;
+            document.getElementById('user-sex').value = p.sex;
+        }
+    };
+
+    function switchScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+    }
+
+    function initTest() {
+        userProfile.name = document.getElementById('user-name').value || "Student";
+        userProfile.age = document.getElementById('user-age').value || "Unknown";
+        userProfile.sex = document.getElementById('user-sex').value || "Unknown";
+        
+        localStorage.setItem('chetna_profile', JSON.stringify(userProfile));
+        
+        let startLvl = parseInt(document.getElementById('start-level').value);
+        currentRound = isNaN(startLvl) || startLvl < 1 ? 1 : (startLvl > 10 ? 10 : startLvl);
+        
+        gameHistory = [];
+        currentQuestion = 1;
+        roundStats = { correct: 0, total: 0 };
+        
+        switchScreen('screen-game');
+        startQuestion();
+    }
+
+    // --- Dynamic Generation Algorithms ---
+    function generatePseudoWord(len) {
+        const cons = "BCDFGHJKLMNPQRSTVWXYZ";
+        const vows = "AEIOU";
+        let word = "";
+        let isVowel = Math.random() > 0.5;
+        for(let i=0; i<len; i++) {
+            word += isVowel ? vows.charAt(Math.floor(Math.random()*vows.length)) : cons.charAt(Math.floor(Math.random()*cons.length));
+            isVowel = !isVowel;
+        }
+        return word;
+    }
+
+    function generateRandomString(len, chars) {
+        let res = "";
+        for(let i=0; i<len; i++) res += chars.charAt(Math.floor(Math.random()*chars.length));
+        return res;
+    }
+
+    function generateTask(level) {
+        // Base length scales with level. 
+        // Lvl 1: 3, Lvl 5: 7. Lvl 6+: Length jumps dramatically.
+        let length = level + 2;
+        if (level >= 6) length += Math.floor(level / 2); 
+
+        const type = Math.floor(Math.random() * 4); 
+        /* Types:
+            0: Pure Numbers
+            1: Standard Sequence (Pseudo-words Lvl 1-5, Brutal Alphanumeric Lvl 6+)
+            2: Case Sensitivity (Mixed upper/lower, strict matching)
+            3: Distraction (Flashes target, flashes red distractor, recall target)
+        */
+        
+        let flashed = "", expected = "", instruction = "", isCaseSensitive = false, distractor = null;
+
+        if (type === 0) {
+            flashed = generateRandomString(length, "0123456789");
+            expected = flashed;
+            instruction = "Memorize the number exactly";
+        } 
+        else if (type === 1) {
+            if (level < 6) {
+                flashed = generatePseudoWord(length);
+            } else {
+                // Brutal Mode: Alphanumeric + Symbols for max Ekagrachita testing
+                flashed = generateRandomString(length, "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#");
+            }
+            expected = flashed;
+            instruction = "Memorize the sequence";
+        }
+        else if (type === 2) {
+            let base = level < 6 ? generatePseudoWord(length) : generateRandomString(length, "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
+            // Randomly lowercase some characters
+            flashed = base.split('').map(c => Math.random() > 0.5 ? c.toLowerCase() : c).join('');
+            expected = flashed;
+            instruction = "Type exactly matching UPPER/lower case";
+            isCaseSensitive = true;
+        }
+        else if (type === 3) {
+            flashed = level < 6 ? generatePseudoWord(length) : generateRandomString(length, "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
+            expected = flashed;
+            distractor = generateRandomString(length, "0123456789XXYY"); // Annoying distractor
+            instruction = "Memorize the FIRST sequence. Ignore the red distractor.";
+        }
+
+        return { type, flashed, expected, instruction, isCaseSensitive, distractor };
+    }
+
+    // --- Game Loop ---
+    function startQuestion() {
+        document.getElementById('round-display').innerText = `Level: ${currentRound}`;
+        document.getElementById('question-display').innerText = `Q: ${currentQuestion}/${QUESTIONS_PER_ROUND}`;
+        
+        currentTask = generateTask(currentRound);
+        
+        const flashArea = document.getElementById('flash-area');
+        const inputSection = document.getElementById('input-section');
+        const instructionText = document.getElementById('instruction-text');
+        const userInput = document.getElementById('user-input');
+
+        userInput.value = '';
+        inputSection.style.display = 'none';
+        flashArea.style.color = "var(--primary)";
+        instructionText.innerText = currentTask.instruction;
+        flashArea.innerText = currentTask.flashed;
+
+        if (currentTask.type === 3) {
+            // Distraction Task Logic
+            setTimeout(() => {
+                flashArea.style.color = "var(--danger)";
+                flashArea.innerText = currentTask.distractor;
+                setTimeout(() => showInputPhase(), 700); // Show distractor for 0.7s
+            }, FLASH_DURATION);
+        } else {
+            setTimeout(() => showInputPhase(), FLASH_DURATION);
+        }
+    }
+
+    function showInputPhase() {
+        const flashArea = document.getElementById('flash-area');
+        const inputSection = document.getElementById('input-section');
+        const instructionText = document.getElementById('instruction-text');
+        const userInput = document.getElementById('user-input');
+        
+        flashArea.innerText = "???";
+        flashArea.style.color = "var(--primary)";
+        instructionText.innerText = "Type your answer now!";
+        inputSection.style.display = 'flex';
+        userInput.focus();
+        currentTask.startTime = performance.now();
+    }
+
+    function handleEnter(e) { if (e.key === 'Enter') submitAnswer(); }
+
+    function submitAnswer() {
+        const endTime = performance.now();
+        const timeTakenMs = Math.round(endTime - currentTask.startTime);
+        
+        let rawInput = document.getElementById('user-input').value.trim();
+        let userAnswer = currentTask.isCaseSensitive ? rawInput : rawInput.toUpperCase();
+        
+        const isCorrect = userAnswer === currentTask.expected;
+        
+        if (isCorrect) roundStats.correct++;
+        roundStats.total++;
+
+        let flag = "Normal";
+        if (timeTakenMs > 6000) flag = "Slow Response (Distraction?)";
+        else if (timeTakenMs < 800 && !isCorrect) flag = "Impulsive/Rushed";
+
+        gameHistory.push({
+            level: currentRound,
+            question: currentQuestion,
+            taskType: currentTask.type, // 0:Num, 1:Seq, 2:Case, 3:Distract
+            expected: currentTask.expected,
+            userAnswer: userAnswer,
+            isCorrect: isCorrect,
+            timeTakenMs: timeTakenMs,
+            attentionFlag: flag
+        });
+
+        if (currentQuestion < QUESTIONS_PER_ROUND) {
+            currentQuestion++;
+            startQuestion();
+        } else {
+            endRound();
+        }
+    }
+
+    function endRound() {
+        const percentage = Math.round((roundStats.correct / QUESTIONS_PER_ROUND) * 100);
+        document.getElementById('completed-level-text').innerText = currentRound;
+        document.getElementById('round-summary-text').innerHTML = 
+            `Score: <strong>${roundStats.correct} / ${QUESTIONS_PER_ROUND}</strong><br>
+            Accuracy: <strong style="color: ${percentage >= 80 ? 'var(--success)' : 'var(--danger)'}">${percentage}%</strong>`;
+        
+        document.getElementById('next-round-btn').style.display = (currentRound >= MAX_ROUNDS) ? 'none' : 'inline-block';
+        switchScreen('screen-round-result');
+    }
+
+    function startNextRound() {
+        currentRound++;
+        currentQuestion = 1;
+        roundStats = { correct: 0, total: 0 };
+        switchScreen('screen-game');
+        startQuestion();
+    }
+    
+    function endTestEarly() {
+        saveSessionToDatabase();
+        showFinalResults();
+    }
+
+    // --- Database (localStorage) & Final Renders ---
+    function saveSessionToDatabase() {
+        if (gameHistory.length === 0) return;
+        
+        let totalCorrect = gameHistory.filter(q => q.isCorrect).length;
+        let overallAcc = Math.round((totalCorrect / gameHistory.length) * 100);
+        
+        let sessionData = {
+            date: new Date().toLocaleString(),
+            startLevel: gameHistory[0].level,
+            endLevel: gameHistory[gameHistory.length-1].level,
+            totalQuestions: gameHistory.length,
+            accuracy: overallAcc,
+            details: gameHistory
+        };
+
+        let db = JSON.parse(localStorage.getItem('chetna_history') || "[]");
+        db.push(sessionData);
+        localStorage.setItem('chetna_history', JSON.stringify(db));
+    }
+
+    function showFinalResults() {
+        let db = JSON.parse(localStorage.getItem('chetna_history') || "[]");
+        let currentSession = db[db.length - 1]; // The one we just saved
+        
+        let html = `<h3>Overall Accuracy: ${currentSession.accuracy}%</h3>`;
+        html += '<table class="history-table"><tr><th>Level</th><th>Correct</th><th>Avg Speed</th></tr>';
+
+        let roundData = {};
+        currentSession.details.forEach(q => {
+            if (!roundData[q.level]) roundData[q.level] = { correct: 0, total: 0, time: 0 };
+            if (q.isCorrect) roundData[q.level].correct++;
+            roundData[q.level].total++;
+            roundData[q.level].time += q.timeTakenMs;
+        });
+
+        for (let r in roundData) {
+            let data = roundData[r];
+            let avgSpd = Math.round(data.time / data.total);
+            html += `<tr><td>Level ${r}</td><td>${data.correct}/${data.total}</td><td>${avgSpd} ms</td></tr>`;
+        }
+        html += '</table>';
+        
+        document.getElementById('final-summary').innerHTML = html;
+        switchScreen('screen-final-result');
+    }
+
+    function showHistoryOnly() {
+        let db = JSON.parse(localStorage.getItem('chetna_history') || "[]");
+        let container = document.getElementById('history-table-container');
+        
+        if (db.length === 0) {
+            container.innerHTML = "<p>No training history found. Start your first session!</p>";
+        } else {
+            let html = '<table class="history-table"><tr><th>Date</th><th>Levels Played</th><th>Accuracy</th></tr>';
+            // Show last 10 sessions reversed
+            db.slice(-10).reverse().forEach(s => {
+                html += `<tr><td>${s.date}</td><td>${s.startLevel} to ${s.endLevel}</td><td><strong>${s.accuracy}%</strong></td></tr>`;
+            });
+            html += '</table>';
+            container.innerHTML = html;
+        }
+        switchScreen('screen-history');
+    }
+
+    // --- AI Integration ---
+    async function sendToExpertAnalysis() {
+        const btn = document.getElementById('expert-btn');
+        const status = document.getElementById('api-status');
+        const responseArea = document.getElementById('ai-response-area');
+        
+        btn.disabled = true;
+        status.innerText = "Transmitting neural data to AI Server...";
+        status.style.color = "var(--text-color)";
+        responseArea.innerHTML = "";
+
+        // Fetch historical trend context
+        let db = JSON.parse(localStorage.getItem('chetna_history') || "[]");
+        let historicalAccuracies = db.map(s => s.accuracy);
+        
+        try {
+            const payload = {
+                model: "gemini-2.0-flash", // Adjusted as per your provided logic
+                systemInstruction: {
+                    parts: [{ text: `You are an expert cognitive performance coach evaluating an 'Ekagrachita' (One-pointed concentration) test. You are speaking directly to ${userProfile.name} (${userProfile.age}, ${userProfile.sex}). Analyze their accuracy, reaction times (in ms), and how they handled distractions or complex case-sensitive tasks. Compare their current performance to their historical accuracies provided. Give a highly actionable, scientific, yet encouraging breakdown in plain text without complex markdown so it can be read via Text-to-Speech.` }]
+                },
+                contents: [{
+                    role: "user",
+                    parts: [{ text: `Historical Accuracies (past tests): ${JSON.stringify(historicalAccuracies)}. Current Test Details: ${JSON.stringify(gameHistory)}` }]
+                }]
+            };
+
+            const response = await fetch(PROXY_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) throw new Error("Server returned " + response.status);
+
+            const data = await response.json();
+            const analysis = data.candidates[0].content.parts[0].text;
+            
+            status.innerText = "Analysis Complete.";
+            status.style.color = "var(--success)";
+            
+            responseArea.innerHTML = `
+                <div class="ai-box">
+                    <strong>🧠 AI Coach:</strong><br><br>
+                    ${analysis.replace(/\n/g, '<br>')}
+                </div>
+            `;
+            
+            speakAnalysis(analysis);
+
+        } catch (error) {
+            status.innerText = "API connection failed. Ensure proxy is running.";
+            status.style.color = "var(--danger)";
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    function speakAnalysis(text) {
+        synth.cancel();
+        // Strip out asterisks and hashes for clean audio reading
+        let cleanText = text.replace(/[*#]/g, ''); 
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.lang = 'en-IN'; // Indian English accent for contextual fit
+        utterance.rate = 0.9;
+        synth.speak(utterance);
+    }
+</script>
+</body>
+</html>

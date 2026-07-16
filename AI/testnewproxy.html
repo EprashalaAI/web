@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Proxy Tester</title>
+    <style>
+        body { font-family: monospace; background: #0f172a; color: #38bdf8; padding: 20px; }
+        input, button { padding: 10px; margin: 5px 0; font-family: monospace; }
+        input { width: 300px; background: #1e293b; color: white; border: 1px solid #475569; }
+        button { background: #0ea5e9; color: white; border: none; cursor: pointer; font-weight: bold; }
+        pre { background: #000; padding: 15px; border-radius: 5px; white-space: pre-wrap; word-wrap: break-word; color: #a3e635; }
+        .error { color: #f87171; }
+    </style>
+</head>
+<body>
+    <h2>Vertex AI Proxy Connection Test</h2>
+    
+    <label>Test Prompt:</label><br>
+    <input type="text" id="promptInput" value="Hello, are you online?"><br>
+    <button onclick="testConnection()">Send Test Request</button>
+
+    <h3>Server Response:</h3>
+    <pre id="outputLog">Waiting for input...</pre>
+
+    <script>
+        async function testConnection() {
+            const outputLog = document.getElementById('outputLog');
+            const promptText = document.getElementById('promptInput').value;
+            
+            // Your live Google Cloud Run URL
+            const url = "https://eprashala-proxy-511804777001.us-central1.run.app/api/chat";
+            
+            outputLog.className = "";
+            outputLog.innerText = "Sending request to Google Cloud...\n";
+
+            try {
+                // This matches the exact format your Python code currently expects
+                const payload = { prompt: promptText };
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    outputLog.className = "error";
+                    outputLog.innerText += `\nHTTP Error: ${response.status} ${response.statusText}`;
+                    return;
+                }
+
+                const data = await response.json();
+                outputLog.innerText += `\nSUCCESS! Data received:\n\n` + JSON.stringify(data, null, 2);
+
+            } catch (error) {
+                outputLog.className = "error";
+                outputLog.innerText += `\nCRASH: ${error.message}\n\n`;
+                outputLog.innerText += "👉 If this says 'Failed to fetch', it means your browser blocked it due to CORS.\n";
+                outputLog.innerText += "👉 Press F12, go to the 'Console' tab, and look for a red CORS error.";
+            }
+        }
+    </script>
+</body>
+</html>

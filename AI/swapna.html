@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Svapna Vichar - Dream Interpretation</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        :root {
+            --primary: #8e44ad; /* Shifted to a deep mystic purple for dreams */
+            --secondary: #fdfaf6;
+            --text-dark: #2c3e50;
+            --text-light: #FFFFFF;
+            --panel-bg: white;
+            --border-color: #cbd5e1;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            color: var(--text-dark);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; 
+            min-height: 100vh;
+            margin: 0;
+            padding: 40px 20px;
+        }
+        .container {
+            background: var(--panel-bg);
+            padding: 2.5rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            max-width: 650px;
+            width: 100%;
+            position: relative;
+        }
+        
+        /* Top Bar Controls */
+        .top-controls {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .lang-select {
+            background: #2c3e50; color: #f1c40f; border: 1px solid #f1c40f;
+            border-radius: 4px; padding: 6px 10px; font-weight: bold;
+            outline: none; cursor: pointer; font-size: 13px;
+        }
+        .settings-btn {
+            background: #34495e; color: white; border: none; border-radius: 4px;
+            width: 32px; height: 32px; display: flex; justify-content: center; align-items: center;
+            cursor: pointer; transition: 0.2s; font-size: 16px;
+        }
+        .settings-btn:hover { background: #2c3e50; transform: scale(1.05); }
+
+        h2 { margin-top: 0; color: var(--text-dark); text-align: center; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; }
+        .instructions {
+            background-color: rgba(142, 68, 173, 0.1); border-left: 4px solid #8e44ad;
+            padding: 1rem; margin-bottom: 1.5rem; font-size: 0.95rem; border-radius: 4px; line-height: 1.5;
+        }
+        .form-group { margin-bottom: 1.25rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: bold; font-size: 13px; }
+        select, textarea, input[type="text"] {
+            width: 100%; padding: 10px; border: 1px solid var(--border-color);
+            border-radius: 5px; font-family: inherit; box-sizing: border-box; font-size: 14px;
+        }
+        textarea { resize: vertical; min-height: 120px; }
+
+        .btn-main {
+            width: 100%; background-color: var(--primary); color: var(--text-light);
+            border: none; padding: 14px; font-size: 15px; font-weight: bold;
+            border-radius: 5px; cursor: pointer; transition: 0.3s;
+        }
+        .btn-main:hover { background-color: #732d91; }
+        .btn-main:disabled { background-color: #95a5a6; cursor: not-allowed; }
+        
+        #result-wrapper { display: none; margin-top: 1.5rem; }
+        
+        /* NATIVE WHITE THEME RESULT BOX */
+        #result-box {
+            padding: 1.5rem; 
+            border-radius: 8px; 
+            background: #ffffff; 
+            color: #1e293b; 
+            border: 1px solid #cbd5e1;
+            border-left: 5px solid var(--primary); 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            line-height: 1.6;
+        }
+        
+        .result-header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            margin-bottom: 15px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; 
+        }
+        .result-header h3 { margin: 0; color: var(--primary); font-size: 18px;}
+        
+        /* Markdown formatting for the LIGHT theme */
+        .markdown-body h1, .markdown-body h2, .markdown-body h3 { margin-top: 0; margin-bottom: 10px; color: var(--primary); }
+        .markdown-body strong { color: #000000; font-weight: bold; }
+        .markdown-body ul, .markdown-body ol { margin-top: 0; padding-left: 20px; margin-bottom: 15px; }
+        .markdown-body p { margin-top: 0; margin-bottom: 15px; color: #1e293b; }
+
+        /* TTS Play Button */
+        .action-btns { display: flex; gap: 10px; }
+        .icon-btn {
+            background: #f1f5f9; border: 1px solid #cbd5e1;
+            color: #2c3e50; border-radius: 50%; width: 35px; height: 35px;
+            display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s; font-size: 16px;
+        }
+        .icon-btn:hover { background: #e2e8f0; }
+        .icon-btn.active { background: #e67e22; border-color: #d35400; color: white; }
+        
+        .share-btn {
+            width: 100%; background: #27ae60; color: white; border: none; padding: 12px;
+            border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 15px; transition: 0.2s;
+        }
+        .share-btn:hover { background: #219150; }
+
+        .loader { display: none; text-align: center; margin-top: 1rem; font-weight: bold; color: var(--primary); }
+        .status-text { font-size: 12px; color: #7f8c8d; text-align: center; margin-top: 5px; }
+
+        /* MOBILE OPTIMIZATION */
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .container { padding: 1.5rem; border-radius: 8px; box-shadow: none; }
+            .top-controls { justify-content: space-between; margin-bottom: 20px; }
+        }
+		
+		@media print {
+
+    body * {
+        visibility: hidden;
+    }
+
+    #result-box,
+    #result-box * {
+        visibility: visible;
+    }
+
+    #result-box {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        box-shadow: none;
+        border: none;
+    }
+
+    .share-btn,
+    .pdf-btn,
+    .action-btns,
+    #chat-input-wrapper,
+    #chatSendBtn {
+        display: none !important;
+    }
+
+}
+		
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <div class="top-controls">
+        <select class="lang-select" id="langToggle">
+            <option value="mr-IN" selected>🇮🇳 मराठी</option>
+            <option value="hi-IN">🇮🇳 हिन्दी</option>
+            <option value="en-IN">🇬🇧 English</option>
+            <option value="gu-IN">🇮🇳 ગુજરાતી</option>
+            <option value="bn-IN">🇮🇳 বাংলা</option>
+            <option value="te-IN">🇮🇳 తెలుగు</option>
+            <option value="ta-IN">🇮🇳 தமிழ்</option>
+            <option value="kn-IN">🇮🇳 ಕನ್ನಡ</option>
+            <option value="ml-IN">🇮🇳 മലയാളം</option>
+            <option value="pa-IN">🇮🇳 ਪੰਜਾਬੀ</option>
+            <option value="or-IN">🇮🇳 ଓଡ଼ିଆ</option>
+            <option value="as-IN">🇮🇳 অসমীয়া</option>
+            <option value="ur-IN">🇮🇳 اردو</option>
+            <option value="kok-IN">🇮🇳 कोंकणी</option>
+            <option value="ne-IN">🇮🇳 नेपाली</option>
+            <option value="mai-IN">🇮🇳 मैथिली</option>
+            <option value="sa-IN">🇮🇳 संस्कृतम्</option>
+            <option value="sd-IN">🇮🇳 سنڌي</option>
+            <option value="mni-IN">🇮🇳 ꯃꯤꯇꯩ ꯂꯣꯟ</option>
+            <option value="bodo-IN">🇮🇳 बड़ो</option>
+            <option value="doi-IN">🇮🇳 डोगरी</option>
+            <option value="ks-IN">🇮🇳 کٲشُر</option>
+        </select>
+        <button class="settings-btn" onclick="configureAPIKey()" title="Configure API Key">⚙️</button>
+    </div>
+
+    <h2>Svapna Vichar Engine</h2>
+    
+    <div class="instructions">
+        <strong>Dream Protocol:</strong> Write down everything you can remember about your dream—symbols, emotions, people, and colors. The AI will cross-reference your vision exclusively with the interpretation framework of the classical text you select.
+    </div>
+
+    <form id="dreamForm">
+
+        <div class="form-group">
+            <label for="bookSelection">Select Classical Framework:</label>
+            <select id="bookSelection" name="bookSelection">
+                <option value="Sushruta Samhita">Sushruta Samhita (Focus: Health, pathology, and bodily dosha imbalance)</option>
+                <option value="Svapnadhvaya">Svapnadhvaya / Book of Dreams (Focus: General omens, symbols, and prophetic meanings)</option>
+                <option value="Agni Purana">Agni Purana (Focus: Auspicious/Inauspicious signs and rituals to counteract bad omens)</option>
+                <option value="Brihat Samhita">Brihat Samhita (Focus: Astrological influences, mundane omens, and environmental shifts)</option>
+                <option value="Atharvaveda">Atharvaveda (Focus: Ancient psychological/spiritual symbols and dispelling nightmares)</option>
+                <option value="Mandukya Upanishad">Mandukya Upanishad (Focus: Philosophical state of Taijasa, consciousness, and waking reality)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="userDream">Describe Your Dream:</label>
+            <textarea id="userDream" name="userDream" placeholder="e.g., I saw myself standing near a drying river, and a black bird flew over me holding a golden coin. I felt very anxious..." required></textarea>
+        </div>
+
+        <button type="submit" class="btn-main" id="submitBtn">Interpret Dream</button>
+        <div class="status-text" id="statusText"></div>
+    </form>
+
+    <div class="loader" id="loader">Consulting the ancient texts and aligning AI...</div>
+    
+    <div id="result-wrapper">
+        <div id="result-box">
+            <div class="result-header">
+                <h3>Svapna Phal (Dream Verdict)</h3>
+                <div class="action-btns">
+                    <button id="ttsBtn" class="icon-btn" title="Read Aloud" onclick="toggleTTS()">▶️</button>
+                </div>
+            </div>
+            <div id="result-text" class="markdown-body"></div>
+        
+            <!-- Chat Interface for Consultation -->
+            <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 25px 0 15px 0;">
+            <div id="chat-history" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px;"></div>
+            
+            <div id="chat-input-wrapper" style="display: flex; gap: 10px;">
+                <input type="text" id="chatInput" placeholder="Ask for remedies, shanti pujas, or psychological advice..." style="flex: 1; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; font-size: 14px;">
+                <button onclick="sendChatMessage()" class="btn-main" style="width: auto; padding: 0 20px;" id="chatSendBtn">Ask AI</button>
+            </div>
+        </div>
+ 		<div style="display:flex; gap:10px; margin-top:15px;">
+    <button class="share-btn" style="margin-top:0;" onclick="shareResult()">
+        📤 Copy & Share Interpretation
+    </button>
+
+    <button class="share-btn"
+            style="margin-top:0; background:#2563eb;"
+            onclick="printReport()">
+        🖨️ Print
+    </button>
+</div>
+    </div>
+</div>
+
+<script>
+    // --- Global Chat State Variables ---
+    let chatHistoryForAPI = []; 
+    let fullShareText = ""; 
+    let currentSelectedBook = "";
+    let activeChatTtsBtn = null;
+	
+	// Central Proxy URL Base
+    const PROXY_BASE_URL = "https://eprashala-proxy-511804777001.asia-south1.run.app";
+
+    async function fetchGeminiChat(payloadObject) {
+        const userKey = localStorage.getItem('user_ai_api_key') || '';
+
+        // TIER 1: User has their own key -> Talk directly to Google servers
+        if (userKey && userKey.trim().length > 10) {
+            try {
+                console.log("Direct Route Active: Targeting gemini-flash-latest...");
+                const primaryUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${userKey.trim()}`;
+                const response = await fetch(primaryUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payloadObject)
+                });
+                
+                if (!response.ok) throw new Error(`Primary model status: ${response.status}`);
+                return response;
+
+            } catch (error) {
+                console.warn("Primary channel busy/unavailable. Re-routing to gemini-2.5-flash-lite fallback...", error);
+                const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${userKey.trim()}`;
+                return await fetch(fallbackUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payloadObject)
+                });
+            }
+        } 
+        
+        // TIER 2: No personal key provided -> Route to your centralized proxy gateway
+        else {
+            console.log("Proxy Route Active: Routing through centralized server infrastructure...");
+            return await fetch(`${PROXY_BASE_URL}/api/chat`, {
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payloadObject)
+            });
+        }
+    }
+	
+
+    // --- API Settings Logic ---
+    function configureAPIKey() {
+        let currentKey = localStorage.getItem('user_ai_api_key') || '';
+        let newKey = prompt("Enter your personal Gemini API Key (Leave blank to use default server quota):", currentKey);
+        
+        if (newKey !== null) {
+            if (newKey.trim() === '') {
+                localStorage.removeItem('user_ai_api_key');
+                alert("Personal API Key removed. The app will now use the server's default quota.");
+            } else {
+                localStorage.setItem('user_ai_api_key', newKey.trim());
+                alert("API Key saved securely in your browser cache.");
+            }
+        }
+    }
+
+    // --- Expert TTS Regex Sanitizer ---
+    function cleanTextForTTS(text) {
+        return text
+            .replace(/[*_#`~]/g, '')          
+            .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') 
+            .replace(/<[^>]+>/g, '')          
+            .replace(/[<>()\[\]{}]/g, ' ')    
+            .replace(/-{2,}/g, ' ')           
+            .trim();
+    }
+
+    // --- TTS Logic ---
+    let synth = window.speechSynthesis;
+    let isSpeaking = false;
+    let utterance = null;
+    let rawAIResponse = ""; 
+
+    function toggleTTS() {
+        const ttsBtn = document.getElementById('ttsBtn');
+        const targetLangStr = document.getElementById('langToggle').value;
+        
+        if (!rawAIResponse) return;
+
+        if (synth.speaking && !synth.paused && isSpeaking) {
+            synth.pause();
+            isSpeaking = false;
+            ttsBtn.innerText = "▶️";
+            ttsBtn.classList.remove('active');
+        } else if (synth.paused) {
+            synth.resume();
+            isSpeaking = true;
+            ttsBtn.innerText = "⏸️";
+            ttsBtn.classList.add('active');
+        } else {
+            const sanitizedText = cleanTextForTTS(rawAIResponse);
+            utterance = new SpeechSynthesisUtterance(sanitizedText);
+            utterance.lang = targetLangStr || 'en-US';
+
+            utterance.onend = () => {
+                isSpeaking = false;
+                ttsBtn.innerText = "▶️";
+                ttsBtn.classList.remove('active');
+            };
+            
+            synth.speak(utterance);
+            isSpeaking = true;
+            ttsBtn.innerText = "⏸️";
+            ttsBtn.classList.add('active');
+        }
+    }
+
+    function stopTTS() {
+        if (synth.speaking) { synth.cancel(); }
+        isSpeaking = false;
+        document.getElementById('ttsBtn').innerText = "▶️";
+        document.getElementById('ttsBtn').classList.remove('active');
+    }
+
+    async function shareResult() {
+        if (!fullShareText || fullShareText.trim() === '') {
+            alert("Please run an analysis first before sharing.");
+            return;
+        }
+        const finalShareText = `${fullShareText}\nGenerated on: ${new Date().toLocaleString()}`;
+
+        try { await navigator.clipboard.writeText(finalShareText); } 
+        catch (err) { console.error("Clipboard copy failed:", err); }
+
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: 'Svapna Vichar - Dream Interpretation',
+                    text: finalShareText
+                });
+            } catch (err) { console.log("Share cancelled:", err); }
+        } else {
+            alert("Complete consultation copied to clipboard!");
+        }
+    }
+    
+    // --- Core AI Engine Logic ---
+    document.getElementById('dreamForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        stopTTS(); 
+
+        const btn = document.getElementById('submitBtn');
+        const loader = document.getElementById('loader');
+        const resultWrapper = document.getElementById('result-wrapper');
+        const resultText = document.getElementById('result-text');
+        const statusText = document.getElementById('statusText');
+        
+        btn.disabled = true;
+        loader.style.display = 'block';
+        resultWrapper.style.display = 'none';
+        statusText.innerText = "Analyzing symbols...";
+        
+        const bookDropdown = document.getElementById('bookSelection');
+        // Extracting just the book name, removing the parenthesis text for cleaner prompting
+        const rawBookString = bookDropdown.options[bookDropdown.selectedIndex].text;
+        const bookName = rawBookString.split('(')[0].trim();
+        const bookFocus = rawBookString.split('(')[1].replace(')','').replace('Focus: ','').trim();
+        
+        const userDream = document.getElementById('userDream').value;
+        const langDropdown = document.getElementById('langToggle');
+        const selectedLanguageName = langDropdown.options[langDropdown.selectedIndex].text;
+
+        try {
+            // Construct Deep AI Prompt for Dreams
+            let promptHeader = `SYSTEM PROTOCOL: INCOGNITO MODE. Do not reference user account history. Treat this as a standalone, expert Svapna Vichar (Dream Interpretation) consultation.\n\n`;
+            
+            let promptContent = `The user has described a dream:\n"${userDream}"\n\n`;
+            
+            promptContent += `INSTRUCTIONS FOR AI ANALYSIS:
+            1. Act strictly as a master of the ancient text: ${bookName}.
+            2. You must focus EXCLUSIVELY on the dream interpretation sections and philosophy of this specific text. The primary lens for interpretation is: ${bookFocus}.
+            3. Break down the core symbols, emotions, and narrative sequence of the dream.
+            4. Provide the exact outcome or omen (Svapna Phal) indicated by the dream.
+            5. If the dream is negative, provide remedies, precautions, or rituals (Shanti) aligned with ${bookName}. If it is the Mandukya Upanishad, provide philosophical reflection instead of rituals.
+            6. CRITICAL REQUIREMENT: You must provide your ENTIRE response in ${selectedLanguageName}. Do not use English unless explicitly requested. Use markdown styling for headers and emphasis.`;
+
+			const payloadObject = { contents: [{ parts: [{ text: promptHeader + promptContent }] }] };
+            const aiResponse = await fetchGeminiChat(payloadObject);
+			
+			
+            if (!aiResponse.ok) { throw new Error(`AI Engine HTTP Error ${aiResponse.status}`); }
+
+            const aiData = await aiResponse.json();
+            
+            if (aiData.candidates && aiData.candidates[0] && aiData.candidates[0].content && aiData.candidates[0].content.parts) {
+                rawAIResponse = aiData.candidates[0].content.parts[0].text;
+                
+                // Initialize Chat History
+                currentSelectedBook = bookName;
+                chatHistoryForAPI = [
+                    { role: "user", parts: [{ text: promptHeader + promptContent }] },
+                    { role: "model", parts: [{ text: rawAIResponse }] }
+                ];
+                
+                fullShareText = `Svapna Vichar (Dream Interpretation)\nBook Referenced: ${bookName}\n\nUser Dream:\n${userDream}\n\nInterpretation:\n${cleanTextForTTS(rawAIResponse)}\n`;
+                document.getElementById('chat-history').innerHTML = ""; 
+                
+            } else { throw new Error("Invalid response format from AI API."); }
+            
+            resultText.innerHTML = marked.parse(rawAIResponse);
+            resultWrapper.style.display = 'block';
+
+        } catch (error) {
+            console.error("Diagnostic Error Log:", error);
+            alert(`Analysis Halted.\n\nReason: ${error.message}\n\nPlease check if your server is awake and accepting requests.`);
+        } finally {
+            btn.disabled = false;
+            loader.style.display = 'none';
+            statusText.innerText = "";
+        }
+    });
+
+    // --- Consultation Chat Engine ---
+    async function sendChatMessage() {
+        const inputField = document.getElementById('chatInput');
+        const userMsg = inputField.value.trim();
+        if (!userMsg) return;
+
+        const sendBtn = document.getElementById('chatSendBtn');
+        const chatHistoryUI = document.getElementById('chat-history');
+        const langDropdown = document.getElementById('langToggle');
+        const selectedLanguageName = langDropdown.options[langDropdown.selectedIndex].text;
+        
+        inputField.value = "";
+        inputField.disabled = true;
+        sendBtn.disabled = true;
+        sendBtn.innerText = "Thinking...";
+
+        const userDiv = document.createElement('div');
+        userDiv.style.cssText = "align-self: flex-end; background: #f3e8ff; color: #6b21a8; padding: 10px 15px; border-radius: 12px 12px 0 12px; max-width: 85%; font-size: 14px;";
+        userDiv.innerHTML = `<strong>You:</strong> ${userMsg}`;
+        chatHistoryUI.appendChild(userDiv);
+        
+        fullShareText += `\nYou: ${userMsg}\n`;
+
+        try {
+            const reinforcement = `(Consultation Rule: Answer this follow-up question strictly applying the dream interpretation principles of ${currentSelectedBook}. Provide the answer entirely in ${selectedLanguageName}):\n`;
+            const newApiMsg = { role: "user", parts: [{ text: reinforcement + userMsg }] };
+            
+			const payloadObject = { contents: [...chatHistoryForAPI, newApiMsg] };
+            const response = await fetchGeminiChat(payloadObject);
+
+            if (!response.ok) throw new Error("API Error");
+            const data = await response.json();
+            const aiResponseText = data.candidates[0].content.parts[0].text;
+
+            chatHistoryForAPI.push(newApiMsg);
+            chatHistoryForAPI.push({ role: "model", parts: [{ text: aiResponseText }] });
+            fullShareText += `\nAI Consultant: ${cleanTextForTTS(aiResponseText)}\n`;
+
+            const msgId = 'msg-' + Date.now();
+            const aiDiv = document.createElement('div');
+            aiDiv.style.cssText = "align-self: flex-start; background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px 15px; border-radius: 12px 12px 12px 0; max-width: 95%; font-size: 14px; display: flex; flex-direction: column; gap: 8px;";
+            
+            const textDiv = document.createElement('div');
+            textDiv.className = 'markdown-body';
+            textDiv.innerHTML = marked.parse(aiResponseText);
+            
+            const hiddenText = document.createElement('textarea');
+            hiddenText.id = msgId;
+            hiddenText.style.display = 'none';
+            hiddenText.value = aiResponseText;
+
+            const ttsBtn = document.createElement('button');
+            ttsBtn.className = "icon-btn";
+            ttsBtn.style.cssText = "align-self: flex-end; width: 30px; height: 30px; font-size: 14px; background: white;";
+            ttsBtn.innerHTML = "▶️";
+            ttsBtn.title = "Listen to Advice";
+            ttsBtn.onclick = function() { toggleChatTTS(msgId, this); };
+
+            aiDiv.appendChild(textDiv);
+            aiDiv.appendChild(hiddenText);
+            aiDiv.appendChild(ttsBtn);
+            chatHistoryUI.appendChild(aiDiv);
+
+        } catch (error) {
+            console.error(error);
+            const errDiv = document.createElement('div');
+            errDiv.style.cssText = "color: #e74c3c; font-size: 12px; text-align: center;";
+            errDiv.innerText = "Connection lost. Please try asking again.";
+            chatHistoryUI.appendChild(errDiv);
+        } finally {
+            inputField.disabled = false;
+            sendBtn.disabled = false;
+            sendBtn.innerText = "Ask AI";
+            inputField.focus();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('chatInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') sendChatMessage();
+        });
+    });
+
+    function toggleChatTTS(elementId, btnElement) {
+        const text = document.getElementById(elementId).value;
+        const targetLangStr = document.getElementById('langToggle').value;
+        
+        if (activeChatTtsBtn === btnElement) {
+            if (synth.speaking && !synth.paused && isSpeaking) {
+                synth.pause(); isSpeaking = false;
+                btnElement.innerText = "▶️"; btnElement.classList.remove('active');
+            } else if (synth.paused) {
+                synth.resume(); isSpeaking = true;
+                btnElement.innerText = "⏸️"; btnElement.classList.add('active');
+            } else { playNew(text, targetLangStr, btnElement); }
+        } else {
+            stopTTS(); 
+            if (activeChatTtsBtn) { activeChatTtsBtn.innerText = "▶️"; activeChatTtsBtn.classList.remove('active'); }
+            if (synth.speaking) synth.cancel();
+            playNew(text, targetLangStr, btnElement);
+        }
+
+        function playNew(txt, langStr, btn) {
+            const sanitizedText = cleanTextForTTS(txt);
+            const utterance = new SpeechSynthesisUtterance(sanitizedText);
+            utterance.lang = langStr || 'en-US';
+
+            utterance.onend = () => {
+                isSpeaking = false; activeChatTtsBtn = null;
+                btn.innerText = "▶️"; btn.classList.remove('active');
+            };
+            synth.speak(utterance); isSpeaking = true;
+            btn.innerText = "⏸️"; btn.classList.add('active');
+            activeChatTtsBtn = btn;
+        }
+    }
+
+	function printReport() {
+    window.print();
+}
+	
+</script>
+
+</body>
+</html>

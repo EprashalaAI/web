@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deep Facial Telemetry & Kinematics</title>
+    <style>
+        :root {
+            --bg: #050505; --panel: #111; --border: #333;
+            --accent-cyan: #00e5ff; --accent-red: #ff1744; --accent-green: #00e676; --accent-purple: #d500f9;
+        }
+        body { font-family: 'Courier New', Courier, monospace; background-color: var(--bg); color: #ccc; margin: 0; padding: 1.5rem; display: flex; flex-direction: column; align-items: center; }
+        .hud-header { width: 100%; max-width: 1400px; border-bottom: 1px solid var(--accent-cyan); padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; }
+        .hud-header h1 { margin: 0; font-size: 1.2rem; color: var(--accent-cyan); text-transform: uppercase; }
+        
+        .dashboard { display: grid; grid-template-columns: 350px 1fr 350px; gap: 20px; width: 100%; max-width: 1400px; }
+        
+        .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 4px; padding: 15px; }
+        .panel-title { font-size: 0.9rem; color: #fff; border-bottom: 1px solid #444; padding-bottom: 5px; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .video-container { position: relative; width: 100%; aspect-ratio: 4/3; background: #000; border: 1px solid var(--accent-cyan); overflow: hidden; }
+        video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        .overlay-crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; border: 1px solid rgba(0, 229, 255, 0.3); border-radius: 50%; pointer-events: none; }
+        
+        /* Data Rows */
+        .data-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.8rem; }
+        .bar-container { flex-grow: 1; margin: 0 10px; height: 6px; background: #222; position: relative; }
+        .bar-fill { height: 100%; width: 0%; transition: width 0.05s linear; }
+        .val-text { width: 40px; text-align: right; color: #fff; font-weight: bold; }
+
+        /* Specific Colors */
+        .bg-cyan { background-color: var(--accent-cyan); }
+        .bg-red { background-color: var(--accent-red); }
+        .bg-green { background-color: var(--accent-green); }
+        .bg-purple { background-color: var(--accent-purple); }
+
+        /* Head Pose Dial */
+        .pose-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; text-align: center; margin-top: 15px; }
+        .pose-box { background: #1a1a1a; padding: 10px; border: 1px solid #333; }
+        .pose-val { font-size: 1.2rem; color: var(--accent-cyan); font-weight: bold; margin-top: 5px; }
+
+        #loading { color: var(--accent-red); font-weight: bold; text-align: center; margin-bottom: 20px; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    </style>
+</head>
+<body>
+
+    <div class="hud-header">
+        <h1>Kinematic & Deep Blendshape Telemetry</h1>
+        <div id="status">SYSTEM INITIALIZING...</div>
+    </div>
+
+    <div id="loading">DOWNLOADING NEURAL WEIGHTS AND SPATIAL MATRICES...</div>
+
+    <div class="dashboard">
+        
+        <div class="panel">
+            <div class="panel-title">Spatial Cranial Tracking</div>
+            <div class="pose-grid">
+                <div class="pose-box">PITCH<div id="pose-pitch" class="pose-val">0°</div></div>
+                <div class="pose-box">YAW<div id="pose-yaw" class="pose-val">0°</div></div>
+                <div class="pose-box">ROLL<div id="pose-roll" class="pose-val">0°</div></div>
+            </div>
+            
+            <div class="panel-title" style="margin-top: 25px;">Complex Cognitive States</div>
+            <div id="complex-states"></div>
+        </div>
+
+        <div class="panel" style="padding: 0; border: none; background: transparent;">
+            <div class="video-container">
+                <video id="webcam" autoplay playsinline muted></video>
+                <div class="overlay-crosshair"></div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">Raw Micro-Muscle Activation (Top 10)</div>
+            <div id="micro-muscles"></div>
+        </div>
+
+    </div>
+
+    <script type="module">
+        import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3";
+
+        const video = document.getElementById('webcam');
+        let faceLandmarker;
+        let lastVideoTime = -1;
+
+        const complexStates = [
+            { id: 'contempt', label: 'Contempt / Arrogance', color: 'bg-purple' },
+            { id: 'submissive', label: 'Anxiety / Submissive', color: 'bg-red' },
+            { id: 'intense_focus', label: 'Predatory Focus', color: 'bg-cyan' },
+            { id: 'amusement', label: 'Genuine Amusement', color: 'bg-green' },
+            { id: 'disgust', label: 'Visceral Disgust', color: 'bg-red' }
+        ];
+
+        const microMuscles = [
+            'browInnerUp', 'browDownLeft', 'eyeWideLeft', 'eyeSquintLeft', 
+            'noseSneerLeft', 'cheekPuff', 'mouthPressLeft', 'mouthRollLower', 
+            'mouthSmileLeft', 'jawOpen'
+        ];
+
+        // Setup UI dynamically
+        function buildRows(containerId, items, isComplex) {
+            const container = document.getElementById(containerId);
+            items.forEach(item => {
+                const id = isComplex ? item.id : item;
+                const label = isComplex ? item.label : item;
+                const colorClass = isComplex ? item.color : 'bg-cyan';
+                container.innerHTML += `
+                    <div class="data-row">
+                        <span style="width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${label}</span>
+                        <div class="bar-container"><div class="bar-fill ${colorClass}" id="bar-${id}"></div></div>
+                        <span class="val-text" id="val-${id}">0%</span>
+                    </div>`;
+            });
+        }
+        
+        buildRows('complex-states', complexStates, true);
+        buildRows('micro-muscles', microMuscles, false);
+
+        // Initialize AI
+        async function init() {
+            const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm");
+            faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
+                baseOptions: { modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`, delegate: "GPU" },
+                outputFaceBlendshapes: true, 
+                outputFacialTransformationMatrixes: true, // CRITICAL: Enables 3D head tracking
+                runningMode: "VIDEO", 
+                numFaces: 1
+            });
+            
+            document.getElementById('loading').style.display = "none";
+            document.getElementById('status').innerText = "TRACKING ACTIVE";
+            document.getElementById('status').style.color = "var(--accent-green)";
+
+            navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+                video.srcObject = stream;
+                video.addEventListener("loadeddata", analyzeFrame);
+            });
+        }
+
+        function analyzeFrame() {
+            if (lastVideoTime !== video.currentTime) {
+                lastVideoTime = video.currentTime;
+                const results = faceLandmarker.detectForVideo(video, performance.now());
+
+                if (results.faceBlendshapes && results.faceBlendshapes.length > 0) {
+                    const shapes = results.faceBlendshapes[0].categories;
+                    const v = (name) => shapes.find(s => s.categoryName === name)?.score || 0;
+
+                    // 1. UPDATE MICRO-MUSCLES
+                    microMuscles.forEach(muscle => {
+                        updateBar(muscle, v(muscle) * 100);
+                    });
+
+                    // 2. EXTRACT CRANIAL MATRIX (Pitch, Yaw, Roll)
+                    let pitch = 0, yaw = 0, roll = 0;
+                    if (results.facialTransformationMatrixes && results.facialTransformationMatrixes.length > 0) {
+                        const matrix = results.facialTransformationMatrixes[0].data;
+                        // Math to extract Euler angles from 4x4 matrix
+                        pitch = -Math.asin(matrix[6]) * (180 / Math.PI); 
+                        yaw = Math.atan2(matrix[2], matrix[10]) * (180 / Math.PI);
+                        roll = Math.atan2(matrix[4], matrix[5]) * (180 / Math.PI);
+
+                        document.getElementById('pose-pitch').innerText = `${Math.round(pitch)}°`;
+                        document.getElementById('pose-yaw').innerText = `${Math.round(yaw)}°`;
+                        document.getElementById('pose-roll').innerText = `${Math.round(roll)}°`;
+                    }
+
+                    // 3. CALCULATE COMPLEX STATES (Fusing Pose + Muscles)
+                    
+                    // Contempt: Head pitched up (looking down nose) + unilateral smirk + slight squint
+                    const smirkAsymmetry = Math.abs(v("mouthSmileLeft") - v("mouthSmileRight"));
+                    const contempt = (pitch < -5 ? 30 : 0) + (smirkAsymmetry * 150) + (v("eyeSquintLeft") * 50);
+                    updateBar('contempt', contempt);
+
+                    // Submissive Anxiety: Head pitched down + looking up + pressing lips/biting lip
+                    const submissive = (pitch > 10 ? 40 : 0) + (v("mouthPressLeft") * 100) + (v("mouthRollLower") * 100);
+                    updateBar('submissive', submissive);
+
+                    // Predatory Focus: Head tilted slightly down + eyes wide (not blinking) + brows down
+                    const focus = (pitch > 5 ? 20 : 0) + (v("browDownLeft") * 100) - (v("eyeBlinkLeft") * 200) + 20; 
+                    updateBar('intense_focus', focus);
+
+                    // Genuine Amusement (Duchenne): Smile + Cheek raise + slight head tilt backward
+                    const amusement = (pitch < -2 ? 20 : 0) + (v("mouthSmileLeft") * 100) + (v("cheekSquintLeft") * 100);
+                    updateBar('amusement', amusement);
+
+                    // Visceral Disgust: Nose sneer + upper lip raise + head pulling back
+                    const disgust = (pitch < -5 ? 20 : 0) + (v("noseSneerLeft") * 150) + (v("mouthUpperUpLeft") * 100);
+                    updateBar('disgust', disgust);
+                } else {
+                    // Reset if no face
+                    microMuscles.forEach(m => updateBar(m, 0));
+                    complexStates.forEach(s => updateBar(s.id, 0));
+                    ['pitch', 'yaw', 'roll'].forEach(p => document.getElementById(`pose-${p}`).innerText = '0°');
+                }
+            }
+            window.requestAnimationFrame(analyzeFrame);
+        }
+
+        function updateBar(id, val) {
+            const capped = Math.min(100, Math.max(0, val));
+            const bar = document.getElementById(`bar-${id}`);
+            const text = document.getElementById(`val-${id}`);
+            if (bar && text) {
+                bar.style.width = `${capped}%`;
+                text.innerText = `${Math.round(capped)}%`;
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>

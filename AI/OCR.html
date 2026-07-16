@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Eprashala OCR Scanner</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        /* --- CORE VARIABLES & RESET --- */
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --text: #0f172a;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --warning: #f59e0b;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+            --safe-bottom: env(safe-area-inset-bottom, 5px);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
+
+        /* STRICT FLEXBOX LAYOUT & KIOSK SAFEGUARDS */
+        body { background-color: var(--bg); color: var(--text); display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; user-select: none; }
+
+        /* --- IMMERSIVE OVERLAY --- */
+        #start-overlay {
+            position: fixed; inset: 0; z-index: 99999; background: #0f172a;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: white; text-align: center; cursor: pointer;
+        }
+        #start-overlay h1 { color: #38bdf8; font-size: 2.5rem; margin-bottom: 10px; }
+        #start-overlay p { color: #94a3b8; font-size: 0.9rem; }
+
+        /* --- COMPACT MOBILE HEADER --- */
+        header { 
+            background: var(--surface); padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; 
+            border-bottom: 1px solid var(--border); z-index: 20; box-shadow: var(--shadow-sm); flex-shrink: 0; gap: 8px;
+        }
+        header h1 { font-size: 15px; color: var(--primary); font-weight: 700; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+        .header-controls { display: flex; align-items: center; gap: 6px; }
+        .header-lang-select { padding: 4px 6px; border-radius: 4px; border: 1px solid var(--border); font-size: 12px; background: var(--bg); color: var(--text); outline: none; max-width: 90px; cursor: pointer;}
+        .icon-btn { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-light); transition: transform 0.2s; padding: 2px; display: flex; align-items: center; justify-content: center;}
+        .icon-btn:active { transform: scale(0.9); }
+
+        /* --- SCREENS --- */
+        .screen { flex: 1; min-height: 0; display: none !important; flex-direction: column; overflow: hidden; position: relative; }
+        .screen.active { display: flex !important; }
+
+        /* Screen 1: Home & Camera Setup */
+        #screen-home { padding: 12px; overflow-y: auto; }
+        .instructions { text-align: center; margin-top: 5px; color: var(--text-light); line-height: 1.4; font-size: 13px;}
+        .instructions h2 { color: var(--text); margin-bottom: 6px; font-size: 16px; }
+        
+        #cameraWrapper { position: relative; display: none; width: 100%; border-radius: 8px; overflow: hidden; box-shadow: var(--shadow-md); margin-top: 10px; background: #000; }
+        #cameraFeed { width: 100%; display: block; object-fit: cover; }
+        #cameraControls { position: absolute; top: 10px; left: 10px; right: 10px; background: rgba(0,0,0,0.6); padding: 8px; border-radius: 8px; display: none; flex-direction: column; gap: 6px; backdrop-filter: blur(4px); z-index: 15;}
+        .camera-control-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+        #flashBtn { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: none; cursor: pointer; }
+        .zoom-wrapper { display: none; flex: 1; align-items: center; gap: 6px; color: white; font-size: 14px; }
+        .zoom-wrapper input[type="range"] { flex: 1; accent-color: #fff; height: 3px; }
+
+        /* Screen 2: Tune (Crop & Filter) */
+        #screen-tune { padding: 0; background: #1e293b; }
+        .canvas-container { flex: 1; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; position: relative; padding: 15px; }
+        canvas { max-width: 100%; max-height: 100%; object-fit: contain; display: block; touch-action: none; }
+
+        /* Screen 3: Results (Tabbed) */
+        .tab-bar { display: flex; background: var(--surface); border-bottom: 1px solid var(--border); z-index: 10; flex-shrink: 0; }
+        .tab-btn { flex: 1; padding: 8px 0; text-align: center; font-size: 12px; font-weight: 600; color: var(--text-light); background: transparent; border: none; border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.2s; }
+        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .tab-pane { flex: 1; display: none; flex-direction: column; background: var(--surface); position: relative; overflow: hidden; }
+        .tab-pane.active { display: flex; }
+        
+        .pane-actions { padding: 6px 10px; border-bottom: 1px solid var(--border); display: flex; gap: 6px; background: var(--bg); flex-shrink: 0; align-items: stretch;}
+        select.action-select { flex: 1; padding: 6px; border-radius: 4px; border: 1px solid var(--border); font-size: 13px; background: white; outline: none; }
+        
+        .textarea-wrapper { flex: 1; position: relative; display: flex; flex-direction: column; overflow: hidden; }
+        .full-textarea { flex: 1; width: 100%; padding: 12px; padding-bottom: 60px; border: none; font-size: 14px; line-height: 1.5; resize: none; color: var(--text); background: var(--surface); overflow-y: auto; outline: none; user-select: text;}
+        
+        .tts-fab { position: absolute; bottom: 10px; right: 10px; width: 44px; height: 44px; background: var(--surface); border: 1px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; box-shadow: 0 3px 8px rgba(0,0,0,0.15); transition: transform 0.2s; color: var(--primary); z-index: 10; }
+        .tts-fab:active { transform: scale(0.9); }
+        .loader { padding: 8px; text-align: center; color: var(--primary); font-size: 12px; font-weight: 600; display: none; background: #e0e7ff; flex-shrink: 0;}
+
+        /* --- FLEXIBLE BOTTOM NAVIGATION --- */
+        .bottom-bar { 
+            width: 100%; background: var(--surface); padding: 8px 12px; padding-bottom: calc(8px + var(--safe-bottom)); 
+            border-top: 1px solid var(--border); display: flex; gap: 8px; z-index: 20; box-shadow: 0 -2px 8px rgba(0,0,0,0.05); flex-shrink: 0; position: relative;
+        }
+        .stacked-bar { flex-direction: column; gap: 8px; }
+        
+        .filter-types { display: flex; background: var(--bg); border-radius: 4px; overflow: hidden; border: 1px solid var(--border);}
+        .filter-type-btn { flex: 1; padding: 6px 0; border: none; background: transparent; font-size: 11px; font-weight: 600; color: var(--text-light); cursor: pointer; }
+        .filter-type-btn.active { background: var(--primary); color: white; }
+        
+        .slider-wrapper { display: flex; flex-direction: column; gap: 4px; width: 100%; }
+        .slider-header { display: flex; justify-content: space-between; font-weight: 600; font-size: 11px; color: var(--text); }
+        input[type="range"] { width: 100%; accent-color: var(--primary); height: 3px; border-radius: 2px; }
+        .button-row { display: flex; gap: 6px; width: 100%; }
+
+        /* Unified Button Styling */
+        .btn { flex: 1; padding: 8px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 4px; color: white; transition: transform 0.1s; white-space: nowrap; }
+        .btn:active { transform: scale(0.96); }
+        .btn-primary { background: var(--primary); }
+        .btn-success { background: #10b981; }
+        .btn-secondary { background: #64748b; color: white; }
+        .btn-action { background: var(--warning); color: #fff;}
+        .btn-magic { background: linear-gradient(135deg, #8b5cf6, #d946ef); }
+        .btn-outline { background: var(--surface); border: 1px solid var(--border); color: var(--text); }
+        .btn-mini { font-size: 11px; padding: 6px 4px; }
+        
+        input[type="file"] { display: none; }
+
+        /* --- MODALS --- */
+        .overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: flex-end; z-index: 50; }
+        .overlay.active { display: flex; }
+        .modal { background: var(--surface); width: 100%; max-height: 85vh; border-radius: 16px 16px 0 0; padding: 16px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; padding-bottom: 25px; }
+        .modal h2 { font-size: 16px; margin: 0;}
+        .modal input[type="text"], .modal input[type="number"], .modal select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; outline: none; background: white;}
+        .radio-group { display: flex; flex-direction: column; gap: 6px; margin-top: 2px; }
+        .radio-label { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; padding: 6px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg);}
+        .history-item { padding: 10px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; background: var(--bg); cursor: pointer; }
+        .history-item h4 { margin: 0; font-size: 13px; color: var(--text); margin-bottom: 2px;}
+        .history-item span { font-size: 11px; color: var(--text-light); }
+    </style>
+</head>
+<body>
+
+    <div id="start-overlay" onclick="enterApp()">
+        <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 50%; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.2);">
+            <svg width="40" height="40" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </div>
+        <h1>Eprashala OCR</h1>
+        <p>Tap anywhere to initialize</p>
+        <p style="font-size: 0.75rem; color: #475569; margin-top: 10px;">Enables Fullscreen & Keeps Screen Awake</p>
+    </div>
+
+    <header>
+        <h1>Eprashala OCR</h1>
+        <div class="header-controls">
+            <select id="ocrLangSelect" class="header-lang-select" title="Document Language">
+                <option value="eng">English</option>
+                <option value="mar">Marathi</option>
+                <option value="hin">Hindi</option>
+                <option value="guj">Gujarati</option>
+                <option value="tam">Tamil</option>
+                <option value="tel">Telugu</option>
+                <option value="kan">Kannada</option>
+                <option value="mal">Malayalam</option>
+                <option value="ben">Bengali</option>
+                <option value="pan">Punjabi</option>
+                <option value="ori">Odia</option>
+            </select>
+            <button class="icon-btn" onclick="openSettings()" title="Settings & History">⚙️</button>
+        </div>
+    </header>
+
+    <main id="screen-home" class="screen active">
+        <div class="instructions">
+            <h2>Welcome Student!</h2>
+            <p>1. Ensure your document language is selected above.<br>2. Tap 'Take Photo' or 'Upload'.<br>3. Adjust the crop and apply filters.</p>
+        </div>
+        
+        <div id="cameraWrapper">
+            <video id="cameraFeed" autoplay playsinline></video>
+            <div id="cameraControls">
+                <div class="camera-control-row">
+                    <button id="flashBtn" onclick="toggleFlash()">🔦 Flash Off</button>
+                    <div class="zoom-wrapper" id="zoomWrapper">
+                        🔍 <input type="range" id="zoomSlider" min="1" max="5" step="0.1" value="1">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <main id="screen-tune" class="screen">
+        <div class="canvas-container" id="canvasContainer">
+            <canvas id="displayCanvas"></canvas>
+        </div>
+    </main>
+
+    <main id="screen-result" class="screen">
+        <div class="tab-bar">
+            <button class="tab-btn active" onclick="switchTab('extracted')" id="tab-extracted">Original</button>
+            <button class="tab-btn" onclick="switchTab('translated')" id="tab-translated">Translated</button>
+            <button class="tab-btn" onclick="switchTab('summary')" id="tab-summary">AI Output</button>
+        </div>
+
+        <div id="pane-extracted" class="tab-pane active">
+            <div id="ocrLoader" class="loader">Loading language pack... please wait.</div>
+            <div class="textarea-wrapper">
+                <textarea id="extractedText" class="full-textarea" placeholder="Scanned text will appear here..."></textarea>
+                <button class="tts-fab" id="tts-extractedText" onclick="toggleRead('extractedText')">🔊</button>
+            </div>
+        </div>
+
+        <div id="pane-translated" class="tab-pane">
+            <div class="pane-actions">
+                <select id="languageSelect" class="action-select">
+                    <option value="mr">Marathi</option>
+                    <option value="hi">Hindi</option>
+                    <option value="gu">Gujarati</option>
+                    <option value="te">Telugu</option>
+                    <option value="ta">Tamil</option>
+                    <option value="kn">Kannada</option>
+                    <option value="en">English</option>
+                </select>
+                <button class="btn btn-primary" style="flex: 0.5;" onclick="translateText()">Translate</button>
+            </div>
+            <div class="textarea-wrapper">
+                <textarea id="translatedText" class="full-textarea" placeholder="Select a language and tap Translate..."></textarea>
+                <button class="tts-fab" id="tts-translatedText" onclick="toggleRead('translatedText')">🔊</button>
+            </div>
+        </div>
+
+        <div id="pane-summary" class="tab-pane">
+            <div class="pane-actions">
+                <input type="text" id="customPrompt" placeholder="e.g. Write a 100-word essay based on this..." style="flex: 1; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); font-size: 13px; outline: none;">
+                <button class="btn btn-magic" style="flex: 0 0 45px; border-radius: 6px; padding: 0; font-size: 18px; display: flex; align-items: center; justify-content: center;" onclick="executeAIAction()" title="Run AI">✨</button>
+            </div>
+            <div id="summaryLoader" class="loader">Communicating with Server...</div>
+            <div class="textarea-wrapper">
+                <textarea id="summaryText" class="full-textarea" placeholder="Your AI output will appear here..."></textarea>
+                <button class="tts-fab" id="tts-summaryText" onclick="toggleRead('summaryText')">🔊</button>
+            </div>
+        </div>
+    </main>
+
+    <div class="bottom-bar" id="nav-home">
+        <button class="btn btn-primary" onclick="initCamera()">📸 Take Photo</button>
+        <label class="btn btn-outline file-label">
+            📁 Upload
+            <input type="file" id="imageUpload" accept="image/*">
+        </label>
+    </div>
+
+    <div class="bottom-bar stacked-bar" id="nav-tune" style="display: none;">
+        <div id="cropControls" style="display: flex; gap: 8px; width: 100%;">
+            <button class="btn btn-outline" style="flex: 0.4;" onclick="goBack('home')">Cancel</button>
+            <button class="btn btn-success" onclick="applyCrop()">✂️ Confirm Crop</button>
+        </div>
+
+        <div id="filterControls" style="display: none; flex-direction: column; gap: 8px; width: 100%;">
+            <div class="filter-types">
+                <button class="filter-type-btn active" onclick="setFilterMode('original')" id="f-original">Original</button>
+                <button class="filter-type-btn" onclick="setFilterMode('grayscale')" id="f-grayscale">Grayscale</button>
+                <button class="filter-type-btn" onclick="setFilterMode('bw')" id="f-bw">B/W Text</button>
+            </div>
+            
+            <div class="slider-wrapper" id="sliderWrapper" style="display: none;">
+                <div class="slider-header">
+                    <span>B/W Threshold</span>
+                    <span id="thresholdValue">128</span>
+                </div>
+                <input type="range" id="thresholdSlider" min="0" max="255" value="128" oninput="processFilter()">
+            </div>
+            
+            <div class="button-row">
+                <button class="btn btn-outline btn-mini" style="flex: 0.5;" onclick="resetToCrop()">⬅ Crop</button>
+                <button class="btn btn-action btn-mini" onclick="executeOCR()">⚙️ Text OCR</button>
+                <button class="btn btn-magic btn-mini" onclick="prepareDirectVision()">✨ Direct AI</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-bar" id="nav-result" style="display: none;">
+        <button class="btn btn-outline" style="flex: 1;" onclick="goBack('tune')">⬅ Back</button>
+        <button class="btn btn-secondary" style="flex: 1;" onclick="exportPDF()">📄 PDF</button>
+        <button class="btn btn-primary" style="flex: 1;" onclick="promptSaveHistory()">💾 Save</button>
+    </div>
+
+    <div class="overlay" id="settingsOverlay">
+        <div class="modal">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2>Settings & History</h2>
+                <button class="icon-btn" onclick="closeSettings()">❌</button>
+            </div>
+            <hr style="border: 0; border-top: 1px solid var(--border);">
+            
+            <label style="font-weight: 600; font-size: 13px;">Personalization (Shapes AI responses)</label>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="userNameInput" placeholder="Your Name" style="flex: 1;">
+                <input type="number" id="userAgeInput" placeholder="Age" style="flex: 0.5;">
+            </div>
+
+            <label style="font-weight: 600; font-size: 13px; margin-top: 5px;">Text-to-Speech Engine</label>
+            <select id="ttsEngineSelect">
+                <option value="native">Native Device Voice (Fast/Offline)</option>
+                <option value="cloud">Google Cloud Voice (Requires Internet)</option>
+            </select>
+
+            <label style="font-weight: 600; font-size: 13px; margin-top: 5px;">AI Backend</label>
+            <div class="radio-group">
+                <label class="radio-label">
+                    <input type="radio" name="apiChoice" id="useProxy" value="proxy" checked onchange="toggleApiInput()">
+                    Eprashala Cloud Proxy (Free)
+                </label>
+                <label class="radio-label">
+                    <input type="radio" name="apiChoice" id="useDirect" value="direct" onchange="toggleApiInput()">
+                    Personal Gemini API Key
+                </label>
+            </div>
+            <div id="apiKeySection" style="display: none; flex-direction: column; gap: 6px;">
+                <input type="text" id="apiKeyInput" placeholder="Paste Gemini API Key...">
+            </div>
+            
+            <button class="btn btn-primary" style="margin-top: 4px;" onclick="saveSettings()">Save Settings</button>
+            <hr style="border: 0; border-top: 1px solid var(--border); margin-top: 4px;">
+            <h3 style="font-size: 15px;">Saved Scans</h3>
+            <div id="historyList" style="max-height: 150px; overflow-y: auto;"></div>
+        </div>
+    </div>
+
+<script>
+    // ==========================================
+    // KIOSK MODE & WAKE LOCK ENGINE
+    // ==========================================
+    let wakeLock = null;
+    async function requestWakeLock() {
+        try { 
+            if ('wakeLock' in navigator) { 
+                if (wakeLock !== null) return;
+                wakeLock = await navigator.wakeLock.request('screen'); 
+                wakeLock.addEventListener('release', () => { wakeLock = null; });
+            } 
+        } catch (err) { console.warn('Wake Lock Error:', err.message); }
+    }
+
+    function enforceFullscreen() {
+        const docElm = document.documentElement;
+        if (!document.fullscreenElement) {
+            if (docElm.requestFullscreen) docElm.requestFullscreen().catch(() => {});
+            else if (docElm.webkitRequestFullscreen) docElm.webkitRequestFullscreen();
+        }
+    }
+
+    function enterApp() {
+        document.getElementById('start-overlay').style.display = 'none';
+        enforceFullscreen();
+        requestWakeLock();
+        
+        // Unlock Audio Context silently
+        if (window.speechSynthesis) {
+            const silent = new SpeechSynthesisUtterance('');
+            silent.volume = 0; window.speechSynthesis.speak(silent);
+        }
+        currentAudio.play().catch(()=>{}); currentAudio.pause(); currentAudio.src = "";
+    }
+
+    document.addEventListener('click', () => {
+        if (document.getElementById('start-overlay').style.display === 'none') {
+            if (!document.fullscreenElement) enforceFullscreen();
+        }
+    }, { capture: true, passive: true });
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') requestWakeLock();
+    });
+
+    // --- STATE MANAGEMENT ---
+    let isExtracting = false; 
+    let aiProcessingMode = 'text'; 
+
+    function showScreen(screenName) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.bottom-bar').forEach(b => b.style.display = 'none');
+        document.getElementById(`screen-${screenName}`).classList.add('active');
+        document.getElementById(`nav-${screenName}`).style.display = 'flex';
+        stopTTS();
+    }
+
+    function goBack(target) {
+        if (isExtracting) { alert("Please wait for processing to finish before navigating."); return; }
+        if(target === 'home') {
+            document.getElementById('cameraWrapper').style.display = 'none';
+            if(stream) { stream.getTracks().forEach(t => t.stop()); }
+            document.querySelector('.instructions').style.display = 'block';
+        } else if (target === 'tune') {
+            resetToFilter(); 
+        }
+        showScreen(target);
+    }
+
+    function switchTab(tabId) {
+        stopTTS();
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(`tab-${tabId}`).classList.add('active');
+        document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+        document.getElementById(`pane-${tabId}`).classList.add('active');
+    }
+
+    // --- CAMERA PIPELINE ---
+    const video = document.getElementById('cameraFeed');
+    let stream, videoTrack;
+    let isFlashOn = false;
+    const MAX_IMAGE_SIZE = 1920; 
+
+    async function initCamera() {
+        document.querySelector('.instructions').style.display = 'none';
+        document.getElementById('cameraWrapper').style.display = 'block';
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 4096 }, height: { ideal: 2160 } } });
+            video.srcObject = stream;
+            videoTrack = stream.getVideoTracks()[0];
+            setTimeout(setupCameraHardware, 500);
+            const btn = document.querySelector('#nav-home .btn-primary');
+            btn.innerHTML = "📸 Capture"; btn.onclick = captureFrame;
+        } catch (err) { alert("Camera error. Ensure you are on HTTPS and have granted permissions."); }
+    }
+
+    function setupCameraHardware() {
+        const capabilities = videoTrack.getCapabilities();
+        const settings = videoTrack.getSettings();
+        const controlsDiv = document.getElementById('cameraControls');
+        let showControls = false;
+
+        if (capabilities.torch) { document.getElementById('flashBtn').style.display = 'block'; showControls = true; }
+        if (capabilities.zoom) {
+            const zoomWrapper = document.getElementById('zoomWrapper');
+            const zoomSlider = document.getElementById('zoomSlider');
+            zoomWrapper.style.display = 'flex'; showControls = true;
+            zoomSlider.min = capabilities.zoom.min; zoomSlider.max = capabilities.zoom.max; zoomSlider.step = capabilities.zoom.step; zoomSlider.value = settings.zoom || 1;
+            zoomSlider.oninput = (e) => { videoTrack.applyConstraints({ advanced: [{ zoom: e.target.value }] }); };
+        }
+        if (showControls) controlsDiv.style.display = 'flex';
+    }
+
+    function toggleFlash() {
+        if (!videoTrack) return;
+        isFlashOn = !isFlashOn;
+        videoTrack.applyConstraints({ advanced: [{ torch: isFlashOn }] });
+        const flashBtn = document.getElementById('flashBtn');
+        flashBtn.innerText = isFlashOn ? '🔦 Flash On' : '🔦 Flash Off';
+        flashBtn.style.background = isFlashOn ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.2)';
+    }
+
+    function captureFrame() {
+        if (!video.videoWidth) { alert("Camera is not ready yet."); return; }
+        if(isFlashOn) toggleFlash();
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = video.videoWidth; tempCanvas.height = video.videoHeight;
+        tempCanvas.getContext('2d').drawImage(video, 0, 0);
+        const btn = document.querySelector('#nav-home .btn-primary');
+        btn.innerHTML = "📸 Take Photo"; btn.onclick = initCamera;
+        loadAndPrepareImage(tempCanvas);
+    }
+
+    document.getElementById('imageUpload').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const img = new Image();
+            img.onload = function() { 
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = img.width; tempCanvas.height = img.height;
+                tempCanvas.getContext('2d').drawImage(img, 0, 0);
+                loadAndPrepareImage(tempCanvas); 
+            }
+            img.src = event.target.result;
+        }
+        reader.readAsDataURL(file);
+    });
+
+    // --- CROP & FILTER ENGINE ---
+    const canvas = document.getElementById('displayCanvas');
+    const ctx = canvas.getContext('2d');
+    let originalImageData = null, croppedImageData = null, currentFilterMode = 'original', isCropMode = true;
+    let corners = [], draggingCorner = null;
+
+    function loadAndPrepareImage(sourceCanvas) {
+        let width = sourceCanvas.width, height = sourceCanvas.height;
+        if (width > MAX_IMAGE_SIZE || height > MAX_IMAGE_SIZE) {
+            const ratio = Math.min(MAX_IMAGE_SIZE / width, MAX_IMAGE_SIZE / height);
+            width = Math.round(width * ratio); height = Math.round(height * ratio);
+        }
+        canvas.width = width; canvas.height = height;
+        ctx.drawImage(sourceCanvas, 0, 0, width, height);
+        originalImageData = ctx.getImageData(0, 0, width, height);
+        if(stream) { stream.getTracks().forEach(t => t.stop()); document.getElementById('cameraWrapper').style.display = 'none'; }
+        resetToCrop(); showScreen('tune');
+    }
+
+    function resetToCrop() {
+        isCropMode = true;
+        document.getElementById('cropControls').style.display = 'flex';
+        document.getElementById('filterControls').style.display = 'none';
+        const w = canvas.width, h = canvas.height, pad = Math.min(w, h) * 0.1;
+        corners = [{x: pad, y: pad}, {x: w - pad, y: pad}, {x: w - pad, y: h - pad}, {x: pad, y: h - pad}];
+        renderCanvas();
+    }
+
+    function renderCanvas() {
+        if (!originalImageData) return;
+        if (isCropMode) {
+            ctx.putImageData(originalImageData, 0, 0);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.save(); ctx.globalCompositeOperation = 'destination-out'; ctx.beginPath();
+            ctx.moveTo(corners[0].x, corners[0].y); for(let i=1; i<4; i++) ctx.lineTo(corners[i].x, corners[i].y);
+            ctx.closePath(); ctx.fill(); ctx.restore();
+            ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 3; ctx.beginPath();
+            ctx.moveTo(corners[0].x, corners[0].y); for(let i=1; i<4; i++) ctx.lineTo(corners[i].x, corners[i].y);
+            ctx.closePath(); ctx.stroke();
+            ctx.fillStyle = '#ffffff'; corners.forEach(p => { ctx.beginPath(); ctx.arc(p.x, p.y, 12, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); });
+        } else { processFilter(); }
+    }
+
+    function getCanvasPos(e) {
+        const rect = canvas.getBoundingClientRect(), scaleX = canvas.width / rect.width, scaleY = canvas.height / rect.height;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX, clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+    }
+
+    function handleStart(e) {
+        if (!isCropMode) return;
+        const pos = getCanvasPos(e), hitRadius = 50 * (canvas.width / canvas.clientWidth); 
+        let minDist = hitRadius; draggingCorner = null;
+        corners.forEach(c => { const dist = Math.hypot(c.x - pos.x, c.y - pos.y); if (dist < minDist) { minDist = dist; draggingCorner = c; }});
+        if(draggingCorner && e.cancelable) e.preventDefault();
+    }
+
+    function handleMove(e) {
+        if (!isCropMode || !draggingCorner) return;
+        if (e.cancelable) e.preventDefault();
+        const pos = getCanvasPos(e);
+        draggingCorner.x = Math.max(0, Math.min(canvas.width, pos.x)); draggingCorner.y = Math.max(0, Math.min(canvas.height, pos.y));
+        renderCanvas();
+    }
+
+    function handleEnd() { draggingCorner = null; }
+    canvas.addEventListener('touchstart', handleStart, {passive: false}); canvas.addEventListener('touchmove', handleMove, {passive: false}); canvas.addEventListener('touchend', handleEnd);
+    canvas.addEventListener('mousedown', handleStart); canvas.addEventListener('mousemove', handleMove); canvas.addEventListener('mouseup', handleEnd);
+
+    function applyCrop() {
+        let minX = canvas.width, minY = canvas.height, maxX = 0, maxY = 0;
+        corners.forEach(c => { if(c.x < minX) minX = c.x; if(c.x > maxX) maxX = c.x; if(c.y < minY) minY = c.y; if(c.y > maxY) maxY = c.y; });
+        const cropW = maxX - minX, cropH = maxY - minY;
+        const tCtx = document.createElement('canvas').getContext('2d');
+        tCtx.canvas.width = cropW; tCtx.canvas.height = cropH;
+        tCtx.fillStyle = '#ffffff'; tCtx.fillRect(0, 0, cropW, cropH);
+        tCtx.save(); tCtx.beginPath(); tCtx.moveTo(corners[0].x - minX, corners[0].y - minY);
+        for(let i=1; i<4; i++) tCtx.lineTo(corners[i].x - minX, corners[i].y - minY);
+        tCtx.closePath(); tCtx.clip();
+        const origCanvas = document.createElement('canvas'); origCanvas.width = canvas.width; origCanvas.height = canvas.height;
+        origCanvas.getContext('2d').putImageData(originalImageData, 0, 0);
+        tCtx.drawImage(origCanvas, -minX, -minY); tCtx.restore();
+        canvas.width = cropW; canvas.height = cropH;
+        croppedImageData = tCtx.getImageData(0, 0, cropW, cropH);
+        resetToFilter();
+    }
+
+    function resetToFilter() {
+        isCropMode = false; document.getElementById('cropControls').style.display = 'none'; document.getElementById('filterControls').style.display = 'flex'; setFilterMode('original'); 
+    }
+
+    function setFilterMode(mode) {
+        currentFilterMode = mode; document.querySelectorAll('.filter-type-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(`f-${mode}`).classList.add('active');
+        document.getElementById('sliderWrapper').style.display = (mode === 'bw') ? 'flex' : 'none'; renderCanvas();
+    }
+
+    function processFilter() {
+        if (!croppedImageData) return;
+        const w = croppedImageData.width, h = croppedImageData.height;
+        if (canvas.width !== w) { canvas.width = w; canvas.height = h; }
+        const outData = new ImageData(new Uint8ClampedArray(croppedImageData.data), w, h), data = outData.data;
+        const threshold = parseInt(document.getElementById('thresholdSlider').value); document.getElementById('thresholdValue').innerText = threshold;
+
+        if (currentFilterMode === 'grayscale') {
+            for (let i = 0; i < data.length; i += 4) { const lum = data[i]*0.299 + data[i+1]*0.587 + data[i+2]*0.114; data[i] = data[i+1] = data[i+2] = lum; }
+        } else if (currentFilterMode === 'bw') {
+            for (let i = 0; i < data.length; i += 4) { const lum = data[i]*0.299 + data[i+1]*0.587 + data[i+2]*0.114; const c = lum > threshold ? 255 : 0; data[i] = data[i+1] = data[i+2] = c; }
+        }
+        ctx.putImageData(outData, 0, 0);
+    }
+
+    // --- STANDARD TESSERACT OCR ENGINE ---
+    async function executeOCR() {
+        if (isExtracting) return;
+        isExtracting = true; aiProcessingMode = 'text'; 
+        
+        document.getElementById('customPrompt').placeholder = "Ask AI about the extracted text...";
+        const finalImageBase64 = canvas.toDataURL('image/png'); 
+        showScreen('result'); switchTab('extracted'); 
+        
+        const loader = document.getElementById('ocrLoader'), extText = document.getElementById('extractedText'), selectedLang = document.getElementById('ocrLangSelect').value;
+        extText.value = ""; loader.style.display = "block"; loader.innerText = `Downloading/Loading '${selectedLang}' language...`;
+
+        try {
+            const worker = await Tesseract.createWorker({ logger: m => { if (m.status === 'recognizing text') loader.innerText = `Extracting Text... ${Math.round(m.progress * 100)}%`; else loader.innerText = m.status; } });
+            await worker.loadLanguage(selectedLang); await worker.initialize(selectedLang); await worker.setParameters({ tessedit_pageseg_mode: '1', preserve_interword_spaces: '1' });
+            const result = await worker.recognize(finalImageBase64);
+            extText.value = result.data.text; await worker.terminate();
+        } catch (error) { extText.value = `Error: ${error.message}`; } finally { loader.style.display = "none"; isExtracting = false; }
+    }
+
+    // --- PREPARE DIRECT AI VISION ---
+    function prepareDirectVision() {
+        if (isExtracting) return;
+        aiProcessingMode = 'image'; 
+        document.getElementById('customPrompt').placeholder = "Ask AI about this image...";
+        document.getElementById('summaryText').value = "Image filtered and ready for Direct AI. Type your instructions above and tap ✨.";
+        showScreen('result'); switchTab('summary');
+    }
+
+    function executeAIAction() { aiProcessingMode === 'image' ? executeDirectVision() : summarizeText(); }
+
+    // --- AI PROMPT CONTEXT GENERATOR ---
+    function getPersonaContext() {
+        const userName = document.getElementById('userNameInput').value.trim();
+        const userAge = document.getElementById('userAgeInput').value.trim();
+        if (userName || userAge) {
+            return `\n\nContext: The reader's name is ${userName || 'User'} and they are ${userAge ? userAge + ' years old' : 'of an unknown age'}. Ensure the vocabulary, tone, and complexity perfectly match their age and understanding level, addressing them by name if appropriate.`;
+        }
+        return "";
+    }
+
+    // --- DIRECT AI VISION MULTIMODAL ENGINE ---
+    async function executeDirectVision() {
+        if (isExtracting) return;
+        isExtracting = true;
+        
+        const finalImageBase64 = canvas.toDataURL('image/png'); 
+        const loader = document.getElementById('summaryLoader'), summaryTextArea = document.getElementById('summaryText');
+        const useProxy = document.getElementById('useProxy').checked, key = document.getElementById('apiKeyInput').value;
+        
+        if (!useProxy && (!key || key.trim() === "")) { alert("Please provide a Gemini API Key in Settings, or select Eprashala Proxy."); openSettings(); isExtracting = false; return; }
+
+        const customInstruction = document.getElementById('customPrompt').value.trim() || "Extract all the text from this image and provide a well-formatted summary of it in a single paragraph. Maintain the original language context of the document.";
+        const promptText = `${customInstruction}. Please format cleanly and do not use excessive markdown symbols like asterisks or brackets:${getPersonaContext()}`;
+
+        summaryTextArea.value = ""; loader.style.display = "block"; loader.innerText = "Analyzing image with AI Vision...";
+
+        try {
+            const base64Data = finalImageBase64.split(',')[1];
+            const payload = { model: "gemini-3.1-flash-lite", contents: [{ role: "user", parts: [{ inlineData: { mimeType: "image/png", data: base64Data } }, { text: promptText }] }] };
+            let url = "", headers = { 'Content-Type': 'application/json' };
+
+            if (useProxy) {
+                url = "https://eprashala.pythonanywhere.com/api/chat";
+                if (key && key.trim().length > 10) headers['X-Custom-Api-Key'] = key.trim();
+            } else { url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${key.trim()}`; }
+
+            const response = await fetch(url, { method: 'POST', headers: headers, body: JSON.stringify(payload) });
+            const data = await response.json();
+            if(data.error) throw new Error(data.error.message);
+            
+            if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
+                summaryTextArea.value = data.candidates[0].content.parts[0].text.replace(/```html/gi, '').replace(/```/g, '').trim();
+            } else { summaryTextArea.value = data.summary || data.response || data.reply || data.text || JSON.stringify(data); }
+        } catch (error) { summaryTextArea.value = `Vision API Error: ${error.message}. If using proxy, it may only support text. Try using a personal API key.`; console.error(error); } finally { loader.style.display = "none"; isExtracting = false; }
+    }
+
+    // --- AI SUMMARIZATION (FROM TEXT) ---
+    async function summarizeText() {
+        if (isExtracting) { alert("Please wait for processing to finish."); return; }
+        
+        const text = document.getElementById('extractedText').value, useProxy = document.getElementById('useProxy').checked, key = document.getElementById('apiKeyInput').value;
+        const textArea = document.getElementById('summaryText'), loader = document.getElementById('summaryLoader');
+        
+        if (!text) { alert("Please extract text first."); return; }
+        if (!useProxy && (!key || key.trim() === "")) { alert("Please provide a Gemini API Key in Settings."); openSettings(); return; }
+
+        loader.style.display = "block"; textArea.value = "";
+        const safeText = text.substring(0, 3000).trim();
+        const customInstruction = document.getElementById('customPrompt').value.trim() || "Summarize this text in a short, clear, well-formatted paragraph";
+
+        try {
+            const promptText = `${customInstruction}. Please format cleanly and do not use excessive markdown symbols like asterisks or brackets:${getPersonaContext()}\n\n${safeText}`;
+            const payload = { model: "gemini-3.1-flash-lite", contents: [{ role: "user", parts: [{ text: "Please process the input." }] }], systemInstruction: { parts: [{ text: promptText }] } };
+            let url = "", headers = { 'Content-Type': 'application/json' };
+
+            if (useProxy) {
+                url = "https://eprashala.pythonanywhere.com/api/chat";
+                if (key && key.trim().length > 10) headers['X-Custom-Api-Key'] = key.trim();
+            } else { url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${key.trim()}`; }
+
+            const response = await fetch(url, { method: 'POST', headers: headers, body: JSON.stringify(payload) });
+            const data = await response.json();
+            if(data.error) throw new Error(data.error.message);
+            
+            if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
+                textArea.value = data.candidates[0].content.parts[0].text.replace(/```html/gi, '').replace(/```/g, '').trim();
+            } else { textArea.value = data.summary || data.response || data.reply || data.text || JSON.stringify(data); }
+        } catch (error) { textArea.value = `Server Error: Ensure your proxy is running. Details: ${error.message}`; console.error(error); } finally { loader.style.display = "none"; }
+    }
+
+    // --- DUAL TTS ENGINE (Cloud & Native) ---
+    let currentReadingId = null;
+    let ttsStatus = 'STOPPED'; 
+    let currentAudio = new Audio();
+    let audioChunks = [];
+    let currentChunkIndex = 0;
+    let currentLangCode = 'en';
+    let currentActiveBtn = null;
+
+    function chunkText(text, maxLength = 180) {
+        const regex = /[^.?!।,\n]+[.?!।,\n]*/g;
+        let chunks = []; let currentChunk = ""; let match;
+        while ((match = regex.exec(text)) !== null) {
+            let sentence = match[0];
+            if (currentChunk.length + sentence.length > maxLength) { if (currentChunk) chunks.push(currentChunk.trim()); currentChunk = sentence; } else { currentChunk += sentence; }
+        }
+        if (currentChunk) chunks.push(currentChunk.trim());
+        if (chunks.length === 0 && text.trim().length > 0) chunks.push(text.trim());
+        return chunks;
+    }
+
+    function toggleRead(elementId) {
+        const text = document.getElementById(elementId).value;
+        const btn = document.getElementById(`tts-${elementId}`);
+        const engine = document.getElementById('ttsEngineSelect').value || 'native';
+        if (!text) return;
+
+        if (currentReadingId === elementId) {
+            if (ttsStatus === 'PLAYING') {
+                if (engine === 'native') window.speechSynthesis.pause(); else currentAudio.pause();
+                ttsStatus = 'PAUSED'; btn.innerText = '▶️'; return;
+            } else if (ttsStatus === 'PAUSED') {
+                if (engine === 'native') window.speechSynthesis.resume(); else currentAudio.play();
+                ttsStatus = 'PLAYING'; btn.innerText = '⏸️'; return;
+            }
+        }
+
+        stopTTS();
+        currentReadingId = elementId; currentActiveBtn = btn; ttsStatus = 'PLAYING'; btn.innerText = '⏸️';
+
+        // SANITIZER: Strip markdown before reading
+        const cleanText = text.replace(/[*_<>{}\[\]()\-#]/g, ' ').replace(/\s+/g, ' ').trim();
+
+        let langCode = 'en-US';
+        if (elementId === 'translatedText') { langCode = document.getElementById('languageSelect').value; } 
+        else if (elementId === 'extractedText') {
+            const langMap = { 'eng':'en-US', 'mar':'mr-IN', 'hin':'hi-IN', 'guj':'gu-IN', 'tam':'ta-IN', 'tel':'te-IN', 'kan':'kn-IN', 'mal':'ml-IN', 'ben':'bn-IN', 'pan':'pa-IN' };
+            langCode = langMap[document.getElementById('ocrLangSelect').value] || 'en-US';
+        }
+
+        if (engine === 'cloud') {
+            currentLangCode = langCode.split('-')[0]; // Map to Google Translate ISO ('mr', 'hi', 'en')
+            audioChunks = chunkText(cleanText, 180);
+            currentChunkIndex = 0;
+            playNextChunk();
+        } else {
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            utterance.lang = langCode;
+            utterance.onend = stopTTS; utterance.onerror = stopTTS;
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    function playNextChunk() {
+        if (currentChunkIndex >= audioChunks.length || ttsStatus === 'STOPPED') { stopTTS(); return; }
+        const url = `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=${currentLangCode}&q=${encodeURIComponent(audioChunks[currentChunkIndex])}`;
+        currentAudio.src = url;
+        currentAudio.play().catch(() => { setTimeout(() => { currentChunkIndex++; playNextChunk(); }, 300); });
+        currentAudio.onended = () => { currentChunkIndex++; playNextChunk(); };
+    }
+
+    function stopTTS() {
+        window.speechSynthesis.cancel();
+        currentAudio.pause(); currentAudio.src = '';
+        ttsStatus = 'STOPPED'; currentReadingId = null; currentActiveBtn = null;
+        document.querySelectorAll('.tts-fab').forEach(b => b.innerText = '🔊');
+    }
+
+    // --- TRANSLATION API ---
+    async function translateText() {
+        if (isExtracting) { alert("Please wait for text extraction to finish."); return; }
+        const sourceText = document.getElementById('extractedText').value;
+        if (!sourceText) { alert("Please extract text first."); return; }
+        const targetLang = document.getElementById('languageSelect').value;
+        const tesseractLang = document.getElementById('ocrLangSelect').value;
+        const langMap = { 'eng':'en', 'mar':'mr', 'hin':'hi', 'guj':'gu', 'tam':'ta', 'tel':'te', 'kan':'kn', 'mal':'ml', 'ben':'bn', 'pan':'pa', 'ori':'or' };
+        const sourceLang = langMap[tesseractLang] || 'en';
+
+        if (sourceLang === targetLang) { alert("Source document and target translation language are the same."); return; }
+
+        const textArea = document.getElementById('translatedText'); textArea.value = "Translating...";
+        const chunks = sourceText.match(/[^.!?\n]+[.!?\n]+/g) || [sourceText]; 
+        let finalTranslation = "";
+        
+        try {
+            for (let chunk of chunks) {
+                if(chunk.trim() === "") continue;
+                const apiUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunk)}&langpair=${sourceLang}|${targetLang}`;
+                const response = await fetch(apiUrl); const data = await response.json();
+                if (data?.responseData?.translatedText) finalTranslation += data.responseData.translatedText + " ";
+                await new Promise(r => setTimeout(r, 250)); 
+            }
+            textArea.value = finalTranslation.trim();
+        } catch (error) { textArea.value = "Translation Error."; }
+    }
+
+    // --- PDF EXPORT ENGINE (A4 Formatting) ---
+    function exportPDF() {
+        let contentToExport = "", title = "Document";
+        if (document.getElementById('tab-extracted').classList.contains('active')) { contentToExport = document.getElementById('extractedText').value; title = "Extracted Text"; } 
+        else if (document.getElementById('tab-translated').classList.contains('active')) { contentToExport = document.getElementById('translatedText').value; title = "Translated Text"; } 
+        else { contentToExport = document.getElementById('summaryText').value; title = "AI Document"; }
+
+        if (!contentToExport || !contentToExport.trim()) { alert("There is no text to export from this tab."); return; }
+
+        // Sanitize markdown for PDF rendering
+        const cleanContent = contentToExport.replace(/[*_#`~]/g, '');
+
+        const element = document.createElement('div');
+        element.innerHTML = `
+            <div style="padding: 30px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #0f172a; line-height: 1.6; text-align: justify;">
+                <h2 style="color: #2563eb; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 20px;">Eprashala OCR - ${title}</h2>
+                <div style="white-space: pre-wrap; font-size: 14px;">${cleanContent}</div>
+                <div style="margin-top: 50px; font-size: 10px; color: #64748b; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 10px;">
+                    Generated by Eprashala OCR Scanner • ${new Date().toLocaleString()}
+                </div>
+            </div>`;
+        
+        html2pdf().set({
+            margin: 0.5, filename: `Eprashala_${title.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+        }).from(element).save();
+    }
+
+    // --- INDEXED DB ---
+    let db;
+    const request = indexedDB.open("EprashalaDB", 1);
+    request.onupgradeneeded = (e) => { db = e.target.result; db.createObjectStore("history", { keyPath: "id", autoIncrement: true }); };
+    request.onsuccess = (e) => { db = e.target.result; };
+
+    function promptSaveHistory() {
+        if (isExtracting) { alert("Please wait for processing to finish."); return; }
+        const name = prompt("Name this scan (e.g., 'Science Chapter 4'):", `Scan ${new Date().toLocaleDateString()}`);
+        if(!name) return;
+        const record = { title: name, date: new Date().toLocaleString(), image: canvas.toDataURL('image/png'), extracted: document.getElementById('extractedText').value, translated: document.getElementById('translatedText').value, summary: document.getElementById('summaryText').value };
+        const tx = db.transaction("history", "readwrite");
+        tx.objectStore("history").add(record);
+        tx.oncomplete = () => { alert("Saved to phone memory!"); loadHistoryList(); };
+    }
+
+    function loadHistoryList() {
+        if(!db) return;
+        const tx = db.transaction("history", "readonly");
+        const req = tx.objectStore("history").getAll();
+        req.onsuccess = () => {
+            const list = document.getElementById('historyList'); list.innerHTML = "";
+            req.result.reverse().forEach(item => {
+                const div = document.createElement('div'); div.className = "history-item";
+                div.innerHTML = `<div><h4>${item.title}</h4><span>${item.date}</span></div> <button class="btn btn-outline" style="padding: 4px 10px; font-size:11px;" onclick="loadRecord(${item.id})">Open</button>`;
+                list.appendChild(div);
+            });
+        };
+    }
+
+    function loadRecord(id) {
+        const tx = db.transaction("history", "readonly");
+        const req = tx.objectStore("history").get(id);
+        req.onsuccess = () => {
+            const data = req.result; if(!data) return;
+            document.getElementById('extractedText').value = data.extracted || ""; document.getElementById('translatedText').value = data.translated || ""; document.getElementById('summaryText').value = data.summary || "";
+            closeSettings(); showScreen('result'); switchTab('extracted');
+        };
+    }
+
+    // --- SETTINGS OVERLAY ---
+    function toggleApiInput() { document.getElementById('apiKeySection').style.display = document.getElementById('useDirect').checked ? 'flex' : 'none'; }
+    function openSettings() {
+        const savedKey = localStorage.getItem('geminiApiKey'); const savedBackend = localStorage.getItem('summaryBackend') || 'proxy';
+        
+        if (savedKey) document.getElementById('apiKeyInput').value = savedKey;
+        document.getElementById(savedBackend === 'direct' ? 'useDirect' : 'useProxy').checked = true;
+        
+        document.getElementById('userNameInput').value = localStorage.getItem('ocrUserName') || '';
+        document.getElementById('userAgeInput').value = localStorage.getItem('ocrUserAge') || '';
+        document.getElementById('ttsEngineSelect').value = localStorage.getItem('ocrTtsEngine') || 'native';
+
+        toggleApiInput(); document.getElementById('settingsOverlay').classList.add('active'); loadHistoryList();
+    }
+    function closeSettings() { document.getElementById('settingsOverlay').classList.remove('active'); }
+    function saveSettings() {
+        localStorage.setItem('geminiApiKey', document.getElementById('apiKeyInput').value.trim());
+        localStorage.setItem('summaryBackend', document.getElementById('useDirect').checked ? 'direct' : 'proxy');
+        localStorage.setItem('ocrUserName', document.getElementById('userNameInput').value.trim());
+        localStorage.setItem('ocrUserAge', document.getElementById('userAgeInput').value.trim());
+        localStorage.setItem('ocrTtsEngine', document.getElementById('ttsEngineSelect').value);
+        alert("Settings Saved!"); closeSettings();
+    }
+    window.onload = () => {
+        document.getElementById(localStorage.getItem('summaryBackend') === 'direct' ? 'useDirect' : 'useProxy').checked = true;
+        toggleApiInput();
+    }
+</script>
+</body>
+</html>

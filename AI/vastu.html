@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vastu Architecture & AI Analysis Studio</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; display: flex; height: 100vh; background-color: #1e272e; color: #dcdde1; overflow-x: hidden; }
+        
+        .sidebar { width: 280px; background-color: #2f3640; padding: 20px; display: flex; flex-direction: column; gap: 12px; border-right: 2px solid #3d3d3d; box-shadow: 4px 0 15px rgba(0,0,0,0.3); overflow-y: auto; z-index: 10; }
+        .sidebar h3 { margin-top: 0; color: #fbc531; border-bottom: 2px solid #e1b12c; padding-bottom: 8px; font-size: 1.1em; letter-spacing: 0.5px; }
+        .section-label { font-size: 0.85em; text-transform: uppercase; color: #718093; margin-top: 10px; font-weight: bold; }
+        
+        .accordion-header { background-color: #353b48; color: #fbc531; padding: 12px; cursor: pointer; border-radius: 6px; font-weight: bold; font-size: 0.85em; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; border: 1px solid #718093; margin-top: 10px; touch-action: manipulation; }
+        .accordion-content { display: none; flex-direction: column; gap: 10px; padding: 5px 0 0 0; }
+
+        .btn { background-color: #353b48; color: #f5f6fa; border: 1px solid #718093; padding: 12px 14px; cursor: pointer; border-radius: 6px; text-align: left; font-weight: 500; transition: all 0.2s ease; display: flex; justify-content: space-between; align-items: center; touch-action: manipulation; }
+        .btn:hover { background-color: #718093; color: #fff; transform: translateY(-1px); }
+        .btn-room { border-left: 4px solid #fbc531; }
+        .btn-fixture { border-left: 4px solid #00a8ff; }
+        .btn-utility { border-left: 4px solid #4cd137; }
+        .btn-danger { background-color: #c23616; border: none; color: white; text-align: center; justify-content: center; font-weight: bold; }
+        .btn-danger:hover { background-color: #ea2027; }
+        .btn-action { background-color: #e1b12c; color: #2f3640; border: none; font-weight: bold; font-size: 1.05em; text-align: center; justify-content: center; padding: 14px; margin-top: 10px; box-shadow: 0 4px 10px rgba(225,177,44,0.3); }
+        .btn-action:hover { background-color: #fbc531; color: #000; }
+        .btn-align { background-color: #0097e6; color: white; border: none; text-align: center; justify-content: center; font-weight: bold; margin-top: 5px; }
+
+        .main-content { flex: 1; display: flex; flex-direction: column; padding: 20px; background-color: #1e272e; min-width: 0; }
+        .controls { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; background: #2f3640; padding: 15px; border-radius: 8px; border: 1px solid #3d3d3d; }
+        .controls-row { display: flex; align-items: center; gap: 10px; justify-content: space-between; width: 100%; flex-wrap: wrap; }
+        .controls label { font-size: 0.9em; color: #fbc531; font-weight: 600; white-space: nowrap; }
+        .controls input[type="number"] { background: #1e272e; border: 1px solid #718093; padding: 10px; color: #fff; border-radius: 4px; width: 65px; text-align: center; font-size: 16px; }
+        
+        .slider-container { display: flex; align-items: center; gap: 15px; width: 100%; background: #1e272e; padding: 10px 15px; border-radius: 6px; box-sizing: border-box; border: 1px solid #485460; }
+        .slider-container input[type="range"] { flex: 1; accent-color: #e1b12c; height: 6px; }
+        .slider-value { color: #e1b12c; font-weight: bold; min-width: 45px; text-align: right; }
+
+        .canvas-container-wrapper { flex: 1; background: #252c34; border: 2px dashed #485460; border-radius: 8px; display: flex; justify-content: center; align-items: center; position: relative; box-shadow: inset 0 0 20px rgba(0,0,0,0.4); overflow: hidden; touch-action: none; }
+        
+        .settings-panel { width: 320px; background-color: #2f3640; border-left: 2px solid #3d3d3d; padding: 20px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; z-index: 10; }
+        .settings-panel label { font-size: 0.9em; font-weight: bold; color: #fbc531; }
+        .settings-panel input[type="text"], .settings-panel textarea { background: #1e272e; border: 1px solid #718093; padding: 12px; color: white; border-radius: 6px; width: 100%; box-sizing: border-box; font-family: inherit; font-size: 16px; }
+        .settings-panel textarea { height: 120px; resize: vertical; line-height: 1.4; }
+        
+        #ai-response { flex: 1; background: #1e272e; border: 1px solid #485460; border-radius: 6px; padding: 12px; overflow-y: auto; font-size: 0.9em; white-space: pre-wrap; color: #f5f6fa; line-height: 1.5; border-left: 4px solid #4cd137; min-height: 150px; }
+        .loading { display: none; color: #4cd137; font-weight: bold; text-align: center; animation: pulse 1.5s infinite; margin: 10px 0; }
+        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+
+        .report-header { display: flex; justify-content: space-between; align-items: center; }
+        .tts-btn { background-color: #00a8ff; color: white; border: none; padding: 8px 14px; border-radius: 4px; font-size: 0.85em; font-weight: bold; cursor: pointer; display: none; transition: background 0.2s; }
+
+        @media screen and (max-width: 850px) {
+            body { flex-direction: column; height: auto; min-height: 100vh; overflow-y: auto; }
+            .sidebar { width: 100%; border-right: none; border-bottom: 2px solid #3d3d3d; padding: 15px; box-sizing: border-box; display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .sidebar h3, .sidebar .section-label, .sidebar .btn-danger, .sidebar .btn-align, .accordion-header { grid-column: 1 / -1; text-align: center; justify-content: center; }
+            .accordion-content { grid-column: 1 / -1; display: none; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .main-content { padding: 10px; height: 75vh; min-height: 550px; box-sizing: border-box; }
+            .settings-panel { width: 100%; border-left: none; border-top: 2px solid #3d3d3d; box-sizing: border-box; height: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h3>Architectural Elements</h3>
+        
+        <div class="section-label">Habitable Spaces</div>
+        <button class="btn btn-room" onclick="addRoom('Master Bedroom', '#ff7675')"><span>Master Bed</span> 🛋️</button>
+        <button class="btn btn-room" onclick="addRoom('Living Room', '#74b9ff')"><span>Living</span> 📺</button>
+        <button class="btn btn-room" onclick="addRoom('Kitchen', '#ffeaa7')"><span>Kitchen</span> 🍳</button>
+        <button class="btn btn-room" onclick="addRoom('Pooja Room', '#fdcb6e')"><span>Pooja</span> 🛕</button>
+        <button class="btn btn-room" onclick="addRoom('Dining Room', '#55efc4')"><span>Dining</span> 🍽️</button>
+        
+        <div class="section-label">Utilities & Structural</div>
+        <button class="btn btn-fixture" onclick="addRoom('Toilet/Bath', '#a29bfe')"><span>Toilet</span> 🚽</button>
+        <button class="btn btn-fixture" onclick="addFixture('Main Door', '#e17055', 45, 12)"><span>Entrance</span> 🚪</button>
+        <button class="btn btn-fixture" onclick="addFixture('Window', '#0984e3', 60, 8)"><span>Window</span> 🪟</button>
+
+        <div class="accordion-header" onclick="toggleUtilitiesAccordion()">
+            <span>Utilities Menu</span>
+            <span id="accordion-indicator">▶</span>
+        </div>
+        <div class="accordion-content" id="utilities-container">
+            <button class="btn btn-utility" onclick="addFixture('Internal Door', '#d1ccc0', 35, 8)"><span>Internal Door</span> 🚪</button>
+            <button class="btn btn-utility" onclick="addFixture('Kitchen Loft', '#ffb142', 90, 30)"><span>Kitchen Loft</span> 🥞</button>
+            <button class="btn btn-utility" onclick="addFixture('Commode', '#f7f1e3', 25, 25)"><span>Commode</span> 🚽</button>
+            <button class="btn btn-utility" onclick="addFixture('Dining Table', '#cd6133', 80, 50)"><span>Dining Table</span> 🪑</button>
+            <button class="btn btn-utility" onclick="addFixture('Cupboard', '#aaa69d', 50, 25)"><span>Cupboard</span> 🗄️</button>
+            <button class="btn btn-utility" onclick="addFixture('Wardrobe', '#84817a', 60, 25)"><span>Wardrobe</span> 👗</button>
+            <button class="btn btn-utility" onclick="addFixture('Television', '#2c3e50', 45, 8)"><span>TV Unit</span> 🖥️</button>
+            <button class="btn btn-utility" onclick="addFixture('Music System', '#474787', 30, 20)"><span>Music System</span> 📻</button>
+        </div>
+        
+        <div class="section-label">Grid Operations</div>
+        <button class="btn btn-align" onclick="alignHouseToCenter()">🎯 Align House to Center</button>
+        <button class="btn btn-danger" onclick="deleteSelected()" style="margin-top: 5px;">Remove Selected</button>
+    </div>
+
+    <div class="main-content">
+        <div class="controls">
+            <div class="slider-container">
+                <label>🧭 Rotate North Axis:</label>
+                <input type="range" id="compass-slider" min="0" max="360" value="0">
+                <span class="slider-value" id="slider-display">0°</span>
+            </div>
+            
+            <div class="controls-row">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <label>Size:</label>
+                    <input type="number" id="obj-width" placeholder="W" onchange="updateDimensions()">
+                    <span style="color: #718093; font-weight: bold;">×</span>
+                    <input type="number" id="obj-height" placeholder="L" onchange="updateDimensions()">
+                </div>
+                <button class="btn" onclick="updateDimensions()" style="padding: 10px 14px; background: #e1b12c; color: #000; font-weight: bold; border: none;">Apply</button>
+            </div>
+        </div>
+        <div class="canvas-container-wrapper" id="canvas-wrapper">
+            <canvas id="floorplan"></canvas>
+        </div>
+    </div>
+
+    <div class="settings-panel">
+        <h3>Vastu Shastra Engine</h3>
+        
+        <label for="api-key">Developer / Personal API Key</label>
+        <input type="text" id="api-key" placeholder="Enter Gemini API key (optional)...">
+        
+        <label for="custom-prompt">Vastu Consultation Directive</label>
+        <textarea id="custom-prompt">You are an elite Vastu Shastra expert and senior architectural consultant. Inspect the attached layout image. Cross-verify the graphical floor plan layout with the spatial coordinates provided in the manifest text below. Identify exact location entries for rooms relative to the dynamic North pointer, highlight critical Vastu Doshas, outline downstream effects on inhabitants, and prescribe structural or placement remedies.</textarea>
+
+        <button class="btn btn-action" onclick="analyzeVastuPlan()">Run Vastu Consultation</button>
+        <div id="loading-indicator" class="loading">⚡ Aligning cosmic elements & consulting AI...</div>
+        
+        <div class="report-header">
+            <label>Vastu Evaluation Document:</label>
+            <button id="tts-btn" class="tts-btn" onclick="toggleSpeech()">🔊 Read Aloud</button>
+        </div>
+        <div id="ai-response">Awaiting blueprint analysis layout submission...</div>
+    </div>
+
+    <script>
+        fabric.Object.prototype.cornerSize = 28; 
+        fabric.Object.prototype.touchCornerSize = 40; 
+        fabric.Object.prototype.transparentCorners = false;
+        fabric.Object.prototype.cornerColor = '#e1b12c';
+        fabric.Object.prototype.borderColor = '#00a8ff';
+
+		let canvas;
+        let vastuCompassGroup;
+        let speechSynth = window.speechSynthesis;
+        let currentUtterance = null;
+        let isSpeakingPaused = false;
+
+        // --- CENTRAL PROXY ROUTER ---
+        const PROXY_BASE_URL = "https://eprashala-proxy-511804777001.asia-south1.run.app";
+
+        async function fetchGeminiChat(payloadObject) {
+            const userKey = document.getElementById('api-key').value.trim() || '';
+
+            // TIER 1: User has their own key -> Direct browser handoff to Google
+            if (userKey && userKey.length > 10) {
+                try {
+                    console.log("Direct Route Active: Targeting gemini-flash-latest...");
+                    const primaryUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${userKey}`;
+                    const response = await fetch(primaryUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payloadObject)
+                    });
+                    
+                    if (!response.ok) throw new Error(`Primary model status: ${response.status}`);
+                    return response;
+
+                } catch (error) {
+                    console.warn("Primary channel busy/unavailable. Re-routing to fallback...", error);
+                    const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${userKey}`;
+                    return await fetch(fallbackUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payloadObject)
+                    });
+                }
+            } 
+            
+            // TIER 2: No personal key provided -> Route to your centralized Mumbai server
+            else {
+                console.log("Proxy Route Active: Routing through centralized server...");
+                return await fetch(`${PROXY_BASE_URL}/api/chat`, {
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payloadObject)
+                });
+            }
+        }
+
+        function toggleUtilitiesAccordion() {
+            const container = document.getElementById('utilities-container');
+            const indicator = document.getElementById('accordion-indicator');
+            const isMobileView = window.innerWidth < 850;
+
+            if (container.style.display === 'none' || container.style.display === '') {
+                container.style.display = isMobileView ? 'grid' : 'flex';
+                indicator.innerText = '▼';
+            } else {
+                container.style.display = 'none';
+                indicator.innerText = '▶';
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const wrapper = document.getElementById('canvas-wrapper');
+            canvas = new fabric.Canvas('floorplan', {
+                width: wrapper.clientWidth,
+                height: wrapper.clientHeight,
+                backgroundColor: '#252c34',
+                preserveObjectStacking: true,
+                selection: true
+            });
+
+            initVastuCompassGrid(wrapper.clientWidth / 2, wrapper.clientHeight / 2, wrapper.clientWidth, wrapper.clientHeight);
+            setupCompassSlider(); 
+
+            canvas.on('selection:created', handleAssetSelection);
+            canvas.on('selection:updated', handleAssetSelection);
+            canvas.on('selection:cleared', () => {
+                document.getElementById('obj-width').value = '';
+                document.getElementById('obj-height').value = '';
+            });
+
+            window.addEventListener('resize', debounce(() => {
+                const newWidth = wrapper.clientWidth;
+                const newHeight = wrapper.clientHeight;
+                canvas.setWidth(newWidth);
+                canvas.setHeight(newHeight);
+                
+                if (vastuCompassGroup) {
+                    const radius = Math.min(newWidth, newHeight) / 2.2;
+                    vastuCompassGroup.set({ 
+                        left: newWidth / 2, 
+                        top: newHeight / 2,
+                        scaleX: radius / (vastuCompassGroup.width / 2),
+                        scaleY: radius / (vastuCompassGroup.height / 2)
+                    });
+                    vastuCompassGroup.setCoords();
+                }
+                canvas.renderAll();
+            }, 200));
+        });
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => { clearTimeout(timeout); func(...args); };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        function setupCompassSlider() {
+            const slider = document.getElementById('compass-slider');
+            const display = document.getElementById('slider-display');
+
+            slider.addEventListener('input', (e) => {
+                const degrees = parseInt(e.target.value);
+                display.innerText = degrees + "°";
+                if (vastuCompassGroup) {
+                    vastuCompassGroup.set('angle', degrees);
+                    canvas.renderAll();
+                }
+            });
+
+            canvas.on('object:rotating', (e) => {
+                if (e.target.isVastuCompass) {
+                    let currentAngle = Math.round(e.target.angle % 360);
+                    if (currentAngle < 0) currentAngle += 360;
+                    slider.value = currentAngle;
+                    display.innerText = currentAngle + "°";
+                }
+            });
+        }
+
+        function initVastuCompassGrid(centerX, centerY, width, height) {
+            const isMobile = window.innerWidth < 800;
+            const radius = Math.min(width, height) / 2.2;
+            const elements = [];
+
+            // 1. Base Rings
+            const outerCircle = new fabric.Circle({
+                radius: radius, fill: 'transparent', stroke: '#e1b12c', strokeWidth: 1.5, strokeDashArray: [6, 6], originX: 'center', originY: 'center', selectable: false
+            });
+            elements.push(outerCircle);
+
+            const innerCenter = new fabric.Circle({
+                radius: 6, fill: '#e1b12c', originX: 'center', originY: 'center', selectable: false
+            });
+            elements.push(innerCenter);
+
+            // 2. EMBEDDED GEOMETRIC VASTU PURUSHA MANDALA (HIGH VISIBILITY)
+            // Helper to map 360 degree space to exact XY relative to center
+            const getPurushaPos = (angleDeg, distanceMultiplier) => {
+                const rad = (angleDeg - 90) * (Math.PI / 180);
+                return { x: Math.cos(rad) * (radius * distanceMultiplier), y: Math.sin(rad) * (radius * distanceMultiplier) };
+            };
+
+            // Calculate precise anatomical mapping for the Purusha
+            const pPts = {
+                head: getPurushaPos(45, 0.72),        // NE (Ishanya)
+                neck: getPurushaPos(45, 0.50),
+                heart: getPurushaPos(45, 0.25),       // Hands folded at heart
+                navel: getPurushaPos(0, 0),           // Brahma Sthana
+                sacral: getPurushaPos(225, 0.25),
+                feet: getPurushaPos(225, 0.72),       // SW (Nairutya)
+                rShoulder: getPurushaPos(90, 0.22),   // East-ish
+                lShoulder: getPurushaPos(0, 0.22),    // North-ish
+                rElbow: getPurushaPos(135, 0.48),     // SE (Agneya)
+                lElbow: getPurushaPos(315, 0.48),     // NW (Vayu)
+                rHip: getPurushaPos(180, 0.22),       // South-ish
+                lHip: getPurushaPos(270, 0.22),       // West-ish
+                rKnee: getPurushaPos(180, 0.55),      // Bowed toward South
+                lKnee: getPurushaPos(270, 0.55)       // Bowed toward West
+            };
+
+            // Map the anatomical connections with bold, clear vectors
+            const purushaConnections = [
+                ['head', 'neck'], ['neck', 'rShoulder'], ['neck', 'lShoulder'],
+                ['rShoulder', 'rElbow'], ['rElbow', 'heart'], 
+                ['lShoulder', 'lElbow'], ['lElbow', 'heart'],
+                ['neck', 'heart'], ['heart', 'navel'], ['navel', 'sacral'],
+                ['sacral', 'rHip'], ['sacral', 'lHip'],
+                ['rHip', 'rKnee'], ['rKnee', 'feet'],
+                ['lHip', 'lKnee'], ['lKnee', 'feet'],
+                ['sacral', 'feet']
+            ];
+
+            // Render Thick Dotted Limbs
+            purushaConnections.forEach(pair => {
+                const p1 = pPts[pair[0]];
+                const p2 = pPts[pair[1]];
+                elements.push(new fabric.Line([p1.x, p1.y, p2.x, p2.y], {
+                    stroke: '#fbc531',       // High visibility gold
+                    strokeWidth: 2.5,        // Increased thickness
+                    strokeDashArray: [6, 4], // More distinct dotted pattern
+                    opacity: 0.9,            // High opacity
+                    selectable: false, 
+                    originX: 'center', 
+                    originY: 'center'
+                }));
+            });
+
+            // Render Prominent Chakra/Joint Nodes
+            Object.keys(pPts).forEach(key => {
+                const p = pPts[key];
+                const isMajor = (key === 'head' || key === 'navel' || key === 'feet' || key === 'heart');
+                elements.push(new fabric.Circle({
+                    left: p.x, top: p.y, 
+                    radius: isMajor ? 6.5 : 3.5, 
+                    fill: isMajor ? '#e84118' : '#fbc531', // Crimson for main chakras, gold for joints
+                    stroke: '#1e272e', 
+                    strokeWidth: 1.5,
+                    opacity: 1, 
+                    selectable: false, 
+                    originX: 'center', 
+                    originY: 'center'
+                }));
+            });
+
+            // Prominent Halo around the Head in NE
+            elements.push(new fabric.Circle({
+                left: pPts.head.x, top: pPts.head.y, 
+                radius: 18, 
+                stroke: '#e1b12c', 
+                strokeWidth: 2.5, 
+                strokeDashArray: [3, 4], 
+                fill: 'transparent', 
+                opacity: 0.8, 
+                selectable: false, 
+                originX: 'center', 
+                originY: 'center'
+            }));
+
+
+            // 3. Direction Vectors & Labels
+            const directions = [
+                { name: 'N', angle: 0, color: '#e84118', isMajor: true },
+                { name: 'NE', angle: 45, color: '#fbc531', isMajor: false },
+                { name: 'E', angle: 90, color: '#fbc531', isMajor: true },
+                { name: 'SE', angle: 135, color: '#fbc531', isMajor: false },
+                { name: 'S', angle: 180, color: '#fbc531', isMajor: true },
+                { name: 'SW', angle: 225, color: '#fbc531', isMajor: false },
+                { name: 'W', angle: 270, color: '#fbc531', isMajor: true },
+                { name: 'NW', angle: 315, color: '#fbc531', isMajor: false }
+            ];
+
+            const textOffset = isMobile ? 18 : 25;
+            const arrowOffset = isMobile ? 35 : 50;
+
+            directions.forEach(dir => {
+                const rad = (dir.angle - 90) * (Math.PI / 180);
+                const lineX = Math.cos(rad) * radius;
+                const lineY = Math.sin(rad) * radius;
+
+                const ray = new fabric.Line([0, 0, lineX, lineY], {
+                    stroke: dir.isMajor ? '#e1b12c' : '#718093', strokeWidth: dir.isMajor ? 1.5 : 1, strokeDashArray: dir.isMajor ? null : [4, 4], selectable: false, originX: 'center', originY: 'center'
+                });
+                elements.push(ray);
+
+                const textX = Math.cos(rad) * (radius - textOffset);
+                const textY = Math.sin(rad) * (radius - textOffset);
+                const label = new fabric.Text(dir.name, {
+                    fontSize: dir.isMajor ? (isMobile ? 16 : 20) : (isMobile ? 12 : 16), fontWeight: 'bold', fill: dir.color, fontFamily: 'Arial', originX: 'center', originY: 'center', left: textX, top: textY, selectable: false
+                });
+                elements.push(label);
+
+                if (dir.name === 'N') {
+                    const pointer = new fabric.Triangle({
+                        width: isMobile ? 16 : 20, height: isMobile ? 20 : 26, fill: '#e84118', originX: 'center', originY: 'center', left: Math.cos(rad) * (radius - arrowOffset), top: Math.sin(rad) * (radius - arrowOffset), angle: dir.angle, selectable: false
+                    });
+                    elements.push(pointer);
+                }
+            });
+
+            // 4. Group Assembly & Logic lock
+            vastuCompassGroup = new fabric.Group(elements, {
+                left: centerX, top: centerY, originX: 'center', originY: 'center',
+                hasControls: true, hasBorders: true, borderColor: 'transparent', transparentCorners: false,
+                lockMovementX: true, lockMovementY: true, lockScalingX: true, lockScalingY: true, lockSkewingX: true, lockSkewingY: true, lockScalingFlip: true,
+                padding: 40, 
+                hoverCursor: 'grab', moveCursor: 'grabbing'
+            });
+
+            vastuCompassGroup.setControlsVisibility({
+                mt: false, mb: false, ml: false, mr: false,
+                tl: false, tr: false, bl: false, br: false,
+                mtr: true
+            });
+
+            vastuCompassGroup.set('isVastuCompass', true);
+            canvas.add(vastuCompassGroup);
+            vastuCompassGroup.sendToBack(); 
+            canvas.renderAll();
+        }
+
+        function alignHouseToCenter() {
+            const allHouseElements = canvas.getObjects().filter(obj => !obj.isVastuCompass);
+            
+            if (allHouseElements.length === 0) {
+                alert("Draw some rooms first to align them!");
+                return;
+            }
+
+            const boundingGroup = new fabric.Group(allHouseElements);
+            const structureCenter = boundingGroup.getCenterPoint();
+            const trueCanvasCenter = vastuCompassGroup.getCenterPoint();
+
+            const offsetX = trueCanvasCenter.x - structureCenter.x;
+            const offsetY = trueCanvasCenter.y - structureCenter.y;
+
+            allHouseElements.forEach(obj => {
+                obj.set({
+                    left: obj.left + offsetX,
+                    top: obj.top + offsetY
+                });
+                obj.setCoords();
+            });
+
+            canvas.discardActiveObject();
+            canvas.renderAll();
+        }
+
+        function handleAssetSelection(e) {
+            const selectedItem = e.selected[0];
+            if (selectedItem && !selectedItem.isVastuCompass) {
+                document.getElementById('obj-width').value = Math.round(selectedItem.width * selectedItem.scaleX);
+                document.getElementById('obj-height').value = Math.round(selectedItem.height * selectedItem.scaleY);
+            }
+        }
+
+        function addRoom(name, backgroundColor) {
+            const isMobile = window.innerWidth < 800;
+            const baseW = isMobile ? 100 : 140;
+            const baseH = isMobile ? 80 : 120;
+
+            const rect = new fabric.Rect({ width: baseW, height: baseH, fill: backgroundColor, opacity: 0.85, stroke: '#2f3640', strokeWidth: 2, rx: 4, ry: 4 });
+            const title = new fabric.Text(name, { fontSize: isMobile ? 11 : 13, fontWeight: 'bold', fontFamily: 'Segoe UI', originX: 'center', originY: 'center', left: baseW/2, top: baseH/2, fill: '#1e272e' });
+            
+            const roomGroup = new fabric.Group([rect, title], { 
+                left: canvas.width / 2 - baseW / 2, top: canvas.height / 2 - baseH / 2, 
+                transparentCorners: false 
+            });
+            
+            roomGroup.set('customMetadata', { assetName: name, type: 'room' });
+            canvas.add(roomGroup);
+            canvas.setActiveObject(roomGroup);
+        }
+
+        function addFixture(name, hexColor, w, h) {
+            const isMobile = window.innerWidth < 800;
+            const finalW = isMobile ? w * 0.85 : w;
+            const finalH = isMobile ? h * 0.85 : h;
+
+            const rect = new fabric.Rect({ width: finalW, height: finalH, fill: hexColor, opacity: 0.9, stroke: '#ffffff', strokeWidth: 1 });
+            const title = new fabric.Text(name, { fontSize: isMobile ? 9 : 11, fontWeight: 'bold', fontFamily: 'Segoe UI', originX: 'center', originY: 'center', left: finalW/2, top: finalH/2, fill: '#ffffff' });
+
+            const fixtureGroup = new fabric.Group([rect, title], {
+                left: canvas.width / 2 - finalW / 2, top: canvas.height / 2 - finalH / 2,
+                transparentCorners: false
+            });
+
+            fixtureGroup.set('customMetadata', { assetName: name, type: 'fixture' });
+            canvas.add(fixtureGroup);
+            canvas.setActiveObject(fixtureGroup);
+        }
+
+        function updateDimensions() {
+            const activeAsset = canvas.getActiveObject();
+            if (!activeAsset || activeAsset.isVastuCompass) return;
+            
+            const w = parseInt(document.getElementById('obj-width').value);
+            const h = parseInt(document.getElementById('obj-height').value);
+            
+            if (w && h) {
+                activeAsset.set({ width: w, height: h, scaleX: 1, scaleY: 1 });
+                if (activeAsset.type === 'group' && activeAsset.getObjects().length >= 2) {
+                    activeAsset.item(0).set({ width: w, height: h });
+                    activeAsset.item(1).set({ left: w / 2, top: h / 2 });
+                    activeAsset.addWithUpdate();
+                }
+                canvas.renderAll();
+            }
+        }
+
+        function deleteSelected() {
+            const elementsToRemove = canvas.getActiveObjects();
+            if (elementsToRemove.length) {
+                elementsToRemove.forEach((item) => {
+                    if (!item.isVastuCompass) canvas.remove(item);
+                });
+                canvas.discardActiveObject();
+                canvas.renderAll();
+            }
+        }
+
+        function calculateSpatialVastuManifest() {
+            const compassCenter = vastuCompassGroup.getCenterPoint();
+            const compassRotation = vastuCompassGroup.angle; 
+
+            let manifestOutputText = "\n\n=========================================\n";
+            manifestOutputText += "CRITICAL GEOMETRIC METADATA (AUTOMATED ARCHITECT MANIFEST):\n";
+            manifestOutputText += `- Compass Alignment Orientation Reference: Center=(${Math.round(compassCenter.x)}, ${Math.round(compassCenter.y)}), Dynamic North Angle=${Math.round(compassRotation)}°\n`;
+
+            let detectedAssetsCount = 0;
+
+            canvas.getObjects().forEach(item => {
+                if (item.isVastuCompass) return;
+
+                const metadata = item.customMetadata;
+                if (metadata) {
+                    detectedAssetsCount++;
+                    const itemCenter = item.getCenterPoint();
+                    const deltaX = itemCenter.x - compassCenter.x;
+                    const deltaY = itemCenter.y - compassCenter.y;
+
+                    let baseScreenAngle = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
+                    if (baseScreenAngle < 0) baseScreenAngle += 360;
+
+                    let adjustedVastuAngle = baseScreenAngle - (compassRotation - 90);
+                    adjustedVastuAngle = (adjustedVastuAngle % 360 + 360) % 360;
+
+                    let assignedZone = "";
+                    if (adjustedVastuAngle >= 337.5 || adjustedVastuAngle < 22.5) assignedZone = "North (N) - Kubera Zone";
+                    else if (adjustedVastuAngle >= 22.5 && adjustedVastuAngle < 67.5) assignedZone = "North-East (NE) - Ishanya Zone";
+                    else if (adjustedVastuAngle >= 67.5 && adjustedVastuAngle < 112.5) assignedZone = "East (E) - Indra Zone";
+                    else if (adjustedVastuAngle >= 112.5 && adjustedVastuAngle < 157.5) assignedZone = "South-East (SE) - Agneya Zone";
+                    else if (adjustedVastuAngle >= 157.5 && adjustedVastuAngle < 202.5) assignedZone = "South (S) - Yama Zone";
+                    else if (adjustedVastuAngle >= 202.5 && adjustedVastuAngle < 247.5) assignedZone = "South-West (SW) - Nairutya Zone";
+                    else if (adjustedVastuAngle >= 247.5 && adjustedVastuAngle < 292.5) assignedZone = "West (W) - Varuna Zone";
+                    else if (adjustedVastuAngle >= 292.5 && adjustedVastuAngle < 337.5) assignedZone = "North-West (NW) - Vayu Zone";
+
+                    manifestOutputText += `- Asset: [${metadata.assetName}] | Exact Vastu Angle: ${Math.round(adjustedVastuAngle)}° -> Placed in Zone: ${assignedZone}\n`;
+                }
+            });
+
+            return detectedAssetsCount === 0 ? null : manifestOutputText + "=========================================";
+        }
+
+        function toggleSpeech() {
+            const btn = document.getElementById('tts-btn');
+            const outputText = document.getElementById('ai-response').innerText;
+            
+            if (!outputText || outputText.includes("Awaiting blueprint")) return;
+
+            if (speechSynth.speaking) {
+                if (isSpeakingPaused) {
+                    speechSynth.resume();
+                    isSpeakingPaused = false;
+                    btn.innerText = "⏸️ Pause Audio";
+                } else {
+                    speechSynth.pause();
+                    isSpeakingPaused = true;
+                    btn.innerText = "▶️ Resume Audio";
+                }
+            } else {
+                currentUtterance = new SpeechSynthesisUtterance(outputText);
+                currentUtterance.rate = 1.0;
+                currentUtterance.pitch = 1.0;
+                
+                currentUtterance.onend = () => {
+                    isSpeakingPaused = false;
+                    btn.innerText = "🔊 Read Aloud";
+                };
+                
+                speechSynth.speak(currentUtterance);
+                isSpeakingPaused = false;
+                btn.innerText = "⏸️ Pause Audio";
+            }
+        }
+
+        function resetAudioEngine() {
+            speechSynth.cancel();
+            isSpeakingPaused = false;
+            document.getElementById('tts-btn').style.display = 'none';
+            document.getElementById('tts-btn').innerText = "🔊 Read Aloud";
+        }
+
+        async function analyzeVastuPlan() {
+            resetAudioEngine(); 
+            
+            const apiKey = document.getElementById('api-key').value.trim();
+            const baseDirectivePrompt = document.getElementById('custom-prompt').value;
+            const outputReportView = document.getElementById('ai-response');
+            const visualLoader = document.getElementById('loading-indicator');
+
+            const coordinateManifest = calculateSpatialVastuManifest();
+            
+            if (!coordinateManifest) {
+                alert("Please add structural elements to the grid first.");
+                return;
+            }
+
+            const strictFormattingRule = "\n\nCRITICAL FORMATTING INSTRUCTION: Do NOT use formatting symbols. Output clean, plain text only so the TTS engine can read it perfectly. Exclude formatting characters like asterisks, tags, underscores, and brackets.";
+            
+            const fullEnginePrompt = baseDirectivePrompt + strictFormattingRule + coordinateManifest;
+
+            canvas.discardActiveObject();
+            canvas.renderAll();
+
+            const canvasSnapshotBase64 = canvas.toDataURL({ format: 'jpeg', quality: 0.95 }).split(',')[1];
+
+            const payloadStructure = {
+                contents: [{
+                    parts: [
+                        { text: fullEnginePrompt },
+                        { inlineData: { mimeType: "image/jpeg", data: canvasSnapshotBase64 } }
+                    ]
+                }]
+            };
+
+            outputReportView.innerText = "";
+            visualLoader.style.display = "block";
+            
+            if (window.innerWidth < 800) {
+                outputReportView.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+
+			try {
+                const response = await fetchGeminiChat(payloadStructure);
+
+                const data = await response.json();
+                visualLoader.style.display = "none";
+
+                if (data.candidates && data.candidates[0].content.parts[0].text) {
+                    let cleanedText = data.candidates[0].content.parts[0].text;
+                    cleanedText = cleanedText.replace(/[*_~`]/g, ''); 
+                    outputReportView.innerText = cleanedText;
+                    document.getElementById('tts-btn').style.display = 'block'; 
+                } else if (data.error) {
+                    outputReportView.innerText = "Execution Exception:\n" + JSON.stringify(data.error, null, 2);
+                } else {
+                    outputReportView.innerText = "Error parsing server data packet stream.";
+                }
+
+            } catch (err) {
+                visualLoader.style.display = "none";
+                outputReportView.innerText = "Network Communication Failed.\n\nError Vector Tracing: " + err.message;
+            }
+        }
+    </script>
+</body>
+</html>

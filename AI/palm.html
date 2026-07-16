@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vedic Palmistry Scanner v7.0</title>
+    <style>
+        :root {
+            --primary: #d4af37; 
+            --bg-color: #1a0b2e; 
+            --text-color: #f4e8c1;
+            --error-color: #ff4c4c;
+            --panel-bg: rgba(0, 0, 0, 0.5);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-bottom: 80px; 
+        }
+
+        /* Modals & Top Buttons */
+        .top-btn-group {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            gap: 15px;
+            z-index: 1000;
+        }
+
+        .icon-btn {
+            background: transparent;
+            border: none;
+            color: var(--primary);
+            font-size: 24px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .icon-btn:hover {
+            transform: scale(1.1);
+            text-shadow: 0 0 10px var(--primary);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 2000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(3px);
+        }
+
+        .modal-content {
+            background: var(--bg-color);
+            border: 2px solid var(--primary);
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+        }
+
+        h1 {
+            color: var(--primary);
+            text-align: center;
+            text-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+            margin-bottom: 5px;
+            margin-top: 20px;
+        }
+
+        /* Form & Inputs */
+        .setup-container {
+            margin-top: 20px;
+            text-align: center;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        input[type="text"], input[type="password"], select, textarea {
+            width: 80%;
+            padding: 10px;
+            border: 2px solid var(--primary);
+            background: rgba(0, 0, 0, 0.3);
+            color: white;
+            font-size: 16px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .flex-row { 
+            display: flex; 
+            justify-content: space-evenly; 
+            width: 85%; 
+            margin: 0 auto 15px auto; 
+            gap: 10px;
+        }
+        
+        .flex-row select { width: 100%; margin-bottom: 0; }
+
+        textarea {
+            width: 100%;
+            text-align: left;
+            resize: vertical;
+            min-height: 80px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 80%;
+            margin-top: 10px;
+        }
+
+        button:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px var(--primary);
+        }
+
+        button:disabled {
+            background-color: #555;
+            color: #888;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .small-btn {
+            background-color: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            width: auto;
+            padding: 5px 15px;
+            font-size: 14px;
+            margin-top: 0;
+            cursor: pointer;
+        }
+
+        /* Camera & Scanning UI */
+        #handInstruction {
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            text-align: center;
+        }
+
+        .camera-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            aspect-ratio: 3/4;
+            background-color: #000;
+            border: 3px solid var(--primary);
+            border-radius: 10px;
+            overflow: hidden;
+            display: none; 
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .torch-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            z-index: 10;
+            display: none; 
+        }
+
+        .hand-guide-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; 
+            display: flex; justify-content: center; align-items: center;
+            opacity: 0.5; transition: transform 0.5s ease;
+        }
+
+        .hand-guide-overlay.flipped { transform: scaleX(-1); }
+
+        .hand-guide-overlay svg {
+            width: 95%; height: 95%;
+            filter: drop-shadow(0px 0px 5px rgba(212, 175, 55, 1));
+        }
+
+        .scanner-line {
+            position: absolute; top: 0; left: 0; width: 100%; height: 4px;
+            background-color: red; box-shadow: 0 0 15px red, 0 0 30px red;
+            display: none; animation: scanAnimation 1.5s linear;
+        }
+
+        @keyframes scanAnimation {
+            0% { top: 0; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        /* Results Structured UI */
+        .results-container {
+            margin-top: 20px;
+            width: 100%;
+            max-width: 600px;
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .hand-result-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--primary);
+            padding: 20px;
+            border-radius: 10px;
+            line-height: 1.6;
+            display: none; 
+        }
+
+        .reading-section {
+            background: rgba(212, 175, 55, 0.05);
+            border-left: 3px solid var(--primary);
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            text-align: left;
+            border-radius: 0 5px 5px 0;
+        }
+
+        .reading-section h4 {
+            margin: 0 0 8px 0;
+            color: var(--primary);
+            font-size: 1.1em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .reading-section p { margin: 0; font-size: 0.95em; }
+
+        .qa-container {
+            margin-top: 20px; width: 100%; max-width: 600px;
+            display: none; flex-direction: column; align-items: center;
+        }
+
+        .answer-box {
+            margin-top: 15px; padding: 15px;
+            background: rgba(212, 175, 55, 0.1);
+            border-left: 4px solid var(--primary);
+            border-radius: 5px; display: none; width: 100%; box-sizing: border-box;
+            text-align: left;
+        }
+        
+        .floating-action {
+            position: fixed; bottom: 20px; right: 20px;
+            background-color: var(--primary); color: black;
+            border-radius: 50px; padding: 15px 25px;
+            font-size: 16px; font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); cursor: pointer;
+            z-index: 1000; display: none;
+        }
+
+        /* Archive Items */
+        .archive-item {
+            border: 1px solid #555;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            text-align: left;
+            cursor: pointer;
+        }
+        .archive-item:hover { border-color: var(--primary); }
+        .archive-date { font-size: 0.8em; color: #888; }
+
+        canvas { display: none; }
+        .pulsing-text { animation: pulse 1.5s infinite; color: #888; font-style: italic; }
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+    </style>
+</head>
+<body>
+
+    <div class="top-btn-group">
+        <button id="archiveBtn" class="icon-btn" title="Local Archive">📂</button>
+        <button id="settingsBtn" class="icon-btn" title="API Settings">⚙️</button>
+    </div>
+
+    <div id="settingsModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="color: var(--primary); margin-top: 0;">System Configuration</h3>
+            <p style="font-size: 14px; margin-bottom: 15px;">Enter your custom Gemini API key to bypass the proxy.</p>
+            <input type="password" id="customApiInput" placeholder="AIzaSy..." style="width: 100%; box-sizing: border-box; text-align: left;">
+            <div class="flex-row" style="margin-top: 15px; width: 100%;">
+                <button id="saveSettingsBtn" style="margin-top: 0; width: 45%; font-size: 16px;">Save</button>
+                <button onclick="document.getElementById('settingsModal').style.display='none'" class="small-btn" style="width: 45%; border-color:#555; color:#fff;">Close</button>
+            </div>
+            <p id="settingsMsg" style="font-size: 12px; color: #4cff4c; margin-top: 10px; display: none;"></p>
+        </div>
+    </div>
+
+    <div id="archiveModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="color: var(--primary); margin-top: 0;">Local Reading Archive</h3>
+            <div id="archiveList" style="max-height: 300px; overflow-y: auto; margin-bottom: 15px;"></div>
+            <button onclick="document.getElementById('archiveModal').style.display='none'" class="small-btn" style="width: 100%; border-color:#555; color:#fff;">Close</button>
+        </div>
+    </div>
+
+    <h1>Hastarekha Darshan<br><span style="font-size: 16px; font-weight: normal;">Free Humanistic Palmistry System</span></h1>
+
+    <div class="setup-container" id="setupSection">
+        <input type="text" id="userName" placeholder="Enter your full name..." autocomplete="off">
+        
+        <select id="userLang" style="width: 85%; margin-bottom: 15px;">
+            <option value="English">English</option>
+            <option value="Hindi">Hindi (हिन्दी)</option>
+            <option value="Marathi" selected>Marathi (मराठी)</option>
+            <option value="Sanskrit">Sanskrit (संस्कृतम्)</option>
+            </select>
+
+        <div class="flex-row">
+            <select id="userSex">
+                <option value="" disabled selected>Select Sex</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+            </select>
+            <select id="userAge"></select>
+        </div>
+        <button id="initBtn">Begin Reading</button>
+    </div>
+
+    <div id="handInstruction" style="display: none;"></div>
+
+    <div class="camera-container" id="cameraContainer">
+        <button id="torchBtn" class="torch-btn">🔦 Flash: OFF</button>
+        <video id="videoFeed" autoplay playsinline></video>
+        <div class="hand-guide-overlay" id="handGuide">
+            <svg viewBox="0 0 100 120" preserveAspectRatio="xMidYMid meet">
+                <path d="M 35,115 C 30,90 20,70 20,50 C 20,40 30,35 35,45 L 40,65 L 40,25 C 40,15 50,15 50,25 L 50,60 L 50,15 C 50,5 60,5 60,15 L 60,60 L 60,20 C 60,10 70,10 70,20 L 70,65 L 70,35 C 70,25 80,25 80,35 L 80,80 C 80,95 75,105 65,115 Z" fill="none" stroke="var(--primary)" stroke-width="1.8" stroke-dasharray="4,4"/>
+            </svg>
+        </div>
+        <div class="scanner-line" id="scannerLine"></div>
+    </div>
+
+    <button id="actionBtn" style="display: none; margin-top: 15px;"></button>
+
+    <div class="results-container" id="resultsSection">
+        <div class="hand-result-card" id="stage1Card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin:0; color: var(--primary);"><span id="stage1Title">Hand 1</span> Analysis</h3>
+                <button class="small-btn audio-btn" id="audioBtn1" style="display: none;">🔊 Listen</button>
+            </div>
+            <div id="stage1Status" class="pulsing-text">Channeling cosmic energies...</div>
+            
+            <div id="stage1Data" style="display: none;">
+                <div class="reading-section"><h4>Anguli Pramana (Proportions)</h4><p id="stg1_prop"></p></div>
+                <div class="reading-section"><h4>Manibandha (Wrist Bands)</h4><p id="stg1_wrist"></p></div>
+                <div class="reading-section"><h4>Parvatas (Mounts)</h4><p id="stg1_mounts"></p></div>
+                <div class="reading-section"><h4>Major Lines</h4><p id="stg1_lines"></p></div>
+                <div class="reading-section"><h4>Remedies</h4><p id="stg1_remedies"></p></div>
+            </div>
+            <button class="small-btn" id="retakeBtn1" style="display:none; background: var(--error-color); color:white; width:100%; margin-top:15px;">Retake Image</button>
+        </div>
+
+        <div class="hand-result-card" id="stage2Card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin:0; color: var(--primary);"><span id="stage2Title">Hand 2</span> Analysis</h3>
+                <button class="small-btn audio-btn" id="audioBtn2" style="display: none;">🔊 Listen</button>
+            </div>
+            <div id="stage2Status" class="pulsing-text">Awaiting scan...</div>
+            
+            <div id="stage2Data" style="display: none;">
+                <div class="reading-section"><h4>Anguli Pramana (Proportions)</h4><p id="stg2_prop"></p></div>
+                <div class="reading-section"><h4>Manibandha (Wrist Bands)</h4><p id="stg2_wrist"></p></div>
+                <div class="reading-section"><h4>Parvatas (Mounts)</h4><p id="stg2_mounts"></p></div>
+                <div class="reading-section"><h4>Major Lines</h4><p id="stg2_lines"></p></div>
+                <div class="reading-section"><h4>Remedies</h4><p id="stg2_remedies"></p></div>
+            </div>
+            <button class="small-btn" id="retakeBtn2" style="display:none; background: var(--error-color); color:white; width:100%; margin-top:15px;">Retake Image</button>
+        </div>
+    </div>
+
+    <div class="qa-container" id="qaSection">
+        <h3 style="color: var(--primary); margin-bottom: 10px; width: 100%;">Seek Further Wisdom</h3>
+        <textarea id="questionInput" placeholder="Ask a question based on your full reading..."></textarea>
+        <button id="askBtn">Consult the Astrologer</button>
+        <div class="answer-box" id="answerBox">
+            <button class="small-btn audio-btn" id="audioBtnQA" style="float: right; display: none;">🔊 Listen</button>
+            <div id="qaContent" style="margin-top: 30px;"></div>
+        </div>
+    </div>
+    
+    <button id="sharePdfBtn" class="floating-action">📤 Save Reading</button>
+    <canvas id="captureCanvas"></canvas>
+
+    <script>
+const PROXY_BASE_URL = "https://eprashala-proxy-511804777001.asia-south1.run.app";
+
+        async function fetchGeminiChat(payloadObject) {
+            const userKey = localStorage.getItem('hastarekha_api_key') || '';
+
+            // TIER 1: User has their own key -> Direct browser handoff to Google
+            if (userKey && userKey.trim().length > 10) {
+                try {
+                    console.log("Direct Route Active: Targeting gemini-flash-latest...");
+                    const primaryUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${userKey.trim()}`;
+                    const response = await fetch(primaryUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payloadObject)
+                    });
+                    
+                    if (!response.ok) throw new Error(`Primary model status: ${response.status}`);
+                    return response;
+
+                } catch (error) {
+                    console.warn("Primary channel busy/unavailable. Re-routing to fallback...", error);
+                    const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${userKey.trim()}`;
+                    return await fetch(fallbackUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payloadObject)
+                    });
+                }
+            } 
+            
+            // TIER 2: No personal key provided -> Route to your centralized Mumbai server
+            else {
+                console.log("Proxy Route Active: Routing through centralized server...");
+                return await fetch(`${PROXY_BASE_URL}/api/chat`, {
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payloadObject)
+                });
+            }
+        }
+        
+        let customApiKey = localStorage.getItem('hastarekha_api_key') || "";
+        let savedReadings = JSON.parse(localStorage.getItem('hastarekha_archive') || '[]');
+
+        // Settings Logic
+        document.getElementById('settingsBtn').addEventListener('click', () => {
+            document.getElementById('customApiInput').value = customApiKey;
+            document.getElementById('settingsModal').style.display = 'flex';
+        });
+
+        document.getElementById('saveSettingsBtn').addEventListener('click', () => {
+            const val = document.getElementById('customApiInput').value.trim();
+            const msg = document.getElementById('settingsMsg');
+            if (val) {
+                localStorage.setItem('hastarekha_api_key', val);
+                customApiKey = val;
+                msg.innerText = "Key saved to Local Storage."; msg.style.color = "#4cff4c";
+            } else {
+                localStorage.removeItem('hastarekha_api_key');
+                customApiKey = "";
+                msg.innerText = "Key cleared. Using Proxy."; msg.style.color = "var(--primary)";
+            }
+            msg.style.display = 'block';
+            setTimeout(() => { document.getElementById('settingsModal').style.display = 'none'; }, 1500);
+        });
+
+        // Archive Logic
+        document.getElementById('archiveBtn').addEventListener('click', () => {
+            const list = document.getElementById('archiveList');
+            list.innerHTML = "";
+            savedReadings = JSON.parse(localStorage.getItem('hastarekha_archive') || '[]');
+            if(savedReadings.length === 0) {
+                list.innerHTML = "<p style='color:#888;'>No stored records found on this device.</p>";
+            } else {
+                savedReadings.forEach((reading, index) => {
+                    const d = new Date(reading.timestamp).toLocaleDateString();
+                    list.innerHTML += `<div class="archive-item" onclick="loadArchive(${index})">
+                        <strong>${reading.name}</strong> - ${reading.hand1.type} & ${reading.hand2.type}<br>
+                        <span class="archive-date">${d}</span>
+                    </div>`;
+                });
+            }
+            document.getElementById('archiveModal').style.display = 'flex';
+        });
+
+        function saveToArchive(name, hand1Data, hand2Data, hand1Type, hand2Type) {
+            savedReadings.push({
+                timestamp: new Date().toISOString(),
+                name: name,
+                hand1: { type: hand1Type, data: hand1Data },
+                hand2: { type: hand2Type, data: hand2Data }
+            });
+            localStorage.setItem('hastarekha_archive', JSON.stringify(savedReadings));
+        }
+
+        function loadArchive(index) {
+            alert("Archive viewer UI building... Reading data loaded in memory.");
+            // To be expanded: populate the UI with the archived JSON data
+            document.getElementById('archiveModal').style.display='none';
+        }
+
+        function getActiveEndpoint() {
+            return customApiKey ? `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash:generateContent?key=${customApiKey}` : PROXY_API_ENDPOINT;
+        }
+
+        let stream = null, scanStage = 0, firstHand = "", secondHand = "", isTorchOn = false;
+        let hand1JSON = null, hand2JSON = null, fullReadingContext = "";
+
+        // UI Elements Mapping
+        const userSex = document.getElementById('userSex');
+        const userNameInput = document.getElementById('userName');
+        const userLang = document.getElementById('userLang');
+        const userAge = document.getElementById('userAge');
+        
+        for (let i = 1; i <= 100; i++) {
+            let opt = document.createElement('option'); opt.value = i; opt.text = i + " years old";
+            if (i === 25) opt.selected = true; userAge.appendChild(opt);
+        }
+
+        document.getElementById('initBtn').addEventListener('click', async () => {
+            if (!userNameInput.value.trim() || !userSex.value) return alert("Please enter name and sex.");
+            if (userSex.value === 'Male') { firstHand = "Left"; secondHand = "Right"; } 
+            else { firstHand = "Right"; secondHand = "Left"; }
+            startCameraFlow();
+        });
+
+        async function startCameraFlow() {
+            try {
+                // Upgraded to request 1080p and continuous auto-focus
+                const constraints = {
+                    video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 }, advanced: [{ focusMode: "continuous" }] },
+                    audio: false
+                };
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+                document.getElementById('videoFeed').srcObject = stream;
+                
+                setTimeout(() => {
+                    const track = stream.getVideoTracks()[0];
+                    if (track.getCapabilities().torch) {
+                        document.getElementById('torchBtn').style.display = 'block';
+                        isTorchOn = false;
+                    }
+                }, 500);
+                
+                document.getElementById('setupSection').style.display = 'none';
+                document.getElementById('cameraContainer').style.display = 'block';
+                document.getElementById('resultsSection').style.display = 'flex';
+                setupStage1();
+            } catch (err) { alert("Camera access required."); }
+        }
+
+        document.getElementById('torchBtn').addEventListener('click', async () => {
+            if (!stream) return;
+            isTorchOn = !isTorchOn;
+            try {
+                await stream.getVideoTracks()[0].applyConstraints({ advanced: [{ torch: isTorchOn }] });
+                document.getElementById('torchBtn').innerText = isTorchOn ? "🔦 Flash: ON" : "🔦 Flash: OFF";
+            } catch(e) { isTorchOn = !isTorchOn; }
+        });
+
+        function setupStage1() {
+            scanStage = 1;
+            document.getElementById('handInstruction').style.display = 'block';
+            document.getElementById('handInstruction').innerText = `Step 1: Align ${firstHand} Hand & wrist in guide.`;
+            document.getElementById('stage1Title').innerText = firstHand;
+            document.getElementById('stage2Title').innerText = secondHand;
+            document.getElementById('handGuide').className = `hand-guide-overlay ${firstHand === 'Right' ? 'flipped' : ''}`;
+            
+            const btn = document.getElementById('actionBtn');
+            btn.style.display = 'block'; btn.disabled = false; btn.innerText = `Scan ${firstHand} Hand`;
+        }
+
+        function setupStage2() {
+            scanStage = 2;
+            document.getElementById('handInstruction').innerText = `Step 2: Align ${secondHand} Hand & wrist in guide.`;
+            document.getElementById('handGuide').className = `hand-guide-overlay ${secondHand === 'Right' ? 'flipped' : ''}`;
+            
+            const btn = document.getElementById('actionBtn');
+            btn.style.display = 'block'; btn.disabled = false; btn.innerText = `Scan ${secondHand} Hand`;
+            document.getElementById('cameraContainer').style.display = 'block';
+        }
+
+        document.getElementById('actionBtn').addEventListener('click', () => {
+            const btn = document.getElementById('actionBtn');
+            btn.disabled = true;
+            const line = document.getElementById('scannerLine');
+            line.style.display = 'block'; line.style.animation = 'none'; void line.offsetWidth; line.style.animation = 'scanAnimation 1.5s linear';
+
+            setTimeout(() => {
+                line.style.display = 'none';
+                const cvs = document.getElementById('captureCanvas');
+                const vid = document.getElementById('videoFeed');
+                cvs.width = vid.videoWidth; cvs.height = vid.videoHeight;
+                cvs.getContext('2d').drawImage(vid, 0, 0, cvs.width, cvs.height);
+                const b64 = cvs.toDataURL('image/jpeg', 0.85).split(',')[1];
+
+                if (scanStage === 1) {
+                    document.getElementById('stage1Card').style.display = 'block';
+                    document.getElementById('stage1Status').style.display = 'block';
+                    processHandAsync(firstHand, b64, 1);
+                    setupStage2();
+                } else {
+                    document.getElementById('stage2Card').style.display = 'block';
+                    document.getElementById('stage2Status').style.display = 'block';
+                    document.getElementById('cameraContainer').style.display = 'none';
+                    btn.style.display = 'none'; document.getElementById('torchBtn').style.display = 'none';
+                    processHandAsync(secondHand, b64, 2);
+                }
+            }, 1500);
+        });
+
+        async function processHandAsync(hand, base64Image, stageNum) {
+            const karmicContext = userSex.value === "Male" ? (hand === "Left" ? "Prarabdha Karma" : "Agami Karma") : (hand === "Right" ? "Prarabdha Karma" : "Agami Karma");
+            const statusEl = document.getElementById(`stage${stageNum}Status`);
+            const dataEl = document.getElementById(`stage${stageNum}Data`);
+            const retakeBtn = document.getElementById(`retakeBtn${stageNum}`);
+
+            // Enforced JSON Structure and Classical Framework
+            const prompt = `Act as an expert Vedic Palmist utilizing classical Samudrika Shastra principles.
+            My name is ${userNameInput.value}. I am a ${userAge.value}-year-old ${userSex.value}. Analyze my ${hand} hand (${karmicContext}).
+            
+            CRITICAL INSTRUCTION: You MUST respond ONLY with a valid, raw JSON object. Do not use markdown wrappers like \`\`\`json.
+            
+            SCHEMA:
+            {
+              "validImage": boolean (false if blurry, not a human hand, or wrist cut off),
+              "errorMessage": string (short reason if validImage is false, else empty),
+              "handProportions": string (Anguli Pramana analysis in ${userLang.value}),
+              "manibandhaRekha": string (Wrist bands analysis in ${userLang.value}),
+              "planetaryMounts": string (Parvatas analysis in ${userLang.value}),
+              "majorLines": string (Life, Head, Heart, Fate lines analysis in ${userLang.value}),
+              "remedies": string (Authentic remedies in ${userLang.value})
+            }`;
+
+		try {
+                const payloadObject = { "contents": [{ "parts": [ { "text": prompt }, { "inline_data": { "mime_type": "image/jpeg", "data": base64Image } } ] }] };
+                const response = await fetchGeminiChat(payloadObject);
+
+                if(response.status === 504) throw new Error("Gateway Timeout - Matrix overwhelmed. Try again.");
+
+ 
+                const data = await response.json();
+                if (data.error) throw new Error(data.error.message);
+
+                let textResp = data.candidates[0].content.parts[0].text;
+                textResp = textResp.replace(/```json/gi, '').replace(/```/g, '').trim(); // Strip potential markdown
+                
+                const parsed = JSON.parse(textResp);
+
+                if(!parsed.validImage) {
+                    statusEl.classList.remove('pulsing-text');
+                    statusEl.innerHTML = `<span style="color:var(--error-color);">Error: ${parsed.errorMessage}</span>`;
+                    retakeBtn.style.display = 'block'; return;
+                }
+
+                // Populate Structured UI
+                document.getElementById(`stg${stageNum}_prop`).innerText = parsed.handProportions;
+                document.getElementById(`stg${stageNum}_wrist`).innerText = parsed.manibandhaRekha;
+                document.getElementById(`stg${stageNum}_mounts`).innerText = parsed.planetaryMounts;
+                document.getElementById(`stg${stageNum}_lines`).innerText = parsed.majorLines;
+                document.getElementById(`stg${stageNum}_remedies`).innerText = parsed.remedies;
+
+                statusEl.style.display = 'none';
+                dataEl.style.display = 'block';
+                document.getElementById(`audioBtn${stageNum}`).style.display = 'block';
+
+                if(stageNum === 1) hand1JSON = parsed; else hand2JSON = parsed;
+                checkCompletion();
+
+            } catch (err) {
+                statusEl.classList.remove('pulsing-text');
+                statusEl.innerHTML = `<span style="color:var(--error-color);">Interface Error: ${err.message || "Connection failed."}</span>`;
+                retakeBtn.style.display = 'block';
+            }
+        }
+
+        document.getElementById('retakeBtn1').addEventListener('click', () => {
+            if(!stream || !stream.active) startCameraFlow();
+            document.getElementById('stage1Data').style.display = 'none';
+            document.getElementById('stage1Status').style.display = 'block';
+            document.getElementById('stage1Status').innerText = "Awaiting scan...";
+            document.getElementById('retakeBtn1').style.display = 'none';
+            setupStage1();
+        });
+
+        document.getElementById('retakeBtn2').addEventListener('click', () => {
+            if(!stream || !stream.active) startCameraFlow();
+            document.getElementById('stage2Data').style.display = 'none';
+            document.getElementById('stage2Status').style.display = 'block';
+            document.getElementById('stage2Status').innerText = "Awaiting scan...";
+            document.getElementById('retakeBtn2').style.display = 'none';
+            setupStage2();
+        });
+
+        function checkCompletion() {
+            if (hand1JSON && hand2JSON) {
+                document.getElementById('handInstruction').innerText = "Vedic Diagnostics Compiled.";
+                document.getElementById('qaSection').style.display = 'flex';
+                document.getElementById('sharePdfBtn').style.display = 'block';
+                
+                fullReadingContext = JSON.stringify({ Hand1: hand1JSON, Hand2: hand2JSON });
+                saveToArchive(userNameInput.value, hand1JSON, hand2JSON, firstHand, secondHand);
+
+                if (stream) {
+                    stream.getTracks().forEach(t => t.stop());
+                }
+            }
+        }
+
+        // Q&A and Audio Logic remains standard
+        function generateSpeechText(jsonObj) {
+            return `${jsonObj.handProportions}. ${jsonObj.manibandhaRekha}. ${jsonObj.planetaryMounts}. ${jsonObj.majorLines}. Remedies: ${jsonObj.remedies}`;
+        }
+
+        document.getElementById('audioBtn1').addEventListener('click', function() { toggleSpeech(generateSpeechText(hand1JSON), userLang.value, this); });
+        document.getElementById('audioBtn2').addEventListener('click', function() { toggleSpeech(generateSpeechText(hand2JSON), userLang.value, this); });
+
+        let currentSynth = null, currentAudioBtn = null;
+        function toggleSpeech(text, langName, btnElement) {
+            const synth = window.speechSynthesis;
+            if (synth.speaking && currentAudioBtn === btnElement) {
+                if (synth.paused) { synth.resume(); btnElement.innerHTML = "⏸️ Pause"; } 
+                else { synth.pause(); btnElement.innerHTML = "▶️ Resume"; } return;
+            }
+            synth.cancel();
+            if(currentAudioBtn) currentAudioBtn.innerHTML = "🔊 Listen";
+            
+            currentAudioBtn = btnElement;
+            const ut = new SpeechSynthesisUtterance(text);
+            const langMap = {"English":"en-IN", "Hindi":"hi-IN", "Marathi":"mr-IN", "Sanskrit":"sa-IN"};
+            ut.lang = langMap[langName] || 'en-IN';
+            
+            ut.onstart = () => btnElement.innerHTML = "⏸️ Pause";
+            ut.onend = ut.onerror = () => { btnElement.innerHTML = "🔊 Listen"; currentAudioBtn = null; };
+            synth.speak(ut);
+        }
+
+        document.getElementById('askBtn').addEventListener('click', async () => {
+            const q = document.getElementById('questionInput').value.trim();
+            if(!q) return;
+            const btn = document.getElementById('askBtn'); btn.disabled = true;
+            const box = document.getElementById('answerBox'); box.style.display = 'block';
+            document.getElementById('qaContent').innerHTML = `<span class="pulsing-text">Channeling answer...</span>`;
+
+            const prompt = `Act as a Vedic Palmist. Based on this full reading context: ${fullReadingContext}\nUser asks: "${q}"\nAnswer precisely in ${userLang.value}.`;
+
+		try {
+                const payloadObject = { "contents": [{ "parts": [{ "text": prompt }] }] };
+                const res = await fetchGeminiChat(payloadObject);
+                const data = await res.json();
+                if(data.error) throw new Error(data.error.message);
+                
+                const ans = data.candidates[0].content.parts[0].text;
+                document.getElementById('qaContent').innerHTML = `<strong>Astrologer says:</strong><br><br>${ans.replace(/\n/g,'<br>')}`;
+                document.getElementById('audioBtnQA').style.display = 'block';
+                document.getElementById('audioBtnQA').onclick = function() { toggleSpeech(ans.replace(/<[^>]*>?/gm, ''), userLang.value, this); };
+            } catch(e) { document.getElementById('qaContent').innerHTML = `<span style="color:var(--error-color);">Error: ${e.message}</span>`; }
+            btn.disabled = false;
+        });
+        
+        document.getElementById('sharePdfBtn').addEventListener('click', () => window.print());
+    </script>
+</body>
+</html>

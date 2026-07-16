@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Cognitive Assessment & Career Architect</title>
+	<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #f8fafc;
+            --surface: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --radius: 12px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: var(--bg-primary); color: var(--text-main); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        
+        .app-container {
+            width: 100%; max-width: 850px; background: var(--surface); border-radius: var(--radius);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+            border: 1px solid var(--border); padding: 40px; transition: all 0.3s ease;
+        }
+
+        .screen { display: none; }
+        .screen.active { display: block; animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        
+        h2 { font-size: 28px; font-weight: 800; margin-bottom: 8px; color: #0f172a; letter-spacing: -0.5px;}
+        p.subtitle { color: var(--text-muted); font-size: 15px; margin-bottom: 24px; line-height: 1.6; }
+        
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: 600; font-size: 14px; margin-bottom: 8px; color: #334155;}
+        input, select { width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; outline: none; transition: all 0.2s; background: #f8fafc;}
+        input:focus, select:focus { border-color: var(--accent); background: #ffffff; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);}
+        
+        button { background-color: var(--accent); color: white; border: none; padding: 14px 24px; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; transition: all 0.2s; }
+        button:hover { background-color: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);}
+        button:disabled { background-color: var(--border); color: var(--text-muted); cursor: not-allowed; transform: none; box-shadow: none;}
+        .btn-secondary { background-color: var(--surface); color: var(--text-main); border: 2px solid var(--border); box-shadow: none;}
+        .btn-secondary:hover { background-color: var(--bg-primary); }
+
+        .game-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .game-card { border: 1px solid var(--border); border-radius: 10px; padding: 20px; text-align: center; background: #ffffff; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
+        .game-card h4 { margin-bottom: 6px; font-size: 17px; color: #0f172a; }
+        .game-card p { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+        .status-badge { display: inline-block; padding: 6px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-top: 12px; letter-spacing: 0.5px;}
+        .status-pending { background: #f1f5f9; color: #64748b; }
+        .status-complete { background: #dcfce7; color: #166534; }
+
+        /* Shared Game UI */
+        .game-arena { height: 280px; background: #f8fafc; border-radius: 12px; display: flex; justify-content: center; align-items: center; margin-bottom: 24px; border: 2px dashed var(--border); flex-direction: column; position: relative; overflow: hidden;}
+        .large-prompt { font-size: 42px; font-weight: 900; letter-spacing: 1px; text-align: center; word-wrap: break-word; max-width: 90%; color: #0f172a;}
+        .dynamic-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;}
+        .dynamic-btns button { width: auto; min-width: 130px; }
+
+        /* Specific Elements */
+        .gng-target { width: 110px; height: 110px; border-radius: 50%; display: none; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1);}
+        .gng-green { background-color: var(--success); }
+        .gng-red { background-color: var(--danger); }
+        .balloon-container { display: flex; justify-content: center; align-items: center; height: 200px; position: relative; }
+        .balloon { width: 55px; height: 65px; background: radial-gradient(circle at 30% 30%, #fca5a5, #ef4444); border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%; transition: transform 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; }
+        
+        /* Tables & Prompt Box */
+        .results-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; text-align: left; border-radius: 8px; overflow: hidden; border: 1px solid var(--border);}
+        .results-table th, .results-table td { padding: 14px; border-bottom: 1px solid var(--border); }
+        .results-table th { background-color: #f1f5f9; font-weight: 700; color: #334155; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px;}
+        .results-table tr:last-child td { border-bottom: none; }
+        .ai-prompt-box { background: linear-gradient(145deg, #eff6ff, #e0e7ff); border: 1px solid #bfdbfe; padding: 30px; margin-top: 32px; border-radius: 12px; text-align: center; }
+        .ai-btn { background: linear-gradient(135deg, #4f46e5, #9333ea); color: white; box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3); font-size: 18px; margin-top: 20px; padding: 16px;}
+        .ai-btn:hover { background: linear-gradient(135deg, #4338ca, #7e22ce); box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4); }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    
+    <div id="screen-onboarding" class="screen active">
+        <h2>Enterprise Cognitive Assessment</h2>
+        <p class="subtitle">A clinical-grade, high-stress neuro-cognitive battery. This evaluation produces mathematically precise, objective telemetry to architect your optimal career trajectory.</p>
+        
+        <div class="form-group"><label>Candidate Full Name</label><input type="text" id="input-name" placeholder="e.g. Jane Doe"></div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+            <div class="form-group"><label>Age</label><input type="number" id="input-age" placeholder="Age" min="16" max="99"></div>
+            <div class="form-group"><label>Target Industry Domain</label>
+                <select id="input-edu">
+                    <option value="Technology & IT">Technology & IT</option>
+                    <option value="Business & Finance">Business & Finance</option>
+                    <option value="Healthcare">Healthcare</option>
+                    <option value="Education">Education & Academia</option>
+                    <option value="Arts & Media">Arts, Design & Media</option>
+                    <option value="Law & Public Service">Law & Public Service</option>
+                    <option value="Open Evaluation">Open Evaluation (Analyze All Domains)</option>
+                </select>
+            </div>
+        </div>
+        <button id="btn-start-battery">Initialize Secure Assessment</button>
+    </div>
+
+    <div id="screen-hub" class="screen">
+        <h2>Assessment Hub</h2>
+        <p class="subtitle">Complete all four modules. Ensure you are in a distraction-free environment.</p>
+        <div class="game-grid">
+            <div class="game-card"><h4>Stroop Task</h4><p>Inhibitory Control (10 Trials)</p><button onclick="startModule('stroop')" class="btn-secondary" id="b-stroop">Initiate</button><div class="status-badge status-pending" id="s-stroop">PENDING</div></div>
+            <div class="game-card"><h4>BART</h4><p>Risk Tolerance (10 Trials)</p><button onclick="startModule('bart')" class="btn-secondary" id="b-bart">Initiate</button><div class="status-badge status-pending" id="s-bart">PENDING</div></div>
+            <div class="game-card"><h4>Go / No-Go</h4><p>Impulse Control (10 Trials)</p><button onclick="startModule('gng')" class="btn-secondary" id="b-gng">Initiate</button><div class="status-badge status-pending" id="s-gng">PENDING</div></div>
+            <div class="game-card" style="grid-column: 1 / -1; background: #e0e7ff; border-color: #a5b4fc;">
+                <h4>High-Stress Procedural Battery</h4>
+                <p>20 Extreme Trials procedurally generated from an infinite logic bank. Evaluates Working Memory, Fluid Intelligence, and Abstract Processing under severe time pressure.</p>
+                <button onclick="startModule('rapid')" id="b-rapid" style="background: #4f46e5;">Initiate Rapid Battery</button>
+                <div class="status-badge status-pending" id="s-rapid" style="display:none;">PENDING</div>
+            </div>
+        </div>
+        <button id="btn-view-results" disabled>Compile Final Telemetry & View Results</button>
+    </div>
+
+    <div id="screen-stroop" class="screen">
+        <h2>Stroop Task</h2><p class="subtitle" style="text-align:center; color: var(--danger); font-weight:bold;">Select the INK COLOR, not the word!</p>
+        <div style="text-align:center; font-weight:bold; margin-bottom:10px; color:#475569;">Trial <span id="stroop-trial">1</span> / 10</div>
+        <div class="game-arena"><div id="stroop-word" class="large-prompt">RED</div></div>
+        <div class="dynamic-btns" id="stroop-btns"></div>
+    </div>
+
+    <div id="screen-bart" class="screen">
+        <h2>Risk Task (BART)</h2><p class="subtitle" style="text-align:center;">Pump for points. If it pops, you lose the round's points.</p>
+        <div style="display:flex; justify-content:space-around; font-weight:bold; margin-bottom:15px; color:#475569; background:#f1f5f9; padding:10px; border-radius:8px;">
+            <span>Round: <span id="bart-round">1</span>/10</span>
+            <span>Bank: <span id="bart-bank" style="color:var(--success)">0</span></span>
+            <span>Temp: <span id="bart-temp" style="color:var(--warning)">0</span></span>
+        </div>
+        <div class="game-arena balloon-container"><div id="bart-balloon" class="balloon"></div></div>
+        <div class="dynamic-btns"><button style="background:#ef4444;" onclick="pumpBart()">Pump (+10)</button><button style="background:#10b981;" onclick="cashBart()">Cash Out</button></div>
+    </div>
+
+    <div id="screen-gng" class="screen">
+        <h2>Go / No-Go</h2><p class="subtitle" style="text-align:center;">Click GREEN immediately. Do NOTHING for RED.</p>
+        <div style="text-align:center; font-weight:bold; margin-bottom:10px; color:#475569;">Trial <span id="gng-trial">1</span> / 10</div>
+        <div class="game-arena" id="gng-arena" onmousedown="clickGng()"><div id="gng-target" class="gng-target"></div></div>
+    </div>
+
+    <div id="screen-rapid" class="screen">
+        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+            <h2 id="rapid-title">Rapid Suite</h2>
+            <span style="font-weight: bold; color: var(--text-muted); background: #f1f5f9; padding: 4px 10px; border-radius: 12px;">Trial <span id="rapid-counter">1</span> / 20</span>
+        </div>
+        <p class="subtitle" id="rapid-desc" style="text-align:center; color: var(--danger); font-weight:bold;">Focus carefully.</p>
+        <div class="game-arena">
+            <div id="rapid-prompt" class="large-prompt"></div>
+            <input type="text" id="rapid-input" style="display:none; width: 80%; margin-top:20px; text-align:center; font-size:24px; text-transform: uppercase;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+        </div>
+        <div class="dynamic-btns" id="rapid-btns"></div>
+    </div>
+
+    <div id="screen-results" class="screen">
+        <h2>Master Cognitive Profile</h2>
+        <p class="subtitle">Biometric telemetry compiled securely across 50 objective data points.</p>
+        <table class="results-table"><thead><tr><th>Cognitive Domain</th><th>Accuracy / Status</th><th>Processing Speed</th></tr></thead><tbody id="results-body"></tbody></table>
+		<div class="ai-prompt-box">
+            <h3 style="color:#3730a3; margin-bottom: 8px;">Architect Your Career</h3>
+            <p style="font-size: 15px; color: #475569;">Enter your personal Gemini API Key below to bypass proxy limits, or leave it blank to use the centralized server.</p>
+            <div class="form-group" style="margin-top: 15px; text-align: left;">
+                <input type="password" id="api-key-input" placeholder="AIzaSy... (Optional API Key)">
+            </div>
+            <button id="btn-generate-ai" class="ai-btn">🧠 Generate Clinical Career Placement</button>
+            <div id="ai-loading" style="display: none; margin-top: 15px; font-weight: bold; color: #4f46e5; animation: pulse 1.5s infinite;">Analyzing telemetry matrix... Please wait.</div>
+        </div>
+        <div id="ai-results-output" style="margin-top: 20px; text-align: left; background: #ffffff; padding: 25px; border-radius: 12px; border: 1px solid var(--border); display: none; line-height: 1.6; box-shadow: 0 4px 15px rgba(0,0,0,0.05);"></div>
+    </div>
+
+</div>
+
+<script>
+let state = { user: {}, metrics: [], globalTime: [], flags: { stroop: false, bart: false, gng: false, rapid: false } };
+
+    // --- CENTRAL PROXY ROUTER ---
+    const PROXY_BASE_URL = "https://eprashala-proxy-511804777001.asia-south1.run.app";
+
+    async function fetchGeminiChat(payloadObject) {
+        const userKey = document.getElementById('api-key-input').value.trim() || '';
+
+        // TIER 1: User has their own key -> Direct browser handoff to Google
+        if (userKey && userKey.length > 10) {
+            try {
+                console.log("Direct Route Active: Targeting gemini-flash-latest...");
+                const primaryUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${userKey}`;
+                const response = await fetch(primaryUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payloadObject)
+                });
+                
+                if (!response.ok) throw new Error(`Primary model status: ${response.status}`);
+                return response;
+
+            } catch (error) {
+                console.warn("Primary channel busy/unavailable. Re-routing to fallback...", error);
+                const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${userKey}`;
+                return await fetch(fallbackUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payloadObject)
+                });
+            }
+        } 
+        
+        // TIER 2: No personal key provided -> Route to your centralized Mumbai server
+        else {
+            console.log("Proxy Route Active: Routing through centralized server...");
+            return await fetch(`${PROXY_BASE_URL}/api/chat`, {
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payloadObject)
+            });
+        }
+    }
+
+    function nav(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+    
+    function checkHub() {
+        ['stroop', 'bart', 'gng', 'rapid'].forEach(f => {
+            if(state.flags[f]) { document.getElementById(`b-${f}`).style.display = 'none'; document.getElementById(`s-${f}`).style.display = 'inline-block'; document.getElementById(`s-${f}`).innerText = 'COMPLETED'; document.getElementById(`s-${f}`).className = 'status-badge status-complete'; }
+        });
+        if (state.flags.stroop && state.flags.bart && state.flags.gng && state.flags.rapid) {
+            const b = document.getElementById('btn-view-results'); b.disabled = false; b.style.background = '#10b981';
+        }
+    }
+
+    document.getElementById('btn-start-battery').addEventListener('click', () => {
+        const name = document.getElementById('input-name').value.trim();
+        const age = document.getElementById('input-age').value.trim();
+        if (!name || !age) { alert("Please provide your name and age to ensure accurate demographic baselining."); return; }
+        
+        state.user.name = name;
+        state.user.age = age;
+        state.user.edu = document.getElementById('input-edu').value;
+        nav('screen-hub');
+    });
+
+    function startModule(mod) {
+        if(mod==='stroop') initStroop();
+        if(mod==='bart') initBart();
+        if(mod==='gng') initGng();
+        if(mod==='rapid') initRapid();
+    }
+
+    // --- 1. STROOP (10 Rounds) ---
+    let stData = { t: 0, m: 10, c: 0, rt: 0, st: 0, cols: ['red', 'blue', 'green', 'yellow'] };
+    function initStroop() { stData = { t: 1, m: 10, c: 0, rt: 0, st: 0, cols: ['red', 'blue', 'green', 'yellow'] }; nav('screen-stroop'); nextStroop(); }
+    function nextStroop() {
+        if(stData.t > stData.m) { state.metrics.push({trait:"Inhibitory Control (Stroop)", score:`${Math.round((stData.c/stData.m)*100)}% Acc`, time:Math.round(stData.rt/stData.m)}); state.flags.stroop=true; nav('screen-hub'); checkHub(); return; }
+        document.getElementById('stroop-trial').innerText = stData.t;
+        const text = stData.cols[Math.floor(Math.random()*4)];
+        let ink = stData.cols[Math.floor(Math.random()*4)]; while(ink===text) ink = stData.cols[Math.floor(Math.random()*4)];
+        
+        const hexMap = { 'red': '#ef4444', 'blue': '#3b82f6', 'green': '#22c55e', 'yellow': '#eab308' };
+        document.getElementById('stroop-word').innerText = text; document.getElementById('stroop-word').style.color = hexMap[ink];
+        document.getElementById('stroop-btns').innerHTML = stData.cols.map(c => `<button style="background:${hexMap[c]};color:${c==='yellow'?'#000':'#fff'};" onclick="ansStroop('${c}', '${ink}')">${c.toUpperCase()}</button>`).join('');
+        stData.st = performance.now();
+    }
+    function ansStroop(ans, correct) { const rt = performance.now()-stData.st; stData.rt += rt; state.globalTime.push(rt); if(ans===correct) stData.c++; stData.t++; nextStroop(); }
+
+    // --- 2. BART (10 Rounds) ---
+    let btData = { r: 1, m: 10, p: 0, b: 0, tp: 0, un: 0, lim: 0 };
+    function initBart() { btData = { r: 1, m: 10, p: 0, b: 0, tp: 0, un: 0, lim: 0 }; nav('screen-bart'); nBart(); }
+    function nBart() {
+        if(btData.r > btData.m) { 
+            const avg = btData.un>0 ? (btData.tp/btData.un).toFixed(1) : 0;
+            state.metrics.push({trait:"Risk Tolerance (BART)", score:`${avg} Avg Pumps/Round`, time:"N/A"}); state.flags.bart=true; nav('screen-hub'); checkHub(); return; 
+        }
+        document.getElementById('bart-round').innerText = btData.r;
+        btData.p = 0; btData.lim = Math.floor(Math.random()*15)+4; 
+        document.getElementById('bart-balloon').style.transform = `scale(1)`; document.getElementById('bart-balloon').innerHTML=''; document.getElementById('bart-temp').innerText='0';
+    }
+    function pumpBart() {
+        btData.p++;
+        if(btData.p >= btData.lim) { document.getElementById('bart-balloon').innerHTML='💥'; setTimeout(()=>{ btData.r++; nBart(); }, 500); }
+        else { document.getElementById('bart-temp').innerText = btData.p*10; document.getElementById('bart-balloon').style.transform = `scale(${1+(btData.p*0.1)})`; }
+    }
+    function cashBart() { if(btData.p===0) { alert("You must pump the balloon at least once before cashing out."); return; } btData.b += btData.p*10; btData.tp += btData.p; btData.un++; btData.r++; document.getElementById('bart-bank').innerText = btData.b; nBart(); }
+
+    // --- 3. GO/NO-GO (10 Rounds) ---
+    let ggData = { t: 1, m: 10, fa: 0, rt: 0, c: 0, st: 0, act: false, typ: '', tmr: null };
+    function initGng() { ggData = { t: 1, m: 10, fa: 0, rt: 0, c: 0, st: 0, act: false, typ: '', tmr: null }; nav('screen-gng'); nGng(); }
+    function nGng() {
+        if(ggData.t > ggData.m) { state.metrics.push({trait:"Impulse Control (Go/No-Go)", score:`${ggData.fa} False Alarms`, time:ggData.c>0?Math.round(ggData.rt/ggData.c):0}); state.flags.gng=true; nav('screen-hub'); checkHub(); return; }
+        document.getElementById('gng-trial').innerText = ggData.t;
+        document.getElementById('gng-target').style.display = 'none'; ggData.act = false;
+        
+        ggData.tmr = setTimeout(() => {
+            ggData.typ = Math.random()>0.3 ? 'go' : 'nogo';
+            document.getElementById('gng-target').className = `gng-target ${ggData.typ==='go'?'gng-green':'gng-red'}`;
+            document.getElementById('gng-target').style.display = 'block'; ggData.act = true; ggData.st = performance.now();
+            ggData.tmr = setTimeout(()=>{ ggData.act=false; document.getElementById('gng-target').style.display='none'; ggData.t++; nGng(); }, 1000);
+        }, Math.floor(Math.random()*1000)+600);
+    }
+    function clickGng() {
+        if(!ggData.act) return; 
+        clearTimeout(ggData.tmr); ggData.act=false; document.getElementById('gng-target').style.display='none';
+        if(ggData.typ==='go') { const rt = performance.now()-ggData.st; ggData.c++; ggData.rt += rt; state.globalTime.push(rt); } else { ggData.fa++; }
+        ggData.t++; nGng();
+    }
+
+    // --- 4. MASSIVE PROCEDURAL RAPID ENGINE (25 Distinct Generators) ---
+    const PROCEDURAL_GENERATORS = [
+        { tr: "Orthographic Fault Recall", d: "Type the EXACT spelling you saw, even if incorrect.", gen: () => {
+            const w = ["DEFANITELY", "ACOMMODATE", "REVEIVE", "SEPERATE", "OCURRENCE", "WENSDAY", "ACIDENT", "TOMOROW", "BELEIVE", "CALANDER", "BUIZNESS"][Math.floor(Math.random()*11)];
+            return { p: w, a: w, input: true, hide: 800 }; 
+        }},
+        { tr: "Working Memory (Reverse)", d: "Type the digits in REVERSE order.", gen: () => {
+            const num = Math.floor(Math.random()*90000) + 10000;
+            return { p: num.toString(), a: num.toString().split('').reverse().join(''), input: true, hide: 1200 };
+        }},
+        { tr: "Alphanumeric Registration", d: "Memorize and type exactly.", gen: () => {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'; let res = '';
+            for(let i=0; i<6; i++) res += chars.charAt(Math.floor(Math.random() * chars.length));
+            return { p: res, a: res, input: true, hide: 1000 };
+        }},
+        { tr: "Quantitative Stress", d: "Solve accurately.", gen: () => {
+            const x = Math.floor(Math.random()*12)+3, y = Math.floor(Math.random()*8)+3, z = Math.floor(Math.random()*5)+2;
+            const op = Math.random()>0.5 ? '+' : '-'; const ans = op === '+' ? ((x+y)*z) : ((x-y)*z);
+            return { p: `(${x} ${op} ${y}) × ${z} = ?`, a: ans.toString(), input: true, hide: false };
+        }},
+        { tr: "Abstract Logic (Boolean)", d: "Evaluate the statement.", gen: () => {
+            const b1 = Math.random()>0.5, b2 = Math.random()>0.5, op = Math.random()>0.5 ? "AND" : "OR", inv = Math.random()>0.5;
+            let ans = op === "AND" ? (b1 && b2) : (b1 || b2); if (inv) ans = !ans;
+            return { p: `${inv ? "NOT (" : ""}${b1?'TRUE':'FALSE'} ${op} ${b2?'TRUE':'FALSE'}${inv ? ")" : ""}`, a: ans ? "TRUE" : "FALSE", b: ["TRUE", "FALSE"] };
+        }},
+        { tr: "Semantic Trap", d: "Is this logically true?", gen: () => {
+            const st = [{q:"1kg of Iron is heavier than 1kg of Feathers", a:"FALSE"}, {q:"A square has 4 corners", a:"TRUE"}, {q:"Water boils at 0°C", a:"FALSE"}, {q:"The day before yesterday was 2 days ago", a:"TRUE"}];
+            const s = st[Math.floor(Math.random()*st.length)]; return { p: s.q, a: s.a, b: ["TRUE", "FALSE"] };
+        }},
+        { tr: "Perceptual Speed", d: "Find the odd letter out and type it.", gen: () => {
+            const p = [{m:'O', t:'Q'}, {m:'I', t:'l'}, {m:'M', t:'N'}, {m:'E', t:'F'}][Math.floor(Math.random()*4)];
+            const arr = Array(25).fill(p.m); arr[Math.floor(Math.random()*25)] = p.t;
+            return { p: arr.join(''), a: p.t.toUpperCase(), input: true, hide: false };
+        }},
+        { tr: "Fluid Intelligence", d: "Complete the sequence.", gen: () => {
+            const start = Math.floor(Math.random()*5)+1, step = Math.floor(Math.random()*4)+2;
+            return { p: `${start}, ${start+step}, ${start+(step*2)}, ${start+(step*3)}, ?`, a: (start+(step*4)).toString(), input: true, hide: false };
+        }},
+        { tr: "Spatial Direction", d: "Where are you facing?", gen: () => {
+            const dirs = ['NORTH', 'EAST', 'SOUTH', 'WEST']; const sIdx = Math.floor(Math.random()*4);
+            const t = [90, 180, -90][Math.floor(Math.random()*3)]; let eIdx = (sIdx + (t/90)) % 4; if(eIdx < 0) eIdx += 4;
+            return { p: `Face ${dirs[sIdx]}. ${t===90 ? "Right 90°" : (t===-90 ? "Left 90°" : "Turn 180°")}.`, a: dirs[eIdx], b: dirs };
+        }},
+        { tr: "Symbolic Decoding", d: "If A=1, B=2, C=3...", gen: () => {
+            const a = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"; const i1 = Math.floor(Math.random()*8), i2 = Math.floor(Math.random()*8);
+            return { p: `${a[i1]} + ${a[i2]} = ?`, a: ((i1+1)+(i2+1)).toString(), input: true, hide: false };
+        }},
+        { tr: "Lexical Flexibility", d: "Unscramble the word.", gen: () => {
+            const w = [{s:"TCA", a:"CAT"}, {s:"OGD", a:"DOG"}, {s:"NUB", a:"BUN"}, {s:"RTA", a:"ART"}][Math.floor(Math.random()*4)];
+            return { p: w.s, a: w.a, input: true, hide: false };
+        }},
+        { tr: "Selective Attention", d: "Count the vowels (A, E, I, O, U).", gen: () => {
+            const w = ["NEUROPLASTICITY", "PSYCHOMETRICS", "ALGORITHM", "COGNITIVE", "ARCHITECTURE"][Math.floor(Math.random()*5)];
+            return { p: w, a: ((w.match(/[AEIOU]/g) || []).length).toString(), input: true, hide: false };
+        }},
+        { tr: "Time Calculation", d: "Calculate the exact time.", gen: () => {
+            const h = Math.floor(Math.random()*10)+1, m = [15, 30, 45][Math.floor(Math.random()*3)], add = [15, 30, 45][Math.floor(Math.random()*3)];
+            let nH = h, nM = m + add; if(nM >= 60) { nH++; nM -= 60; }
+            return { p: `If it is ${h}:${m}, what time is it in ${add} mins?`, a: `${nH}:${nM===0?'00':nM}`, input: true, hide: false };
+        }},
+        { tr: "Fraction Logic", d: "Which fraction is mathematically larger?", gen: () => {
+            const f = [{p:"3/4 or 5/8?", a:"3/4", b:["3/4", "5/8"]}, {p:"2/3 or 5/9?", a:"2/3", b:["2/3", "5/9"]}, {p:"1/4 or 3/10?", a:"3/10", b:["1/4", "3/10"]}];
+            const sel = f[Math.floor(Math.random()*f.length)]; return { p: sel.p, a: sel.a, b: sel.b };
+        }},
+        { tr: "Word Categorization", d: "Categorize the word.", gen: () => {
+            const c = [{w:"Hammer", a:"Tool"}, {w:"Cabbage", a:"Plant"}, {w:"Leopard", a:"Animal"}][Math.floor(Math.random()*3)];
+            return { p: c.w, a: c.a, b: ["Tool", "Plant", "Animal"] };
+        }},
+        { tr: "Algebra Basics", d: "Solve for X, then apply.", gen: () => {
+            const x = Math.floor(Math.random()*5)+2, mult = Math.floor(Math.random()*3)+2, add = Math.floor(Math.random()*5)+1;
+            return { p: `If ${mult}X = ${mult*x}, what is X + ${add}?`, a: (x+add).toString(), input: true, hide: false };
+        }},
+        { tr: "Mirror Word", d: "Which word is exactly reversed?", gen: () => {
+            const p = [{w:"APPLE", a:"ELPPA", b:["ELPPA", "ELPAA"]}, {w:"LOGIC", a:"CIGOL", b:["CIGOL", "CIGAL"]}][Math.floor(Math.random()*2)];
+            return { p: p.w, a: p.a, b: p.b };
+        }},
+        { tr: "Decimal Math", d: "Solve the decimal equation.", gen: () => {
+            const n1 = [0.25, 0.5, 0.75][Math.floor(Math.random()*3)], n2 = [0.25, 0.5][Math.floor(Math.random()*2)];
+            return { p: `${n1} + ${n2} = ?`, a: (n1+n2).toString(), input: true, hide: false };
+        }},
+        { tr: "Odd/Even Logic", d: "Follow the instruction.", gen: () => {
+            const st = Math.floor(Math.random()*4)*2 + 2; // 2,4,6,8
+            return { p: `Multiply the next two EVEN numbers after ${st}.`, a: ((st+2)*(st+4)).toString(), input: true, hide: false };
+        }},
+        { tr: "Visual Symbol Search", d: "Find the odd symbol.", gen: () => {
+            const arr = Array(20).fill('♠'); arr[Math.floor(Math.random()*20)] = '♣';
+            return { p: arr.join(''), a: '♣', b: ['♠', '♣'] };
+        }}
+    ];
+
+    let rapState = { t: 1, max: 20, trialsData: [], st: 0, curr: null, playlist: [], tmr1: null, tmr2: null };
+
+    function initRapid() { 
+        // Strict No-Repeat logic for 20 trials out of 20+ generators
+        rapState.playlist = PROCEDURAL_GENERATORS.slice().sort(()=>Math.random()-0.5).slice(0, 20);
+        rapState = { t: 1, max: 20, trialsData: [], st: 0, curr: null, playlist: rapState.playlist, tmr1: null, tmr2: null }; 
+        nav('screen-rapid'); 
+        runRapid(); 
+    }
+
+    function runRapid() {
+        if(rapState.t > rapState.max) {
+            let traitMap = {};
+            rapState.trialsData.forEach(td => {
+                if(!traitMap[td.tr]) traitMap[td.tr] = { cr: 0, rt: 0, count: 0 };
+                if(td.correct) traitMap[td.tr].cr++;
+                traitMap[td.tr].rt += td.rt; traitMap[td.tr].count++;
+            });
+
+            for (const [trait, data] of Object.entries(traitMap)) {
+                state.metrics.push({ trait: trait, score: `${Math.round((data.cr/data.count)*100)}% Acc`, time: Math.round(data.rt/data.count) });
+            }
+            state.flags.rapid = true; nav('screen-hub'); checkHub(); return;
+        }
+
+        document.getElementById('rapid-counter').innerText = rapState.t;
+        
+        const generatorDef = rapState.playlist[rapState.t - 1];
+        rapState.curr = generatorDef.gen();
+        rapState.curr.tr = generatorDef.tr;
+
+        document.getElementById('rapid-title').innerText = generatorDef.tr;
+        document.getElementById('rapid-desc').innerText = generatorDef.d;
+
+        const pEl = document.getElementById('rapid-prompt'); const bEl = document.getElementById('rapid-btns'); const iEl = document.getElementById('rapid-input');
+        pEl.style.display = 'block'; bEl.style.display = 'flex'; iEl.style.display = 'none'; iEl.value = ''; bEl.innerHTML = '';
+        
+        // Clear any rogue timers
+        clearTimeout(rapState.tmr1); clearTimeout(rapState.tmr2);
+
+        if(rapState.curr.hide) {
+            pEl.innerText = rapState.curr.p;
+            rapState.tmr1 = setTimeout(() => {
+                pEl.innerText = "Type exactly what you saw:";
+                iEl.style.display = 'block'; iEl.focus();
+                bEl.innerHTML = `<button onclick="ansRapid(document.getElementById('rapid-input').value.toUpperCase())">Submit</button>`;
+                rapState.st = performance.now();
+            }, rapState.curr.hide);
+        } else if(rapState.curr.input) {
+            pEl.innerText = rapState.curr.p;
+            iEl.style.display = 'block'; iEl.focus();
+            bEl.innerHTML = `<button onclick="ansRapid(document.getElementById('rapid-input').value.toUpperCase())">Submit</button>`;
+            rapState.st = performance.now();
+        } else {
+            pEl.innerText = rapState.curr.p;
+            bEl.innerHTML = rapState.curr.b.map(b=>`<button onclick="ansRapid('${b}')">${b}</button>`).join('');
+            rapState.st = performance.now();
+        }
+
+        // Prevent multiple fires from Enter key
+        iEl.onkeydown = function(e){ 
+            if(e.key === 'Enter'){ 
+                e.preventDefault(); 
+                iEl.onkeydown = null; // Remove listener instantly
+                ansRapid(iEl.value.toUpperCase()); 
+            } 
+        };
+    }
+
+    function ansRapid(ans) {
+        const rt = performance.now() - rapState.st;
+        state.globalTime.push(rt);
+        const isCorrect = ans.trim() === rapState.curr.a.toString().toUpperCase(); 
+        rapState.trialsData.push({ tr: rapState.curr.tr, correct: isCorrect, rt: rt });
+        rapState.t++; runRapid();
+    }
+
+    // --- RESULTS & PROMPT ---
+    document.getElementById('btn-view-results').addEventListener('click', () => {
+        const tb = document.getElementById('results-body'); tb.innerHTML = '';
+        state.metrics.forEach(m => { tb.innerHTML += `<tr><td>${m.trait}</td><td style="font-weight:bold; color:#0f172a;">${m.score}</td><td>${m.time} ${m.time!=='N/A'?'ms':''}</td></tr>`; });
+        nav('screen-results');
+    });
+
+document.getElementById('btn-generate-ai').addEventListener('click', async () => {
+        const btn = document.getElementById('btn-generate-ai');
+        const loader = document.getElementById('ai-loading');
+        const outputBox = document.getElementById('ai-results-output');
+
+        btn.style.display = 'none';
+        loader.style.display = 'block';
+        outputBox.style.display = 'none';
+
+        let tStr = "Cognitive Domain | Score / Error Rate | Processing Time\n---|---|---\n";
+        state.metrics.forEach(m => { tStr += `${m.trait} | ${m.score} | ${m.time}\n`; });
+        
+        const globalVelocity = state.globalTime.length > 0 ? Math.round(state.globalTime.reduce((a,b)=>a+b, 0) / state.globalTime.length) : 0;
+
+        const systemPrompt = `System Directive: Act as a Master Career Architect and Elite Industrial-Organizational Psychologist. The professional trajectory of this candidate depends on your clinical, mathematically sound analysis. Do NOT provide generic career advice. You must anchor every recommendation to the objective biometric telemetry provided below.
+
+I have completed a clinical-grade, high-stress Cognitive Assessment Battery testing reaction times, working memory, impulse control, risk tolerance, and fluid intelligence under extreme constraints.
+
+CANDIDATE PROFILE:
+- Name: ${state.user.name}
+- Age: ${state.user.age}
+- Target Industry Domain: ${state.user.edu}
+- Global Cognitive Velocity (Average Reaction Time across all stress trials): ${globalVelocity} ms.
+
+RAW BIOMETRIC TELEMETRY MATRIX:
+${tStr}
+
+YOUR DIRECTIVE:
+Perform a ruthless, objective analysis of this cognitive architecture. Tell the absolute truth based on the data.
+- Are they highly impulsive (High Go/No-Go errors)? If so, steer them away from meticulous compliance roles.
+- Are they aggressive risk-takers (High BART pumps)? If so, point them toward sales or entrepreneurship.
+- Do they have elite working memory (Accurate Orthographic/Reverse span)? Point them toward complex engineering or data roles.
+- How does their Global Velocity (${globalVelocity} ms) dictate their ideal working environment?
+
+You MUST select exactly 3 specific career roles. If a Target Domain was specified (other than "Open Evaluation"), prioritize roles strictly within that domain. Otherwise, select the best fits from across these industries: Technology, Healthcare, Finance, Education, Media, Law, Hospitality, or Skilled Trades.
+
+FORMAT YOUR OUTPUT EXACTLY AS FOLLOWS (Do not deviate):
+### 1st Option: [Specific Role]
+[Provide 3-4 sentences of deep reasoning directly referencing specific numerical metrics from the table (e.g., "Your Stroop accuracy of X% and Global Velocity of Y ms proves you excel at...") to mathematically justify this placement].
+
+### 2nd Option: [Specific Role]
+[Detailed reasoning referencing specific metrics].
+
+### 3rd Option: [Specific Role]
+[Detailed reasoning referencing specific metrics].
+
+Tone: Highly professional, clinical, objective, and constructive.`;
+
+        const payloadObject = {
+            contents: [{ role: "user", parts: [{ text: systemPrompt }] }]
+        };
+
+        try {
+            const response = await fetchGeminiChat(payloadObject);
+            const data = await response.json();
+            
+            if (data.error) throw new Error(data.error.message);
+
+            let rawExpertText = data.candidates[0].content.parts[0].text;
+            
+            outputBox.innerHTML = typeof marked !== 'undefined' ? marked.parse(rawExpertText) : rawExpertText.replace(/\n/g, '<br>');
+            outputBox.style.display = 'block';
+
+        } catch (error) {
+            console.error("AI Error:", error);
+            alert("Failed to generate career placement: " + error.message);
+            btn.style.display = 'block';
+        } finally {
+            loader.style.display = 'none';
+        }
+    });
+</script>
+</body>
+</html>
