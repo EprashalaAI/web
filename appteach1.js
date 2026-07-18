@@ -1542,17 +1542,18 @@ function renderMessage(sender, text, isModel) {
     div.innerHTML = htmlContent;
     UI.log.appendChild(div);
 
-    if (isModel) {
+if (isModel) {
         const mdBody = div.querySelector('.markdown-body');
         
-        // Strip tags completely so the TTS engine doesn't read them out loud
+        // Deep sanitization: Strip tags, brackets, and markdown symbols so the TTS reads cleanly
         const cleanTextForTTS = text
             .replace(/YT_SEARCH:.*$/gm, '')
             .replace(/IMG_SEARCH:.*$/gm, '')
             .replace(/\[SCORE:\d+\]/g, '')
-            .replace(/[*_#`~]/g, '')
-            .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-            .replace(/<[^>]+>/g, '')
+            .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Extract text from markdown links
+            .replace(/<[^>]+>/g, ' ')               // Strip HTML tags and replace with space
+            .replace(/[\*<>\#\-;:\[\]{}\(\)`~_]/g, ' ') // Target deep symbols and punctuation
+            .replace(/\s+/g, ' ')                   // Collapse any double spaces created by removal
             .trim();
             
         const speechText = prepareTextForTTSAndHighlighting(mdBody, msgId);
