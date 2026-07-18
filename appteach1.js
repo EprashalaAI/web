@@ -43,23 +43,47 @@ function enforceFullscreen() {
     document.addEventListener(eventType, enforceFullscreen, { capture: true, passive: true });
 });
 
-// --- 1. DATA STRUCTURES & CONFIG ---
-const PROXY_URL = "https://eprashala.pythonanywhere.com/api/chat"; 
 
-const MAHA_BOARD_SUBJECTS = {
-    std1to2: ["Marathi (मराठी)", "English", "Mathematics (गणित)"],
-    std3: ["Marathi (मराठी)", "English", "Mathematics (गणित)", "Environmental Studies (परिसर अभ्यास)"],
-    std4to5: ["Marathi (मराठी)", "English", "Hindi (हिंदी)", "Mathematics (गणित)", "EVS Part 1 (परिसर अभ्यास १)", "EVS Part 2 (परिसर अभ्यास २ - शिवछत्रपती)"],
-    std6to8: ["Marathi (मराठी)", "English", "Hindi (हिंदी)", "Mathematics (गणित)", "General Science (सामान्य विज्ञान)", "History & Civics (इतिहास व नागरिकशास्त्र)", "Geography (भूगोल)"],
-    std9to10: ["Marathi (मराठी)", "English", "Hindi (हिंदी)", "Sanskrit (संस्कृत)", "Mathematics Part-I (Algebra / बीजगणित)", "Mathematics Part-II (Geometry / भूमिती)", "Science & Technology Part-1", "Science & Technology Part-2", "History & Political Science", "Geography (भूगोल)"],
-    std11to12: [
-        "English", "Marathi (मराठी)", "Hindi (हिंदी)", "Physics", "Chemistry", "Biology", 
-        "Mathematics & Statistics", "Information Technology (IT)", "Economics (अर्थशास्त्र)", 
-        "Book Keeping & Accountancy", "Organization of Commerce & Management (OCM)", 
-        "Secretarial Practice (SP)", "History (इतिहास)", "Geography (भूगोल)", 
-        "Political Science (राज्यशास्त्र)", "Sociology (समाजशास्त्र)", "Psychology (मानसशास्त्र)"
-    ]
-};
+// --- 1. DATA STRUCTURES & CONFIG ---
+const PROXY_BASE_URL = "https://eprashala-proxy-511804777001.asia-south1.run.app";
+
+async function fetchGeminiChat(payloadObject, abortSignal) {
+    const userKey = document.getElementById('custom-api-key-input').value.trim() || '';
+    
+    // Package request options and bind the AbortController signal if active
+    const fetchOptions = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payloadObject)
+    };
+    if (abortSignal) fetchOptions.signal = abortSignal;
+
+    // TIER 1: User has their own key -> Direct browser handoff to Google
+    if (userKey && userKey.length > 10) {
+        try {
+            console.log("Direct Route Active: Targeting gemini-flash-latest...");
+            const primaryUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${userKey}`;
+            const response = await fetch(primaryUrl, fetchOptions);
+            
+            if (!response.ok) throw new Error(`Primary model status: ${response.status}`);
+            return response;
+
+        } catch (error) {
+            if (error.name === 'AbortError') throw error; // Halt immediately if user triggered cancellation
+            console.warn("Primary channel busy/unavailable. Re-routing to fallback...", error);
+            const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${userKey}`;
+            return await fetch(fallbackUrl, fetchOptions);
+        }
+    } 
+    
+    // TIER 2: No personal key provided -> Route to your centralized Mumbai proxy server
+    else {
+        console.log("Proxy Route Active: Routing through centralized gateway...");
+        return await fetch(`${PROXY_BASE_URL}/api/chat`, fetchOptions);
+    }
+}
+
+
 
 // --- 2. DOM & STATE ---
 const UI = {
@@ -142,6 +166,7 @@ let cropper = null;
 let state = { isProcessing: false, isMuted: false, lastAIMessage: "" };
 let inningsScore = 0; 
 let currentAborter = null;
+let syllabusIndex = {};
 
 // History Vault State
 let allSessions = []; 
@@ -212,7 +237,18 @@ window.triggerEditLastInput = (e) => {
 };
 
 // --- 3. INITIALIZATION ---
-window.onload = () => {
+window.onload = async () => {
+    try {
+        // Fetch the external JSON index
+        const response = await fetch('./syllabus.json');
+        if (!response.ok) throw new Error("Failed to load syllabus index.");
+        syllabusIndex = await response.json();
+    } catch (error) {
+        console.error("Error loading syllabus data:", error);
+        alert("Failed to load curriculum data. Please refresh.");
+    }
+
+    // Proceed with existing initialization
     loadData();
     initSpeechRecognition(); 
     
@@ -242,23 +278,29 @@ UI.overlay.addEventListener('click', () => {
 });
 
 function updateSubjectsList() {
-    const std = parseInt(UI.selStd.value);
-    let subjects = [];
+    const medium = UI.selMedium.value;
+    const std = UI.selStd.value;
     
-    if (std >= 1 && std <= 2) subjects = MAHA_BOARD_SUBJECTS.std1to2;
-    else if (std === 3) subjects = MAHA_BOARD_SUBJECTS.std3;
-    else if (std >= 4 && std <= 5) subjects = MAHA_BOARD_SUBJECTS.std4to5;
-    else if (std >= 6 && std <= 8) subjects = MAHA_BOARD_SUBJECTS.std6to8;
-    else if (std >= 9 && std <= 10) subjects = MAHA_BOARD_SUBJECTS.std9to10;
-    else if (std >= 11 && std <= 12) subjects = MAHA_BOARD_SUBJECTS.std11to12;
-
+    // Clear the current dropdown
     UI.selSub.innerHTML = '';
-    subjects.forEach(sub => {
+    
+    // Check if the data exists for the selected medium and standard
+    if (syllabusIndex[medium] && syllabusIndex[medium][std]) {
+        const subjects = syllabusIndex[medium][std];
+        
+        subjects.forEach(sub => {
+            const opt = document.createElement('option');
+            opt.value = sub;
+            opt.text = sub;
+            UI.selSub.appendChild(opt);
+        });
+    } else {
+        // Fallback if no subjects are found for that specific index
         const opt = document.createElement('option');
-        opt.value = sub;
-        opt.text = sub;
+        opt.value = "";
+        opt.text = "No subjects available";
         UI.selSub.appendChild(opt);
-    });
+    }
 }
 
 function updateLeftSliderLabels() {
@@ -582,7 +624,7 @@ function updateStopButtonVisibility() {
 
 // --- 6. EVENT LISTENERS ---
 function setupEventListeners() {
-    UI.selMedium.addEventListener('change', saveData);
+	UI.selMedium.addEventListener('change', () => { updateSubjectsList();  saveData(); });
     UI.selStd.addEventListener('change', () => { updateSubjectsList(); saveData(); });
     UI.selSub.addEventListener('change', saveData);
     if (UI.ttsEngine) UI.ttsEngine.addEventListener('change', saveData);
@@ -924,20 +966,16 @@ async function getAIResponse(history) {
            IMG_SEARCH: relevant_topic_keywords`; 
     }
 
-    const payload = { 
-        model: "gemini-3.1-flash", 
+const payload = { 
         contents: history.slice(-10), 
         systemInstruction: { parts: [{ text: prompt }] } 
     };
 
     currentAborter = new AbortController();
 
-    const response = await fetch(PROXY_URL, { 
-        method: 'POST', 
-        headers: headers, 
-        body: JSON.stringify(payload),
-        signal: currentAborter.signal
-    });
+    // Pass both the payload and the operational abort signal into the router
+    const response = await fetchGeminiChat(payload, currentAborter.signal);
+    
     if (!response.ok) throw new Error('API Error');
     const data = await response.json();
     return data.candidates[0].content.parts[0].text;
