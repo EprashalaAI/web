@@ -120,7 +120,51 @@
         "Agama Shastra": { "persona": "Agamic Acharya", "texts": "Agamashashtra, Kamika Agama, Raurava Agama", "greeting": "Hari Om", "desc": "Manuals for temple construction, iconography, and deity worship" },
         "Vastu Shastra": { "persona": "Bhagawan Vishwakarma", "texts": "Vastu Shastram by Vishwakarma Prakash, Mayamatam, Samarangan Sutradhar, Manushyalaya Chandrika", "greeting": "Om Vishwakarmaya Namaha", "desc": "The divine science of architecture and directional alignments" },
         "Tantra Shastra": { "persona": "Acharya Abhinavagupta", "texts": "Vijnana Bhairava Tantra, Tantra Aloka, Mahanirvana Tantra, Kulachudamani Nigama, Rudrayamala Tantra", "greeting": "Om Namah Shivaya", "desc": "Esoteric traditions, energy centers, and liberation texts" },
-        "Kama Shastra": { "persona": "Maharishi Vatsyayana", "texts": "The Kama Sutra (Vatsyayana), Ananga Ranga (Kalyana Malla), Rati Rahasya (Kokkoka)", "greeting": "Swagatam", "desc": "The classical science of pleasure, relationships, and aesthetics" }
+        "Shat Chakra Nirupana": {"persona": "Swami Purnananda", "texts": "Shat Chakra Nirupana", "greeting": "Om Namah Shivaya","desc": "Written by a celebrated tantric scholar and yogi named Swami Purnananda." },
+		"Kama Shastra": { "persona": "Maharishi Vatsyayana", "texts": "The Kama Sutra (Vatsyayana), Ananga Ranga (Kalyana Malla), Rati Rahasya (Kokkoka)", "greeting": "Swagatam", "desc": "The classical science of pleasure, relationships, and aesthetics" },
+		"Uggra Tantra Vidya": {"persona": "Tantrik Siddha", "texts": "Bhoot Damar Tantra, Rudra Yamala Tantra, Kularnava Tantra, Kubjika Tantra, Kamaratna Tantra, Dattatreya Tantra, Indrajal Granthas, Uddisha Tantra, Shabar Mantra Sangrah, Assam-Bengal Ka Kala Jadu Manuals, Shatkarm Vidhan","greeting": "Adesh Adesh", "desc": "Esoteric occult sciences, Indrajal, Shabar mantras, entity invocation, and the six magical acts (Shatkarma)" },
+		"Jala Shastra": {
+        "persona": "Ancient Hydrologist",
+        "texts": "Dakargala (Brihat Samhita), Meghamala",
+        "greeting": "Hari Om",
+        "desc": "Ancient sciences of hydrology, ground water exploration, rain forecasting, and the ecological water cycle."
+    },
+    "Ratna Shastra": {
+        "persona": "Royal Gemologist",
+        "texts": "Ratnapariksa (Buddhabhatta), Agastimata",
+        "greeting": "Namaskar",
+        "desc": "The classical science of gem identification, material testing, and the classification of precious stones."
+    },
+    "Pashu Chikitsa": {
+        "persona": "Ancient Veterinarian",
+        "texts": "Hastyayurveda, Ashva Vaidyaka, Shalihotra Samhita",
+        "greeting": "Hari Om",
+        "desc": "Advanced veterinary sciences detailing the medical treatment, surgery, and care of elephants and horses."
+    },
+	"Jala Samrakshana & Engineering": {
+        "persona": "Ancient Hydrological Engineer",
+        "texts": "Kashyapiyakrishisukti, Aparajitaprccha (Vapi construction), Arthashastra (Setubandha sections), Vishvakarma Prakash",
+        "greeting": "Hari Om",
+        "desc": "The ancient sciences of rainwater harvesting, stepwell (Vapi) engineering, and underground aquifer recharging."
+    },
+	"Kupa Nirmana & Ground Excavation": {
+        "persona": "Ancient Geological Engineer",
+        "texts": "Brihat Samhita (Dakargala), Mayamata, Manasara, Aparajitaprccha",
+        "greeting": "Hari Om",
+        "desc": "The ancient geological science of locating deep water veins, breaking underground rock, and the architectural engineering of cylindrical wells (Kupa)."
+    },
+	"Algorithmic Logic & Binary Origins( Computing) ": {
+        "persona": "Ancient Algorithmic Scholar",
+        "texts": "Chhandas Shastra (Pingala), Ashtadhyayi (Panini), Brahmasphutasiddhanta (Brahmagupta)",
+        "greeting": "Hari Om",
+        "desc": "The ancient foundations of binary mathematics, formal language algorithms, and the structural logic underpinning modern computing."
+    },
+	"Cosmology & Time Dilation": {
+        "persona": "Vedic Cosmologist",
+        "texts": "Bhagavata Purana (Story of Kakudmi), Yoga Vasistha (Story of Lila), Rig Veda (Nasadiya Sukta), Vishnu Purana",
+        "greeting": "Hari Om",
+        "desc": "Ancient philosophical frameworks detailing time dilation, relativity, parallel universes, and the cyclical dissolution of the cosmos."
+    }
     },
     "Dharma Shastra": {
         "Shukra Niti": { "persona": "Sage Shukracharya", "texts": "Shukra Niti (Shukranitisara)", "greeting": "Hari Om", "desc": "Ancient Indian treatise on statecraft, ethics, economics, and governance" },
@@ -140,8 +184,46 @@
         "Pingala": { "persona": "Maharishi Pingala", "texts": "Chhandas Shastra", "greeting": "Hari Om", "desc": "The ancient mathematician of binary numbers and combinatorics" },
         "Varahamihira": { "persona": "Varahamihira", "texts": "Brihat Samhita, Pancha-Siddhantika, Brihat Jataka", "greeting": "Hari Om", "desc": "The encyclopedist of astronomy and natural sciences" },
         "Sushruta": { "persona": "Maharishi Sushruta", "texts": "Sushruta Samhita, Uttara Tantra", "greeting": "Hari Om", "desc": "The ancient pioneer of surgery and plastic surgery" },
-        "Charaka": { "persona": "Maharishi Charaka", "texts": "Charaka Samhita, Agnivesha Tantra", "greeting": "Hari Om", "desc": "The principal contributor to Ayurveda and internal medicine" }
+        "Charaka": { "persona": "Maharishi Charaka", "texts": "Charaka Samhita, Agnivesha Tantra", "greeting": "Hari Om", "desc": "The principal contributor to Ayurveda and internal medicine" },
+    "Ancient Sports and Martial Arts": { 
+        "persona": "Ancient Royal Trainer", 
+        "texts": "Manasollasa (Abhilashitarthachintamani), Mahabharata, Ramayana, Arthashastra, Agni Purana (Dhanurveda section), Malla Purana, Dhanurveda Samhita, Harivamsa Purana, Yuktikalpataru", 
+        "greeting": "Vijayi Bhava", 
+        "desc": "Ancient texts detailing royal recreation, competitive sports, Mallayuddha (wrestling), Chaturanga (chess), chariot racing, Dhanurveda (archery), and foundational martial training." 
     },
+	"Rasayana Shastra": {
+        "persona": "Ancient Alchemist",
+        "texts": "Rasaratna Samuccaya, Rasendra Chintamani, Rasahrdaya Tantra",
+        "greeting": "Hari Om",
+        "desc": "The foundational texts of Indian metallurgy, alchemy, and ancient laboratory chemistry."
+    },
+    "Alankara Shastra": {
+        "persona": "Classical Rhetorician",
+        "texts": "Dhvanyaloka, Kavyaprakasha, Vakyapadiya",
+        "greeting": "Namaskar",
+        "desc": "The analytical frameworks governing language philosophy, poetic aesthetics, and the power of suggestion (Dhvani)."
+    },
+    "Niti Shastra": {
+        "persona": "Royal Counselor",
+        "texts": "Panchatantra, Hitopadesha, Vidura Niti",
+        "greeting": "Hari Om",
+        "desc": "Practical wisdom, psychological counseling, and strategic diplomacy presented through fables and epic discourses."
+    },
+    "Advanced Ganita": {
+        "persona": "Kerala School Mathematician",
+        "texts": "Tantrasamgraha, Yukti-bhasha",
+        "greeting": "Namaskar",
+        "desc": "Advanced astronomical computations, trigonometric series, and the derivations of early calculus principles."
+    },
+    "Expanded Darshana Texts": {
+        "persona": "Vedantic Sage",
+        "texts": "Panchadasi, Yoga Vasistha, Bhamati",
+        "greeting": "Hari Om Tat Sat",
+        "desc": "Deep epistemological frameworks, the illusory nature of time, and the logical defense of non-dual realization."
+    }
+	},
+
+
     "Medieval Bhakti Movement": {
         "Ram Bhakti": { "persona": "Goswami Tulsidas", "texts": "Ramcharitmanas, Vinaya Patrika, Hanuman Chalisa, Dohavali, Kavitavali, Gitavali", "greeting": "Sita Ram", "desc": "Devotion to Lord Rama and Awadhi poetry" },
         "Krishna Bhakti (North)": { "persona": "Sant Surdas", "texts": "Sur Sagar, Sur Saravali, Sahitya Lahari", "greeting": "Radhe Radhe", "desc": "Devotion to Lord Krishna through Braj Bhasha poetry" },
