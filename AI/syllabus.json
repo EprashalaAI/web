@@ -1,0 +1,265 @@
+{
+  "Marathi": {
+    "1": [
+      "मराठी (Balbharati)", 
+      "इंग्रजी (My English Book)", 
+      "गणित (Mathematics)", 
+      "खेळू, करू, शिकू (Play, Do, Learn)"
+    ],
+    "2": [
+      "मराठी (Balbharati)", 
+      "इंग्रजी (My English Book)", 
+      "गणित (Mathematics)", 
+      "खेळू, करू, शिकू (Play, Do, Learn)"
+    ],
+    "3": [
+      "मराठी (Balbharati)", 
+      "इंग्रजी (My English Book)", 
+      "गणित (Mathematics)", 
+      "परिसर अभ्यास (Environmental Studies)", 
+      "खेळू, करू, शिकू (Play, Do, Learn)"
+    ],
+    "4": [
+      "मराठी (Balbharati)", 
+      "इंग्रजी (My English Book)", 
+      "गणित (Mathematics)", 
+      "परिसर अभ्यास भाग १ (EVS Part 1)", 
+      "परिसर अभ्यास भाग २ - शिवछत्रपती (EVS Part 2 - Shivchhatrapati)"
+    ],
+    "5": [
+      "मराठी (Balbharati - First Language)", 
+      "इंग्रजी (My English Book)", 
+      "हिंदी (Sulabhbharati / Sugambharati)", 
+      "गणित (Mathematics)", 
+      "परिसर अभ्यास भाग १ (EVS Part 1)", 
+      "परिसर अभ्यास भाग २ (EVS Part 2)"
+    ],
+    "6": [
+      "मराठी (Balbharati)", 
+      "इंग्रजी (My English Book)", 
+      "हिंदी (Sulabhbharati)", 
+      "गणित (Mathematics)", 
+      "सामान्य विज्ञान (General Science)", 
+      "इतिहास व नागरिकशास्त्र (History & Civics)", 
+      "भूगोल (Geography)"
+    ],
+    "7": [
+      "मराठी (Balbharati)", 
+      "इंग्रजी (My English Book)", 
+      "हिंदी (Sulabhbharati)", 
+      "गणित (Mathematics)", 
+      "सामान्य विज्ञान (General Science)", 
+      "इतिहास व नागरिकशास्त्र (History & Civics)", 
+      "भूगोल (Geography)"
+    ],
+    "8": [
+      "मराठी (Balbharati)", 
+      "इंग्रजी (My English Book)", 
+      "हिंदी (Sulabhbharati)", 
+      "संस्कृत (Aamod - Optional)",
+      "गणित (Mathematics)", 
+      "सामान्य विज्ञान (General Science)", 
+      "इतिहास व नागरिकशास्त्र (History & Civics)", 
+      "भूगोल (Geography)"
+    ],
+    "9": [
+      "मराठी (First Language)", 
+      "इंग्रजी (Second Language)", 
+      "हिंदी (Lokbharati)", 
+      "संस्कृत (Aamod)", 
+      "गणित भाग-१ (बीजगणित / Algebra)", 
+      "गणित भाग-२ (भूमिती / Geometry)", 
+      "विज्ञान आणि तंत्रज्ञान भाग-१ (Science & Tech Part-1)", 
+      "विज्ञान आणि तंत्रज्ञान भाग-२ (Science & Tech Part-2)", 
+      "इतिहास व राज्यशास्त्र (History & Political Science)", 
+      "भूगोल (Geography)",
+      "जलसुरक्षा (Water Security)"
+    ],
+    "10": [
+      "मराठी (First Language)", 
+      "इंग्रजी (Second Language)", 
+      "हिंदी (Lokbharati)", 
+      "संस्कृत (Aamod)", 
+      "गणित भाग-१ (बीजगणित / Algebra)", 
+      "गणित भाग-२ (भूमिती / Geometry)", 
+      "विज्ञान आणि तंत्रज्ञान भाग-१ (Science & Tech Part-1)", 
+      "विज्ञान आणि तंत्रज्ञान भाग-२ (Science & Tech Part-2)", 
+      "इतिहास व राज्यशास्त्र (History & Political Science)", 
+      "भूगोल (Geography)",
+      "जलसुरक्षा (Water Security)"
+    ],
+    "11": [
+      "मराठी (Yuvakbharati)",
+      "इंग्रजी (English Yuvakbharati)",
+      "हिंदी (Hindi Yuvakbharati)",
+      "भौतिकशास्त्र (Physics)",
+      "रसायनशास्त्र (Chemistry)",
+      "जीवशास्त्र (Biology)",
+      "गणित आणि सांख्यिकी (Maths & Statistics)",
+      "माहिती तंत्रज्ञान (Information Technology)",
+      "अर्थशास्त्र (Economics)",
+      "पुस्तपालन व लेखाकर्म (Book Keeping & Accountancy)",
+      "वाणिज्य संघटन व व्यवस्थापन (OCM)",
+      "चिटणिसाची कार्यपद्धती (Secretarial Practice)",
+      "इतिहास (History)",
+      "भूगोल (Geography)",
+      "राज्यशास्त्र (Political Science)",
+      "समाजशास्त्र (Sociology)",
+      "मानसशास्त्र (Psychology)",
+      "पर्यावरण शिक्षण व जलसुरक्षा (Environment Education & Water Security)"
+    ],
+    "12": [
+      "मराठी (Yuvakbharati)",
+      "इंग्रजी (English Yuvakbharati)",
+      "हिंदी (Hindi Yuvakbharati)",
+      "भौतिकशास्त्र (Physics)",
+      "रसायनशास्त्र (Chemistry)",
+      "जीवशास्त्र (Biology)",
+      "गणित आणि सांख्यिकी (Maths & Statistics)",
+      "माहिती तंत्रज्ञान (Information Technology)",
+      "अर्थशास्त्र (Economics)",
+      "पुस्तपालन व लेखाकर्म (Book Keeping & Accountancy)",
+      "वाणिज्य संघटन व व्यवस्थापन (OCM)",
+      "चिटणिसाची कार्यपद्धती (Secretarial Practice)",
+      "इतिहास (History)",
+      "भूगोल (Geography)",
+      "राज्यशास्त्र (Political Science)",
+      "समाजशास्त्र (Sociology)",
+      "मानसशास्त्र (Psychology)",
+      "पर्यावरण शिक्षण व जलसुरक्षा (Environment Education & Water Security)"
+    ]
+  },
+  "English": {
+    "1": [
+      "English (Balbharati)", 
+      "Marathi (Sulabhbharati)", 
+      "Mathematics", 
+      "Play, Do, Learn (Art, PE, Work Experience)"
+    ],
+    "2": [
+      "English (Balbharati)", 
+      "Marathi (Sulabhbharati)", 
+      "Mathematics", 
+      "Play, Do, Learn (Art, PE, Work Experience)"
+    ],
+    "3": [
+      "English (Balbharati)", 
+      "Marathi (Sulabhbharati)", 
+      "Mathematics", 
+      "Environmental Studies", 
+      "Play, Do, Learn"
+    ],
+    "4": [
+      "English (Balbharati)", 
+      "Marathi (Sulabhbharati)", 
+      "Mathematics", 
+      "Environmental Studies Part 1", 
+      "Environmental Studies Part 2 (Shivchhatrapati)"
+    ],
+    "5": [
+      "English (First Language)", 
+      "Marathi (Sulabhbharati)", 
+      "Hindi (Sugambharati)", 
+      "Mathematics", 
+      "Environmental Studies Part 1", 
+      "Environmental Studies Part 2"
+    ],
+    "6": [
+      "English (First Language)", 
+      "Marathi (Sulabhbharati)", 
+      "Hindi (Sulabhbharati)", 
+      "Mathematics", 
+      "General Science", 
+      "History & Civics", 
+      "Geography"
+    ],
+    "7": [
+      "English (First Language)", 
+      "Marathi (Sulabhbharati)", 
+      "Hindi (Sulabhbharati)", 
+      "Mathematics", 
+      "General Science", 
+      "History & Civics", 
+      "Geography"
+    ],
+    "8": [
+      "English (First Language)", 
+      "Marathi (Sulabhbharati)", 
+      "Hindi (Sulabhbharati)", 
+      "Sanskrit (Aamod - Optional)",
+      "Mathematics", 
+      "General Science", 
+      "History & Civics", 
+      "Geography"
+    ],
+    "9": [
+      "English (First Language)", 
+      "Marathi (Second / Third Language)", 
+      "Hindi (Lokbharati)", 
+      "Sanskrit (Aamod)", 
+      "Mathematics Part-I (Algebra)", 
+      "Mathematics Part-II (Geometry)", 
+      "Science & Technology Part-1", 
+      "Science & Technology Part-2", 
+      "History & Political Science", 
+      "Geography",
+      "Defence Studies",
+      "Water Security"
+    ],
+    "10": [
+      "English (First Language)", 
+      "Marathi (Second / Third Language)", 
+      "Hindi (Lokbharati)", 
+      "Sanskrit (Aamod)", 
+      "Mathematics Part-I (Algebra)", 
+      "Mathematics Part-II (Geometry)", 
+      "Science & Technology Part-1", 
+      "Science & Technology Part-2", 
+      "History & Political Science", 
+      "Geography",
+      "Water Security"
+    ],
+    "11": [
+      "English (Yuvakbharati)",
+      "Marathi / Hindi (Yuvakbharati)",
+      "Physics",
+      "Chemistry",
+      "Biology",
+      "Mathematics & Statistics (Arts & Science)",
+      "Mathematics & Statistics (Commerce)",
+      "Information Technology (IT)",
+      "Economics",
+      "Book Keeping & Accountancy",
+      "Organization of Commerce & Management (OCM)",
+      "Secretarial Practice (SP)",
+      "History",
+      "Geography",
+      "Political Science",
+      "Sociology",
+      "Psychology",
+      "Philosophy",
+      "Environment Education & Water Security"
+    ],
+    "12": [
+      "English (Yuvakbharati)",
+      "Marathi / Hindi (Yuvakbharati)",
+      "Physics",
+      "Chemistry",
+      "Biology",
+      "Mathematics & Statistics (Arts & Science)",
+      "Mathematics & Statistics (Commerce)",
+      "Information Technology (IT)",
+      "Economics",
+      "Book Keeping & Accountancy",
+      "Organization of Commerce & Management (OCM)",
+      "Secretarial Practice (SP)",
+      "History",
+      "Geography",
+      "Political Science",
+      "Sociology",
+      "Psychology",
+      "Philosophy",
+      "Environment Education & Water Security"
+    ]
+  }
+}
