@@ -1054,25 +1054,64 @@ function updatePlayBtnUI(btn, isPlaying) {
     if (!btn) return;
     const playIcon = btn.querySelector('.play-icon');
     const pauseIcon = btn.querySelector('.pause-icon');
-    
+    const textSpan = btn.querySelector('.play-text');
+
+    // Tailwind classes to force the button to float above the UI
+    const floatClasses = ['fixed', 'bottom-[120px]', 'right-6', 'z-[100]', 'scale-110', 'shadow-2xl', 'border-green-400', 'bg-slate-900'];
+
     if (isPlaying) {
         if (playIcon) playIcon.classList.add('hidden');
         if (pauseIcon) pauseIcon.classList.remove('hidden');
-        btn.classList.add('text-green-400');
+        if (textSpan) textSpan.innerText = "Pause";
+        
+        // Add floating classes and turn indicator green
+        btn.classList.add('text-green-400', 'is-floating', ...floatClasses);
         btn.classList.remove('text-sky-400');
+        
+        // Suppress any competing floating indicators
+        document.querySelectorAll('.msg-play-btn.is-floating').forEach(el => {
+            if (el !== btn) {
+                el.classList.remove('is-floating', ...floatClasses);
+                el.classList.remove('text-green-400');
+                el.classList.add('text-sky-400');
+                const tSpan = el.querySelector('.play-text');
+                if (tSpan) tSpan.innerText = "Play";
+            }
+        });
+        
     } else {
         if (playIcon) playIcon.classList.remove('hidden');
         if (pauseIcon) pauseIcon.classList.add('hidden');
+        if (textSpan) textSpan.innerText = "Resume";
+        
         btn.classList.remove('text-green-400');
         btn.classList.add('text-sky-400');
+        // Note: We intentionally leave the 'is-floating' positioning active while PAUSED 
+        // so the user does not have to scroll to find the resume button.
     }
 }
 
 function resetCurrentTTS() {
+    const floatClasses = ['fixed', 'bottom-[120px]', 'right-6', 'z-[100]', 'scale-110', 'shadow-2xl', 'border-green-400', 'bg-slate-900'];
+
     if (currentActiveBtn) {
         updatePlayBtnUI(currentActiveBtn, false);
+        const textSpan = currentActiveBtn.querySelector('.play-text');
+        if (textSpan) textSpan.innerText = "Play";
+        
+        // Snap the button back to its original place in the chat log
+        currentActiveBtn.classList.remove('is-floating', ...floatClasses);
         currentActiveBtn = null;
     }
+    
+    // Fallback array sweep to maintain clean alignment bounds
+    document.querySelectorAll('.msg-play-btn.is-floating').forEach(el => {
+        el.classList.remove('is-floating', ...floatClasses);
+        el.classList.remove('text-green-400');
+        el.classList.add('text-sky-400');
+        const tSpan = el.querySelector('.play-text');
+        if (tSpan) tSpan.innerText = "Play";
+    });
     
     if (currentAudio) {
         currentAudio.pause();
@@ -1492,9 +1531,10 @@ function renderMessage(sender, text, isModel) {
                 <button class="msg-copy-btn p-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-full text-slate-400 hover:text-green-400 transition-colors shadow-sm focus:outline-none" onclick="window.copySingleMessage(this)" data-msg-id="${msgId}" title="Copy Answer">
                     <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
                 </button>
-                <button id="play-btn-${msgId}" class="msg-play-btn p-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-full text-sky-400 transition-colors shadow-sm focus:outline-none" onclick="window.toggleSingleMessagePlay(this)" data-msg-id="${msgId}" title="Play/Pause Audio">
+				<button id="play-btn-${msgId}" class="msg-play-btn flex items-center gap-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-full text-sky-400 transition-colors shadow-sm focus:outline-none" onclick="window.toggleSingleMessagePlay(this)" data-msg-id="${msgId}" title="Play/Pause Audio">
                     <svg class="play-icon w-4 h-4 pointer-events-none" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                     <svg class="pause-icon w-4 h-4 hidden pointer-events-none" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                    <span class="play-text text-[10px] font-bold uppercase tracking-wider pointer-events-none">Play</span>
                 </button>
             </div>`;
     }
