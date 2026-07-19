@@ -287,6 +287,17 @@ function enforceFullScreen() {
     }
 }
 
+const safeFullScreen = (e) => {
+    // Do not trigger fullscreen if the user is interacting with an input box
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+        return;
+    }
+    enforceFullScreen();
+};
+
+document.addEventListener('click', safeFullScreen, { capture: true });
+document.addEventListener('touchstart', safeFullScreen, { capture: true, passive: true });
+
 document.addEventListener('click', enforceFullScreen, { capture: true });
 document.addEventListener('touchstart', enforceFullScreen, { capture: true, passive: true });
 
@@ -500,7 +511,7 @@ function getSelectedItemName() {
 function getModelInfo(val) {
     val = parseInt(val);
     if(val === 20) return { name: "Flash-Lite", id: "gemini-3.1-flash-lite" };
-    if(val === 40) return { name: "Flash", id: "gemini-2.5-flash" };
+    if(val === 40) return { name: "Flash", id: "gemini-3-flash-preview" };
     if(val === 60) return { name: "Thinking", id: "gemini-3.5-flash" }; 
     if(val === 80) return { name: "Pro", id: "gemini-3.1-pro" };
     return { name: "Flash", id: "gemini-3.1-flash" };
@@ -971,6 +982,11 @@ function setupEventListeners() {
     UI.btnSend.onclick = (e) => { e.stopPropagation(); processInput(UI.textIn.value); };
     UI.textIn.onkeypress = (e) => { e.stopPropagation(); if(e.key === 'Enter') processInput(UI.textIn.value); };
 
+UI.textIn.addEventListener('focus', () => {
+    setTimeout(() => {
+        UI.textIn.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }, 300);
+});
 	UI.btnMic.addEventListener('click', (e) => {
         e.stopPropagation();
         if (state.isProcessing) return;
