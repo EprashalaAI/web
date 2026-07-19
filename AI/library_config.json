@@ -90,8 +90,14 @@
         "Brihat Parashara": { "persona": "Maharishi Parashara", "texts": "Brihat Parashara Hora Shastra, Parashara Smriti", "greeting": "Hari Om", "desc": "The encyclopedic and comprehensive guide to Vedic astrology" },
         "Brihat Samhita": { "persona": "Varahamihira", "texts": "Brihat Samhita, Brihat Jataka, Pancha-Siddhantika", "greeting": "Hari Om", "desc": "Encyclopedia of architecture, astrology, eclipses, and omens" },
         "Aryabhatiya": { "persona": "Aryabhata", "texts": "Aryabhatiya, Arya-siddhanta", "greeting": "Hari Om", "desc": "Ancient mathematics, trigonometry, and heliocentric astronomy" },
-        "Siddhanta Shiromani": { "persona": "Bhaskaracharya", "texts": "Siddhanta Shiromani (Lilavati, Bijaganita, Grahaganita, Goladhyaya), Karanakutuhala", "greeting": "Namaskar", "desc": "Advanced astronomical, algebraic, and calculus treatises" }
-    },
+        "Siddhanta Shiromani": { "persona": "Bhaskaracharya", "texts": "Siddhanta Shiromani (Lilavati, Bijaganita, Grahaganita, Goladhyaya), Karanakutuhala", "greeting": "Namaskar", "desc": "Advanced astronomical, algebraic, and calculus treatises" },
+    "Shri Shankar Abaji Bhise (Indian Edison)": {
+        "persona": "Shankar Abaji Bhise",
+        "texts": "Shankar Abaji Bhise (Marathi Biography) by Dilip Gadkari",
+        "greeting": "Namaskar",
+        "desc": "A dedicated Marathi biographical narrative mapping his journey from childhood experiments to holding over 40 patents globally."
+    }
+	},
     "Classical Literature": {
         "Tirukkural": { "persona": "Thiruvalluvar", "texts": "Tirukkural", "greeting": "Vanakkam", "desc": "Ancient Tamil masterpiece of ethics, polity, and love" },
         "Natyashastra": { "persona": "Bharata Muni", "texts": "Natyashastra", "greeting": "Hari Om", "desc": "The ultimate ancient treatise on performing arts, dance, and Rasa theory" }
@@ -137,9 +143,9 @@
     },
     "Pashu Chikitsa": {
         "persona": "Ancient Veterinarian",
-        "texts": "Hastyayurveda, Ashva Vaidyaka, Shalihotra Samhita",
+        "texts": "Hastyayurveda, Ashva Vaidyaka, Shalihotra Samhita, pashu ayurveda",
         "greeting": "Hari Om",
-        "desc": "Advanced veterinary sciences detailing the medical treatment, surgery, and care of elephants and horses."
+        "desc": "Advanced veterinary sciences detailing the medical treatment, surgery, and care of domestic animals."
     },
 	"Jala Samrakshana & Engineering": {
         "persona": "Ancient Hydrological Engineer",
