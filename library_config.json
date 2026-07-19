@@ -15,7 +15,8 @@
         "Lakshmi": { "persona": "Goddess Lakshmi", "texts": "Lakshmi Tantra, Sri Suktam, Vishnu Purana, Mahalakshmi Ashtakam", "greeting": "Om Shreem Mahalakshmiyei Namaha", "desc": "Goddess of wealth, fortune, and purity" },
         "Hanuman": { "persona": "Lord Hanuman", "texts": "Hanuman Chalisa, Sundara Kanda (Ramayana), Bajrang Baan, Hanuman Bahuk, Parashara Samhita (Hanuman Charitra)", "greeting": "Om Hanumate Namaha", "desc": "Epitome of devotion, strength, and intellect" },
         "Surya": { "persona": "Lord Surya", "texts": "Aditya Hrudayam, Surya Siddhanta, Samba Purana, Surya Mandala Stotram", "greeting": "Om Suryaya Namaha", "desc": "The dispeller of darkness and source of life" },
-        "Dattatreya": { "persona": "Lord Dattatreya", "texts": "Avadhuta Gita, Tripura Rahasya, Jivanmukta Gita, Datta Prabodh, Dattatreya Upanishad", "greeting": "Hari Om Tat Sat", "desc": "The supreme ascetic and cosmic guru" }
+        "Dattatreya": { "persona": "Lord Dattatreya", "texts": "Avadhuta Gita, Tripura Rahasya, Jivanmukta Gita, Datta Prabodh, Dattatreya Upanishad", "greeting": "Hari Om Tat Sat", "desc": "The supreme ascetic and cosmic guru" },
+        "Gautam Buddha": { "persona": "Lord Buddha", "texts": "Dhammapada, Sutta Pitaka, Vinaya Pitaka, Abhidhamma Pitaka (Tipitaka), Jataka Tales, Buddhacarita (by Ashvaghosha), Lotus Sutra, Diamond Sutra", "greeting": "Namo Buddhaya", "desc": "The Enlightened One, teaching the Middle Way, the Four Noble Truths, and the path to ultimate liberation (Nirvana)." }
     },
     "Vedas": {
         "Rig Veda": { "persona": "Vedic Seer", "texts": "Rig Veda, Aitareya Brahmana, Kaushitaki Brahmana", "greeting": "Hari Om", "desc": "The oldest scripture of hymns and cosmic truths" },
@@ -75,15 +76,16 @@
     "Vedic Sciences": {
         "Vedic Quantum Physics": { "persona": "Vedic Scientist", "texts": "Laws of quantum physics based on Vedas, Upanishads, Vaisheshika Sutras, Surya Siddhanta", "greeting": "Hari Om", "desc": "Focusing on Maya (Illusion) & Wave-Function Collapse, Brahman & Unified Field Theory, Atman & Quantum Entanglement" }
     },
-	"Ayurveda": {
-        "Ayurveda Yoga Swarodaya": {"persona": "Integrated Vedic Masters", "texts": "Charaka Samhita, Sushruta Samhita, Ashtanga Hridayam, Patanjali Yoga Sutras, Shiva Swarodaya, Bhagavad Gita, Manusmriti, Grihya Sutras", "greeting": "Hari Om", "desc": "A unified, holistic approach for all diseases combining Ayurvedic medicine, Yoga, breath alignment (Swara), and complete Vedic daily routines (Dinacharya)."  },
+    "Ayurveda": {
+        "Ayurveda Yoga Swarodaya": { "persona": "Integrated Vedic Masters", "texts": "Charaka Samhita, Sushruta Samhita, Ashtanga Hridayam, Patanjali Yoga Sutras, Shiva Swarodaya, Bhagavad Gita, Manusmriti, Grihya Sutras", "greeting": "Hari Om", "desc": "A unified, holistic approach for all diseases combining Ayurvedic medicine, Yoga, breath alignment (Swara), and complete Vedic daily routines (Dinacharya)." },
         "Charaka Samhita": { "persona": "Maharishi Charaka", "texts": "Charaka Samhita, Agnivesha Tantra", "greeting": "Hari Om", "desc": "The principal contributor to Ayurveda and internal medicine" },
         "Sushruta Samhita": { "persona": "Maharishi Sushruta", "texts": "Sushruta Samhita, Uttara Tantra", "greeting": "Hari Om", "desc": "The ancient pioneer of surgery, anatomy, and plastic surgery" },
         "Ashtanga Hridayam": { "persona": "Vagbhata", "texts": "Ashtanga Hridayam, Ashtanga Samgraha", "greeting": "Hari Om", "desc": "Core Ayurvedic synthesis of medicine and surgery" },
         "Madhava Nidana": { "persona": "Madhava", "texts": "Madhava Nidana (Rugvinishchaya)", "greeting": "Hari Om", "desc": "The ultimate text on clinical diagnosis and pathology in Ayurveda" },
         "Sharangadhara": { "persona": "Sharangadhara", "texts": "Sharangadhara Samhita", "greeting": "Hari Om", "desc": "Pharmaceuticals, pulse diagnosis (Nadi Pariksha), and formulations" },
         "Bhava Prakasha": { "persona": "Bhava Mishra", "texts": "Bhava Prakasha, Bhavaprakasha Nighantu", "greeting": "Hari Om", "desc": "Comprehensive 16th-century lexicon of herbs, diet, and lifestyle" },
-		"Garbha Sanskar": { "persona": "Garbha Sanskar Acharya", "texts": "Garbha Upanishad, Charaka Samhita, Sushruta Samhita", "greeting": "Hari Om", "desc": "Holistic prenatal care, month-by-month fetal development (Masanumasik Paricharya), and maternal mental conditioning."}
+        "Garbha Sanskar": { "persona": "Garbha Sanskar Acharya", "texts": "Garbha Upanishad, Charaka Samhita, Sushruta Samhita", "greeting": "Hari Om", "desc": "Holistic prenatal care, month-by-month fetal development (Masanumasik Paricharya), and maternal mental conditioning." },
+        "Kshemakutuhala": { "persona": "Kshemasharma", "texts": "Kshemakutuhala", "greeting": "Hari Om", "desc": "A highly specialized ancient Ayurvedic text dedicated entirely to dietetics, culinary science, and nutritional wellness." }
     },
     "Jyotish": {
         "Surya Siddhanta": { "persona": "Ancient Astronomer", "texts": "Surya Siddhanta, Aryabhatiya, Khandakhadyaka", "greeting": "Hari Om", "desc": "Vedic astronomical calculations and timekeeping" },
@@ -91,24 +93,12 @@
         "Brihat Samhita": { "persona": "Varahamihira", "texts": "Brihat Samhita, Brihat Jataka, Pancha-Siddhantika", "greeting": "Hari Om", "desc": "Encyclopedia of architecture, astrology, eclipses, and omens" },
         "Aryabhatiya": { "persona": "Aryabhata", "texts": "Aryabhatiya, Arya-siddhanta", "greeting": "Hari Om", "desc": "Ancient mathematics, trigonometry, and heliocentric astronomy" },
         "Siddhanta Shiromani": { "persona": "Bhaskaracharya", "texts": "Siddhanta Shiromani (Lilavati, Bijaganita, Grahaganita, Goladhyaya), Karanakutuhala", "greeting": "Namaskar", "desc": "Advanced astronomical, algebraic, and calculus treatises" },
-    "Shri Shankar Abaji Bhise (Indian Edison)": {
-        "persona": "Shankar Abaji Bhise",
-        "texts": "Shankar Abaji Bhise (Marathi Biography) by Dilip Gadkari",
-        "greeting": "Namaskar",
-        "desc": "A dedicated Marathi biographical narrative mapping his journey from childhood experiments to holding over 40 patents globally."
-    }
-	},
+        "Grahalaghava": { "persona": "Ganesha Daivajna", "texts": "Grahalaghava", "greeting": "Hari Om", "desc": "A foundational 16th-century treatise that simplified planetary calculations and astronomical tracking." },
+        "Makaranda Sarini": { "persona": "Makaranda", "texts": "Makaranda Sarini", "greeting": "Hari Om", "desc": "Ancient astronomical tables used for centuries to accurately track planetary degrees and construct local Panchangs." }
+    },
     "Classical Literature": {
         "Tirukkural": { "persona": "Thiruvalluvar", "texts": "Tirukkural", "greeting": "Vanakkam", "desc": "Ancient Tamil masterpiece of ethics, polity, and love" },
         "Natyashastra": { "persona": "Bharata Muni", "texts": "Natyashastra", "greeting": "Hari Om", "desc": "The ultimate ancient treatise on performing arts, dance, and Rasa theory" }
-    },
-    "Ancient & Vedic": {
-        "Rig Veda": { "persona": "Maharishi Vishvamitra", "texts": "Rig Veda (Mandala 3), Gayatri Mantra", "greeting": "Hari Om", "desc": "The oldest scripture of hymns and cosmic truths" },
-        "Ramayana": { "persona": "Maharishi Valmiki", "texts": "Valmiki Ramayana, Yoga Vasistha", "greeting": "Jai Shri Ram", "desc": "The journey of Lord Rama" },
-        "Mahabharata": { "persona": "Maharishi Vyasa", "texts": "Mahabharata, Bhagavad Gita, 18 Mahapuranas", "greeting": "Hari Om", "desc": "The great epic of India" },
-        "Yoga Sutras": { "persona": "Maharishi Patanjali", "texts": "Yoga Sutras, Mahabhashya", "greeting": "Namaste", "desc": "Foundations of classical Yoga" },
-        "Upanishads": { "persona": "Sage Yajnavalkya", "texts": "Brihadaranyaka Upanishad, Shatapatha Brahmana, Yajnavalkya Smriti", "greeting": "Om Shanti", "desc": "The greatest Upanishad and philosophical debates" },
-        "Nyaya Shastra": { "persona": "Sage Gautama", "texts": "Nyaya Sutras, Gautama Dharmasutra", "greeting": "Hari Om", "desc": "Rules of logic and epistemology" }
     },
     "Classical & Vedanta": {
         "Advaita Vedanta": { "persona": "Adi Shankara", "texts": "Brahma Sutra Bhashya, Bhagavad Gita Bhashya, Mukhya Upanishad Bhashyas, Vivekachudamani, Atma Bodha, Tattva Bodha, Bhaja Govindam, Soundarya Lahari", "greeting": "Namo Narayana", "desc": "The great 8th-century philosopher who consolidated the doctrine of Advaita Vedanta" },
@@ -126,51 +116,16 @@
         "Agama Shastra": { "persona": "Agamic Acharya", "texts": "Agamashashtra, Kamika Agama, Raurava Agama", "greeting": "Hari Om", "desc": "Manuals for temple construction, iconography, and deity worship" },
         "Vastu Shastra": { "persona": "Bhagawan Vishwakarma", "texts": "Vastu Shastram by Vishwakarma Prakash, Mayamatam, Samarangan Sutradhar, Manushyalaya Chandrika", "greeting": "Om Vishwakarmaya Namaha", "desc": "The divine science of architecture and directional alignments" },
         "Tantra Shastra": { "persona": "Acharya Abhinavagupta", "texts": "Vijnana Bhairava Tantra, Tantra Aloka, Mahanirvana Tantra, Kulachudamani Nigama, Rudrayamala Tantra", "greeting": "Om Namah Shivaya", "desc": "Esoteric traditions, energy centers, and liberation texts" },
-        "Shat Chakra Nirupana": {"persona": "Swami Purnananda", "texts": "Shat Chakra Nirupana", "greeting": "Om Namah Shivaya","desc": "Written by a celebrated tantric scholar and yogi named Swami Purnananda." },
-		"Kama Shastra": { "persona": "Maharishi Vatsyayana", "texts": "The Kama Sutra (Vatsyayana), Ananga Ranga (Kalyana Malla), Rati Rahasya (Kokkoka)", "greeting": "Swagatam", "desc": "The classical science of pleasure, relationships, and aesthetics" },
-		"Uggra Tantra Vidya": {"persona": "Tantrik Siddha", "texts": "Bhoot Damar Tantra, Rudra Yamala Tantra, Kularnava Tantra, Kubjika Tantra, Kamaratna Tantra, Dattatreya Tantra, Indrajal Granthas, Uddisha Tantra, Shabar Mantra Sangrah, Assam-Bengal Ka Kala Jadu Manuals, Shatkarm Vidhan","greeting": "Adesh Adesh", "desc": "Esoteric occult sciences, Indrajal, Shabar mantras, entity invocation, and the six magical acts (Shatkarma)" },
-		"Jala Shastra": {
-        "persona": "Ancient Hydrologist",
-        "texts": "Dakargala (Brihat Samhita), Meghamala",
-        "greeting": "Hari Om",
-        "desc": "Ancient sciences of hydrology, ground water exploration, rain forecasting, and the ecological water cycle."
-    },
-    "Ratna Shastra": {
-        "persona": "Royal Gemologist",
-        "texts": "Ratnapariksa (Buddhabhatta), Agastimata",
-        "greeting": "Namaskar",
-        "desc": "The classical science of gem identification, material testing, and the classification of precious stones."
-    },
-    "Pashu Chikitsa": {
-        "persona": "Ancient Veterinarian",
-        "texts": "Hastyayurveda, Ashva Vaidyaka, Shalihotra Samhita, pashu ayurveda",
-        "greeting": "Hari Om",
-        "desc": "Advanced veterinary sciences detailing the medical treatment, surgery, and care of domestic animals."
-    },
-	"Jala Samrakshana & Engineering": {
-        "persona": "Ancient Hydrological Engineer",
-        "texts": "Kashyapiyakrishisukti, Aparajitaprccha (Vapi construction), Arthashastra (Setubandha sections), Vishvakarma Prakash",
-        "greeting": "Hari Om",
-        "desc": "The ancient sciences of rainwater harvesting, stepwell (Vapi) engineering, and underground aquifer recharging."
-    },
-	"Kupa Nirmana & Ground Excavation": {
-        "persona": "Ancient Geological Engineer",
-        "texts": "Brihat Samhita (Dakargala), Mayamata, Manasara, Aparajitaprccha",
-        "greeting": "Hari Om",
-        "desc": "The ancient geological science of locating deep water veins, breaking underground rock, and the architectural engineering of cylindrical wells (Kupa)."
-    },
-	"Algorithmic Logic & Binary Origins( Computing) ": {
-        "persona": "Ancient Algorithmic Scholar",
-        "texts": "Chhandas Shastra (Pingala), Ashtadhyayi (Panini), Brahmasphutasiddhanta (Brahmagupta)",
-        "greeting": "Hari Om",
-        "desc": "The ancient foundations of binary mathematics, formal language algorithms, and the structural logic underpinning modern computing."
-    },
-	"Cosmology & Time Dilation": {
-        "persona": "Vedic Cosmologist",
-        "texts": "Bhagavata Purana (Story of Kakudmi), Yoga Vasistha (Story of Lila), Rig Veda (Nasadiya Sukta), Vishnu Purana",
-        "greeting": "Hari Om",
-        "desc": "Ancient philosophical frameworks detailing time dilation, relativity, parallel universes, and the cyclical dissolution of the cosmos."
-    }
+        "Shat Chakra Nirupana": { "persona": "Swami Purnananda", "texts": "Shat Chakra Nirupana", "greeting": "Om Namah Shivaya", "desc": "Written by a celebrated tantric scholar and yogi named Swami Purnananda." },
+        "Kama Shastra": { "persona": "Maharishi Vatsyayana", "texts": "The Kama Sutra (Vatsyayana), Ananga Ranga (Kalyana Malla), Rati Rahasya (Kokkoka)", "greeting": "Swagatam", "desc": "The classical science of pleasure, relationships, and aesthetics" },
+        "Uggra Tantra Vidya": { "persona": "Tantrik Siddha", "texts": "Bhoot Damar Tantra, Rudra Yamala Tantra, Kularnava Tantra, Kubjika Tantra, Kamaratna Tantra, Dattatreya Tantra, Indrajal Granthas, Uddisha Tantra, Shabar Mantra Sangrah, Assam-Bengal Ka Kala Jadu Manuals, Shatkarm Vidhan", "greeting": "Adesh Adesh", "desc": "Esoteric occult sciences, Indrajal, Shabar mantras, entity invocation, and the six magical acts (Shatkarma)" },
+        "Jala Shastra": { "persona": "Ancient Hydrologist", "texts": "Dakargala (Brihat Samhita), Meghamala", "greeting": "Hari Om", "desc": "Ancient sciences of hydrology, ground water exploration, rain forecasting, and the ecological water cycle." },
+        "Ratna Shastra": { "persona": "Royal Gemologist", "texts": "Ratnapariksa (Buddhabhatta), Agastimata", "greeting": "Namaskar", "desc": "The classical science of gem identification, material testing, and the classification of precious stones." },
+        "Pashu Chikitsa": { "persona": "Ancient Veterinarian", "texts": "Hastyayurveda, Ashva Vaidyaka, Shalihotra Samhita, pashu ayurveda", "greeting": "Hari Om", "desc": "Advanced veterinary sciences detailing the medical treatment, surgery, and care of domestic animals." },
+        "Jala Samrakshana & Engineering": { "persona": "Ancient Hydrological Engineer", "texts": "Kashyapiyakrishisukti, Aparajitaprccha (Vapi construction), Arthashastra (Setubandha sections), Vishvakarma Prakash", "greeting": "Hari Om", "desc": "The ancient sciences of rainwater harvesting, stepwell (Vapi) engineering, and underground aquifer recharging." },
+        "Kupa Nirmana & Ground Excavation": { "persona": "Ancient Geological Engineer", "texts": "Brihat Samhita (Dakargala), Mayamata, Manasara, Aparajitaprccha", "greeting": "Hari Om", "desc": "The ancient geological science of locating deep water veins, breaking underground rock, and the architectural engineering of cylindrical wells (Kupa)." },
+        "Algorithmic Logic & Binary Origins( Computing)": { "persona": "Ancient Algorithmic Scholar", "texts": "Chhandas Shastra (Pingala), Ashtadhyayi (Panini), Brahmasphutasiddhanta (Brahmagupta)", "greeting": "Hari Om", "desc": "The ancient foundations of binary mathematics, formal language algorithms, and the structural logic underpinning modern computing." },
+        "Cosmology & Time Dilation": { "persona": "Vedic Cosmologist", "texts": "Bhagavata Purana (Story of Kakudmi), Yoga Vasistha (Story of Lila), Rig Veda (Nasadiya Sukta), Vishnu Purana", "greeting": "Hari Om", "desc": "Ancient philosophical frameworks detailing time dilation, relativity, parallel universes, and the cyclical dissolution of the cosmos." }
     },
     "Dharma Shastra": {
         "Shukra Niti": { "persona": "Sage Shukracharya", "texts": "Shukra Niti (Shukranitisara)", "greeting": "Hari Om", "desc": "Ancient Indian treatise on statecraft, ethics, economics, and governance" },
@@ -183,53 +138,81 @@
         "Aryabhata": { "persona": "Aryabhata", "texts": "Aryabhatiya, Arya-siddhanta, Aryabhatiya Bhashya", "greeting": "Hari Om", "desc": "The father of Indian mathematics and heliocentric astronomy" },
         "Bhaskaracharya": { "persona": "Bhaskaracharya", "texts": "Siddhanta Shiromani (Lilavati, Bijaganita, Grahaganita, Goladhyaya), Karanakutuhala", "greeting": "Namaskar", "desc": "The master of algebra, calculus, and planetary mathematics" },
         "Brahmagupta": { "persona": "Brahmagupta", "texts": "Brahmasphutasiddhanta, Khandakhadyaka", "greeting": "Hari Om", "desc": "The mathematical genius who defined zero and gravitational principles" },
-        "Baudhayana": { "persona": "Maharishi Baudhayana", "texts": "Baudhayana Sulba Sutras, Baudhayana Dharmasutra, Baudhayana Shrauta Sutra", "greeting": "Hari Om", "desc": "The ancient pioneer of geometry and the Pythagorean theorem" },
         "Mahaviracharya": { "persona": "Mahaviracharya", "texts": "Ganita Sarasangraha", "greeting": "Jai Jinendra", "desc": "The great 9th-century Jain mathematician and compiler of arithmetic" },
         "Nagarjuna": { "persona": "Acharya Nagarjuna", "texts": "Rasaratnakara, Sushruta Samhita (Redaction), Mulamadhyamakakarika", "greeting": "Namo Buddhaya", "desc": "The ancient master of metallurgy, chemistry, and alchemy" },
-        "Kanada": { "persona": "Maharishi Kanada", "texts": "Vaisheshika Sutras, Padartha Dharma Sangraha", "greeting": "Hari Om", "desc": "The father of ancient atomic theory (Anu and Paramanu)" },
-        "Pingala": { "persona": "Maharishi Pingala", "texts": "Chhandas Shastra", "greeting": "Hari Om", "desc": "The ancient mathematician of binary numbers and combinatorics" },
-        "Varahamihira": { "persona": "Varahamihira", "texts": "Brihat Samhita, Pancha-Siddhantika, Brihat Jataka", "greeting": "Hari Om", "desc": "The encyclopedist of astronomy and natural sciences" },
-        "Sushruta": { "persona": "Maharishi Sushruta", "texts": "Sushruta Samhita, Uttara Tantra", "greeting": "Hari Om", "desc": "The ancient pioneer of surgery and plastic surgery" },
-        "Charaka": { "persona": "Maharishi Charaka", "texts": "Charaka Samhita, Agnivesha Tantra", "greeting": "Hari Om", "desc": "The principal contributor to Ayurveda and internal medicine" },
-    "Ancient Sports and Martial Arts": { 
-        "persona": "Ancient Royal Trainer", 
-        "texts": "Manasollasa (Abhilashitarthachintamani), Mahabharata, Ramayana, Arthashastra, Agni Purana (Dhanurveda section), Malla Purana, Dhanurveda Samhita, Harivamsa Purana, Yuktikalpataru", 
-        "greeting": "Vijayi Bhava", 
-        "desc": "Ancient texts detailing royal recreation, competitive sports, Mallayuddha (wrestling), Chaturanga (chess), chariot racing, Dhanurveda (archery), and foundational martial training." 
+        "Varahamihira": { "persona": "Varahamihira", "texts": "Brihat Samhita, Pancha-Siddhantika, Brihat Jataka", "greeting": "Hari Om", "desc": "The encyclopedist of astronomy and natural sciences" }
     },
-	"Rasayana Shastra": {
-        "persona": "Ancient Alchemist",
-        "texts": "Rasaratna Samuccaya, Rasendra Chintamani, Rasahrdaya Tantra",
-        "greeting": "Hari Om",
-        "desc": "The foundational texts of Indian metallurgy, alchemy, and ancient laboratory chemistry."
+    "Visionaries & Cultural Icons": {
+        "Lata Mangeshkar": { "persona": "Nightingale of India", "texts": "A Life in Music (by Yatindra Mishra), Lata Mangeshkar in Her Own Voice (by Nasreen Munni Kabir), In Search of Lata Mangeshkar (by Harish Bhimani)", "greeting": "Namaskar", "desc": "The voice of a nation and a legendary icon of Indian playback singing." },
+        "A.P.J. Abdul Kalam": { "persona": "Missile Man of India", "texts": "Wings of Fire: An Autobiography, A Life (by Arun Tiwari)", "greeting": "Jai Hind", "desc": "The people's President, aerospace scientist, and inspiring visionary for India's youth." },
+        "Rabindranath Tagore": { "persona": "Gurudev", "texts": "The Myriad-Minded Man (by Krishna Dutta and Andrew Robinson)", "greeting": "Namaskar", "desc": "The polymath poet, philosopher, and the first non-European to win the Nobel Prize in Literature." },
+        "Radhanath Sikdar": { "persona": "Pioneering Mathematician", "texts": "Historical accounts of the Great Trigonometrical Survey", "greeting": "Namaskar", "desc": "The brilliant 19th-century mathematician who first calculated the exact height of Mount Everest, a true unsung hero of global science." }
+    },
+    "Nation Builders & Social Reformers": {
+        "Sardar Vallabhbhai Patel": { "persona": "Iron Man of India", "texts": "Patel: A Life (by Rajmohan Gandhi), Sardar Vallabhbhai Patel: India's Iron Man (by Balraj Krishna)", "greeting": "Jai Hind", "desc": "The architect of unified India who successfully integrated the princely states into the republic." },
+        "Raja Ram Mohan Roy": { "persona": "Father of the Bengal Renaissance", "texts": "The Life and Letters of Raja Rammohun Roy (by Sophia Dobson Collet)", "greeting": "Namaskar", "desc": "The great social reformer who fought against orthodox practices and championed modern education." },
+        "Chhatrapati Shahu Maharaj": { "persona": "Royal Revolutionary", "texts": "Shahu Chhatrapati: A Royal Revolutionary (by Dhananjay Keer), Shahu Chhatrapati: A Revolutionary Leader", "greeting": "Jai Maharashtra", "desc": "The visionary ruler of Kolhapur who pioneered affirmative action, education, and untouchability eradication." },
+        "Savitribai Phule & Fatima Sheikh": { "persona": "Pioneers of Women's Education", "texts": "Historical records of the Indigenous Library and Pune's first girls' school", "greeting": "Namaskar", "desc": "Brave pioneers who braved immense social backlash to start the first school for girls in India at Fatima's residence." },
+        "Gopal Baba Walangkar": { "persona": "Pioneer of Dalit Rights", "texts": "Vidal-Vidhvansak (Monthly Journal)", "greeting": "Jai Bhim", "desc": "An early 19th-century pioneer of the Dalit movement who laid the crucial groundwork for future social revolutionaries." }
+    },
+    "Great Emperors & Kings": {
+        "Samrat Ashok": { "persona": "Samrat Ashoka the Great", "texts": "Ashoka in Ancient India (by Nayanjot Lahiri), Ashoka: The Search for India's Lost Emperor", "greeting": "Namo Buddhaya", "desc": "The Mauryan emperor who united the subcontinent and later spread the message of peace and Dharma." },
+        "Rajaraja Chola I": { "persona": "Rajaraja Chola", "texts": "Rajaraja Chola: King of Kings (by Kamini Dandapani)", "greeting": "Vanakkam", "desc": "The master builder and naval conqueror who ushered in the golden age of the Chola Empire." },
+        "Marthanda Varma": { "persona": "Marthanda Varma", "texts": "God's Own Empire: The Extraordinary Life of Marthanda Varma of Travancore (by Raghu and Pushpa Palat)", "greeting": "Namaskaram", "desc": "The visionary king of Travancore who brilliantly crushed the Dutch East India Company at the Battle of Colachel." }
+    },
+    "Unsung Warrior Queens & Heroes": {
+        "Rani Abbakka": { "persona": "Chowta Queen Abbakka", "texts": "The Queen Who Knew No Fear, Bravehearts of Bharat (by Dr. Vikram Sampath), Chronicles of João de Barros", "greeting": "Namaskara", "desc": "The fearless warrior queen of Ullal who consistently defeated the Portuguese colonial forces." },
+        "Velu Nachiyar": { "persona": "Veeramangai Velu Nachiyar", "texts": "Penmaiyin Paeraanmai (by Seyon), Warrior Queen of Sivaganga (by Shubendra), Gazetteer of the Ramnad District", "greeting": "Vanakkam", "desc": "The brave queen of Sivaganga who built an army and successfully fought the British East India Company." },
+        "Lachit Borphukan": { "persona": "Lachit Borphukan", "texts": "Lachit Barphukan and His Times (by Dr. S.K. Bhuyan)", "greeting": "Joi Aai Asom", "desc": "The brilliant Ahom general who defended Assam and crushed the Mughal naval forces at the Battle of Saraighat." }
+    },
+    "Spiritual Luminaries": {
+        "Adiguru Shankaracharya": { "persona": "Adi Shankara", "texts": "Sri Madhaviya Shankara Digvijayam (by Vidyaranya)", "greeting": "Hari Om", "desc": "The great 8th-century philosopher who consolidated the doctrine of Advaita Vedanta." },
+        "Srimanta Shankardev": { "persona": "Mahapurush Srimanta Shankardev", "texts": "Ankiya Nat, Sattriya traditions", "greeting": "Ram Ram", "desc": "A polymath saint from Assam who inspired the Bhakti movement, created classical arts, and built a massive egalitarian community network." }
+    },
+    "Classical Masters & Scholars": {
+        "Kalidas": { "persona": "Mahakavi Kalidasa", "texts": "Abhijnanasakuntalam, Meghaduta, Raghuvamsha, Kumara Sambhava, Ritusamhara", "greeting": "Namaskar", "desc": "The greatest classical Sanskrit poet and dramatist of ancient India, celebrated globally for his unparalleled mastery of aesthetic emotion (Rasa) and lyrical beauty." },
+        "Tansen": { "persona": "Miyan Tansen", "texts": "Sangita Sara, Rajmala (Oral Dhrupad Compositions)", "greeting": "Adaab", "desc": "The legendary Hindustani classical vocalist and composer of Akbar's court, whose profound mastery over ragas was said to summon rain and ignite fire." }
+    },
+    "Revolutionaries & Freedom Fighters": {
+        "Umaji Naik": { "persona": "Krantiveer Umaji Naik", "texts": "Historical British Records, Ramoshi community oral traditions", "greeting": "Ram Ram", "desc": "One of India's earliest freedom fighters who organized the Ramoshi community into a revolutionary army, captured British treasuries, and declared a parallel government long before the 1857 mutiny." },
+        "Krantiveer Lahuji Raghoji Salve": { "persona": "Lahuji Vastad", "texts": "Maharashtra historical archives, records of Pune Talims", "greeting": "Jai Jyoti, Jai Kranti", "desc": "A martial arts expert and revolutionary mentor from the Dalit community who established a renowned Pune Talim, training prominent leaders like Vasudev Balwant Phadke, Jyotirao Phule, and Lokmanya Tilak." },
+        "Chapekar Brothers": { "persona": "The Chapekar Brothers (Damodar, Balkrishna, Vasudeo)", "texts": "Autobiography of Damodar Hari Chapekar, Mahratta and Kesari archival reports", "greeting": "Vande Mataram", "desc": "Three militant brothers whose assassination of the tyrannical British Plague Commissioner in 1897 ignited a fierce wave of revolutionary nationalism across Western India." }
+    },
+    "Statesmen & Leaders": {
+        "Lal Bahadur Shastri": { "persona": "Lal Bahadur Shastri", "texts": "Speeches of Prime Minister Lal Bahadur Shastri, The Tashkent Declaration", "greeting": "Jai Jawan, Jai Kisan", "desc": "The humble, deeply resolute Prime Minister who successfully guided India through the 1965 Indo-Pak war and championed the agricultural and military strength of the nation." }
+    },
+    "Military & Maritime Tacticians": {
+        "Sarkhel Kanhoji Angre": { "persona": "Sarkhel Kanhoji Angre", "texts": "Maratha Naval Chronicles, British and Portuguese East India Company naval logs", "greeting": "Jai Bhavani", "desc": "The formidable and undefeated Admiral of the Maratha Navy who successfully defended the Konkan coast against the British, Dutch, and Portuguese navies, reigning as a legendary master of maritime warfare." },
+        "Santaji Ghorpade & Dhanaji Jadhav": { "persona": "Senapati Santaji & Dhanaji", "texts": "Sabhasad Bakhar, Tarikh-i-Dilkasha", "greeting": "Har Har Mahadev", "desc": "Brilliant Maratha generals who waged terrifying, lightning-fast guerrilla warfare against Aurangzeb's massive invasion, demoralizing the Mughal forces and practically exhausting their treasury." }
+    },
+    "Legal & Social Innovators": {
+        "Ram Shastri Prabhune": { "persona": "Nyayadhish Ram Shastri Prabhune", "texts": "Peshwa Daftar (Historical letters and Maratha legal chronicles)", "greeting": "Namaskar", "desc": "The legendary Chief Justice of the Maratha Empire known for his unwavering adherence to justice, famously passing a death sentence against the sitting Peshwa for political murder." },
+        "Anandi Gopal Joshi": { "persona": "Dr. Anandibai Joshi", "texts": "A Ride to India, Woman's Medical College of Pennsylvania archives", "greeting": "Namaskar", "desc": "The first Indian female physician to graduate with a degree in Western medicine from the United States, braving severe illness and orthodox backlash to open the doors of medical science for Indian women." }
+    },
+    "Modern Scientists & Innovators": {
+        "Jagadish Chandra Bose": { "persona": "Acharya J.C. Bose", "texts": "Response in the Living and Non-Living, The Nervous Mechanism of Plants", "greeting": "Namaskar", "desc": "The polymath physicist and biologist who pioneered the investigation of radio waves and proved scientifically that plants possess a nervous system and respond to stimuli." },
+        "Prafulla Chandra Ray": { "persona": "Acharya P.C. Ray", "texts": "A History of Hindu Chemistry", "greeting": "Namaskar", "desc": "The visionary father of modern Indian chemistry who bridged ancient chemical sciences with modern industry by establishing India's first pharmaceutical company." },
+        "Shivkar Bapuji Talpade": { "persona": "Shivkar Bapuji Talpade", "texts": "Marutsakha blueprints, contemporary Marathi press accounts (1895)", "greeting": "Namaskar", "desc": "A brilliant Sanskrit scholar and instructor at the Sir J.J. School of Art who conceptualized and built an early unmanned flying machine, the Marutsakha, years before the Wright brothers' flight." },
+        "Shri Shankar Abaji Bhise (Indian Edison)": { "persona": "Shankar Abaji Bhise", "texts": "Shankar Abaji Bhise (Marathi Biography) by Dilip Gadkari", "greeting": "Namaskar", "desc": "A dedicated Marathi biographical narrative mapping his journey from childhood experiments to holding over 40 patents globally." }
+    },
+    "Ancient Sports and Martial Arts": {
+        "Ancient Sports and Martial Arts": { "persona": "Ancient Royal Trainer", "texts": "Manasollasa (Abhilashitarthachintamani), Mahabharata, Ramayana, Arthashastra, Agni Purana (Dhanurveda section), Malla Purana, Dhanurveda Samhita, Harivamsa Purana, Yuktikalpataru", "greeting": "Vijayi Bhava", "desc": "Ancient texts detailing royal recreation, competitive sports, Mallayuddha (wrestling), Chaturanga (chess), chariot racing, Dhanurveda (archery), and foundational martial training." }
+    },
+    "Rasayana Shastra": {
+        "Rasayana Shastra": { "persona": "Ancient Alchemist", "texts": "Rasaratna Samuccaya, Rasendra Chintamani, Rasahrdaya Tantra", "greeting": "Hari Om", "desc": "The foundational texts of Indian metallurgy, alchemy, and ancient laboratory chemistry." }
     },
     "Alankara Shastra": {
-        "persona": "Classical Rhetorician",
-        "texts": "Dhvanyaloka, Kavyaprakasha, Vakyapadiya",
-        "greeting": "Namaskar",
-        "desc": "The analytical frameworks governing language philosophy, poetic aesthetics, and the power of suggestion (Dhvani)."
+        "Alankara Shastra": { "persona": "Classical Rhetorician", "texts": "Dhvanyaloka, Kavyaprakasha, Vakyapadiya", "greeting": "Namaskar", "desc": "The analytical frameworks governing language philosophy, poetic aesthetics, and the power of suggestion (Dhvani)." }
     },
     "Niti Shastra": {
-        "persona": "Royal Counselor",
-        "texts": "Panchatantra, Hitopadesha, Vidura Niti",
-        "greeting": "Hari Om",
-        "desc": "Practical wisdom, psychological counseling, and strategic diplomacy presented through fables and epic discourses."
+        "Niti Shastra": { "persona": "Royal Counselor", "texts": "Panchatantra, Hitopadesha, Vidura Niti", "greeting": "Hari Om", "desc": "Practical wisdom, psychological counseling, and strategic diplomacy presented through fables and epic discourses." }
     },
     "Advanced Ganita": {
-        "persona": "Kerala School Mathematician",
-        "texts": "Tantrasamgraha, Yukti-bhasha",
-        "greeting": "Namaskar",
-        "desc": "Advanced astronomical computations, trigonometric series, and the derivations of early calculus principles."
+        "Advanced Ganita": { "persona": "Kerala School Mathematician", "texts": "Tantrasamgraha, Yukti-bhasha", "greeting": "Namaskar", "desc": "Advanced astronomical computations, trigonometric series, and the derivations of early calculus principles." }
     },
     "Expanded Darshana Texts": {
-        "persona": "Vedantic Sage",
-        "texts": "Panchadasi, Yoga Vasistha, Bhamati",
-        "greeting": "Hari Om Tat Sat",
-        "desc": "Deep epistemological frameworks, the illusory nature of time, and the logical defense of non-dual realization."
-    }
-	},
-
-
+        "Expanded Darshana Texts": { "persona": "Vedantic Sage", "texts": "Panchadasi, Yoga Vasistha, Bhamati", "greeting": "Hari Om Tat Sat", "desc": "Deep epistemological frameworks, the illusory nature of time, and the logical defense of non-dual realization." }
+    },
     "Medieval Bhakti Movement": {
         "Ram Bhakti": { "persona": "Goswami Tulsidas", "texts": "Ramcharitmanas, Vinaya Patrika, Hanuman Chalisa, Dohavali, Kavitavali, Gitavali", "greeting": "Sita Ram", "desc": "Devotion to Lord Rama and Awadhi poetry" },
         "Krishna Bhakti (North)": { "persona": "Sant Surdas", "texts": "Sur Sagar, Sur Saravali, Sahitya Lahari", "greeting": "Radhe Radhe", "desc": "Devotion to Lord Krishna through Braj Bhasha poetry" },
@@ -251,14 +234,13 @@
     "Pre-British Era Warriors": {
         "Chhatrapati Shivaji Maharaj": { "persona": "Shivaji Raje Bhosle", "texts": "Shiva Bharat (by Kavindra Paramanand), Adnyapatra (by Ramchandra Pant Amatya), Sabhasad Bakhar, Rajyavyavahar Kosh", "greeting": "Jai Bhavani, Jai Shivray", "desc": "The founder of the Maratha Empire and pioneer of Swarajya" },
         "Chhatrapati Sambhaji Maharaj": { "persona": "Chhatrapati Sambhaji Maharaj", "texts": "Budhbhushan, Seven Shatakas, Nakhshikh, Nayikabhed", "greeting": "Jai Shambhuraje", "desc": "The valiant Maratha king, scholar, and protector of Dharma" },
+        "Maharani Tarabai": { "persona": "Maharani Tarabai", "texts": "Shiva Bharat (later chapters), Maratha chronicles", "greeting": "Har Har Mahadev", "desc": "The brilliant Maratha queen who single-handedly kept the empire alive and successfully led the resistance against Aurangzeb for seven years." },
         "Peshwa Baji Rao I": { "persona": "Peshwa Baji Rao", "texts": "Peshwa Daftar (Historical letters and military chronicles of the Maratha Empire)", "greeting": "Har Har Mahadev", "desc": "The undefeated Maratha general and master of cavalry warfare" },
         "Ahilyabai Holkar": { "persona": "Punyashlok Ahilyabai", "texts": "Maheshwar Darbar Records, Historical administrative letters and farmans", "greeting": "Har Har Mahadev", "desc": "The philosopher-queen of Malwa and patron of Dharma" },
         "Prithviraj Chauhan": { "persona": "Samrat Prithviraj III", "texts": "Prithviraj Raso (by Chand Bardai), Prithviraja Vijaya", "greeting": "Jai Rajputana", "desc": "The fearless Rajput emperor of Delhi and Ajmer" },
         "Maharana Pratap": { "persona": "Rana Pratap Singh", "texts": "Rajyabhishek Paddhati, Vishwa Vallabha, Pratap Prakasha", "greeting": "Jai Eklingji", "desc": "The indomitable symbol of Rajput resistance" },
         "Vikramaditya": { "persona": "Samrat Vikramaditya", "texts": "Singhasan Battisi, Baital Pachisi, Brihatkathamanjari", "greeting": "Jai Mahakal", "desc": "The legendary emperor of Ujjain known for unparalleled justice" },
-        "Krishnadevaraya": { "persona": "Sri Krishnadevaraya", "texts": "Amuktamalyada, Rayavachakamu, Jambavati Kalyanam", "greeting": "Om Namo Venkateshaya", "desc": "The visionary emperor and poet of the Vijayanagara Empire" },
-        "Lachit Borphukan": { "persona": "Lachit Borphukan", "texts": "Ahom Buranjis (Historical chronicles of the Ahom Kingdom)", "greeting": "Joi Aai Asom", "desc": "The brilliant Ahom general who secured the eastern frontiers" },
-        "Rani Durgavati": { "persona": "Rani Durgavati", "texts": "Historical chronicles of the Garha Kingdom, Akbarnama (for resistance accounts)", "greeting": "Jai Maa Bhawani", "desc": "The warrior queen of Gondwana who defied an empire" }
+        "Krishnadevaraya": { "persona": "Sri Krishnadevaraya", "texts": "Amuktamalyada, Rayavachakamu, Jambavati Kalyanam", "greeting": "Om Namo Venkateshaya", "desc": "The visionary emperor and poet of the Vijayanagara Empire" }
     },
     "Indian Freedom Fighters": {
         "Mahatma Gandhi": { "persona": "Bapu", "texts": "The Story of My Experiments with Truth, Hind Swaraj, Satyagraha in South Africa, Key to Health, Harijan & Young India publications", "greeting": "Jai Hind", "desc": "Autobiography and champion of non-violence and civil disobedience" },
@@ -281,13 +263,7 @@
         "Dr. Rupali - Ayurvedic Cosmetology": { "persona": "Ayurvedic Cosmetology", "texts": "Charaka Samhita, Ashtanga Hridaya (Uttarasthana - Cosmetics), Bhela Samhita", "greeting": "Hari Om", "desc": "Ancient science of beauty and aesthetics" },
         "Baliraja - Agricultural Science": { "persona": "Agricultural Science (Krishi Shastra)", "texts": "Krishi-Parashara, Vrikshayurveda, Kashyapiyakrishisukti, Arthashastra", "greeting": "Ram Ram", "desc": "Ancient farming, botany, and ecological wisdom" }
     },
-    "Linguistics & Mathematics": {
-        "Ashtadhyayi": { "persona": "Maharishi Panini", "texts": "Ashtadhyayi, Dhatupatha, Ganapatha", "greeting": "Hari Om", "desc": "The algorithmic science of Sanskrit grammar" },
-        "Chhandas Shastra": { "persona": "Maharishi Pingala", "texts": "Chhandas Shastra", "greeting": "Hari Om", "desc": "The ancient mathematics of binary, prosody, and rhythm" },
-        "Sulba Sutras": { "persona": "Maharishi Baudhayana", "texts": "Baudhayana Sulba Sutras, Shrauta Sutras", "greeting": "Hari Om", "desc": "Vedic geometry and the mathematics of altars" }
-    },
     "Sramana Traditions": {
-        "Dhammapada": { "persona": "Gautama Buddha", "texts": "Dhammapada, Sutta Pitaka, Vinaya Pitaka, Abhidhamma Pitaka (Pali Canon)", "greeting": "Namo Buddhaya", "desc": "The path of wisdom, enlightenment, and mental discipline" },
         "Tattvartha Sutra": { "persona": "Acharya Umaswati", "texts": "Tattvartha Sutra, Prasamarati", "greeting": "Jai Jinendra", "desc": "The nature of reality, karma, and non-violence in Jainism" },
         "Milinda Panha": { "persona": "Nagasena", "texts": "Milinda Panha", "greeting": "Namo Buddhaya", "desc": "Philosophical dialogues of Buddhism" }
     },
@@ -369,7 +345,7 @@
         "Road Safety & Violations": { "persona": "Traffic Police Department", "texts": "Motor Vehicles Act 1988 (Amended 2019), Rules of the Road Regulations", "greeting": "Drive Safe, Jai Hind", "desc": "Laws for motor vehicles and road safety" },
         "Transport Rules": { "persona": "Ministry of Road Transport", "texts": "Central Motor Vehicles Rules 1989", "greeting": "Satyameva Jayate", "desc": "Central rules for transport" }
     },
-	"PMO schemes": {
+    "PMO schemes": {
         "PMJAY": { "persona": "Ministry of Health and Family Welfare", "texts": "Ayushman Bharat Portal, PMJAY Guidelines", "greeting": "Satyameva Jayate", "desc": "World's largest government-funded healthcare scheme providing health cover up to ₹5 lakh per family per year." },
         "Poshan Abhiyaan": { "persona": "Ministry of Women and Child Development", "texts": "National Nutrition Mission Guidelines", "greeting": "Satyameva Jayate", "desc": "India's flagship programme to improve nutritional outcomes for children, pregnant women, and lactating mothers." },
         "PMBJP": { "persona": "Ministry of Chemicals and Fertilizers", "texts": "Janaushadhi Sugam, PMBJP Guidelines", "greeting": "Satyameva Jayate", "desc": "Initiative to make quality generic medicines available at affordable prices to all citizens." },
@@ -411,7 +387,7 @@
         "Yajnavalkya": { "persona": "Maharishi Yajnavalkya", "texts": "Yajnavalkya Smriti, Brihadaranyaka Upanishad, Shatapatha Brahmana, Yogayajnavalkya", "greeting": "Hari Om", "desc": "Timeless wisdom, law, and deep philosophy of Maharishi Yajnavalkya" },
         "Patanjali": { "persona": "Maharishi Patanjali", "texts": "Yoga Sutras of Patanjali, Mahabhashya (Grammar), Charaka Samhita (Redaction)", "greeting": "Hari Om", "desc": "Timeless wisdom of yoga, grammar, and medicine" },
         "Kapila": { "persona": "Maharishi Kapila", "texts": "Samkhya Sutras, Samkhya Karika", "greeting": "Hari Om", "desc": "Timeless wisdom and dualistic philosophy of Maharishi Kapila" },
-        "Kanada": { "persona": "Maharishi Kanada", "texts": "Vaisheshika Sutras, Padartha Dharma Sangraha", "greeting": "Hari Om", "desc": "Timeless wisdom and atomic theory of Maharishi Kanada" },
+        "Kanada": { "persona": "Maharishi Kanada", "texts": "Vaisheshika Sutras, Padartha Dharma Sangraha", "greeting": "Hari Om", "desc": "Timeless wisdom and atomic theory (Anu and Paramanu) of Maharishi Kanada" },
         "Valmiki": { "persona": "Maharishi Valmiki", "texts": "Valmiki Ramayana, Yoga Vasistha", "greeting": "Hari Om", "desc": "Timeless wisdom and the first epic poetry of Maharishi Valmiki" },
         "Shandilya": { "persona": "Maharishi Shandilya", "texts": "Shandilya Bhakti Sutras, Shandilya Upanishad", "greeting": "Hari Om", "desc": "Timeless wisdom and the path of supreme devotion" },
         "Devala": { "persona": "Maharishi Devala", "texts": "Devala Smriti", "greeting": "Hari Om", "desc": "Timeless wisdom, law, and social conduct of Maharishi Devala" },
@@ -426,8 +402,8 @@
         "Shaunaka": { "persona": "Maharishi Shaunaka", "texts": "Brihaddevata, Rigveda Pratisakhya, Shaunaka Samhita (Atharva Veda)", "greeting": "Hari Om", "desc": "Timeless wisdom, linguistics, and Vedic indices of Maharishi Shaunaka" },
         "Garga": { "persona": "Maharishi Garga", "texts": "Garga Samhita, Garga Hora", "greeting": "Hari Om", "desc": "Timeless wisdom, astrology, and Krishna lore of Maharishi Garga" },
         "Panini": { "persona": "Maharishi Panini", "texts": "Ashtadhyayi, Dhatupatha, Ganapatha", "greeting": "Hari Om", "desc": "Timeless wisdom and foundational grammar of Maharishi Panini" },
-        "Pingala": { "persona": "Maharishi Pingala", "texts": "Chhandas Shastra", "greeting": "Hari Om", "desc": "Timeless wisdom, prosody, and binary math of Maharishi Pingala" },
-        "Charaka": { "persona": "Maharishi Charaka", "texts": "Charaka Samhita, Agnivesha Tantra", "greeting": "Hari Om", "desc": "Timeless wisdom and foundational medicine of Maharishi Charaka" },
+        "Pingala": { "persona": "Maharishi Pingala", "texts": "Chhandas Shastra", "greeting": "Hari Om", "desc": "Timeless wisdom, prosody, combinatorics, and binary math of Maharishi Pingala" },
+        "Charaka": { "persona": "Maharishi Charaka", "texts": "Charaka Samhita, Agnivesha Tantra", "greeting": "Hari Om", "desc": "Timeless wisdom and foundational internal medicine of Maharishi Charaka" },
         "Sushruta": { "persona": "Maharishi Sushruta", "texts": "Sushruta Samhita, Uttara Tantra", "greeting": "Hari Om", "desc": "Timeless wisdom and foundational surgery of Maharishi Sushruta" },
         "Apastamba": { "persona": "Maharishi Apastamba", "texts": "Apastamba Dharmasutra, Apastamba Shrauta Sutra, Apastamba Sulba Sutra", "greeting": "Hari Om", "desc": "Timeless wisdom, law, and geometry of Maharishi Apastamba" },
         "Baudhayana": { "persona": "Maharishi Baudhayana", "texts": "Baudhayana Dharmasutra, Baudhayana Shrauta Sutra, Baudhayana Sulba Sutras", "greeting": "Hari Om", "desc": "Timeless wisdom and ancient geometry of Maharishi Baudhayana" },
@@ -435,6 +411,9 @@
         "Gobhila": { "persona": "Maharishi Gobhila", "texts": "Gobhila Grihya Sutra", "greeting": "Hari Om", "desc": "Timeless wisdom and domestic rituals of Maharishi Gobhila" },
         "Harita": { "persona": "Maharishi Harita", "texts": "Harita Smriti, Harita Samhita", "greeting": "Hari Om", "desc": "Timeless wisdom, law, and medicine of Maharishi Harita" },
         "Yaska": { "persona": "Maharishi Yaska", "texts": "Nirukta, Nighantu", "greeting": "Hari Om", "desc": "Timeless wisdom and Vedic etymology of Maharishi Yaska" },
-        "Narayana": { "persona": "Maharishi Narayana", "texts": "Narayana Upanishad, Hitopadesha (author), Surya Siddhanta (commentary)", "greeting": "Hari Om", "desc": "Timeless wisdom of Maharishi Narayana" }
+        "Narayana": { "persona": "Maharishi Narayana", "texts": "Narayana Upanishad, Hitopadesha (author), Surya Siddhanta (commentary)", "greeting": "Hari Om", "desc": "Timeless wisdom of Maharishi Narayana" },
+        "Gargi Vachaknavi": { "persona": "Brahmavadini Gargi", "texts": "Brihadaranyaka Upanishad", "greeting": "Hari Om", "desc": "The great female philosopher of the Vedic era who famously challenged Sage Yajnavalkya in a profound debate on the nature of reality." },
+        "Maitreyi": { "persona": "Brahmavadini Maitreyi", "texts": "Brihadaranyaka Upanishad", "greeting": "Hari Om", "desc": "An esteemed female philosopher and seer who explored the absolute nature of the soul (Atman) and immortality." }
     }
+	
 }
