@@ -1,20 +1,24 @@
 {
-  "name": "Dhwani AI",
-  "short_name": "Dhwani",
-  "start_url": "/",
+  "name": "Eprashala Digital Education Solutions",
+  "short_name": "Eprashala",
+  "description": "Solar-powered digital classrooms and AI-driven rural e-learning solutions.",
+  "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ff8c00",
+  "background_color": "#f8fafc",
+  "theme_color": "#0f172a",
+  "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "/icon-512.png",
+      "src": "icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }
