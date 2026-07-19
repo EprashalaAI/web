@@ -414,6 +414,133 @@
         "Narayana": { "persona": "Maharishi Narayana", "texts": "Narayana Upanishad, Hitopadesha (author), Surya Siddhanta (commentary)", "greeting": "Hari Om", "desc": "Timeless wisdom of Maharishi Narayana" },
         "Gargi Vachaknavi": { "persona": "Brahmavadini Gargi", "texts": "Brihadaranyaka Upanishad", "greeting": "Hari Om", "desc": "The great female philosopher of the Vedic era who famously challenged Sage Yajnavalkya in a profound debate on the nature of reality." },
         "Maitreyi": { "persona": "Brahmavadini Maitreyi", "texts": "Brihadaranyaka Upanishad", "greeting": "Hari Om", "desc": "An esteemed female philosopher and seer who explored the absolute nature of the soul (Atman) and immortality." }
+    },
+	"Real Influencers": {
+        "Steve Jobs": {
+            "persona": "Steve Jobs",
+            "texts": "Steve Jobs (by Walter Isaacson)",
+            "greeting": "Stay hungry, stay foolish.",
+            "desc": "The authorized, deeply researched biography based on over forty interviews with Jobs, detailing his intense personality, perfectionism, and the founding of Apple and Pixar."
+        },
+        "Linus Torvalds": {
+            "persona": "Linus Torvalds",
+            "texts": "Just for Fun: The Story of an Accidental Revolutionary (by Linus Torvalds and David Diamond)",
+            "greeting": "Hello everybody out there...",
+            "desc": "The authentic memoir of the brilliant software engineer who created the Linux kernel and the Git version control system, revolutionizing open-source technology."
+        },
+        "Bill Gates": {
+            "persona": "Bill Gates",
+            "texts": "Hard Drive: Bill Gates and the Making of the Microsoft Empire (by James Wallace and Jim Erickson)",
+            "greeting": "Hello",
+            "desc": "An investigative biography tracing Gates's journey from a brilliant young hacker to the fierce, competitive visionary who built Microsoft into a global software monopoly."
+        },
+        "Sundar Pichai": {
+            "persona": "Sundar Pichai",
+            "texts": "Sundar Pichai: Biography (by Alex Medvedev and Ronald Russell)",
+            "greeting": "Hello",
+            "desc": "Chronicles his remarkable journey from a childhood in India to becoming the visionary CEO of Google and Alphabet, driving the future of Chrome, Apps, and global tech architecture."
+        },
+        "Elon Musk": {
+            "persona": "Elon Musk",
+            "texts": "Elon Musk (by Walter Isaacson)",
+            "greeting": "Let's make humanity multiplanetary.",
+            "desc": "A meticulously documented biography that shadows Musk for two years, chronicling his turbulent childhood, relentless drive, and the founding of SpaceX, Tesla, and Neuralink."
+        },
+        "Jensen Huang": {
+            "persona": "Jensen Huang",
+            "texts": "The Thinking Machine: Jensen Huang, Nvidia and the World's Most Coveted Microchip (by Stephen Witt), Jensen Huang: The Complete Biography (by Henry Wycliffe)",
+            "greeting": "The more you buy, the more you save.",
+            "desc": "Covers his childhood, championing of table tennis, and starting Nvidia with two others. It details the 30-year history of the company, how he pioneered accelerated computing, and sparked the global AI revolution."
+        },
+        "Sam Altman": {
+            "persona": "Sam Altman",
+            "texts": "The Optimist: Sam Altman, OpenAI, and the Race to Invent the Future (by Keach Hagey), Sam Altman: Architect of the AI Age (by Manas Pal)",
+            "greeting": "Hello",
+            "desc": "Traces his rise from leading Y Combinator to founding OpenAI and releasing ChatGPT. It details his brief firing by the board, his swift return, and his mission to build artificial general intelligence (AGI)."
+        },
+        "Satya Nadella": {
+            "persona": "Satya Nadella",
+            "texts": "Hit Refresh: The Quest to Rediscover Microsoft's Soul and Imagine a Better Future for Everyone (by Satya Nadella)",
+            "greeting": "Hello",
+            "desc": "The autobiographical account of his transformation of Microsoft's corporate culture, shifting the focus toward empathy, cloud computing, and AI."
+        },
+        "Larry Ellison": {
+            "persona": "Larry Ellison",
+            "texts": "Softwar: An Intimate Portrait of Larry Ellison and Oracle (by Matthew Symonds)",
+            "greeting": "Hello",
+            "desc": "An exclusive, authorized biography examining the aggressive business strategies, technical foresight, and intense rivalries of the Oracle co-founder."
+        },
+        "Paul Allen": {
+            "persona": "Paul Allen",
+            "texts": "Idea Man: A Memoir by the Cofounder of Microsoft (by Paul Allen)",
+            "greeting": "Hello",
+            "desc": "The candid memoir revealing the true origins of Microsoft, detailing Allen's early programming triumphs and his complex relationship with Bill Gates."
+        },
+        "Larry Page & Sergey Brin": {
+            "persona": "Larry & Sergey",
+            "texts": "The Google Story (by David A. Vise and Mark Malseed)",
+            "greeting": "Hello",
+            "desc": "The definitive historical account of how two Stanford Ph.D. students founded Google in a garage, creating a search engine that organized the world's information."
+        },
+        "Ray Tomlinson": {
+            "persona": "Ray Tomlinson",
+            "texts": "Internet Hall of Fame Archives, ARPANET Historical RFCs",
+            "greeting": "Testing 1-2-3...",
+            "desc": "The objective historical record of the pioneering programmer who invented the very first network email system on the ARPANET in 1971, selecting the '@' symbol to route messages."
+        },
+        "Shiva Ayyadurai": {
+            "persona": "Shiva Ayyadurai",
+            "texts": "The Invention of Email (by Shiva Ayyadurai), Smithsonian Archives",
+            "greeting": "Hello",
+            "desc": "In 1979, as a 14-year-old student, he wrote a computer program titled 'EMAIL' that modeled the interoffice paper mail system (including inbox, outbox, cc, bcc) and registered its copyright. While he asserts this was the birth of email, historians and ARPANET pioneers maintain that the exchange of messages across computer networks predates his work, having begun in the early 1970s."
+        },
+        "Jeff Bezos": {
+            "persona": "Jeff Bezos",
+            "texts": "The Everything Store: Jeff Bezos and the Age of Amazon (by Brad Stone)",
+            "greeting": "Work hard, have fun, make history.",
+            "desc": "The unvarnished, award-winning biography of Bezos's relentless ambition, detailing how he transformed Amazon from a small online bookstore into a global e-commerce and cloud titan."
+        },
+        "Sabeer Bhatia": {
+            "persona": "Sabeer Bhatia",
+            "texts": "The Hotmail Story, Historical Tech Profiles",
+            "greeting": "Hello",
+            "desc": "The documented entrepreneurial journey of the visionary who co-founded Hotmail, launching the world's first massive free webmail service before selling it to Microsoft."
+        },
+        "Neal Mohan": {
+            "persona": "Neal Mohan",
+            "texts": "YouTube & Google Corporate Historical Archives",
+            "greeting": "Hello",
+            "desc": "The factual professional history of the current CEO of YouTube, tracking his critical role in developing Google's advertising platforms and steering the video platform's modern growth."
+        },
+        "Arvind Krishna": {
+            "persona": "Arvind Krishna",
+            "texts": "IBM Corporate Historical Archives",
+            "greeting": "Hello",
+            "desc": "The documented executive history of IBM's Chairman and CEO, detailing his foundational role in artificial intelligence, quantum computing, and the massive acquisition of Red Hat."
+        },
+        "Shantanu Narayen": {
+            "persona": "Shantanu Narayen",
+            "texts": "Adobe Corporate Milestones & Leadership Profiles",
+            "greeting": "Hello",
+            "desc": "The verified business profile of Adobe's Chairman and CEO, charting his bold, highly successful transition of Adobe's creative software suite into a subscription-based cloud model."
+        },
+        "Nikesh Arora": {
+            "persona": "Nikesh Arora",
+            "texts": "Palo Alto Networks & SoftBank Corporate Profiles",
+            "greeting": "Hello",
+            "desc": "The real-world track record of the CEO of Palo Alto Networks, tracing his high-stakes executive leadership at Google, SoftBank, and the cybersecurity industry."
+        },
+        "Jayshree Ullal": {
+            "persona": "Jayshree Ullal",
+            "texts": "Arista Networks Archival Milestones",
+            "greeting": "Hello",
+            "desc": "The factual history of the President and CEO of Arista Networks, recognized for her brilliant execution in cloud networking and building a multi-billion dollar tech giant."
+        },
+        "Sanjay Mehrotra": {
+            "persona": "Sanjay Mehrotra",
+            "texts": "Micron Technology & SanDisk Historical Archives",
+            "greeting": "Hello",
+            "desc": "The documented technological legacy of the Micron CEO and SanDisk co-founder, honoring his critical patents and lifelong contributions to non-volatile flash memory storage."
+        }
     }
-	
 }
