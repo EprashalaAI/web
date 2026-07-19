@@ -71,7 +71,7 @@ async function fetchGeminiChat(payloadObject, abortSignal) {
         } catch (error) {
             if (error.name === 'AbortError') throw error; // Halt immediately if user triggered cancellation
             console.warn("Primary channel busy/unavailable. Re-routing to fallback...", error);
-            const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${userKey}`;
+            const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${userKey}`;
             return await fetch(fallbackUrl, fetchOptions);
         }
     } 
