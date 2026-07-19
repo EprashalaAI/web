@@ -39,16 +39,8 @@ function enforceFullscreen() {
 }
 
 ['click', 'touchstart', 'touchend', 'keydown'].forEach(eventType => {
-    const safeFullscreen = (e) => {
-        // Do not trigger fullscreen if the user is interacting with an input box
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-            return;
-        }
-        enforceFullscreen();
-    };
-
-    window.addEventListener(eventType, safeFullscreen, { capture: true, passive: true });
-    document.addEventListener(eventType, safeFullscreen, { capture: true, passive: true });
+    window.addEventListener(eventType, enforceFullscreen, { capture: true, passive: true });
+    document.addEventListener(eventType, enforceFullscreen, { capture: true, passive: true });
 });
 
 
@@ -826,13 +818,6 @@ function setupEventListeners() {
     UI.textIn.onkeypress = (e) => { 
         if(e.key === 'Enter') { e.stopPropagation(); enforceFullscreen(); processInput(UI.textIn.value); } 
     };
-
-UI.textIn.addEventListener('focus', () => {
-    // A slight delay ensures the keyboard has fully opened before calculating the scroll position
-    setTimeout(() => {
-        UI.textIn.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }, 300); 
-});
 
     UI.btnMic.addEventListener('click', (e) => {
         e.stopPropagation(); enforceFullscreen();
