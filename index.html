@@ -3,6 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<!-- PWA Linking Configurations -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f172a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icon-192.png">
     <title>Eprashala | Educational Ed-tech Transforming Rural India</title>
     
     <!-- Deep SEO & Meta Tags for NGO & Educational Tech -->
@@ -648,7 +654,7 @@
                     <p class="text-base sm:text-lg text-slate-600 mb-8 sm:mb-10 leading-relaxed">
                         Keeping this in mind, we have decoded more than <strong>200 ancient Indian texts</strong> including the <strong>Vedas, Puranas, and Upanishads</strong>, making them available to all absolutely free of cost. Any person of any age can use the profound knowledge from these books, apply it to day-to-day life, innovate new products, and live a healthy, fruitful life.
                     </p>
-                    <a href="https://www.eprashala.com/AI" target="_blank" class="inline-block w-full sm:w-auto bg-brand-dark text-amber-50 px-6 sm:px-10 py-3 sm:py-4 rounded-xl font-bold text-base sm:text-lg shadow-xl hover:bg-slate-800 transition hover:-translate-y-1 border border-amber-900/30">
+                    <a href="https://ai.eprashala.com" target="_blank" class="inline-block w-full sm:w-auto bg-brand-dark text-amber-50 px-6 sm:px-10 py-3 sm:py-4 rounded-xl font-bold text-base sm:text-lg shadow-xl hover:bg-slate-800 transition hover:-translate-y-1 border border-amber-900/30">
                         Explore the Ancient Library (Free)
                     </a>
                 </div>
@@ -748,8 +754,8 @@
                     <h4 class="text-white font-bold text-lg mb-3 sm:mb-4">Contact</h4>
                     <p class="mb-2"><strong>Email:</strong> <a href="mailto:info@eprashala.com" class="text-brand-primary hover:text-white transition">info@eprashala.com</a></p>
                     <p><strong>Phone:</strong> 
-                       <a href="tel:+919320453744" class="text-brand-primary hover:text-white transition">9320453744</a>,
-					<a href="tel:+919869065253" class="text-brand-primary hover:text-white transition">7304623132</a>, 
+                        <a href="tel:+919869065253" class="text-brand-primary hover:text-white transition">9869065253</a>, 
+                        <a href="tel:+919320453744" class="text-brand-primary hover:text-white transition">9320453744</a>
                     </p>
                 </div>
             </div>
@@ -904,6 +910,16 @@
                 }
             });
         });
-    </script>
+    // Register Service Worker securely if supported by the client browser
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('Eprashala Service Worker connected successfully:', reg.scope))
+            .catch(err => console.error('Service Worker deployment blocked:', err));
+    });
+}
+	
+	
+	</script>
 </body>
 </html>
