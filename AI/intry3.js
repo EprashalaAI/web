@@ -999,6 +999,85 @@ UI.textIn.addEventListener('focus', () => {
         if (isListening) { recognition.stop(); } 
         else { recognition.lang = UI.lang.value; try { recognition.start(); } catch(err) {} }
     });
+	
+	// --- SMART BOOK SUGGESTIONS LOGIC ---
+    // Map everyday keywords to specific groups and books from your library
+    const keywordMap = {
+        "health": { group: "Ayurveda", item: "Charaka Samhita", label: "Health (Charaka)" },
+        "medicine": { group: "Ayurveda", item: "Sushruta Samhita", label: "Medicine (Sushruta)" },
+        "surgery": { group: "Ayurveda", item: "Sushruta Samhita", label: "Surgery (Sushruta)" },
+        "relationship": { group: "Shastra", item: "Kama Shastra", label: "Relationships" },
+        "love": { group: "Shastra", item: "Kama Shastra", label: "Love & Aesthetics" },
+        "science": { group: "Vedic Sciences", item: "Vedic Quantum Physics", label: "Quantum Science" },
+        "physics": { group: "Vedic Sciences", item: "Vedic Quantum Physics", label: "Vedic Physics" },
+        "astronomy": { group: "Jyotish", item: "Surya Siddhanta", label: "Astronomy" },
+        "stars": { group: "Jyotish", item: "Brihat Parashara", label: "Astrology" },
+        "math": { group: "Ancient Scientists & Mathematicians", item: "Aryabhata", label: "Mathematics" },
+        "law": { group: "Dharma Shastra", item: "Manusmriti", label: "Ancient Law" },
+        "sports": { group: "Ancient Sports and Martial Arts", item: "Ancient Sports and Martial Arts", label: "Ancient Sports" },
+        "cricket": { group: "Sports Science & Mindset", item: "Sachin Tendulkar", label: "Cricket Mindset" }
+    };
+
+    const suggestionsContainer = document.getElementById('book-suggestions');
+
+    UI.textIn.addEventListener('input', (e) => {
+        if (!suggestionsContainer) return;
+        
+        const text = e.target.value.toLowerCase();
+        let matchedBooks = [];
+        let matchedKeys = new Set(); // Prevent duplicate tabs if multiple keywords map to the same book
+
+        // Check if any keyword matches the user's input
+        for (const [key, data] of Object.entries(keywordMap)) {
+            if (text.includes(key)) {
+                const uniqueId = data.group + "|" + data.item;
+                if (!matchedKeys.has(uniqueId)) {
+                    matchedKeys.add(uniqueId);
+                    matchedBooks.push(data);
+                }
+            }
+        }
+
+        // Display the tabs if matches are found
+        if (matchedBooks.length > 0) {
+            suggestionsContainer.classList.remove('hidden');
+            suggestionsContainer.innerHTML = matchedBooks.map(book => 
+                `<button type="button" 
+                    onclick="window.selectSuggestedBook('${book.group}', '${book.item}')" 
+                    class="whitespace-nowrap px-4 py-1.5 bg-cyan-900/60 hover:bg-cyan-700 text-cyan-200 border border-cyan-600/50 rounded-full text-xs font-bold transition-all shadow-md focus:outline-none">
+                    Select: ${book.label}
+                </button>`
+            ).join('');
+        } else {
+            // Hide the tabs if no keywords are matched or text is cleared
+            suggestionsContainer.classList.add('hidden');
+            suggestionsContainer.innerHTML = '';
+        }
+    });
+
+    // Global function to handle tab clicks
+    window.selectSuggestedBook = (group, item) => {
+        selectedLibraryItem = `${group}|${item}`;
+        if (UI.ddText) UI.ddText.innerText = item;
+        
+        // Flash effect to show it was selected
+        const container = document.getElementById('dropdown-btn');
+        if (container) {
+            container.classList.add('bg-cyan-900/50', 'border-cyan-400');
+            setTimeout(() => {
+                container.classList.remove('bg-cyan-900/50', 'border-cyan-400');
+            }, 500);
+        }
+
+        // Hide suggestions after selection
+        if (suggestionsContainer) {
+            suggestionsContainer.classList.add('hidden');
+            suggestionsContainer.innerHTML = '';
+        }
+    };
+	
+	
+	
 }
 
 function initSpeechRecognition() {
