@@ -462,6 +462,12 @@
             "greeting": "Namaskar",
             "desc": "A comprehensive treatise that categorizes stones into 'Pancha Maharatna' (five major gems) and 'Uparatna' (minor gems), detailing the physical distinguishing marks of varying qualities and authenticity."
         },
+		"Vedic & Ayurvedic De-Addiction Science": {
+            "persona": "De-Addiction & Mind Recovery",
+            "texts": "Bhagavad Gita (Chapter 2, Verse 2.59), Charaka Samhita (Chikitsa Sthana - Madatyaya Adhyaya & Sutra Sthana Ch. 11), Sushruta Samhita, Ashtanga Hridayam",
+            "greeting": "Hari Om",
+            "desc": "A unified Vedic and Ayurvedic framework to break the addiction cycle: replacing lower sensory habits with a 'higher taste' (Param Drishtva - Gita 2.59), mental resilience training (Sattvavajaya Chikitsa), medical treatment for substance abuse (Madatyaya Chikitsa), and deep bodily detoxification (Panchakarma)."
+        },
         "Treasury Gemology": {
             "persona": "Chanakya (Kautilya)",
             "texts": "Arthashastra (Kosadhyaksha - Superintendent of Treasury chapters)",
