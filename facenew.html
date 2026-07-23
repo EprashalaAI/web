@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vedic Mukha Samudrika - Absolute Truth</title>
+	<script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/vision_bundle.js" crossorigin="anonymous"></script>
+    
+	<style>
+        :root {
+            --bg-primary: #121214;
+            --bg-surface: #1e1e24;
+            --accent: #f59e0b;
+            --accent-hover: #d97706;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --border: #374151;
+            --error-color: #ff4c4c;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem;
+            padding-bottom: 80px;
+        }
+
+        /* Fullscreen adjustments */
+        :fullscreen body { background-color: var(--bg-primary); width: 100vw; height: 100vh; overflow-y: auto; }
+        :-webkit-full-screen body { background-color: var(--bg-primary); width: 100vw; height: 100vh; overflow-y: auto; }
+        :-ms-fullscreen body { background-color: var(--bg-primary); width: 100vw; height: 100vh; overflow-y: auto; }
+
+        header {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 1.5rem;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            color: var(--accent);
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        .settings-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            transition: all 0.2s;
+        }
+
+        .settings-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+        .setup-container {
+            width: 100%;
+            max-width: 400px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.25rem;
+        }
+
+        .photo-guideline {
+            background: rgba(245, 158, 11, 0.08);
+            border: 1px dashed var(--accent);
+            padding: 12px;
+            border-radius: 0.5rem;
+            text-align: center;
+            width: 100%;
+        }
+
+        .input-field, .select-field {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            border-radius: 0.375rem;
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        .input-field:focus, .select-field:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .flex-row {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            gap: 10px;
+        }
+
+        #mainWorkspace {
+            width: 100%;
+            max-width: 800px;
+            display: none;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .workspace-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .viewport-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            aspect-ratio: 4/5;
+            background: #000;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            border: 2px solid var(--border);
+            touch-action: none;
+        }
+
+        video, canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .guideline-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .guide-oval {
+            position: absolute;
+            top: 10%;
+            left: 15%;
+            width: 70%;
+            height: 75%;
+            border: 2px dashed var(--accent);
+            border-radius: 50% 50% 48% 48% / 60% 60% 40% 40%;
+            opacity: 0.65;
+        }
+
+        .guide-line-h {
+            position: absolute;
+            top: 45%;
+            left: 0;
+            width: 100%;
+            border-top: 1px dotted var(--accent);
+            opacity: 0.5;
+        }
+
+        .guide-line-v {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            height: 100%;
+            border-left: 1px dotted var(--accent);
+            opacity: 0.5;
+        }
+
+        .scanner-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background-color: red;
+            box-shadow: 0 0 15px red, 0 0 30px red;
+            display: none;
+            z-index: 20;
+        }
+
+        @keyframes scanAnimation {
+            0% { top: 0; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        .control-panel {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .row-group {
+            display: flex;
+            justify-content: center;
+            gap: 0.75rem;
+            width: 100%;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: var(--border);
+            color: var(--text-main);
+            padding: 0.625rem 1.25rem;
+            border: none;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary { background: var(--accent); color: #000; font-weight: 600; width: 100%; justify-content: center;}
+        .btn-primary:hover:not(:disabled) { background: var(--accent-hover); box-shadow: 0 0 10px var(--accent); }
+        .btn:disabled { background-color: #555; color: #888; cursor: not-allowed; box-shadow: none; }
+        .btn:hover:not(.btn-primary):not(:disabled) { background: #4b5563; }
+
+        .zoom-slider-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            width: 100%;
+            max-width: 450px;
+            margin: 0 auto;
+        }
+
+        .zoom-slider { flex: 1; accent-color: var(--accent); cursor: pointer; }
+
+        .report-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .report-card.active { display: flex; }
+
+        .captured-display {
+            width: 100%;
+            max-width: 300px;
+            border-radius: 0.5rem;
+            border: 2px solid var(--accent);
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            display: none;
+        }
+
+        .audio-btn {
+            background-color: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 8px 16px;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 15px;
+            transition: all 0.2s;
+        }
+
+        .audio-btn:hover { background-color: rgba(245, 158, 11, 0.1); }
+
+        .report-text { line-height: 1.6; color: #e5e7eb; width: 100%; }
+        .report-text h2, .report-text h3 { color: var(--accent); margin: 1.25rem 0 0.5rem 0; }
+        .report-text p, .report-text ul { margin-bottom: 0.75rem; }
+        .report-text ul { padding-left: 1.5rem; }
+
+        .loader {
+            display: none;
+            border: 4px solid var(--border);
+            border-top: 4px solid var(--accent);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 1rem auto;
+        }
+
+        .pulsing-status {
+            animation: pulse 1.5s infinite;
+            color: var(--accent);
+            font-weight: bold;
+            margin-top: 10px;
+            display: none;
+            text-align: center;
+        }
+
+        .floating-action {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--accent);
+            color: black;
+            border-radius: 50px;
+            padding: 15px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            cursor: pointer;
+            z-index: 1000;
+            display: none;
+            border: none;
+            transition: transform 0.2s;
+        }
+        
+        .floating-action:hover { transform: scale(1.05); }
+
+        .modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.75);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 1000; opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .modal.active { opacity: 1; pointer-events: auto; }
+        .modal-content {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            padding: 1.5rem; border-radius: 0.5rem;
+            width: 90%; max-width: 400px;
+            display: flex; flex-direction: column; gap: 1rem;
+        }
+
+        @media print {
+            body { background: #fff !important; color: #000 !important; overflow: visible !important; height: auto !important; padding: 0 !important; }
+            header, .setup-container, .control-panel, .zoom-slider-container, .floating-action, .audio-btn { display: none !important; }
+            #mainWorkspace { display: block !important; padding: 0 !important; gap: 0 !important; }
+            .workspace-card { display: none !important; }
+            .report-card { display: block !important; border: none !important; padding: 0 !important; background: transparent !important; }
+            .captured-display { border: 2px solid #000 !important; box-shadow: none !important; max-width: 200px !important; margin-bottom: 20px !important; page-break-inside: avoid; }
+            .report-text { color: #000 !important; }
+            .report-text h2, .report-text h3 { color: #000 !important; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+            ::-webkit-scrollbar { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Vedic Mukha Samudrika</h1>
+        <button class="settings-btn" onclick="toggleModal(true)">⚙️ Settings</button>
+    </header>
+
+    <div class="setup-container" id="setupSection">
+        
+        <div class="photo-guideline">
+            <strong style="color: var(--accent); font-size: 0.95rem; display: block; margin-bottom: 4px;">⚠️ CRITICAL FOR ACCURACY</strong>
+            <span style="font-size: 0.85rem; color: #d1d5db; line-height: 1.4;">Make sure you upload a best and latest clicked passport size photo shot by a professional photographer for best results. Shadows or blur will distort the Samudrika readings.</span>
+        </div>
+
+        <h3 style="color: var(--accent); margin-bottom: 0;">Subject Demographics</h3>
+        <p style="font-size: 0.875rem; color: var(--text-muted); text-align: center; margin-top: 0;">
+            Age and sex are required to accurately calibrate the karmic baselines.
+        </p>
+        
+        <input type="text" id="userName" class="input-field" placeholder="Full Name" autocomplete="off">
+        
+        <div class="flex-row">
+            <select id="userSex" class="select-field">
+                <option value="" disabled selected>Select Sex</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+            </select>
+            <select id="userAge" class="select-field"></select>
+        </div>
+
+        <select id="userLang" class="select-field">
+            <option value="English">English</option>
+            <option value="Hindi">Hindi (हिन्दी)</option>
+            <option value="Bengali">Bengali (বাংলা)</option>
+            <option value="Telugu">Telugu (తెలుగు)</option>
+            <option value="Marathi" selected>Marathi (मराठी)</option>
+            <option value="Tamil">Tamil (தமிழ்)</option>
+            <option value="Gujarati">Gujarati (ગુજરાતી)</option>
+            <option value="Kannada">Kannada (ಕನ್ನಡ)</option>
+            <option value="Malayalam">Malayalam (മലയാളം)</option>
+            <option value="Odia">Odia (ଓଡ଼ିଆ)</option>
+            <option value="Punjabi">Punjabi (ਪੰਜਾਬੀ)</option>
+        </select>
+
+        <button class="btn btn-primary" id="initBtn">Initiate Session</button>
+    </div>
+
+    <main id="mainWorkspace">
+        <div class="workspace-card">
+            <div class="viewport-container" id="viewport">
+                <video id="video" autoplay playsinline muted></video>
+                <canvas id="canvas"></canvas>
+                
+                <div class="guideline-overlay">
+                    <div class="guide-oval"></div>
+                    <div class="guide-line-h"></div>
+                    <div class="guide-line-v"></div>
+                </div>
+
+                <div class="scanner-line" id="scannerLine"></div>
+            </div>
+
+            <div class="zoom-slider-container">
+                <span>🔍 -</span>
+                <input type="range" id="zoomSlider" class="zoom-slider" min="1" max="4" step="0.05" value="1" disabled>
+                <span>+</span>
+            </div>
+
+            <div class="control-panel">
+                <div class="row-group">
+                    <button class="btn" onclick="startCamera('user')">📸 Front Cam</button>
+                    <button class="btn" onclick="startCamera('environment')">📹 Rear Cam</button>
+                    <button class="btn" onclick="document.getElementById('fileInput').click()">📁 Upload</button>
+                    <input type="file" id="fileInput" accept="image/*" style="display: none" onchange="handleFileUpload(event)">
+                </div>
+                <div class="row-group">
+                    <button class="btn btn-primary" id="analyzeBtn" onclick="initiateScanSequence()">Commence Deep Face Scan</button>
+                </div>
+            </div>
+            
+            <div class="loader" id="loader"></div>
+            <div class="pulsing-status" id="statusText">Extracting 478 biometric points...</div>
+        </div>
+
+        <div class="report-card" id="reportCard">
+            <img id="capturedDisplay" class="captured-display" alt="Captured Face for Analysis">
+            <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; margin-bottom: 1rem;">
+                <h2 style="color: var(--accent); margin: 0;">AI Mukha Samudrika Report ( AI generated) </h2>
+                <button class="audio-btn" id="audioBtn" style="display: none;">🔊 Listen</button>
+            </div>
+            <div class="report-text" id="reportTarget"></div>
+        </div>
+    </main>
+
+    <button id="shareBtn" class="floating-action">📤 Share Reading</button>
+    <button id="sharePdfBtn" class="floating-action" style="bottom: 85px;">🖨️ Save PDF</button>
+
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <h3 style="color: var(--accent)">Personalized API Key</h3>
+            <p style="font-size: 0.875rem; color: var(--text-muted);">
+                Enter your own API key to bypass server limits. Saved locally.
+            </p>
+            <div style="display: flex; gap: 0.5rem; width: 100%;">
+                <input type="password" id="apiKeyInput" class="input-field" placeholder="AIzaSy..." style="flex: 1;">
+                <button class="btn" id="pasteBtn" title="Paste API Key" style="padding: 0.75rem;">📋 Paste</button>
+            </div>
+            <div class="row-group" style="justify-content: flex-end; margin-top: 0.5rem;">
+                <button class="btn" onclick="toggleModal(false)">Cancel</button>
+                <button class="btn btn-primary" style="width:auto;" onclick="saveSettings()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="appnew.js"></script>
+</body>
+</html>
