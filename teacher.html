@@ -207,7 +207,28 @@
                             <option value="cloud">Cloud Voice (Requires Internet)</option>
                         </select>
                     </div>
-                    <div class="flex items-center gap-3 pt-2 pl-1">
+                    <!-- Add inside settings-main-view in teacher.html -->
+					<div id="advanced-sliders-container" class="space-y-3 pt-3 border-t border-slate-700/50 mb-3">
+						<div>
+							<div class="flex justify-between items-center mb-1">
+								<label class="block text-[10px] text-gray-400 uppercase tracking-wider">Syllabus / AI Ratio</label>
+								<span id="ratio-val" class="text-xs text-sky-400 font-bold">80% Book / 20% AI</span>
+							</div>
+							<input type="range" id="ratio-slider" min="0" max="100" step="10" value="80" class="w-full accent-sky-500 cursor-pointer shadow-inner">
+							<p class="text-[9px] text-gray-500 mt-1 leading-tight">Higher Book % forces strict textbook accuracy.</p>
+						</div>
+						
+						<div>
+							<div class="flex justify-between items-center mb-1">
+								<label class="block text-[10px] text-gray-400 uppercase tracking-wider">AI Brain Model</label>
+								<span id="model-val" class="text-xs text-sky-400 font-bold">Gemini 3.1 Pro Preview</span>
+							</div>
+							<input type="range" id="model-slider" min="20" max="80" step="20" value="80" class="w-full accent-sky-500 cursor-pointer shadow-inner">
+							<p class="text-[9px] text-gray-500 mt-1 leading-tight">Lower = Fast (Flash). Higher = Accurate (Pro).</p>
+						</div>
+					</div>
+									
+					<div class="flex items-center gap-3 pt-2 pl-1">
                         <input type="checkbox" id="remember-checkbox" checked class="w-5 h-5 accent-sky-500 rounded cursor-pointer">
                         <label for="remember-checkbox" class="text-sm text-gray-300 cursor-pointer">Remember Chat History</label>
                     </div>

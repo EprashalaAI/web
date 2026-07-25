@@ -47,39 +47,58 @@ function enforceFullscreen() {
 // --- 1. DATA STRUCTURES & CONFIG ---
 const PROXY_BASE_URL = "https://eprashala-proxy-511804777001.asia-south1.run.app";
 
-async function fetchGeminiChat(payloadObject, abortSignal) {
+async function fetchGeminiChat(payloadObject, abortSignal, modelId) {
     const userKey = document.getElementById('custom-api-key-input').value.trim() || '';
-    
-    // Package request options and bind the AbortController signal if active
-    const fetchOptions = {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payloadObject)
-    };
-    if (abortSignal) fetchOptions.signal = abortSignal;
 
-    // TIER 1: User has their own key -> Direct browser handoff to Google
+    // TIER 1: User Direct Route (Personal API Key)
     if (userKey && userKey.length > 10) {
+        
+        // 🚨 STRICT REQUIREMENT: Remove 'model' from the JSON body or Google will reject it.
+        delete payloadObject.model;
+
+        const fetchOptions = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payloadObject)
+        };
+        if (abortSignal) fetchOptions.signal = abortSignal;
+
         try {
-            console.log("Direct Route Active: Targeting gemini-flash-latest...");
-            const primaryUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${userKey}`;
+            console.log(`Direct Route Active: Targeting ${modelId}...`);
+            const primaryUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${userKey}`;
             const response = await fetch(primaryUrl, fetchOptions);
             
             if (!response.ok) throw new Error(`Primary model status: ${response.status}`);
             return response;
 
         } catch (error) {
-            if (error.name === 'AbortError') throw error; // Halt immediately if user triggered cancellation
-            console.warn("Primary channel busy/unavailable. Re-routing to fallback...", error);
-            const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${userKey}`;
-            return await fetch(fallbackUrl, fetchOptions);
+            if (error.name === 'AbortError') throw error; 
+            console.warn("Primary channel unavailable. Falling back to Flash...", error);
+            
+            // 🚨 UPDATED FALLBACK: Pointing to a valid active model from your list
+            const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${userKey}`;
+            
+            const fallbackResponse = await fetch(fallbackUrl, fetchOptions);
+            if (!fallbackResponse.ok) throw new Error(`Fallback model status: ${fallbackResponse.status}`);
+            return fallbackResponse;
         }
     } 
     
-    // TIER 2: No personal key provided -> Route to your centralized Mumbai proxy server
+    // TIER 2: Proxy Gateway (No Personal Key - Uses Server Key)
     else {
-        console.log("Proxy Route Active: Routing through centralized gateway...");
-        return await fetch(`${PROXY_BASE_URL}/api/chat`, fetchOptions);
+        console.log(`Proxy Route Active: Forwarding request for ${modelId} to Central Gateway...`);
+        
+        // ONLY inject the model name here, because your Python proxy expects it.
+        payloadObject.model = modelId;
+        
+        const proxyOptions = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payloadObject)
+        };
+        if (abortSignal) proxyOptions.signal = abortSignal;
+
+        return await fetch(`${PROXY_BASE_URL}/api/chat`, proxyOptions);
     }
 }
 
@@ -102,6 +121,10 @@ const UI = {
     btnSharePdf: document.getElementById('btn-share-pdf'),
     iconVol: document.getElementById('icon-vol'),
     iconMute: document.getElementById('icon-mute'),
+	ratioSlider: document.getElementById('ratio-slider'),
+    modelSlider: document.getElementById('model-slider'),
+    ratioVal: document.getElementById('ratio-val'),
+    modelVal: document.getElementById('model-val'),
     
     // Multimodal & Crop Additions
     btnQuizManual: document.getElementById('btn-quiz-manual'), 
@@ -197,6 +220,7 @@ function updateEditPencil() {
     }
 }
 
+
 window.triggerEditLastInput = (e) => {
     if(e) e.stopPropagation();
 
@@ -236,6 +260,22 @@ window.triggerEditLastInput = (e) => {
     updateEditPencil();
 };
 
+function getModelInfo(val) {
+    val = parseInt(val);
+    if(val === 20) return { name: "Gemini 3.1 Flash-Lite", id: "gemini-3.1-flash-lite" };
+    if(val === 40) return { name: "Gemini 3.5 Flash", id: "gemini-3.5-flash" };
+    if(val === 60) return { name: "Gemini Live Preview", id: "gemini-3.1-flash-live-preview" }; 
+    if(val === 80) return { name: "Gemini 3.1 Pro Preview", id: "gemini-3.1-pro-preview" }; 
+    return { name: "Gemini 3.1 Pro Preview", id: "gemini-3.1-pro-preview" }; // Fallback default
+}
+
+function updateRightSliderLabels() {
+    if (!UI.ratioSlider || !UI.modelSlider) return;
+    const rVal = UI.ratioSlider.value;
+    UI.ratioVal.innerText = `${rVal}% Book / ${100 - rVal}% AI`;
+    const mVal = UI.modelSlider.value;
+    UI.modelVal.innerText = `${getModelInfo(mVal).name}`;
+}
 // --- 3. INITIALIZATION ---
 window.onload = async () => {
     try {
@@ -286,21 +326,89 @@ function updateSubjectsList() {
     
     // Check if the data exists for the selected medium and standard
     if (syllabusIndex[medium] && syllabusIndex[medium][std]) {
-        const subjects = syllabusIndex[medium][std];
+        const subjectsObj = syllabusIndex[medium][std];
+        const subjects = Object.keys(subjectsObj); 
         
+        // Add a disabled default option so the user MUST actively select a subject
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = "";
+        defaultOpt.text = "-- Select a Subject --";
+        defaultOpt.disabled = true;
+        defaultOpt.selected = true;
+        UI.selSub.appendChild(defaultOpt);
+
         subjects.forEach(sub => {
             const opt = document.createElement('option');
             opt.value = sub;
             opt.text = sub;
             UI.selSub.appendChild(opt);
         });
+
+        // REMOVED: displayChapterList(...) is no longer auto-triggered here.
+        
     } else {
-        // Fallback if no subjects are found for that specific index
+        // Fallback if no subjects are found
         const opt = document.createElement('option');
         opt.value = "";
         opt.text = "No subjects available";
         UI.selSub.appendChild(opt);
     }
+}
+
+function displayChapterList(medium, std, subject) {
+    if (!subject) return;
+    const chapters = syllabusIndex[medium][std][subject];
+    
+    if (!chapters || chapters.length === 0) return;
+
+    let html = `<div class="text-sky-300 text-sm mb-3 font-bold">Select a chapter below or type its name to start:</div>`;
+    
+    // Changed to 'flex-col' for a vertical index layout
+    html += `<div class="flex flex-col gap-2 w-full">`;
+    
+    chapters.forEach((chap, index) => {
+        // Escape quotes to prevent HTML breakage
+        const chapterText = chap.replace(/"/g, '&quot;');
+        
+        // Styled as full-width list items
+        html += `<button class="chapter-btn flex items-center justify-start w-full gap-3 px-4 py-3 bg-slate-800 hover:bg-sky-600 text-sky-400 hover:text-white rounded-lg transition-colors text-sm font-bold border border-sky-500/30 shadow-sm text-left" data-chapter="${chapterText}">
+            <span class="text-sky-500/70 whitespace-nowrap">Chapter ${index + 1}:</span> 
+            <span>${chapterText}</span>
+        </button>`;
+    });
+    
+    html += `</div>`;
+    
+    renderSystemMessage("Curriculum System", html);
+}
+
+function renderSystemMessage(sender, htmlContent) {
+    const msgId = 'msg-' + Date.now();
+    const div = document.createElement('div');
+    
+    // Using your app's existing model message styling
+    div.className = `msg-container p-4 rounded-2xl bg-[#0f172a]/90 border border-slate-700/50 shadow-lg ml-2 mr-8 mb-4`;
+    div.innerHTML = `
+        <div class="text-[10px] uppercase font-bold tracking-wider text-sky-400 cinzel mb-2">${sender}</div>
+        <div class="text-sm leading-relaxed text-gray-100">${htmlContent}</div>
+    `;
+    
+    UI.log.appendChild(div);
+    
+    // Attach click listeners to all chapter buttons to auto-start the chat
+		div.querySelectorAll('.chapter-btn').forEach(btn => {
+			btn.addEventListener('click', (e) => {
+				const chapterName = e.currentTarget.getAttribute('data-chapter');
+				const std = UI.selStd.value;
+				const sub = UI.selSub.value;
+				
+				// Explicit prompt emphasizing the exact updated chapter
+				UI.textIn.value = `I want to study Chapter "${chapterName}" for Standard ${std} (${sub}). Please start teaching me this exact updated chapter topic.`;
+				processInput(UI.textIn.value);
+			});
+		});
+    
+    setTimeout(() => { UI.log.scrollTop = UI.log.scrollHeight; }, 50);
 }
 
 function updateLeftSliderLabels() {
@@ -325,7 +433,12 @@ function loadData() {
     UI.name.value = localStorage.getItem('edu_name') || "";
     UI.age.value = localStorage.getItem('edu_age') || "";
     UI.keyIn.value = localStorage.getItem('edu_api_key') || "";
-    
+    if (UI.ratioSlider) {
+    UI.ratioSlider.value = localStorage.getItem('edu_ratio') || "80";
+    UI.modelSlider.value = localStorage.getItem('edu_model') || "80"; // Defaulting to 80 (Pro Preview)
+    updateRightSliderLabels();
+	}
+	
     if (UI.ttsEngine && localStorage.getItem('edu_tts_engine')) {
         UI.ttsEngine.value = localStorage.getItem('edu_tts_engine');
     }
@@ -389,6 +502,10 @@ function saveData() {
     localStorage.setItem('edu_remember', UI.remember.checked);
 	localStorage.setItem('edu_score', inningsScore);
     
+	if (UI.ratioSlider) {
+    localStorage.setItem('edu_ratio', UI.ratioSlider.value);
+    localStorage.setItem('edu_model', UI.modelSlider.value);
+	}
     if (UI.ttsEngine) localStorage.setItem('edu_tts_engine', UI.ttsEngine.value);
     
     localStorage.setItem('edu_font_size', UI.fontSizeSlider.value);
@@ -624,9 +741,20 @@ function updateStopButtonVisibility() {
 
 // --- 6. EVENT LISTENERS ---
 function setupEventListeners() {
-	UI.selMedium.addEventListener('change', () => { updateSubjectsList();  saveData(); });
-    UI.selStd.addEventListener('change', () => { updateSubjectsList(); saveData(); });
-    UI.selSub.addEventListener('change', saveData);
+	UI.selMedium.addEventListener('change', () => { updateSubjectsList(); saveData(); });
+	UI.selStd.addEventListener('change', () => { updateSubjectsList(); saveData(); });
+	UI.selSub.addEventListener('change', () => {
+		clearData(); 
+		saveData();
+		displayChapterList(UI.selMedium.value, UI.selStd.value, UI.selSub.value);
+	});
+	if (UI.ratioSlider) {
+    UI.ratioSlider.addEventListener('input', () => { updateRightSliderLabels(); saveData(); });
+	}
+	if (UI.modelSlider) {
+		UI.modelSlider.addEventListener('input', () => { updateRightSliderLabels(); saveData(); });
+	}
+	
     if (UI.ttsEngine) UI.ttsEngine.addEventListener('change', saveData);
 
     // Right Modal Events
@@ -921,22 +1049,37 @@ async function getAIResponse(history) {
     const sub = UI.selSub.value;
     const customKey = (UI.keyIn.value.trim().length > 10) ? UI.keyIn.value.trim() : null;
     const headers = { 'Content-Type': 'application/json' };
+    const bookRatio = UI.ratioSlider ? parseInt(UI.ratioSlider.value) : 80;
+    const aiRatio = 100 - bookRatio;
+    const selectedModelInfo = UI.modelSlider ? getModelInfo(UI.modelSlider.value) : { id: "gemini-3.1-pro-preview" };
+    
     if (customKey) headers['X-Custom-Api-Key'] = customKey;
 
     let prompt = "";
+
+    // GROUND TRUTH DIRECTIVE FOR RECENT SYLLABUS REVISIONS
+    const syllabusAuthorityNotice = `
+    CRITICAL SYLLABUS DIRECTIVE:
+    The Maharashtra State Board (Balbharati) textbook curriculum has undergone major updates. 
+    You MUST treat the exact chapter title specified in the user request as the absolute ground-truth topic from the latest official textbook. 
+    Do NOT attempt to correct, rename, or substitute chapter titles based on older textbook editions, legacy syllabus mappings, or historical memory. Teach strictly according to the chapter name provided.`;
 
     if (role === 'Teacher') {
         const teacherName = UI.name.value ? ` as ${UI.name.value}` : "";
         prompt = `You are an expert educational assistant helping a fellow teacher${teacherName}.
         Context: Maharashtra State Board (Balbharati), Standard ${std}, Subject: "${sub}", Medium: ${med}.
+        
+        ${syllabusAuthorityNotice}
+
         CRITICAL RULES:
-        1. Strictly adhere to the syllabus.
+        1. Strictly adhere to the updated syllabus topic requested.
         2. Tone: Professional, helpful, collaborative.
         3. Language: Primary language is ${med}.
-        4. FORMATTING: Use Markdown to format your response neatly (use **bold** for emphasis, bullet points for lists, and short paragraphs). Do NOT use complex LaTeX.
-        5. MEDIA LINKS: At the very end of your response, provide EXACTLY two lines formatted like this for further visual exploration. The keywords must accurately reflect the specific topic, subject (${sub}), and standard (${std}) in the ${med} medium:
-           YT_SEARCH: relevant_topic_keywords
-           IMG_SEARCH: relevant_topic_keywords`;
+        4. ACCURACY RATIO: Maintain ${bookRatio}% factual alignment with the requested chapter and ${aiRatio}% gentle contextual teaching.
+        5. FORMATTING: Use Markdown to format your response neatly (use **bold** for emphasis, bullet points for lists, and short paragraphs). Do NOT use complex LaTeX.
+        6. MEDIA LINKS: At the very end of your response, provide EXACTLY two lines formatted like this:
+           YT_SEARCH: Standard ${std} ${sub} ${med} medium relevant_topic_keywords
+           IMG_SEARCH: Standard ${std} ${sub} ${med} medium relevant_topic_keywords`;
     } else {
         const studentName = UI.name.value || "Child";
         const estimatedAge = parseInt(std) + 5;
@@ -947,35 +1090,37 @@ async function getAIResponse(history) {
             "Use EXTREMELY simple words. Keep answers SHORT, highly nurturing. Talk to them like a loving primary school teacher." : 
             "Use clear, encouraging explanations appropriate for a teenager.";
 
-		prompt = `You are a highly polite, caring, and expert teacher.
+        prompt = `You are a highly polite, caring, and expert teacher.
         Context: You are teaching a student named ${studentName} (Age: ~${finalAge}), in Standard ${std}, Subject: "${sub}", Medium: ${med} (Maharashtra State Board).
+        
+        ${syllabusAuthorityNotice}
+
         CRITICAL RULES:
         1. PERSONA: Answer in a gender-neutral, deeply caring way. Address them affectionately with respect.
-        2. EXPERTISE: Draw explanations strictly from the textbook for this grade.
+        2. EXPERTISE: Draw explanations strictly from the textbook topic requested by the student.
         3. COMPLEXITY & LENGTH: ${toneInstruction}
         4. Language: Primary language is ${med}.
-        5. FORMATTING: Use Markdown to format your response neatly (use **bold** for emphasis, bullet points for lists, and short paragraphs). Do NOT use complex LaTeX.
-        6. GAMIFICATION (CRICKET THEME): Act as an automated umpire to score the student's progress. Append a hidden tag exactly like [SCORE:X] at the very end of your response if they hit a milestone.
+        5. ACCURACY RATIO: Maintain ${bookRatio}% strict factual accuracy with the latest textbook and ${aiRatio}% engaging guidance.
+        6. FORMATTING: Use Markdown to format your response neatly (use **bold** for emphasis, bullet points for lists, and short paragraphs). Do NOT use complex LaTeX.
+        7. GAMIFICATION (CRICKET THEME): Act as an automated umpire to score the student's progress. Append a hidden tag exactly like [SCORE:X] at the very end of your response if they hit a milestone.
            - [SCORE:4] if they grasp a major topic (Boundary).
            - [SCORE:6] if they answer a quiz question perfectly (Sixer).
            - [SCORE:50] if they show 50% mastery of the current lesson (Fifty).
            - [SCORE:100] if they fully complete and master the chapter (Century).
            IMPORTANT: Do NOT explain the score or mention the tag to the user, just output the tag silently.
-        7. MEDIA LINKS: At the very end of your response, provide EXACTLY two lines formatted like this for further visual exploration. The keywords must accurately reflect the specific topic, subject (${sub}), and standard (${std}) in the ${med} medium:
-           YT_SEARCH: relevant_topic_keywords
-           IMG_SEARCH: relevant_topic_keywords`; 
+        8. MEDIA LINKS: At the very end of your response, provide EXACTLY two lines formatted like this:
+           YT_SEARCH: Standard ${std} ${sub} ${med} medium relevant_topic_keywords
+           IMG_SEARCH: Standard ${std} ${sub} ${med} medium relevant_topic_keywords`; 
     }
 
-const payload = { 
+    const payload = { 
         contents: history.slice(-10), 
         systemInstruction: { parts: [{ text: prompt }] } 
     };
 
     currentAborter = new AbortController();
+    const response = await fetchGeminiChat(payload, currentAborter.signal, selectedModelInfo.id);
 
-    // Pass both the payload and the operational abort signal into the router
-    const response = await fetchGeminiChat(payload, currentAborter.signal);
-    
     if (!response.ok) throw new Error('API Error');
     const data = await response.json();
     return data.candidates[0].content.parts[0].text;
@@ -986,11 +1131,12 @@ const payload = {
 function prepareTextForTTSAndHighlighting(container, msgId) {
     const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, {
         acceptNode: function(node) {
-            // Do not highlight or process text inside the video/image buttons
+            // Do not highlight or process text inside external link buttons
             if (node.parentNode && node.parentNode.closest('.external-link-btn')) return NodeFilter.FILTER_REJECT;
             return NodeFilter.FILTER_ACCEPT;
         }
     }, false);
+    
     const textNodes = [];
     let node;
     
@@ -1000,6 +1146,7 @@ function prepareTextForTTSAndHighlighting(container, msgId) {
 
     let wordCounter = 0;
     let finalSpeechText = [];
+    let insideBracket = false; // Tracks if we are currently reading inside () [] or {}
 
     textNodes.forEach(textNode => {
         const parts = textNode.nodeValue.split(/(\s+)/); 
@@ -1008,12 +1155,38 @@ function prepareTextForTTSAndHighlighting(container, msgId) {
         parts.forEach(part => {
             if (part.trim().length > 0) {
                 const span = document.createElement('span');
-                span.id = `tts-${msgId}-${wordCounter}`;
                 span.className = 'transition-all duration-150'; 
                 span.textContent = part;
+                
+                let skipThisWord = false;
+                
+                // If the word contains an opening bracket, enter 'skip mode'
+                if (/[\(\[\{]/.test(part)) {
+                    insideBracket = true;
+                }
+                
+                if (insideBracket) {
+                    skipThisWord = true;
+                }
+                
+                // If the word contains a closing bracket, exit 'skip mode' for the next word
+                if (/[\)\]\}]/.test(part)) {
+                    insideBracket = false;
+                }
+
+                // Only add the word to the TTS engine if we aren't inside brackets
+                if (!skipThisWord) {
+                    // Assign the ID so the visual highlighter finds it
+                    span.id = `tts-${msgId}-${wordCounter}`;
+                    
+                    // Replace : and ; with a full stop so the TTS engine takes a breath
+                    let spokenWord = part.replace(/[:;]/g, '.');
+                    
+                    finalSpeechText.push(spokenWord);
+                    wordCounter++;
+                }
+                
                 fragment.appendChild(span);
-                finalSpeechText.push(part);
-                wordCounter++;
             } else {
                 fragment.appendChild(document.createTextNode(part));
             }
@@ -1545,19 +1718,13 @@ function renderMessage(sender, text, isModel) {
 if (isModel) {
         const mdBody = div.querySelector('.markdown-body');
         
-        // Deep sanitization: Strip tags, brackets, and markdown symbols so the TTS reads cleanly
-        const cleanTextForTTS = text
-            .replace(/YT_SEARCH:.*$/gm, '')
-            .replace(/IMG_SEARCH:.*$/gm, '')
-            .replace(/\[SCORE:\d+\]/g, '')
-            .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Extract text from markdown links
-            .replace(/<[^>]+>/g, ' ')               // Strip HTML tags and replace with space
-            .replace(/[\*<>\#\-;:\[\]{}\(\)`~_]/g, ' ') // Target deep symbols and punctuation
-            .replace(/\s+/g, ' ')                   // Collapse any double spaces created by removal
-            .trim();
-            
+        // Use the newly engineered preparation function to generate 
+        // the audio text. It handles bracket skipping, colon pausing, 
+        // and synchronizes the highlighter perfectly!
         const speechText = prepareTextForTTSAndHighlighting(mdBody, msgId);
-        speechDataMap[msgId] = cleanTextForTTS;
+        
+        // Save the cleaned speech text to the audio map
+        speechDataMap[msgId] = speechText;
     }
     
     updateEditPencil();
