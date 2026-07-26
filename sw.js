@@ -1,4 +1,4 @@
-const CACHE_NAME = 'eprashala-v1';
+const CACHE_NAME = 'eprashala-v2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
