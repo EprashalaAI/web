@@ -491,7 +491,8 @@ let activeGrahaHitboxes = [];
 const popupObj = document.getElementById('grahaPopup');
 
 // --- CENTRAL PROXY ROUTER ---
-const PROXY_BASE_URL = "https://eprashala-proxy-511804777001.asia-south1.run.app";
+//const PROXY_BASE_URL = "https://eprashala.pythonanywhere.com";
+    const PROXY_BASE_URL = "https://eprashala-proxy-511804777001.asia-south1.run.app";
 
 async function fetchGeminiChat(payloadObject) {
     const userKey = localStorage.getItem('user_ai_api_key') || '';
@@ -512,7 +513,7 @@ async function fetchGeminiChat(payloadObject) {
 
         } catch (error) {
             console.warn("Primary channel busy/unavailable. Re-routing to fallback...", error);
-            const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${userKey.trim()}`;
+            const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${userKey.trim()}`;
             return await fetch(fallbackUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1929,18 +1930,22 @@ async function generateChart() {
     const payload = { date: document.getElementById('date').value, time: timeStr, lat: document.getElementById('lat').value, lon: document.getElementById('lon').value };
 
     try {
-        const response = await fetch('https://eprashala.pythonanywhere.com/calculate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-        const data = await response.json();
+        //const response = await fetch('https://eprashala.pythonanywhere.com/calculate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        const response = await fetch('https://eprashala-proxy-511804777001.asia-south1.run.app/calculate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+		const data = await response.json();
         
-		if (data.status === 'success') {
-            document.getElementById('error-msg').innerText = "";
-            skyData = data.houses; 
-            asc_sign_global = data.asc_sign;
-            asc_degree_global = data.asc_degree; 
-            
-            natalSkyData = JSON.parse(JSON.stringify(data.houses));
-            natalAscSign = data.asc_sign;
-            natalAscDegree = data.asc_degree; 
+			if (data.status === 'success') {
+				document.getElementById('error-msg').innerText = "";
+				skyData = data.houses; 
+				asc_sign_global = data.asc_sign;
+				asc_degree_global = data.lagna_deg; 
+				
+			const safeLagnaDeg = data.lagna_deg !== undefined ? data.lagna_deg : data.asc_degree;
+				asc_degree_global = safeLagnaDeg; 
+				
+				natalSkyData = JSON.parse(JSON.stringify(data.houses));
+				natalAscSign = data.asc_sign;
+				natalAscDegree = safeLagnaDeg;
             
             populateKundali(skyData, asc_sign_global);
             
@@ -2057,10 +2062,10 @@ async function executeSecondaryChart(payload, successMsg) {
                 
                 alert("Gochar Mapped! The transiting planets are now placed in your Natal Houses.");
                 
-            } else {
-                skyData = data.houses; 
-                asc_sign_global = data.asc_sign;
-                asc_degree_global = data.asc_degree; 
+			} else {
+				skyData = data.houses; 
+				asc_sign_global = data.asc_sign;
+				asc_degree_global = data.lagna_deg !== undefined ? data.lagna_deg : data.asc_degree;
                 
                 populateKundali(skyData, asc_sign_global);
                 
