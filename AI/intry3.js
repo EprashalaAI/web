@@ -302,7 +302,8 @@ document.addEventListener('click', enforceFullScreen, { capture: true });
 document.addEventListener('touchstart', enforceFullScreen, { capture: true, passive: true });
 
 // --- 2. THE ANCIENT LIBRARY CONFIGURATION ---
-const PROXY_URL = "https://eprashala-proxy-511804777001.asia-south1.run.app";
+// Change this line in intry.js:
+const PROXY_URL = "https://eprashala-proxy-511804777001.asia-south1.run.app/api/chat";
 
 let LIBRARY_CONFIG = {};
 async function loadLibraryConfig() {
@@ -501,6 +502,13 @@ function renderDropdownList(filterText = "") {
 
 function getSelectedConfig() {
     const [group, item] = selectedLibraryItem.split('|');
+    if (!LIBRARY_CONFIG[group] || !LIBRARY_CONFIG[group][item]) {
+        return {
+            texts: "Bhagavad Gita",
+            persona: "Shri Krishna",
+            desc: "Wisdom of Bhagavad Gita"
+        }; // Safe fallback default
+    }
     return LIBRARY_CONFIG[group][item];
 }
 
@@ -511,10 +519,10 @@ function getSelectedItemName() {
 function getModelInfo(val) {
     val = parseInt(val);
     if(val === 20) return { name: "Flash-Lite", id: "gemini-3.1-flash-lite" };
-    if(val === 40) return { name: "Flash", id: "gemini-3-flash-preview" };
-    if(val === 60) return { name: "Thinking", id: "gemini-3.5-flash" }; 
+    if(val === 40) return { name: "Flash", id: "gemini-3.5-flash" }; // Updated from preview
+    if(val === 60) return { name: "Thinking", id: "gemini-flash-latest" }; 
     if(val === 80) return { name: "Pro", id: "gemini-3.1-pro" };
-    return { name: "Flash", id: "gemini-3.1-flash" };
+    return { name: "Flash", id: "gemini-3.5-flash" };
 }
 
 function updateSliderLabels() {
