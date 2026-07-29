@@ -1,0 +1,174 @@
+{
+    "basic": [
+        {
+            "name": "01_HelloWorld.san",
+            "content": "// 01: The classic first program\nवद \"Hello World! Welcome to Panini.\""
+        },
+        {
+            "name": "02_Greeting.san",
+            "content": "// 02: Asking for text input\nवद \"What is your name?\"\nपृच्छ नाम-मध्ये\n\nवद \"Namaste \" नाम \"! How are you today?\""
+        },
+        {
+            "name": "03_Addition.san",
+            "content": "// 03: Simple Addition Calculator\nवद \"Enter two numbers to add:\"\nपृच्छ पहला-मध्ये\nपृच्छ दूसरा-मध्ये\n\nपहला दूसरा संयोजय उत्तर-मध्ये\nवद \"The total is: \" उत्तर"
+        },
+        {
+            "name": "04_Shopping.san",
+            "content": "// 04: Shopping Change Calculator\nवद \"You have 100 Rupees.\"\n१०० धन-मध्ये स्थापय\n\nवद \"How much does the chocolate cost?\"\nपृच्छ मूल्य-मध्ये\n\nधन मूल्य न्यूनय शेष-मध्ये\nवद \"Your change is: \" शेष \" Rupees.\""
+        },
+        {
+            "name": "05_Area.san",
+            "content": "// 05: Area of a Rectangle\nवद \"Geometry Calculator\"\nपृच्छ लम्बाई-मध्ये\nपृच्छ चौडाई-मध्ये\n\nलम्बाई चौडाई गुणय क्षेत्रफल-मध्ये\nवद \"The Area is: \" क्षेत्रफल"
+        },
+        {
+            "name": "06_Pizza.san",
+            "content": "// 06: Sharing Pizza Slices\nवद \"Pizza Sharing Calculator!\"\nपृच्छ स्लाइस-मध्ये\nपृच्छ मित्र-मध्ये\n\nस्लाइस मित्र विभज हिस्सा-मध्ये\nवद \"Each friend gets \" हिस्सा \" slices.\""
+        },
+        {
+            "name": "07_VotingAge.san",
+            "content": "// 07: Voting Age Checker\nवद \"Check your voting eligibility:\"\nपृच्छ आयु-मध्ये\n\nयदि ( आयु > १७ ) {\n    वद \"Congratulations, you can vote!\"\n} तर्हि {\n    वद \"Sorry, you are too young to vote.\"\n}"
+        },
+        {
+            "name": "08_Password.san",
+            "content": "// 08: Secret Password Door\nवद \"Enter the secret password:\"\nपृच्छ पास-मध्ये\n\nयदि ( पास == \"Panini\" ) {\n    वद \"Access Granted! Welcome inside.\"\n} तर्हि {\n    वद \"Wrong Password. Access Denied!\"\n}"
+        },
+        {
+            "name": "09_Countdown.san",
+            "content": "// 09: Rocket Launch Countdown\n१० समय-मध्ये स्थापय\nवद \"Starting Rocket Countdown...\"\n\nयावत् ( समय > ० ) {\n    वद समय\n    समय १ न्यूनय समय-मध्ये\n}\n\nवद \"Blastoff!!!\""
+        },
+        {
+            "name": "10_CountUp.san",
+            "content": "// 10: Simple Counter\n१ गिनती-मध्ये स्थापय\nवद \"Counting to 5...\"\n\nयावत् ( गिनती < ६ ) {\n    वद गिनती\n    गिनती १ संयोजय गिनती-मध्ये\n}\n\nवद \"Done!\""
+        },
+        {
+            "name": "11_ThemePark.san",
+            "content": "// 11: Theme Park Ticket Pricing\nवद \"Welcome to the Ticket Machine.\"\nपृच्छ आयु-मध्ये\n\nयदि ( आयु < ५ ) {\n    वद \"Ticket is FREE for kids under 5!\"\n} तर्हि {\n    \n    यदि ( आयु < १८ ) {\n        वद \"Ticket is 50 Rupees for students.\"\n    } तर्हि {\n        वद \"Ticket is 100 Rupees for adults.\"\n    }\n    \n}"
+        },
+        {
+            "name": "12_Factorial.san",
+            "content": "// 12: Factorial Calculator\nवद \"Enter a number to find its factorial:\"\nपृच्छ अंक-मध्ये\n१ परिणाम-मध्ये स्थापय\n\nयावत् ( अंक > ० ) {\n    परिणाम अंक गुणय परिणाम-मध्ये\n    अंक १ न्यूनय अंक-मध्ये\n}\nवद \"The Factorial is: \" परिणाम"
+        },
+        {
+            "name": "13_Labour_Wage.san",
+            "content": "// 13: Daily Labour Wage & Overtime Calculator\nवद \"Enter total hours worked today:\"\nपृच्छ घंटे-मध्ये\n५० दर-मध्ये स्थापय  // 50 Rupees per hour base rate\n\nयदि ( घंटे > ८ ) {\n    ८ दर गुणय मूल_वेतन-मध्ये\n    घंटे ८ न्यूनय अतिरिक्त_घंटे-मध्ये\n    ७५ अतिरिक्त_दर-मध्ये स्थापय // Overtime rate\n    \n    अतिरिक्त_घंटे अतिरिक्त_दर गुणय अतिरिक्त_वेतन-मध्ये\n    मूल_वेतन अतिरिक्त_वेतन संयोजय कुल_वेतन-मध्ये\n    \n    वद \"Base Wage: \" मूल_वेतन \" + Overtime: \" अतिरिक्त_वेतन\n    वद \"Total Payout: \" कुल_वेतन\n} तर्हि {\n    घंटे दर गुणय कुल_वेतन-मध्ये\n    वद \"Total Payout: \" कुल_वेतन\n}"
+        },
+        {
+            "name": "14_Fibonacci.san",
+            "content": "// 14: Fibonacci Sequence Generator\nवद \"How many Fibonacci numbers to generate?\"\nपृच्छ सीमा-मध्ये\n० पहला-मध्ये स्थापय\n१ दूसरा-मध्ये स्थापय\n\nवद \"Fibonacci Sequence:\"\nयावत् ( सीमा > ० ) {\n    वद पहला\n    पहला दूसरा संयोजय अगला-मध्ये\n    दूसरा पहला-मध्ये स्थापय\n    अगला दूसरा-मध्ये स्थापय\n    सीमा १ न्यूनय सीमा-मध्ये\n}"
+        },
+        {
+            "name": "15_Diet_Tracker.san",
+            "content": "// 15: Daily Calorie Limit Checker\n२००० लक्ष्य-मध्ये स्थापय\n० खाया-मध्ये स्थापय\n१ चालू-मध्ये स्थापय\n\nवद \"Your daily goal is 2000 calories.\"\n\nयावत् ( चालू == १ ) {\n    वद \"Enter meal calories (or type 0 to stop):\"\n    पृच्छ भोजन-मध्ये\n    \n    यदि ( भोजन == ० ) {\n        ० चालू-मध्ये स्थापय\n    } तर्हि {\n        खाया भोजन संयोजय खाया-मध्ये\n        वद \"Total consumed so far: \" खाया\n    }\n}\n\nयदि ( खाया > लक्ष्य ) {\n    वद \"Warning! You exceeded your daily calorie goal.\"\n} तर्हि {\n    वद \"Great job staying healthy!\"\n}"
+        },
+        {
+            "name": "16_Resort_Discount.san",
+            "content": "// 16: Resort Booking with Group Discount\nवद \"Welcome to the Resort Booking System.\"\nवद \"Enter number of guests:\"\nपृच्छ अतिथि-मध्ये\n१५०० किराया-मध्ये स्थापय // 1500 per person\n\nअतिथि किराया गुणय कुल_बिल-मध्ये\n\nयदि ( अतिथि > ५ ) {\n    वद \"Group of more than 5! Applying 10 percent discount.\"\n    कुल_बिल १० गुणय छूट_अंश-मध्ये\n    छूट_अंश १०० विभज छूट-मध्ये\n    कुल_बिल छूट न्यूनय अंतिम_बिल-मध्ये\n    वद \"Your final discounted bill is: \" अंतिम_बिल\n} तर्हि {\n    वद \"Your total bill is: \" कुल_बिल\n}"
+        },
+        {
+            "name": "17_Turf_Booking.san",
+            "content": "// 17: Sports Turf Hourly Booking\nवद \"Welcome to the Sports Complex Turf Booking.\"\nवद \"Enter number of hours played:\"\nपृच्छ घंटे-मध्ये\n१२०० दर-मध्ये स्थापय \n\nघंटे दर गुणय कीमत-मध्ये\n            \nयदि ( घंटे > ३ ) {\n    वद \"Long session bonus! Removing 500 Rupees.\"\n    कीमत ५०० न्यूनय कीमत-मध्ये\n}\n            \nवद \"Please pay: \" कीमत \" Rupees at the counter.\""
+        },
+        {
+            "name": "18_Aptitude_Test.san",
+            "content": "// 18: Psychometric Aptitude Quiz\n० अंक-मध्ये स्थापय\n\nवद \"Question 1: What is 12 multiplied by 12?\"\nपृच्छ उत्तर१-मध्ये\nयदि ( उत्तर१ == १४४ ) {\n    अंक १ संयोजय अंक-मध्ये\n    वद \"Correct!\"\n} तर्हि { \n    वद \"Wrong.\" \n}\n\nवद \"Question 2: What is 100 divided by 4?\"\nपृच्छ उत्तर२-मध्ये\nयदि ( उत्तर२ == २५ ) {\n    अंक १ संयोजय अंक-मध्ये\n    वद \"Correct!\"\n} तर्हि { \n    वद \"Wrong.\" \n}\n\nवद \"Test complete. Your Aptitude Score is: \" अंक \"/ 2\""
+        },
+        {
+            "name": "19_Leap_Year.san",
+            "content": "// 19: Astronomical Leap Year Checker\nवद \"Enter a year to check if it is a Leap Year:\"\nपृच्छ वर्ष-मध्ये\n\n// Modulo Trick: If (Year / 4) * 4 == Year, it is divisible by 4!\nवर्ष ४ विभज भाग-मध्ये \nभाग ४ गुणय जांच-मध्ये\n\nयदि ( वर्ष == जांच ) {\n    वद वर्ष \" is a Leap Year!\"\n} तर्हि {\n    वद वर्ष \" is not a Leap Year.\"\n}"
+        },
+        {
+            "name": "20_Guess_Number.san",
+            "content": "// 20: Guess the Secret Number\n७ गुप्त-मध्ये स्थापय\n० प्रयास-मध्ये स्थापय\n१ चालू-मध्ये स्थापय\n\nवद \"I am thinking of a number between 1 and 10.\"\n\nयावत् ( चालू == १ ) {\n    पृच्छ अनुमान-मध्ये\n    प्रयास १ संयोजय प्रयास-मध्ये\n\n    यदि ( अनुमान == गुप्त ) {\n        वद \"Correct! You guessed it in \" प्रयास \" tries.\"\n        ० चालू-मध्ये स्थापय\n    } तर्हि {\n        यदि ( अनुमान > गुप्त ) {\n            वद \"Too high! Try again.\"\n        } तर्हि {\n            वद \"Too low! Try again.\"\n        }\n    }\n}"
+        },
+        {
+            "name": "21_Vending_Menu.san",
+            "content": "// 21: Interactive Vending Machine Menu\nवद \"Select an item: 1 for Water, 2 for Chips, 3 for Chocolate\"\nपृच्छ चयन-मध्ये\n\nयदि ( चयन == १ ) {\n    वद \"Water selected. Price: 20 Rs.\"\n}\nयदि ( चयन == २ ) {\n    वद \"Chips selected. Price: 30 Rs.\"\n}\nयदि ( चयन == ३ ) {\n    वद \"Chocolate selected. Price: 50 Rs.\"\n}\nयदि ( चयन < १ ) {\n    वद \"Invalid selection.\"\n}\nयदि ( चयन > ३ ) {\n    वद \"Invalid selection.\"\n}"
+        }
+    ],
+    "advance": [
+        {
+            "name": "22_Prime_Engine_Stress_Test.san",
+            "content": "// ==========================================\n// PANINI ARCHITECTURE STRESS TEST\n// Prime Number Generator & Multi-Layer Logic\n// ==========================================\n\nवद \"=== PANINI STRESS TEST: PRIME FINDER ===\"\nवद \"Enter upper limit to find prime numbers:\"\nपृच्छ सीमा-मध्ये\n\n२ वर्तमान-मध्ये स्थापय\n० कुल_प्रधान-मध्ये स्थापय\n\nवद \"Calculating primes up to limit...\"\n\n// Outer Loop: Iterates through numbers from 2 up to 'सीमा'\nयावत् ( वर्तमान < सीमा ) {\n    \n    // Assume current number is prime (1 = True, 0 = False)\n    १ अस्ति_प्रधान-मध्ये स्थापय\n    २ विभाजक-मध्ये स्थापय\n\n    // Inner Loop: Check for factors from 2 up to (वर्तमान / 2)\n    // We compute halfway mark to save execution cycles\n    वर्तमान २ विभज आधा_वर्तमान-मध्ये\n\n    यावत् ( विभाजक <= आधा_वर्तमान ) {\n        \n        // Advanced Math Check: (वर्तमान / विभाजक) * विभाजक == वर्तमान\n        वर्तमान विभाजक विभज भाग-मध्ये\n        भाग विभाजक गुणय गुणन-मध्ये\n\n        यदि ( वर्तमान == गुणन ) {\n            // Factor found! It is NOT a prime number.\n            ० अस्ति_प्रधान-मध्ये स्थापय\n            // Force inner loop to break by setting divisor higher than limit\n            वर्तमान विभाजक-मध्ये स्थापय \n        }\n\n        विभाजक १ संयोजय विभाजक-मध्ये\n    }\n\n    // If it survived the inner loop as prime, print and count it\n    यदि ( अस्ति_प्रधान == १ ) {\n        वद \"Found Prime: \" वर्तमान\n        कुल_प्रधान १ संयोजय कुल_प्रधान-मध्ये\n    }\n\n    वर्तमान १ संयोजय वर्तमान-मध्ये\n}\n\nवद \"==========================================\"\nवद \"Stress test complete!\"\nवद \"Total prime numbers found: \" कुल_प्रधान"
+        },
+        {
+            "name": "23_Perfect_Number.san",
+            "content": "// 23: Perfect Number Checker\nवद \"Enter a number to check if it is Perfect:\"\nपृच्छ संख्या-मध्ये\n० योग-मध्ये स्थापय\n१ विभाजक-मध्ये स्थापय\nसंख्या २ विभज आधा-मध्ये\n\nयावत् ( विभाजक <= आधा ) {\n    संख्या विभाजक विभज भाग-मध्ये\n    भाग विभाजक गुणय गुणन-मध्ये\n    \n    यदि ( संख्या == गुणन ) {\n        योग विभाजक संयोजय योग-मध्ये\n    }\n    विभाजक १ संयोजय विभाजक-मध्ये\n}\nयदि ( योग == संख्या ) {\n    वद संख्या \" is a PERFECT Number!\"\n} तर्हि {\n    वद संख्या \" is not perfect.\"\n}"
+        },
+        {
+            "name": "24_GCD_Euclidean.san",
+            "content": "// 24: Greatest Common Divisor (GCD)\nवद \"Enter First Number:\"\nपृच्छ क-मध्ये\nवद \"Enter Second Number:\"\nपृच्छ ख-मध्ये\n\nयावत् ( ख > ० ) {\n    क ख विभज भाग-मध्ये\n    भाग ख गुणय गुणन-मध्ये\n    क गुणन न्यूनय शेष-मध्ये\n    \n    ख क-मध्ये स्थापय\n    शेष ख-मध्ये स्थापय\n}\nवद \"The GCD is: \" क"
+        },
+        {
+            "name": "25_Collatz_Conjecture.san",
+            "content": "// 25: Collatz Peak Tracker\nवद \"Enter Collatz starting number:\"\nपृच्छ वर्तमान-मध्ये\n० अधिकतम-मध्ये स्थापय\n० कदम-मध्ये स्थापय\n\nयावत् ( वर्तमान > १ ) {\n    यदि ( वर्तमान > अधिकतम ) {\n        वर्तमान अधिकतम-मध्ये स्थापय\n    }\n    \n    वर्तमान २ विभज आधा-मध्ये\n    आधा २ गुणय सम_जांच-मध्ये\n    \n    यदि ( वर्तमान == सम_जांच ) {\n        आधा वर्तमान-मध्ये स्थापय\n    } तर्हि {\n        वर्तमान ३ गुणय वर्तमान-मध्ये\n        वर्तमान १ संयोजय वर्तमान-मध्ये\n    }\n    कदम १ संयोजय कदम-मध्ये\n}\nवद \"Reached 1 in \" कदम \" steps!\"\nवद \"Peak value reached: \" अधिकतम"
+        },
+        {
+            "name": "26_Prime_Factors.san",
+            "content": "// 26: Prime Factorization\nवद \"Enter a number to factorize:\"\nपृच्छ संख्या-मध्ये\n२ विभाजक-मध्ये स्थापय\n\nयावत् ( संख्या > १ ) {\n    संख्या विभाजक विभज भाग-मध्ये\n    भाग विभाजक गुणय गुणन-मध्ये\n    \n    यदि ( संख्या == गुणन ) {\n        वद \"Factor: \" विभाजक\n        भाग संख्या-मध्ये स्थापय\n    } तर्हि {\n        विभाजक १ संयोजय विभाजक-मध्ये\n    }\n}"
+        },
+        {
+            "name": "27_Digital_Root.san",
+            "content": "// 27: Digital Root (Sum of sums)\nवद \"Enter a large number:\"\nपृच्छ संख्या-मध्ये\n\nयावत् ( संख्या > ९ ) {\n    ० योग-मध्ये स्थापय\n    \n    यावत् ( संख्या > ० ) {\n        संख्या १० विभज भाग-मध्ये\n        भाग १० गुणय गुणन-मध्ये\n        संख्या गुणन न्यूनय शेष-मध्ये\n        \n        योग शेष संयोजय योग-मध्ये\n        भाग संख्या-मध्ये स्थापय\n    }\n    योग संख्या-मध्ये स्थापय\n}\nवद \"The Digital Root is: \" संख्या"
+        },
+        {
+            "name": "28_Median_Of_Three.san",
+            "content": "// 28: Median of Three Numbers\nवद \"Enter A:\"\nपृच्छ अ-मध्ये\nवद \"Enter B:\"\nपृच्छ ब-मध्ये\nवद \"Enter C:\"\nपृच्छ स-मध्ये\n\nयदि ( अ > ब ) {\n    यदि ( ब > स ) { वद \"Median is B: \" ब }\n    तर्हि {\n        यदि ( अ > स ) { वद \"Median is C: \" स }\n        तर्हि { वद \"Median is A: \" अ }\n    }\n} तर्हि {\n    यदि ( अ > स ) { वद \"Median is A: \" अ }\n    तर्हि {\n        यदि ( ब > स ) { वद \"Median is C: \" स }\n        तर्हि { वद \"Median is B: \" ब }\n    }\n}"
+        },
+        {
+            "name": "29_Tax_Brackets.san",
+            "content": "// 29: Progressive Tax Calculator\nवद \"Enter Income:\"\nपृच्छ आय-मध्ये\n० कर-मध्ये स्थापय\n\nयदि ( आय > १००००० ) {\n    आय १००००० न्यूनय शेष-मध्ये\n    शेष ०.३ गुणय अतिरिक्त-मध्ये\n    कर अतिरिक्त संयोजय कर-मध्ये\n    १००००० आय-मध्ये स्थापय\n}\nयदि ( आय > ५०००० ) {\n    आय ५०००० न्यूनय शेष-मध्ये\n    शेष ०.२ गुणय अतिरिक्त-मध्ये\n    कर अतिरिक्त संयोजय कर-मध्ये\n    ५०००० आय-मध्ये स्थापय\n}\nयदि ( आय > २०००० ) {\n    आय २०००० न्यूनय शेष-मध्ये\n    शेष ०.१ गुणय अतिरिक्त-मध्ये\n    कर अतिरिक्त संयोजय कर-मध्ये\n}\nवद \"Total Tax Owed: \" कर"
+        },
+        {
+            "name": "30_Number_To_Words.san",
+            "content": "// 30: Single Digit to String Switcher\nवद \"Enter a single digit (0-5):\"\nपृच्छ अंक-मध्ये\n\nयदि ( अंक == ० ) { वद \"Zero\" }\nयदि ( अंक == १ ) { वद \"One\" }\nयदि ( अंक == २ ) { वद \"Two\" }\nयदि ( अंक == ३ ) { वद \"Three\" }\nयदि ( अंक == ४ ) { वद \"Four\" }\nयदि ( अंक == ५ ) { वद \"Five\" }\nयदि ( अंक > ५ ) { वद \"Number too big for this demo!\" }"
+        },
+        {
+            "name": "31_Pythagorean_Triplets.san",
+            "content": "// 31: Pythagorean Triplets (A^2 + B^2 = C^2)\nवद \"Finding triplets up to limit 15...\"\n१५ सीमा-मध्ये स्थापय\n१ अ-मध्ये स्थापय\n\nयावत् ( अ <= सीमा ) {\n    अ अ गुणय अ_वर्ग-मध्ये\n    १ ब-मध्ये स्थापय\n    \n    यावत् ( ब <= सीमा ) {\n        ब ब गुणय ब_वर्ग-मध्ये\n        १ स-मध्ये स्थापय\n        \n        यावत् ( स <= सीमा ) {\n            स स गुणय स_वर्ग-मध्ये\n            अ_वर्ग ब_वर्ग संयोजय योग-मध्ये\n            \n            यदि ( योग == स_वर्ग ) {\n                वद \"Triplet found: \" अ \", \" ब \", \" स\n            }\n            स १ संयोजय स-मध्ये\n        }\n        ब १ संयोजय ब-मध्ये\n    }\n    अ १ संयोजय अ-मध्ये\n}"
+        },
+        {
+            "name": "32_Binary_Converter.san",
+            "content": "// 32: Decimal to Binary String\nवद \"Enter number to convert to Binary:\"\nपृच्छ संख्या-मध्ये\n\"\" बाइनरी-मध्ये स्थापय\n\nयावत् ( संख्या > ० ) {\n    संख्या २ विभज भाग-मध्ये\n    भाग २ गुणय गुणन-मध्ये\n    संख्या गुणन न्यूनय शेष-मध्ये\n    \n    // Prepend remainder to string\n    शेष बाइनरी संयोजय बाइनरी-मध्ये\n    भाग संख्या-मध्ये स्थापय\n}\nवद \"Binary Output: \" बाइनरी"
+        },
+        {
+            "name": "33_Fibonacci_Words.san",
+            "content": "// 33: Fibonacci String Sequence\nवद \"How many string generations?\"\nपृच्छ सीमा-मध्ये\n\"A\" पहला-मध्ये स्थापय\n\"B\" दूसरा-मध्ये स्थापय\n\nवद पहला\nवद दूसरा\n\nयावत् ( सीमा > २ ) {\n    पहला दूसरा संयोजय नया-मध्ये\n    वद नया\n    \n    दूसरा पहला-मध्ये स्थापय\n    नया दूसरा-मध्ये स्थापय\n    सीमा १ न्यूनय सीमा-मध्ये\n}"
+        },
+        {
+            "name": "34_ASCII_Pyramid.san",
+            "content": "// 34: Star Pyramid Generator\nवद \"Enter pyramid height:\"\nपृच्छ ऊंचाई-मध्ये\n१ पंक्ति-मध्ये स्थापय\n\nयावत् ( पंक्ति <= ऊंचाई ) {\n    \"\" सितारे-मध्ये स्थापय\n    १ गिनती-मध्ये स्थापय\n    \n    यावत् ( गिनती <= पंक्ति ) {\n        सितारे \"*\" संयोजय सितारे-मध्ये\n        गिनती १ संयोजय गिनती-मध्ये\n    }\n    वद सितारे\n    पंक्ति १ संयोजय पंक्ति-मध्ये\n}"
+        },
+        {
+            "name": "35_Palindrome_Number.san",
+            "content": "// 35: Number Reverser\nवद \"Enter a multi-digit number:\"\nपृच्छ संख्या-मध्ये\n० उल्टा-मध्ये स्थापय\nसंख्या मूल-मध्ये स्थापय\n\nयावत् ( संख्या > ० ) {\n    संख्या १० विभज भाग-मध्ये\n    भाग १० गुणय गुणन-मध्ये\n    संख्या गुणन न्यूनय शेष-मध्ये\n    \n    उल्टा १० गुणय उल्टा-मध्ये\n    उल्टा शेष संयोजय उल्टा-मध्ये\n    भाग संख्या-मध्ये स्थापय\n}\nवद \"Reversed Number: \" उल्टा"
+        },
+        {
+            "name": "36_Leibniz_Pi.san",
+            "content": "// 36: Leibniz Pi Approximator\nवद \"Enter number of iterations (e.g. 500):\"\nपृच्छ सीमा-मध्ये\n० पाई-मध्ये स्थापय\n१ विभाजक-मध्ये स्थापय\n१ चिह्न-मध्ये स्थापय\n० कदम-मध्ये स्थापय\n\nयावत् ( कदम < सीमा ) {\n    ४.० विभाजक विभज अंश-मध्ये\n    अंश चिह्न गुणय पद-मध्ये\n    \n    पाई पद संयोजय पाई-मध्ये\n    विभाजक २ संयोजय विभाजक-मध्ये\n    चिह्न -१ गुणय चिह्न-मध्ये\n    \n    कदम १ संयोजय कदम-मध्ये\n}\nवद \"Approximate Pi: \" पाई"
+        },
+        {
+            "name": "37_Newton_Square_Root.san",
+            "content": "// 37: Newton's Method Square Root\nवद \"Enter number to find square root:\"\nपृच्छ संख्या-मध्ये\nसंख्या अनुमान-मध्ये स्थापय  // Initial guess\n१० सीमा-मध्ये स्थापय\n० कदम-मध्ये स्थापय\n\nयावत् ( कदम < सीमा ) {\n    संख्या अनुमान विभज भाग-मध्ये\n    अनुमान भाग संयोजय योग-मध्ये\n    योग २.० विभज अनुमान-मध्ये\n    \n    कदम १ संयोजय कदम-मध्ये\n}\nवद \"Square Root is approx: \" अनुमान"
+        },
+        {
+            "name": "38_Armstrong_Number.san",
+            "content": "// 38: Armstrong Number Checker\nवद \"Enter a 3-digit number:\"\nपृच्छ संख्या-मध्ये\nसंख्या मूल-मध्ये स्थापय\n० योग-मध्ये स्थापय\n\nयावत् ( संख्या > ० ) {\n    संख्या १० विभज भाग-मध्ये\n    भाग १० गुणय गुणन-मध्ये\n    संख्या गुणन न्यूनय शेष-मध्ये\n    \n    शेष शेष गुणय वर्ग-मध्ये\n    वर्ग शेष गुणय घन-मध्ये\n    योग घन संयोजय योग-मध्ये\n    \n    भाग संख्या-मध्ये स्थापय\n}\nयदि ( योग == मूल ) {\n    वद मूल \" IS an Armstrong Number!\"\n} तर्हि {\n    वद मूल \" is NOT an Armstrong Number.\"\n}"
+        },
+        {
+            "name": "39_LCG_Random.san",
+            "content": "// 39: Pseudo-Random Number Generator\nवद \"Generating 5 random numbers...\"\n७ बीज-मध्ये स्थापय  // Seed\n५ सीमा-मध्ये स्थापय\n० कदम-मध्ये स्थापय\n\nयावत् ( कदम < सीमा ) {\n    बीज ५ गुणय भाग१-मध्ये\n    भाग१ ३ संयोजय भाग२-मध्ये\n    \n    // Modulo 16\n    भाग२ १६ विभज भाग३-मध्ये\n    भाग३ १६ गुणय भाग४-मध्ये\n    भाग२ भाग४ न्यूनय बीज-मध्ये\n    \n    वद \"Random Number: \" बीज\n    कदम १ संयोजय कदम-मध्ये\n}"
+        },
+        {
+            "name": "40_Infinite_Loop_Safety.san",
+            "content": "// 40: The Safety Governor Test\nवद \"Attempting to run an infinite loop...\"\nवद \"The compiler should forcefully stop at 2000 steps.\"\n१ चालू-मध्ये स्थापय\n० गिनती-मध्ये स्थापय\n\nयावत् ( चालू == १ ) {\n    गिनती १ संयोजय गिनती-मध्ये\n    // Intentionally never turning 'चालू' to 0\n}\nवद \"Governor activated! Loop stopped safely.\"\nवद \"Total steps executed: \" गिनती"
+        },
+        {
+            "name": "41_Divide_By_Zero_Defense.san",
+            "content": "// 41: Division by Zero Test\nवद \"Attempting to divide 100 by 0...\"\n१०० शून्य विभज उत्तर-मध्ये\nवद \"Output: \" उत्तर\n\nवद \"Attempting to divide variables...\"\n५ क-मध्ये स्थापय\n० ख-मध्ये स्थापय\nक ख विभज उत्तर२-मध्ये\nवद \"Output: \" उत्तर२"
+        },
+        {
+            "name": "42_Self_Dividing.san",
+            "content": "// 42: Self-Dividing Numbers (e.g. 128 is divisible by 1, 2, and 8)\nवद \"Checking number 128:\"\n१२८ संख्या-मध्ये स्थापय\nसंख्या वर्तमान-मध्ये स्थापय\n१ सफल-मध्ये स्थापय\n\nयावत् ( वर्तमान > ० ) {\n    वर्तमान १० विभज भाग-मध्ये\n    भाग १० गुणय गुणन-मध्ये\n    वर्तमान गुणन न्यूनय शेष-मध्ये\n    \n    यदि ( शेष == ० ) {\n        ० सफल-मध्ये स्थापय\n    } तर्हि {\n        संख्या शेष विभज जांच_भाग-मध्ये\n        जांच_भाग शेष गुणय जांच_गुणन-मध्ये\n        यदि ( संख्या != जांच_गुणन ) {\n            ० सफल-मध्ये स्थापय\n        }\n    }\n    भाग वर्तमान-मध्ये स्थापय\n}\n\nयदि ( सफल == १ ) { वद संख्या \" is Self-Dividing!\" }\nतर्हि { वद संख्या \" is NOT Self-Dividing.\" }"
+        }
+    ]
+}

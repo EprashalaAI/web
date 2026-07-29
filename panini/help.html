@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panini Programming Language Manual</title>
+<style>
+body{font-family:Arial,Helvetica,sans-serif;line-height:1.6;background:#f4f4f4;margin:0}
+.container{max-width:1100px;margin:30px auto;background:#fff;padding:30px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+pre{white-space:pre-wrap;word-wrap:break-word;background:#272822;color:#f8f8f2;padding:15px;border-radius:6px;overflow:auto}
+h1{color:#0b5cab}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Panini Programming Language Manual</h1>
+<pre>
+# PANINI PROGRAMMING LANGUAGE (VERSION 11)
+### Official User Guide &amp; Technical Reference Manual
+
+Welcome to **Panini V11**, an educational programming language and environment engineered to make learning computer logic intuitive, stress-free, and accessible. Named after the ancient grammarian Pāṇini, the language utilizes a **Kāraka (Suffix-Based) Engine**.
+
+---
+
+## 1. Quick Keyboard Shortcuts (Hotkeys)
+
+| Key Combination | Action | Description |
+| :--- | :--- | :--- |
+| **`F1`** | **Help Manual** | Opens this documentation guide. |
+| **`F2`** | **Save File** | Saves your current `.san` code file. |
+| **`F3`** | **Open File** | Opens an existing `.san` program. |
+| **`Alt + F9`** | **Compile Code** | Validates code structure and displays the compilation status. |
+| **`Ctrl + F9`** | **Run Program** | Executes your code and displays output in the bottom terminal. |
+| **`Alt + X`** | **Exit** | Closes the Panini IDE application. |
+
+---
+
+## 2. IDE Interface &amp; Developer Tools
+
+### A. Auto-Translate (Keyword Keylogger)
+You do not need to switch keyboard layouts or learn Sanskrit typing to write code. Type standard English or C++ equivalents, and pressing **Space**, **Enter**, **`(`**, or **`{`** automatically transforms them into Panini keywords:
+
+* `print`, `printf`, `cout` $\rightarrow$ **`वद`**
+* `scan`, `scanf`, `cin`, `ask` $\rightarrow$ **`पृच्छ`**
+* `store` $\rightarrow$ **`स्थापय`**
+* `add`, `plus` $\rightarrow$ **`संयोजय`**
+* `sub`, `minus` $\rightarrow$ **`न्यूनय`**
+* `mul`, `multiply` $\rightarrow$ **`गुणय`**
+* `div`, `divide` $\rightarrow$ **`विभज`**
+* `if` $\rightarrow$ **`यदि`**
+* `else` $\rightarrow$ **`तर्हि`**
+* `while` $\rightarrow$ **`यावत्`**
+
+### B. Quick Insert Toolbar
+Located right above the main editor, this bar offers instant clickable buttons for all core keywords and the mandatory **`-मध्ये`** suffix. You can toggle this bar on or off from the menu bar via **`Edit -&gt; Show/Hide Shortcut Toolbar`**.
+
+### C. On-Screen Devanagari Keyboard
+Clicking **`⌨ Devanagari Keyboard`** on the top menu bar launches a floating virtual keyboard. It includes vowels, consonants, matras, Devanagari numbers, and one-click Panini language blocks.
+
+### D. AI Magic Wand (C/C++ Transpiler)
+Click **`🪄 Magic Wand`** in the top menu bar to work with standard C or C++ school code:
+1. **`▶ Run Code (G++)`**: Compiles and executes native C/C++ code directly inside a built-in terminal.
+2. **`✨ Convert to Panini`**: Strips out `#include`, `int main()`, semicolons, and boilerplates, rewriting the core computational logic directly into Panini code.
+
+---
+
+## 3. Core Syntax Rules
+
+### A. The Memory Suffix (`-मध्ये`)
+Panini tracks variable memory destinations using the suffix **`-मध्ये`** (&quot;In / Into&quot;). Whenever you store data, perform mathematical operations, or prompt for user input, the target variable **must** end with `-मध्ये`.
+
+* **Valid Targets:** `क-मध्ये`, `total-मध्ये`, `age-मध्ये`
+
+### B. Flexible Word Order
+Because the `-मध्ये` suffix explicitly identifies the destination variable, standard single-line commands are order-independent:
+
+```sanskrit
+५ क-मध्ये स्थापय       // Value -&gt; Destination -&gt; Action
+स्थापय ५ क-मध्ये       // Action -&gt; Value -&gt; Destination
+क-मध्ये ५ स्थापय       // Destination -&gt; Value -&gt; Action
+
+
+### Official Language Reference &amp; Documentation (Version 10)
+
+## Introduction
+
+Welcome to **Panini**, an educational programming language engineered to replace Turbo C and C++ in schools. Named after the ancient Sanskrit grammarian, Panini uses a **Kāraka (Suffix-Based) Engine**.
+
+Unlike modern languages (like Python or C) that strictly enforce *word order*, Panini understands the *role* of a word based on its suffix. This allows students to focus entirely on computational logic rather than fighting syntax errors, missing semicolons, or rigid boilerplate.
+
+---
+
+## 1. The IDE Features (Developer Experience)
+
+To bridge the gap between English-based coding and Sanskrit, the Panini IDE includes built-in training wheels.
+
+### Auto-Translate (Keylogger)
+
+You do not need to know a Sanskrit keyboard to write Panini code. Simply type the English or C++ equivalent keyword, and the moment you press **Space, Enter, or a Bracket**, the IDE will magically translate it into Sanskrit.
+
+| English / C++ Keyword | Panini Translation | Action |
+| --- | --- | --- |
+| `print`, `printf`, `cout` | **वद** | Output to screen |
+| `scan`, `scanf`, `cin`, `ask` | **पृच्छ** | Take user input |
+| `store` | **स्थापय** | Assign a variable |
+| `add`, `plus` | **संयोजय** | Add / Join text |
+| `sub`, `minus` | **न्यूनय** | Subtract |
+| `mul`, `multiply` | **गुणय** | Multiply |
+| `div`, `divide` | **विभज** | Divide |
+| `if` | **यदि** | Conditional If |
+| `else` | **तर्हि** | Conditional Else |
+| `while` | **यावत्** | While Loop |
+
+### The AI Magic Wand (Transpiler)
+
+Located in the top toolbar, the **Magic Wand** allows users to paste standard, boilerplate-heavy C or C++ school code. Clicking &quot;Convert&quot; will instantly strip away the `#include &lt;stdio.h&gt;` and `int main()` clutter, and rewrite the pure logic into Panini.
+
+---
+
+## 2. Core Syntax Rules
+
+### The Memory Suffix (`-मध्ये`)
+
+The most important rule in Panini is the `-मध्ये` (In / Into) suffix. Whenever you want to save data into a variable (whether you are storing a number, doing math, or asking for input), the target variable **must** end with `-मध्ये`.
+
+* **Valid Destination:** `क-मध्ये` (Into variable &#x27;ka&#x27;)
+* **Valid Destination:** `sum-मध्ये` (Into variable &#x27;sum&#x27;)
+
+### Comments
+
+Use double slashes `//` to write notes. The compiler ignores everything after `//` on that line.
+
+```sanskrit
+// This is a comment. It explains the code below.
+
+```
+
+### Word Order Flexibility
+
+Because of the `-मध्ये` suffix, single-line commands can be written in any order! These three lines are mathematically identical to the compiler:
+
+```sanskrit
+५ क-मध्ये स्थापय       // Value -&gt; Destination -&gt; Action
+स्थापय ५ क-मध्ये       // Action -&gt; Value -&gt; Destination
+क-मध्ये ५ स्थापय       // Destination -&gt; Value -&gt; Action
+
+```
+
+---
+
+## 3. Input and Output (I/O)
+
+### Print / Output (`वद`)
+
+Use **वद** (Speak) to print text, numbers, or variables to the terminal screen. You can string multiple items together by separating them with spaces.
+
+* **Strings** must be enclosed in double quotes `&quot;...&quot;`.
+
+```sanskrit
+वद &quot;Hello World&quot;
+वद १००
+वद &quot;The answer is &quot; उत्तर
+
+```
+
+### User Input (`पृच्छ`)
+
+Use **पृच्छ** (Ask) to prompt the user for input. It automatically detects whether the user typed a Number (Integer/Float) or a Text String, and saves it. The destination variable must have the `-मध्ये` suffix.
+
+```sanskrit
+पृच्छ नाम-मध्ये        // Pops up asking for &#x27;नाम&#x27; (Stores string)
+पृच्छ आयु-मध्ये        // Pops up asking for &#x27;आयु&#x27; (Stores number)
+वद &quot;Hello &quot; नाम &quot; your age is &quot; आयु
+
+```
+
+---
+
+## 4. Variables &amp; Memory Assignment
+
+### Store / Assign (`स्थापय`)
+
+Use **स्थापय** (Store) to initialize or overwrite a variable. Requires a value and a destination.
+
+```sanskrit
+१० क-मध्ये स्थापय      // Sets ka = 10
+&quot;Rahul&quot; नाम-मध्ये स्थापय // Sets naam = &quot;Rahul&quot;
+
+```
+
+---
+
+## 5. Mathematics &amp; Data Manipulation
+
+All mathematical operations require **three parts**: Value 1, Value 2, and a Destination.
+
+### Addition / Concatenation (`संयोजय`)
+
+If used on numbers, it adds them. If used on Strings, it joins them together.
+
+```sanskrit
+५ १० संयोजय योग-मध्ये     // योग = 5 + 10
+वद योग                   // Prints: 15
+
+&quot;Bat&quot; &quot;man&quot; संयोजय नायक-मध्ये
+वद नायक                  // Prints: Batman
+
+```
+
+### Subtraction (`न्यूनय`)
+
+```sanskrit
+२० ५ न्यूनय उत्तर-मध्ये     // उत्तर = 20 - 5
+
+```
+
+### Multiplication (`गुणय`)
+
+```sanskrit
+५ ४ गुणय उत्तर-मध्ये      // उत्तर = 5 * 4
+
+```
+
+### Division (`विभज`)
+
+```sanskrit
+१०० ५ विभज उत्तर-मध्ये    // उत्तर = 100 / 5
+
+```
+
+---
+
+## 6. Control Flow &amp; Logic (CFG Blocks)
+
+While standard statements are free-order, structural logic (Loops and Ifs) use standard Context-Free Grammar (CFG) block structures with `{ }` brackets.
+
+**Supported Operators:** `==` (Equal), `!=` (Not Equal), `&gt;` (Greater Than), `&lt;` (Less Than).
+
+### If / Else (`यदि` / `तर्हि`)
+
+Requires the condition in parentheses `( )`, and the code block in braces `{ }`.
+
+```sanskrit
+पृच्छ आयु-मध्ये
+
+यदि ( आयु &gt; १७ ) {
+    वद &quot;You are an adult.&quot;
+} तर्हि {
+    वद &quot;You are a minor.&quot;
+}
+
+```
+
+### While Loops (`यावत्`)
+
+Executes the code block repeatedly as long as the condition remains true. (The Panini engine has a built-in infinite-loop safeguard set at 2000 iterations to protect school computers from crashing).
+
+```sanskrit
+५ चक्र-मध्ये स्थापय
+
+यावत् ( चक्र &gt; ० ) {
+    वद &quot;Countdown: &quot; चक्र
+    चक्र १ न्यूनय चक्र-मध्ये   // Subtract 1 from Chakra
+}
+वद &quot;Blastoff!&quot;
+
+```
+
+---
+
+## 7. Complete Example Programs
+
+### Example 1: Area of a Rectangle
+
+```sanskrit
+// Calculate Area
+वद &quot;Welcome to the Geometry Calculator!&quot;
+
+पृच्छ लम्बाई-मध्ये            
+पृच्छ चौडाई-मध्ये            
+
+लम्बाई चौडाई गुणय क्षेत्रफल-मध्ये  
+वद &quot;The Area is: &quot; क्षेत्रफल
+
+```
+
+### Example 2: Voting Eligibility Check
+
+```sanskrit
+पृच्छ नाम-मध्ये
+पृच्छ आयु-मध्ये
+
+यदि ( आयु &gt; १७ ) {
+    वद &quot;Congratulations &quot; नाम &quot;, you can vote!&quot;
+} तर्हि {
+    १८ आयु न्यूनय शेष-मध्ये
+    वद &quot;Sorry &quot; नाम &quot;, you must wait &quot; शेष &quot; more years.&quot;
+}
+
+```</pre>
+</div>
+</body>
+</html>
