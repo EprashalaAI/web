@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panini V11 - Professional Web IDE</title>
 	<!-- PWA & Mobile Configuration -->
     <link rel="manifest" href="paninimanifest.json">
@@ -26,25 +26,25 @@
         }
         
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
-        body { background: var(--bg-dark); display: flex; flex-direction: column; height: 100vh; overflow: hidden; color: white; }
+        body { background: var(--bg-dark); display: flex; flex-direction: column; height: 100vh; width: 100vw; overflow: auto; color: white; }
         
         /* Top Navigation & Menus */
-        .menu-bar { background: var(--menu-bar); padding: 5px 10px; display: flex; gap: 10px; font-family: 'Courier New', monospace; font-size: 14px; font-weight: bold; border-bottom: 2px solid #999; flex-wrap: wrap; align-items: center; color: black; }
+        .menu-bar { background: var(--menu-bar); padding: 5px 10px; display: flex; gap: 10px; font-family: 'Courier New', monospace; font-size: 14px; font-weight: bold; border-bottom: 2px solid #999; flex-wrap: wrap; align-items: center; color: black; flex-shrink: 0; }
         .menu-item { cursor: pointer; padding: 4px 8px; border-radius: 3px; user-select: none; text-decoration: none; color: black; display: flex; align-items: center; gap: 5px; }
         .menu-item:hover { background: #bbb; }
         .menu-item.primary { background: #4CAF50; color: white; }
         .menu-item.magic { background: #9C27B0; color: white; }
         .menu-item.github { background: #24292e; color: white; }
         
-        .toolbar { background: var(--toolbar); padding: 8px; display: flex; gap: 6px; overflow-x: auto; white-space: nowrap; border-bottom: 2px solid #999; }
+        .toolbar { background: var(--toolbar); padding: 8px; display: flex; gap: 6px; overflow-x: auto; white-space: nowrap; border-bottom: 2px solid #999; flex-shrink: 0; }
         .toolbar button { font-weight: bold; padding: 4px 10px; background: #D3D3D3; border: 1px solid #777; cursor: pointer; border-radius: 4px; box-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
         .toolbar button:active { box-shadow: inset 1px 1px 2px rgba(0,0,0,0.3); }
 
         /* Layout */
-        .app-body { display: flex; flex: 1; overflow: hidden; }
+        .app-body { display: flex; flex: 1; position: relative; min-height: 0; }
         
         /* File Explorer Sidebar (IndexedDB) */
-        .sidebar { width: 250px; background: var(--bg-sidebar); border-right: 2px solid #555; display: flex; flex-direction: column; transition: transform 0.3s ease; }
+        .sidebar { width: 250px; background: var(--bg-sidebar); border-right: 2px solid #555; display: flex; flex-direction: column; transition: transform 0.3s ease; min-height: 0; }
         .sidebar.hidden { display: none; }
         .file-list { flex: 1; overflow-y: auto; padding: 10px; list-style: none; }
         .file-item { padding: 6px 8px; cursor: pointer; border-radius: 4px; font-size: 14px; color: #ccc; margin-bottom: 4px; word-break: break-all; }
@@ -52,8 +52,8 @@
         .file-item.active { background: #0055ff; color: white; }
 
         /* Workspace */
-        .workspace { display: flex; flex: 1; flex-direction: column; overflow: hidden; }
-        @media (min-width: 768px) { .workspace { flex-direction: row; } }
+       .workspace { display: flex; flex: 1; flex-direction: column; width: 100%; height: 100%; }
+		@media (min-width: 768px), (orientation: landscape) { .workspace { flex-direction: row; } }
         
         .pane { flex: 1; display: flex; flex-direction: column; border: 1px solid #555; position: relative; }
         .pane-header { background: var(--menu-bar); color: black; font-family: 'Courier New', monospace; font-weight: bold; padding: 3px 10px; font-size: 12px; display: flex; justify-content: space-between; }
@@ -264,16 +264,20 @@ int main() {
             list.innerHTML = '<div style="padding: 10px; color: #888;">Fetching from server...</div>';
             toggleSidebar(true);
 
-            try {
+ try {
                 const response = await fetch('samples.json'); 
                 if (!response.ok) throw new Error("Database not found on server.");
                 
                 const data = await response.json();
-                list.innerHTML = '';
+                list.innerHTML = ''; // Clear the "Fetching from server..." message
 
-                // Render Basic Category
+                // Render Basic Category safely using createElement
                 if (data.basic && data.basic.length > 0) {
-                    list.innerHTML += `<div class="category-header">🟢 Basic Programs</div>`;
+                    const basicHeader = document.createElement('div');
+                    basicHeader.className = 'category-header';
+                    basicHeader.innerText = '🟢 Basic Programs';
+                    list.appendChild(basicHeader);
+
                     data.basic.forEach(file => {
                         const item = document.createElement('div');
                         item.className = 'file-item';
@@ -283,9 +287,13 @@ int main() {
                     });
                 }
 
-                // Render Advance Category
+                // Render Advance Category safely using createElement
                 if (data.advance && data.advance.length > 0) {
-                    list.innerHTML += `<div class="category-header">🔴 Advance Programs</div>`;
+                    const advanceHeader = document.createElement('div');
+                    advanceHeader.className = 'category-header';
+                    advanceHeader.innerText = '🔴 Advance Programs';
+                    list.appendChild(advanceHeader);
+
                     data.advance.forEach(file => {
                         const item = document.createElement('div');
                         item.className = 'file-item';
@@ -780,7 +788,12 @@ int main() {
             });
         }
 	
-	
+	// Re-calculate editor dimensions on screen rotate or zoom
+        window.addEventListener('resize', () => {
+            if (editorInstance) {
+                editorInstance.layout();
+            }
+        });
 	
 	</script>
 </body>
