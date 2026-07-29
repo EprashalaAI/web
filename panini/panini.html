@@ -516,8 +516,22 @@ int main() {
                 'mul': { text: 'गुणय ', dLine: 0, dCol: 5 },
                 'vibhaj': { text: 'विभज ', dLine: 0, dCol: 5 },
                 'div': { text: 'विभज ', dLine: 0, dCol: 5 },
-                'madhye': { text: '-मध्ये ', dLine: 0, dCol: 7 }
-            };
+                'madhye': { text: '-मध्ये ', dLine: 0, dCol: 7 },
+            // New Control Structures
+    'kuru': { text: 'कुरु {\n    \n}', dLine: 1, dCol: 4 },
+    'do': { text: 'कुरु {\n    \n}', dLine: 1, dCol: 4 },
+    'krite': { text: 'कृते ( ; ; ) {\n    \n}', dLine: 0, dCol: 7 },
+    'for': { text: 'कृते ( ; ; ) {\n    \n}', dLine: 0, dCol: 7 },
+    
+    // New Math & Variables
+    'shesh': { text: 'शेष ', dLine: 0, dCol: 4 },
+    'mod': { text: 'शेष ', dLine: 0, dCol: 4 },
+    'ghat': { text: 'घात ', dLine: 0, dCol: 4 },
+    'pow': { text: 'घात ', dLine: 0, dCol: 4 },
+    'true': { text: 'सत्य ', dLine: 0, dCol: 5 },
+    'false': { text: 'असत्य ', dLine: 0, dCol: 6 },
+    'null': { text: 'शून्य ', dLine: 0, dCol: 6 }
+};
 
             // Intelligent Autocorrect & Snippet Keylogger
             editorInstance.onKeyUp((e) => {
@@ -606,63 +620,79 @@ int main() {
         // ==========================================
         // 3. ENGINE WITH LINE-ACCURATE ERROR TRACKING
         // ==========================================
-        class SanskritEngine {
-            constructor() {
-                this.specs = [
-                    ['COMMENT', /^\/\/.*/],
-                    ['STRING', /^"[^"]*"/],
-                    ['YADI', /^यदि/],
-                    ['TARHI', /^तर्हि/],
-                    ['YAVAT', /^यावत्/],
-                    ['PRICCHA', /^पृच्छ/],
-                    ['STHAPAYA', /^स्थापय/],
-                    ['VADA', /^वद/],
-                    ['ADD', /^संयोजय/],
-                    ['SUB', /^न्यूनय/],
-                    ['MUL', /^गुणय/],
-                    ['DIV', /^विभज/],
-                    ['OP', /^(==|!=|<=|>=|<|>)/],
-                    ['LPAREN', /^\(/],
-                    ['RPAREN', /^\)/],
-                    ['LBRACE', /^\{/],
-                    ['RBRACE', /^\}/],
-                    ['DESTINATION', /^[a-zA-Z_\u0900-\u097F]+-मध्ये/],
-                    ['NUMBER', /^[0-9०-९]+(?:\.[0-9०-९]+)?/],
-                    ['ID', /^[a-zA-Z_\u0900-\u097F]+/],
-                    ['SKIP', /^[ \t\r]+/],
-                    ['NEWLINE', /^\n/],
-                    ['DOSHA', /^./]
-                ];
-                this.outputLog = [];
-            }
+class SanskritEngine {
+    constructor() {
+        this.specs = [
+            ['COMMENT', /^\/\/.*/],
+            ['STRING', /^"[^"]*"/],
+            ['SATYA', /^सत्य/],
+            ['ASATYA', /^असत्य/],
+            ['SHUNYA', /^शून्य/],
+            ['LBRACKET', /^\[/],
+            ['RBRACKET', /^\]/],
+            ['COMMA', /^,/],
+            ['YADI', /^यदि/],
+            ['TARHI', /^तर्हि/],
+            ['YAVAT', /^यावत्/],
+            ['KURU', /^कुरु/],          
+            ['KRITE', /^कृते/],         
+            ['PRICCHA', /^पृच्छ/],
+            ['STHAPAYA', /^स्थापय/],
+            ['VADA', /^वद/],
+            ['ADD', /^संयोजय/],
+            ['SUB', /^न्यूनय/],
+            ['MUL', /^गुणय/],
+            ['DIV', /^विभज/],
+            ['MOD', /^शेष/],            
+            ['POW', /^घात/],            
+            ['OP', /^(==|!=|<=|>=|<|>)/],
+            ['LPAREN', /^\(/],
+            ['RPAREN', /^\)/],
+            ['LBRACE', /^\{/],
+            ['RBRACE', /^\}/],
+            ['SEMI', /^;/],             
+            ['DESTINATION', /^[a-zA-Z_\u0900-\u097F]+(?:-|\s*)मध्ये/],
+            ['NUMBER', /^[0-9०-९]+(?:\.[0-9०-९]+)?/],
+            ['ID', /^[a-zA-Z_\u0900-\u097F]+/],
+            ['SKIP', /^[ \t\r]+/],
+            ['NEWLINE', /^\n/],
+            ['DOSHA', /^./]
+        ];
+        this.outputLog = [];
+    }
 
-            tokenize(code) {
-                let tokens = [];
-                let pos = 0;
-                let currentLine = 1;
-                while (pos < code.length) {
-                    let match = null;
-                    let textSlice = code.slice(pos);
-                    for (let [kind, regex] of this.specs) {
-                        let m = regex.exec(textSlice);
-                        if (m && m.index === 0) { match = { kind, val: m[0], line: currentLine }; break; }
-                    }
-                    if (!match) throw new Error(`व्याकरण दोषः (Syntax Error) near Line ${currentLine}`);
-                    pos += match.val.length;
-                    
-                    if (match.kind === 'NEWLINE') currentLine++;
-                    if (match.kind === 'SKIP' || match.kind === 'COMMENT') continue;
-
-                    if (match.kind === 'NUMBER') {
-                        let eng = match.val.replace(/[०-९]/g, d => '०१२३४५६७८९'.indexOf(d));
-                        match.val = eng.includes('.') ? parseFloat(eng) : parseInt(eng, 10);
-                    } 
-                    if (match.kind === 'STRING') match.val = match.val.slice(1, -1);
-                    
-                    tokens.push(match);
-                }
-                return tokens;
+    tokenize(code) {
+        let tokens = [];
+        let pos = 0;
+        let currentLine = 1;
+        while (pos < code.length) {
+            let match = null;
+            let textSlice = code.slice(pos);
+            for (let [kind, regex] of this.specs) {
+                let m = regex.exec(textSlice);
+                if (m && m.index === 0) { match = { kind, val: m[0], line: currentLine }; break; }
             }
+            if (!match) throw new Error(`व्याकरण दोषः (Syntax Error) near Line ${currentLine}`);
+            pos += match.val.length;
+            
+            if (match.kind === 'NEWLINE') currentLine++;
+            if (match.kind === 'SKIP' || match.kind === 'COMMENT') continue;
+
+            if (match.kind === 'NUMBER') {
+                let eng = match.val.replace(/[०-९]/g, d => '०१२३४५६७८९'.indexOf(d));
+                match.val = eng.includes('.') ? parseFloat(eng) : parseInt(eng, 10);
+            } 
+            if (match.kind === 'STRING') match.val = match.val.slice(1, -1);
+            
+            // Convert new Boolean/Null tokens
+            if (match.kind === 'SATYA') match.val = true;
+            if (match.kind === 'ASATYA') match.val = false;
+            if (match.kind === 'SHUNYA') match.val = null;
+            
+            tokens.push(match);
+        }
+        return tokens;
+    }
 
             extractBlock(tokens, startIdx, openTok, closeTok) {
                 let block = [];
@@ -700,32 +730,59 @@ int main() {
                 return false;
             }
 
-            executeKarakaLine(tokens, memory) {
-                if (!tokens.length) return;
-                const getVal = (v) => ['NUMBER', 'STRING'].includes(v.kind) ? v.val : (memory[v.val] || 0);
-                
-                let dest = tokens.find(t => t.kind === 'DESTINATION');
-                let vals = tokens.filter(t => ['NUMBER', 'STRING', 'ID'].includes(t.kind) && t.kind !== 'DESTINATION');
-                let has = (k) => tokens.some(t => t.kind === k);
-                
-                let lineStr = tokens[0].line; // for potential runtime error tracking
+executeKarakaLine(tokens, memory) {
+        if (!tokens.length) return;
+        const getVal = (v) => ['NUMBER', 'STRING', 'SATYA', 'ASATYA'].includes(v.kind) ? v.val : (memory[v.val] || 0);
+        
+        let dest = tokens.find(t => t.kind === 'DESTINATION');
+        let vals = tokens.filter(t => ['NUMBER', 'STRING', 'ID', 'SATYA', 'ASATYA'].includes(t.kind) && t.kind !== 'DESTINATION');
+        let has = (k) => tokens.some(t => t.kind === k);
+        
+        let lineStr = tokens[0].line; 
 
-                if (has('PRICCHA') && dest) {
-                    let destVar = dest.val.replace('-मध्ये', '');
-                    let userInput = prompt(`Execution Line ${lineStr} requires input for '${destVar}':`, "0") || "0";
-                    let num = parseFloat(userInput);
-                    memory[destVar] = isNaN(num) ? userInput : num;
+        if (has('PRICCHA') && dest) {
+            let destVar = dest.val.replace(/(?:-|\s*)मध्ये/, '');
+            let userInput = prompt(`Execution Line ${lineStr} requires input for '${destVar}':`, "0") || "0";
+            let num = parseFloat(userInput);
+            memory[destVar] = isNaN(num) ? userInput : num;
+        }
+        else if (has('STHAPAYA') && dest) { 
+            let destVar = dest.val.replace(/(?:-|\s*)मध्ये/, '');
+            
+            // Array Creation Logic
+            if (has('LBRACKET') && has('RBRACKET')) {
+                let startIdx = tokens.findIndex(t => t.kind === 'LBRACKET');
+                let endIdx = tokens.findIndex(t => t.kind === 'RBRACKET');
+                let arrayVals = [];
+                for(let j = startIdx + 1; j < endIdx; j++) {
+                    if(!['COMMA', 'SKIP', 'NEWLINE'].includes(tokens[j].kind)) {
+                        arrayVals.push(getVal(tokens[j]));
+                    }
                 }
-                else if (has('STHAPAYA') && dest && vals.length) { memory[dest.val.replace('-मध्ये', '')] = getVal(vals[0]); }
-                else if (has('ADD') && dest && vals.length > 1) { memory[dest.val.replace('-मध्ये', '')] = (typeof getVal(vals[0])==='string') ? String(getVal(vals[0])) + String(getVal(vals[1])) : getVal(vals[0]) + getVal(vals[1]); }
-                else if (has('SUB') && dest && vals.length > 1) { memory[dest.val.replace('-मध्ये', '')] = Number(getVal(vals[0])) - Number(getVal(vals[1])); }
-                else if (has('MUL') && dest && vals.length > 1) { memory[dest.val.replace('-मध्ये', '')] = Number(getVal(vals[0])) * Number(getVal(vals[1])); }
-                else if (has('DIV') && dest && vals.length > 1) { 
-                    let v1 = getVal(vals[0]), v2 = getVal(vals[1]);
-                    memory[dest.val.replace('-मध्ये', '')] = (Number(v2) === 0) ? "Error: Div by 0" : (Number.isInteger(v1) && Number.isInteger(v2)) ? Math.trunc(v1/v2) : v1/v2; 
-                }
-                else if (has('VADA')) { this.outputLog.push(vals.map(v => getVal(v)).join("")); }
+                memory[destVar] = arrayVals;
+            } else if (vals.length) {
+                memory[destVar] = getVal(vals[0]); 
             }
+        }
+        else if (has('ADD') && dest && vals.length > 1) { 
+            let v1 = getVal(vals[0]), v2 = getVal(vals[1]);
+            memory[dest.val.replace(/(?:-|\s*)मध्ये/, '')] = (typeof v1 === 'string') ? String(v1) + String(v2) : v1 + v2; 
+        }
+        else if (has('SUB') && dest && vals.length > 1) { memory[dest.val.replace(/(?:-|\s*)मध्ये/, '')] = Number(getVal(vals[0])) - Number(getVal(vals[1])); }
+        else if (has('MUL') && dest && vals.length > 1) { memory[dest.val.replace(/(?:-|\s*)मध्ये/, '')] = Number(getVal(vals[0])) * Number(getVal(vals[1])); }
+        else if (has('DIV') && dest && vals.length > 1) { 
+            let v1 = getVal(vals[0]), v2 = getVal(vals[1]);
+            memory[dest.val.replace(/(?:-|\s*)मध्ये/, '')] = (Number(v2) === 0) ? "Error: Div by 0" : v1/v2; 
+        }
+        else if (has('MOD') && dest && vals.length > 1) {
+            let v2 = Number(getVal(vals[1]));
+            memory[dest.val.replace(/(?:-|\s*)मध्ये/, '')] = (v2 === 0) ? "Error: Mod by 0" : Number(getVal(vals[0])) % v2;
+        }
+        else if (has('POW') && dest && vals.length > 1) {
+            memory[dest.val.replace(/(?:-|\s*)मध्ये/, '')] = Math.pow(Number(getVal(vals[0])), Number(getVal(vals[1])));
+        }
+        else if (has('VADA')) { this.outputLog.push(vals.map(v => getVal(v)).join("")); }
+    }
 
             runAst(tokens, memory) {
                 let i = 0;
@@ -762,6 +819,69 @@ int main() {
                         i = loopBlock.nextIdx;
                         continue;
                     }
+					
+					// --- DO-WHILE LOOP (कुरु ... यावत्) ---
+if (kind === 'KURU') {
+    let loopBlock = this.extractBlock(tokens, i, 'LBRACE', 'RBRACE');
+    let lookahead = loopBlock.nextIdx;
+    
+    while (lookahead < tokens.length && tokens[lookahead].kind === 'NEWLINE') lookahead++;
+    
+    if (lookahead < tokens.length && tokens[lookahead].kind === 'YAVAT') {
+        let cond = this.extractBlock(tokens, lookahead + 1, 'LPAREN', 'RPAREN');
+        let safety = 0;
+        
+        do {
+            this.runAst(loopBlock.block, memory);
+            safety++;
+            if(safety >= 2000) break;
+        } while (this.evaluateCondition(cond.block, memory));
+        
+        if (safety >= 2000) this.outputLog.push("[System Warning] Infinite do-while loop prevented.");
+        i = cond.nextIdx;
+    } else {
+        throw new Error("व्याकरण दोषः (Syntax Error): 'कुरु' (do) requires a matching 'यावत्' (while) condition.");
+    }
+    continue;
+}
+
+// --- FOR LOOP (कृते) ---
+if (kind === 'KRITE') {
+    let parenBlock = this.extractBlock(tokens, i, 'LPAREN', 'RPAREN');
+    let bodyBlock = this.extractBlock(tokens, parenBlock.nextIdx, 'LBRACE', 'RBRACE');
+    
+    let parts = [];
+    let current = [];
+    for (let t of parenBlock.block) {
+        if (t.kind === 'SEMI') {
+            parts.push(current);
+            current = [];
+        } else {
+            current.push(t);
+        }
+    }
+    parts.push(current);
+    
+    if (parts.length === 3) {
+        let [initTokens, condTokens, stepTokens] = parts;
+        
+        this.executeKarakaLine(initTokens, memory);
+        let safety = 0;
+        
+        while (this.evaluateCondition(condTokens, memory) && safety < 2000) {
+            this.runAst(bodyBlock.block, memory);
+            this.executeKarakaLine(stepTokens, memory);
+            safety++;
+        }
+        
+        if (safety >= 2000) this.outputLog.push("[System Warning] Infinite for loop prevented.");
+    } else {
+        throw new Error("व्याकरण दोषः (Syntax Error): 'कृते' (for) requires exactly 3 parts separated by semicolons.");
+    }
+    
+    i = bodyBlock.nextIdx;
+    continue;
+}
 
                     let lineTokens = [];
                     while (i < tokens.length && !['NEWLINE', 'LBRACE', 'RBRACE'].includes(tokens[i].kind)) { lineTokens.push(tokens[i]); i++; }
