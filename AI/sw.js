@@ -1,4 +1,4 @@
-const CACHE_NAME = 'eprashala-library-v3'; // Bumped version to force clear old cache rules
+const CACHE_NAME = 'eprashala-library-v4'; // Bumped version to force clear old cache rules
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
