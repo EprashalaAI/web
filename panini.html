@@ -40,8 +40,6 @@
         /* File Explorer Sidebar (IndexedDB) */
         .sidebar { width: 250px; background: var(--bg-sidebar); border-right: 2px solid #555; display: flex; flex-direction: column; transition: transform 0.3s ease; }
         .sidebar.hidden { display: none; }
-        .sidebar-header { background: #333; padding: 10px; font-weight: bold; font-size: 14px; border-bottom: 1px solid #555; display: flex; justify-content: space-between; }
-        .sidebar-header button { background: var(--accent); border: none; color: white; cursor: pointer; padding: 2px 6px; border-radius: 3px; }
         .file-list { flex: 1; overflow-y: auto; padding: 10px; list-style: none; }
         .file-item { padding: 6px 8px; cursor: pointer; border-radius: 4px; font-size: 14px; color: #ccc; margin-bottom: 4px; word-break: break-all; }
         .file-item:hover { background: #333; color: white; }
@@ -68,44 +66,41 @@
         .modal-btn-row { display: flex; gap: 10px; justify-content: flex-end; }
         .modal-btn { padding: 8px 15px; font-weight: bold; border: none; border-radius: 4px; cursor: pointer; }
 		
-		/* Update Sidebar header to align the close button */
-.sidebar-header { background: #333; padding: 10px; font-weight: bold; font-size: 14px; border-bottom: 1px solid #555; display: flex; justify-content: space-between; align-items: center; }
-.sidebar-header .actions { display: flex; gap: 5px; }
-.sidebar-header button { background: var(--accent); border: none; color: white; cursor: pointer; padding: 4px 8px; border-radius: 3px; font-weight: bold; }
-.sidebar-header button.close-btn { background: #f44336; }
+		/* Sidebar header and Close Button */
+        .sidebar-header { background: #333; padding: 10px; font-weight: bold; font-size: 14px; border-bottom: 1px solid #555; display: flex; justify-content: space-between; align-items: center; }
+        .sidebar-header .actions { display: flex; gap: 5px; }
+        .sidebar-header button { background: var(--accent); border: none; color: white; cursor: pointer; padding: 4px 8px; border-radius: 3px; font-weight: bold; }
+        .sidebar-header button.close-btn { background: #f44336; }
 
-/* Category Headers for Examples */
-.category-header { background: #444; color: #FFB86C; padding: 5px 10px; font-size: 12px; font-weight: bold; text-transform: uppercase; margin-top: 10px; }
-	
-	
-	
+        /* Category Headers for Examples */
+        .category-header { background: #444; color: #FFB86C; padding: 5px 10px; font-size: 12px; font-weight: bold; text-transform: uppercase; margin-top: 10px; }
 	</style>
 </head>
 <body>
 
     <!-- Main Menu -->
-<!-- Main Menu -->
-<div class="menu-bar">
-    <div class="menu-item primary" onclick="runCode()">▶ Run (Ctrl+Enter)</div>
-    
-    <!-- New Buttons for Database Loading -->
-    <div class="menu-item" onclick="loadExamples()" style="background: #FF9800; color: black;">📚 Examples</div>
-    <div class="menu-item" onclick="loadHistory()" style="background: #4CAF50; color: white;">🕒 History</div>
-    
-    <div class="menu-item magic" onclick="openWand()">🪄 Magic Wand</div>
-    <div class="menu-item" onclick="generateShareLink()">🔗 Share</div>
-    
-    <!-- External Navigation -->
-    <a href="readme.html" target="_blank" class="menu-item">📄 Readme</a>
-    <a href="help.html" target="_blank" class="menu-item">❓ Help</a>
-    <a href="https://github.com/MarleshPramodShinde/Panini" target="_blank" class="menu-item github">
-        <svg height="16" width="16" fill="white" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
-        Windows App
-    </a>
-</div>
+    <div class="menu-bar">
+        <div class="menu-item primary" onclick="runCode()">▶ Run (Ctrl+Enter)</div>
+        
+        <!-- Buttons for Database Loading -->
+        <div class="menu-item" onclick="loadExamples()" style="background: #FF9800; color: black;">📚 Examples</div>
+        <div class="menu-item" onclick="loadHistory()" style="background: #4CAF50; color: white;">🕒 History</div>
+        
+        <div class="menu-item magic" onclick="openWand()">🪄 Magic Wand</div>
+        <div class="menu-item" onclick="generateShareLink()">🔗 Share</div>
+        
+        <!-- External Navigation -->
+        <a href="readme.html" target="_blank" class="menu-item">📄 Readme</a>
+        <a href="help.html" target="_blank" class="menu-item">❓ Help</a>
+        <a href="https://github.com/MarleshPramodShinde/Panini" target="_blank" class="menu-item github">
+            <svg height="16" width="16" fill="white" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+            Windows App
+        </a>
+    </div>
 
     <!-- Shortcut Toolbar -->
     <div class="toolbar" id="toolbar">
+		<button onclick="undoLastAction()" style="background: #ffcc80; border-color: #ff9800; color: #b26500;">↩ Undo</button>
         <button onclick="insertAtCursor('वद ')">वद</button>
         <button onclick="insertAtCursor('पृच्छ ')">पृच्छ</button>
         <button onclick="insertAtCursor('स्थापय ')">स्थापय</button>
@@ -122,20 +117,20 @@
     <!-- Application Body -->
     <div class="app-body">
         
-    <!-- Local History / Server Examples Sidebar -->
-<div class="sidebar hidden" id="sidebar">
-    <div class="sidebar-header">
-        <span id="sidebar-title">Local History</span>
-        <div class="actions">
-            <button onclick="createNewFile()" id="new-file-btn">+ New</button>
-            <button class="close-btn" onclick="toggleSidebar(false)">✖</button>
+        <!-- Local History / Server Examples Sidebar -->
+        <div class="sidebar hidden" id="sidebar">
+            <div class="sidebar-header">
+                <span id="sidebar-title">Local History</span>
+                <div class="actions">
+                    <button onclick="createNewFile()" id="new-file-btn">+ New</button>
+                    <button class="close-btn" onclick="toggleSidebar(false)">✖</button>
+                </div>
+            </div>
+            <div class="file-list" id="fileList"></div>
+            <div style="padding: 10px;" id="save-btn-container">
+                <button style="width:100%; padding: 6px; font-weight:bold; background: #2196F3; color: white; border: none; cursor: pointer;" onclick="saveCurrentFile()">💾 Save to History</button>
+            </div>
         </div>
-    </div>
-    <div class="file-list" id="fileList"></div>
-    <div style="padding: 10px;" id="save-btn-container">
-        <button style="width:100%; padding: 6px; font-weight:bold; background: #2196F3; color: white; border: none; cursor: pointer;" onclick="saveCurrentFile()">💾 Save to History</button>
-    </div>
-</div>
 
         <!-- Editor & Terminal -->
         <div class="workspace">
@@ -179,140 +174,137 @@ int main() {
         let editorInstance;
         let currentOpenFilename = "main.san";
         const term = document.getElementById('terminal');
-// ==========================================
-// 1. DATABASE & SIDEBAR LOGIC
-// ==========================================
-const dbName = "PaniniHistory";
-const storeName = "scripts";
-let db;
 
-// Open Local IndexedDB for History
-const request = indexedDB.open(dbName, 1);
-request.onupgradeneeded = (e) => {
-    db = e.target.result;
-    if (!db.objectStoreNames.contains(storeName)) {
-        db.createObjectStore(storeName, { keyPath: "name" });
-    }
-};
-request.onsuccess = (e) => { db = e.target.result; };
+        // ==========================================
+        // 1. DATABASE & SIDEBAR LOGIC
+        // ==========================================
+        const dbName = "PaniniHistory";
+        const storeName = "scripts";
+        let db;
 
-function toggleSidebar(forceShow) {
-    const sidebar = document.getElementById('sidebar');
-    if (forceShow === true) sidebar.classList.remove('hidden');
-    else if (forceShow === false) sidebar.classList.add('hidden');
-    else sidebar.classList.toggle('hidden');
-}
+        // Open Local IndexedDB for History
+        const request = indexedDB.open(dbName, 1);
+        request.onupgradeneeded = (e) => {
+            db = e.target.result;
+            if (!db.objectStoreNames.contains(storeName)) {
+                db.createObjectStore(storeName, { keyPath: "name" });
+            }
+        };
+        request.onsuccess = (e) => { db = e.target.result; };
 
-// ---- LOAD LOCAL HISTORY ----
-function loadHistory() {
-    document.getElementById('sidebar-title').innerText = "Local History";
-    document.getElementById('new-file-btn').style.display = "inline-block";
-    document.getElementById('save-btn-container').style.display = "block";
-    
-    const list = document.getElementById('fileList');
-    list.innerHTML = '';
-    
-    const tx = db.transaction(storeName, "readonly");
-    tx.objectStore(storeName).openCursor().onsuccess = (e) => {
-        const cursor = e.target.result;
-        if (cursor) {
-            const li = document.createElement('div');
-            li.className = `file-item ${cursor.value.name === currentOpenFilename ? 'active' : ''}`;
-            li.innerText = cursor.value.name;
-            li.onclick = () => openFile(cursor.value.name, cursor.value.content);
-            list.appendChild(li);
-            cursor.continue();
-        } else if (list.innerHTML === '') {
-            list.innerHTML = '<div style="padding: 10px; color: #888; font-size: 13px;">No history saved yet.</div>';
-        }
-    };
-    toggleSidebar(true);
-}
-
-// ---- LOAD SERVER EXAMPLES DB ----
-async function loadExamples() {
-    document.getElementById('sidebar-title').innerText = "Server Examples";
-    document.getElementById('new-file-btn').style.display = "none";
-    document.getElementById('save-btn-container').style.display = "none";
-    
-    const list = document.getElementById('fileList');
-    list.innerHTML = '<div style="padding: 10px; color: #888;">Fetching from server...</div>';
-    toggleSidebar(true);
-
-    try {
-        // NOTE: Browsers cannot directly read an SQLite '.db' file without WebAssembly. 
-        // Best practice for static websites is to save your 42 samples as a JSON file named 'samples.json' on your server.
-        const response = await fetch('samples.json'); 
-        if (!response.ok) throw new Error("Database not found on server.");
-        
-        const data = await response.json();
-        list.innerHTML = '';
-
-        // Render Basic Category
-        if (data.basic && data.basic.length > 0) {
-            list.innerHTML += `<div class="category-header">🟢 Basic Programs</div>`;
-            data.basic.forEach(file => {
-                const item = document.createElement('div');
-                item.className = 'file-item';
-                item.innerText = file.name;
-                item.onclick = () => openFile(file.name, file.content);
-                list.appendChild(item);
-            });
+        function toggleSidebar(forceShow) {
+            const sidebar = document.getElementById('sidebar');
+            if (forceShow === true) sidebar.classList.remove('hidden');
+            else if (forceShow === false) sidebar.classList.add('hidden');
+            else sidebar.classList.toggle('hidden');
         }
 
-        // Render Advance Category
-        if (data.advance && data.advance.length > 0) {
-            list.innerHTML += `<div class="category-header">🔴 Advance Programs</div>`;
-            data.advance.forEach(file => {
-                const item = document.createElement('div');
-                item.className = 'file-item';
-                item.innerText = file.name;
-                item.onclick = () => openFile(file.name, file.content);
-                list.appendChild(item);
-            });
+        // ---- LOAD LOCAL HISTORY ----
+        function loadHistory() {
+            document.getElementById('sidebar-title').innerText = "Local History";
+            document.getElementById('new-file-btn').style.display = "inline-block";
+            document.getElementById('save-btn-container').style.display = "block";
+            
+            const list = document.getElementById('fileList');
+            list.innerHTML = '';
+            
+            const tx = db.transaction(storeName, "readonly");
+            tx.objectStore(storeName).openCursor().onsuccess = (e) => {
+                const cursor = e.target.result;
+                if (cursor) {
+                    const li = document.createElement('div');
+                    li.className = `file-item ${cursor.value.name === currentOpenFilename ? 'active' : ''}`;
+                    li.innerText = cursor.value.name;
+                    li.onclick = () => openFile(cursor.value.name, cursor.value.content);
+                    list.appendChild(li);
+                    cursor.continue();
+                } else if (list.innerHTML === '') {
+                    list.innerHTML = '<div style="padding: 10px; color: #888; font-size: 13px;">No history saved yet.</div>';
+                }
+            };
+            toggleSidebar(true);
         }
-    } catch (error) {
-        list.innerHTML = `<div style="padding: 10px; color: #FF5555; font-size: 13px;">Error: Could not load samples database. Ensure 'samples.json' is on your server.</div>`;
-    }
-}
 
-// ---- FILE OPERATIONS ----
-function openFile(name, content) {
-    currentOpenFilename = name;
-    document.getElementById('currentFilename').innerText = name.toUpperCase();
-    if(editorInstance) editorInstance.setValue(content);
-    
-    // Highlight active state in UI
-    document.querySelectorAll('.file-item').forEach(el => el.classList.remove('active'));
-    event.target.classList.add('active');
-}
+        // ---- LOAD SERVER EXAMPLES DB ----
+        async function loadExamples() {
+            document.getElementById('sidebar-title').innerText = "Server Examples";
+            document.getElementById('new-file-btn').style.display = "none";
+            document.getElementById('save-btn-container').style.display = "none";
+            
+            const list = document.getElementById('fileList');
+            list.innerHTML = '<div style="padding: 10px; color: #888;">Fetching from server...</div>';
+            toggleSidebar(true);
 
-function saveCurrentFile() {
-    if(!editorInstance) return;
-    const content = editorInstance.getValue();
-    const tx = db.transaction(storeName, "readwrite");
-    tx.objectStore(storeName).put({ name: currentOpenFilename, content: content });
-    tx.oncomplete = () => {
-        term.innerHTML = `<span style="color:yellow;">[System] Saved ${currentOpenFilename} to Local History.</span>`;
-        // Refresh list if currently viewing history
-        if (document.getElementById('sidebar-title').innerText === "Local History") {
-            loadHistory();
+            try {
+                const response = await fetch('samples.json'); 
+                if (!response.ok) throw new Error("Database not found on server.");
+                
+                const data = await response.json();
+                list.innerHTML = '';
+
+                // Render Basic Category
+                if (data.basic && data.basic.length > 0) {
+                    list.innerHTML += `<div class="category-header">🟢 Basic Programs</div>`;
+                    data.basic.forEach(file => {
+                        const item = document.createElement('div');
+                        item.className = 'file-item';
+                        item.innerText = file.name;
+                        item.onclick = () => openFile(file.name, file.content);
+                        list.appendChild(item);
+                    });
+                }
+
+                // Render Advance Category
+                if (data.advance && data.advance.length > 0) {
+                    list.innerHTML += `<div class="category-header">🔴 Advance Programs</div>`;
+                    data.advance.forEach(file => {
+                        const item = document.createElement('div');
+                        item.className = 'file-item';
+                        item.innerText = file.name;
+                        item.onclick = () => openFile(file.name, file.content);
+                        list.appendChild(item);
+                    });
+                }
+            } catch (error) {
+                list.innerHTML = `<div style="padding: 10px; color: #FF5555; font-size: 13px;">Error: Could not load samples database. Ensure 'samples.json' is on your server.</div>`;
+            }
         }
-    };
-}
 
-function createNewFile() {
-    const name = prompt("Enter new filename for your history (e.g., test.san):", "new_file.san");
-    if (name) {
-        currentOpenFilename = name;
-        document.getElementById('currentFilename').innerText = name.toUpperCase();
-        editorInstance.setValue("// New Panini Script");
-        saveCurrentFile();
-    }
-}
+        // ---- FILE OPERATIONS ----
+        function openFile(name, content) {
+            currentOpenFilename = name;
+            document.getElementById('currentFilename').innerText = name.toUpperCase();
+            if(editorInstance) editorInstance.setValue(content);
+            
+            // Highlight active state in UI
+            document.querySelectorAll('.file-item').forEach(el => el.classList.remove('active'));
+            if(event && event.target) {
+                event.target.classList.add('active');
+            }
+        }
 
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('hidden');
+        function saveCurrentFile() {
+            if(!editorInstance) return;
+            const content = editorInstance.getValue();
+            const tx = db.transaction(storeName, "readwrite");
+            tx.objectStore(storeName).put({ name: currentOpenFilename, content: content });
+            tx.oncomplete = () => {
+                term.innerHTML = `<span style="color:yellow;">[System] Saved ${currentOpenFilename} to Local History.</span>\n`;
+                // Refresh list if currently viewing history
+                if (document.getElementById('sidebar-title').innerText === "Local History") {
+                    loadHistory();
+                }
+            };
+        }
+
+        function createNewFile() {
+            const name = prompt("Enter new filename for your history (e.g., test.san):", "new_file.san");
+            if (name) {
+                currentOpenFilename = name;
+                document.getElementById('currentFilename').innerText = name.toUpperCase();
+                editorInstance.setValue("// New Panini Script");
+                saveCurrentFile();
+            }
         }
 
         // ==========================================
@@ -373,36 +365,109 @@ function createNewFile() {
 
             document.getElementById('currentFilename').innerText = currentOpenFilename.toUpperCase();
 
-            // Auto-Correct Keylogger logic in Monaco
-            const translations = {
-                'if': 'यदि', 'else': 'तर्हि', 'while': 'यावत्',
-                'print': 'वद', 'store': 'स्थापय', 
-                'add': 'संयोजय', 'sub': 'न्यूनय', 'mul': 'गुणय', 'div': 'विभज',
-                'ask': 'पृच्छ', 'scan': 'पृच्छ'
+// ====================================================
+            // EXPERT AUTO-SYNTAX DICTIONARY & CURSOR TRACKER
+            // ====================================================
+            const autoSyntax = {
+                // I/O (Generates quotes, places cursor inside them)
+                'vad': { text: 'वद ""', dLine: 0, dCol: 4 }, 
+                'print': { text: 'वद ""', dLine: 0, dCol: 4 },
+                'cout': { text: 'वद ""', dLine: 0, dCol: 4 },
+        
+                // Inputs (Generates suffix, places cursor before it)
+                'pricch': { text: 'पृच्छ -मध्ये', dLine: 0, dCol: 6 }, 
+                'ask': { text: 'पृच्छ -मध्ये', dLine: 0, dCol: 6 },
+                'scan': { text: 'पृच्छ -मध्ये', dLine: 0, dCol: 6 },
+        
+                // Conditionals (Generates block, places cursor inside parentheses)
+                'yadi': { text: 'यदि (  ) {\n    \n}', dLine: 0, dCol: 6 }, 
+                'if': { text: 'यदि (  ) {\n    \n}', dLine: 0, dCol: 6 },
+                'yavat': { text: 'यावत् (  ) {\n    \n}', dLine: 0, dCol: 8 }, 
+                'while': { text: 'यावत् (  ) {\n    \n}', dLine: 0, dCol: 8 },
+        
+                // Else Block (Generates block, moves cursor to new indented line)
+                'tarhi': { text: 'तर्हि {\n    \n}', dLine: 1, dCol: 4 }, 
+                'else': { text: 'तर्हि {\n    \n}', dLine: 1, dCol: 4 },
+        
+                // Standard Actions (Auto-adds a trailing space, places cursor at end)
+                'sthapay': { text: 'स्थापय ', dLine: 0, dCol: 7 },
+                'store': { text: 'स्थापय ', dLine: 0, dCol: 7 },
+                'sanyojay': { text: 'संयोजय ', dLine: 0, dCol: 7 },
+                'add': { text: 'संयोजय ', dLine: 0, dCol: 7 },
+                'nyunay': { text: 'न्यूनय ', dLine: 0, dCol: 7 },
+                'sub': { text: 'न्यूनय ', dLine: 0, dCol: 7 },
+                'gunay': { text: 'गुणय ', dLine: 0, dCol: 5 },
+                'mul': { text: 'गुणय ', dLine: 0, dCol: 5 },
+                'vibhaj': { text: 'विभज ', dLine: 0, dCol: 5 },
+                'div': { text: 'विभज ', dLine: 0, dCol: 5 },
+                'madhye': { text: '-मध्ये ', dLine: 0, dCol: 7 }
             };
 
+            // Intelligent Autocorrect & Snippet Keylogger
             editorInstance.onKeyUp((e) => {
-                // Space or Enter
-                if (e.keyCode === 10 || e.keyCode === 3) {
+                // Monaco KeyCode 10 is the Spacebar. We ONLY trigger on space to prevent disrupting normal typing.
+                if (e.keyCode === 10) { 
                     const position = editorInstance.getPosition();
                     const lineContent = editorInstance.getModel().getLineContent(position.lineNumber);
-                    const beforeCursor = lineContent.substring(0, position.column - 2);
                     
-                    const match = beforeCursor.match(/\b([a-zA-Z]+)$/);
+                    // Grab the word typed right before the spacebar was pressed
+                    const textBeforeSpace = lineContent.substring(0, position.column - 2);
+                    const match = textBeforeSpace.match(/\b([a-zA-Z]+)$/);
+                    
                     if (match) {
                         const word = match[1].toLowerCase();
-                        if (translations[word]) {
+                        if (autoSyntax[word]) {
+                            const syntax = autoSyntax[word];
+                            
+                            // 1. Calculate where the English word started
+                            const startCol = position.column - 1 - match[1].length;
+                            
+                            // 2. Capture existing line indentation to format blocks cleanly
+                            const currentIndent = lineContent.substring(0, startCol - 1);
+                            const formattedText = syntax.text.replace(/\n/g, '\n' + currentIndent);
+                            
+                            // 3. Create a range that swallows the English word AND the typed space
                             const range = new monaco.Range(
-                                position.lineNumber, position.column - 1 - match[1].length,
-                                position.lineNumber, position.column - 1
+                                position.lineNumber, startCol,
+                                position.lineNumber, position.column
                             );
-                            editorInstance.executeEdits("autocorrect", [{ range: range, text: translations[word] }]);
+                            
+                            // 4. Inject the formatting directly into the undo history stack
+                            editorInstance.executeEdits("autosyntax", [{ range: range, text: formattedText }]);
+                            
+                            // 5. Mathematically calculate where the cursor needs to land
+                            let targetLine = position.lineNumber + syntax.dLine;
+                            let targetCol;
+                            
+                            if (syntax.dLine === 0) {
+                                // Same line adjustment (e.g. landing inside quotes)
+                                targetCol = startCol + syntax.dCol;
+                            } else {
+                                // Multi-line adjustment (e.g. landing inside a { } block)
+                                targetCol = currentIndent.length + 1 + syntax.dCol;
+                            }
+                            
+                            // 6. Snap the cursor to the perfect position
+                            editorInstance.setPosition({ lineNumber: targetLine, column: targetCol });
                         }
                     }
                 }
             });
-        });
+     
+        }); // <-- THIS WAS THE MISSING CLOSURE THAT BROKE THE SCRIPT!
 
+        // ==========================================
+        // GLOBAL FUNCTIONS (Must be outside the require block to work with HTML buttons)
+        // ==========================================
+
+        // Triggers native undo so the user can easily revert an autocorrect they didn't want
+        function undoLastAction() {
+            if (editorInstance) {
+                editorInstance.trigger('keyboard', 'undo', null);
+                editorInstance.focus();
+            }
+        }
+        
         function insertAtCursor(text) {
             if(!editorInstance) return;
             const position = editorInstance.getPosition();
