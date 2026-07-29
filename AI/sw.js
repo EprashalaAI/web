@@ -28,7 +28,8 @@ const ASSETS_TO_CACHE = [
     '/book.html',
     '/Eye.html',
     '/cv.html',
-    '/trip.html' 
+    '/trip.html'
+	'./sw.js'
 ];
 
 // Install Event: Pre-cache essential assets
