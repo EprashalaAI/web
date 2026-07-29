@@ -26,7 +26,7 @@
         }
         
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
-        body { background: var(--bg-dark); display: flex; flex-direction: column; height: 100vh; width: 100vw; overflow: auto; color: white; }
+        body { background: var(--bg-dark); display: flex; flex-direction: column; height: 100vh; width: 100vw; overflow: hidden; color: white; }
         
         /* Top Navigation & Menus */
         .menu-bar { background: var(--menu-bar); padding: 5px 10px; display: flex; gap: 10px; font-family: 'Courier New', monospace; font-size: 14px; font-weight: bold; border-bottom: 2px solid #999; flex-wrap: wrap; align-items: center; color: black; flex-shrink: 0; }
@@ -36,7 +36,7 @@
         .menu-item.magic { background: #9C27B0; color: white; }
         .menu-item.github { background: #24292e; color: white; }
         
-        .toolbar { background: var(--toolbar); padding: 8px; display: flex; gap: 6px; overflow-x: auto; white-space: nowrap; border-bottom: 2px solid #999; flex-shrink: 0; }
+        .toolbar { background: var(--toolbar); padding: 8px; display: flex; gap: 6px; overflow-x: scroll; white-space: nowrap; border-bottom: 2px solid #999; flex-shrink: 0; }
         .toolbar button { font-weight: bold; padding: 4px 10px; background: #D3D3D3; border: 1px solid #777; cursor: pointer; border-radius: 4px; box-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
         .toolbar button:active { box-shadow: inset 1px 1px 2px rgba(0,0,0,0.3); }
 
@@ -62,7 +62,7 @@
         #editor-container { flex: 1; background: var(--bg-dark); }
 
         /* Terminal */
-        .terminal { flex: 1; background: var(--bg-terminal); color: #00FF00; padding: 10px; font-family: 'Consolas', monospace; font-size: 15px; overflow-y: auto; white-space: pre-wrap; }
+        .terminal { flex: 1; background: var(--bg-terminal); color: #00FF00; padding: 10px; font-family: 'Consolas', monospace; font-size: 15px; overflow-y: scroll; white-space: pre-wrap; }
         .terminal .error { color: #FF5555; }
 
         /* Modals */
@@ -90,6 +90,73 @@
             .app-body, .menu-bar, .toolbar { display: none !important; }
         }
 	
+	/* =========================================
+           CUSTOM SCROLLBARS (FORCES VISIBILITY ON MOBILE)
+           ========================================= */
+        
+        /* Firefox Support */
+        * { scrollbar-width: auto; scrollbar-color: #555555 #2B2B2B; }
+
+        /* Chrome, Edge, Safari, Android WebKit Support */
+        ::-webkit-scrollbar {
+            width: 14px;  /* Width of vertical scrollbar */
+            height: 14px; /* Height of horizontal scrollbar */
+            background: #2B2B2B; /* Background of the scrollbar track */
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #1E1E1E; /* Dark track matching sidebar */
+            border-left: 1px solid #444;
+            border-top: 1px solid #444;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background-color: #555555; /* The draggable handle */
+            border-radius: 6px;
+            border: 3px solid #1E1E1E; /* Creates padding around the thumb */
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background-color: #777777; /* Lighter on hover/touch */
+        }
+        
+        ::-webkit-scrollbar-corner {
+            background: #1E1E1E; /* Where H and V scrollbars meet */
+        }
+	
+	/* =========================================
+           DRAGGABLE SPLIT PANE RESIZER
+           ========================================= */
+        .resizer {
+            background-color: #333;
+            width: 8px; /* Desktop width */
+            cursor: col-resize;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            box-shadow: inset 1px 0 2px rgba(0,0,0,0.5), inset -1px 0 2px rgba(255,255,255,0.1);
+        }
+        .resizer::after {
+            content: "⋮";
+            color: #888;
+            font-size: 18px;
+        }
+        /* Mobile Portrait Resizer Adaptation */
+        @media screen and (max-width: 767px) and (orientation: portrait) {
+            .resizer { width: 100%; height: 8px; cursor: row-resize; }
+            .resizer::after { content: "⋯"; }
+        }
+
+        /* =========================================
+           FORCE NATIVE SCROLLBARS (TERMINAL/SIDEBAR)
+           ========================================= */
+        .terminal, .file-list, .toolbar { overflow: scroll !important; }
+        ::-webkit-scrollbar { width: 14px !important; height: 14px !important; background: #2B2B2B !important; }
+        ::-webkit-scrollbar-track { background: #1E1E1E !important; border-left: 1px solid #444; border-top: 1px solid #444; }
+        ::-webkit-scrollbar-thumb { background-color: #555555 !important; border-radius: 6px !important; border: 3px solid #1E1E1E !important; }
+        ::-webkit-scrollbar-thumb:hover { background-color: #777777 !important; }
+        ::-webkit-scrollbar-corner { background: #1E1E1E !important; }
 	
 	</style>
 </head>
@@ -156,15 +223,18 @@
         </div>
 
         <!-- Editor & Terminal -->
-        <div class="workspace">
-            <div class="pane">
+		<div class="workspace" id="workspace">
+            <div class="pane" id="editor-pane" style="flex: 0 0 60%;">
                 <div class="pane-header">
                     <span id="currentFilename">MAIN.SAN</span>
                 </div>
                 <div id="editor-container"></div>
             </div>
             
-            <div class="pane" style="flex: 0.6;">
+            <!-- THE DRAGGABLE HANDLE -->
+            <div class="resizer" id="drag-resizer"></div>
+            
+            <div class="pane" id="terminal-pane" style="flex: 1 1 0%;">
                 <div class="pane-header">MESSAGE / OUTPUT</div>
                 <div class="terminal" id="terminal">System Ready...\n</div>
             </div>
@@ -390,14 +460,23 @@ int main() {
                 } catch(e) {}
             }
 
-            editorInstance = monaco.editor.create(document.getElementById('editor-container'), {
+			editorInstance = monaco.editor.create(document.getElementById('editor-container'), {
                 value: initialCode,
                 language: 'panini',
                 theme: 'panini-dark',
                 fontSize: 16,
                 fontFamily: 'Consolas, monospace',
                 minimap: { enabled: false },
-                automaticLayout: true
+                automaticLayout: true,
+                wordWrap: 'off', // REQUIRED: Forces the horizontal scrollbar to exist
+                scrollbar: {
+                    vertical: 'visible', // FORCES Vertical Bar
+                    horizontal: 'visible', // FORCES Horizontal Bar
+                    verticalHasArrows: true,
+                    horizontalHasArrows: true,
+                    verticalScrollbarSize: 14,
+                    horizontalScrollbarSize: 14
+                }
             });
 
             document.getElementById('currentFilename').innerText = currentOpenFilename.toUpperCase();
@@ -794,6 +873,76 @@ int main() {
                 editorInstance.layout();
             }
         });
+	// ==========================================
+        // DRAG TO RESIZE PANE LOGIC (Mouse & Touch)
+        // ==========================================
+        const resizer = document.getElementById('drag-resizer');
+        const leftPane = document.getElementById('editor-pane');
+        const rightPane = document.getElementById('terminal-pane');
+        const workspace = document.getElementById('workspace');
+        
+        let isResizing = false;
+        let isDesktopLayout = window.innerWidth >= 768 || window.matchMedia("(orientation: landscape)").matches;
+
+        const startResize = (e) => {
+            isResizing = true;
+            isDesktopLayout = window.innerWidth >= 768 || window.matchMedia("(orientation: landscape)").matches;
+            document.body.style.cursor = isDesktopLayout ? 'col-resize' : 'row-resize';
+            document.body.style.userSelect = 'none'; // Prevent text highlighting while dragging
+        };
+
+        const doResize = (e) => {
+            if (!isResizing) return;
+            
+            // Get mouse or touch coordinates
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const rect = workspace.getBoundingClientRect();
+
+            if (isDesktopLayout) {
+                // Horizontal Dragging (Desktop / Landscape)
+                const x = clientX - rect.left;
+                let percent = (x / rect.width) * 100;
+                
+                // Prevent shrinking too far (lock bounds between 15% and 85%)
+                if (percent < 15) percent = 15;
+                if (percent > 85) percent = 85;
+                
+                leftPane.style.flex = `0 0 ${percent}%`;
+                rightPane.style.flex = `1 1 0%`; // Terminal takes remaining space
+            } else {
+                // Vertical Dragging (Mobile Portrait)
+                const y = clientY - rect.top;
+                let percent = (y / rect.height) * 100;
+                
+                if (percent < 15) percent = 15;
+                if (percent > 85) percent = 85;
+                
+                leftPane.style.flex = `0 0 ${percent}%`;
+                rightPane.style.flex = `1 1 0%`;
+            }
+            
+            // Tell Monaco to recalculate its grid to fit the new pane size
+            if (editorInstance) editorInstance.layout();
+        };
+
+        const stopResize = () => {
+            if (isResizing) {
+                isResizing = false;
+                document.body.style.cursor = 'default';
+                document.body.style.userSelect = 'auto';
+            }
+        };
+
+        // Attach Mouse Events
+        resizer.addEventListener('mousedown', startResize);
+        document.addEventListener('mousemove', doResize);
+        document.addEventListener('mouseup', stopResize);
+
+        // Attach Touch Events for Mobile
+        resizer.addEventListener('touchstart', startResize, { passive: true });
+        document.addEventListener('touchmove', doResize, { passive: true });
+        document.addEventListener('touchend', stopResize);
 	
 	</script>
 </body>
