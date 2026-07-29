@@ -3,11 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Panini V11 - The Complete Web Edition</title>
+    <title>Panini V11 - Professional Web IDE</title>
+    
+    <!-- LZ-String for Shareable URLs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
+    
     <style>
         :root {
             --bg-dark: #0000AA;
-            --bg-editor: #0000AA;
+            --bg-sidebar: #1E1E1E;
             --bg-terminal: #000000;
             --toolbar: #E8E8E8;
             --menu-bar: #D3D3D3;
@@ -15,51 +19,47 @@
             --accent: #2196F3;
         }
         
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg-dark); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { background: var(--bg-dark); display: flex; flex-direction: column; height: 100vh; overflow: hidden; color: white; }
         
-        /* Menu & Toolbar */
-        .menu-bar { background: var(--menu-bar); padding: 5px 10px; display: flex; gap: 15px; font-family: 'Courier New', monospace; font-size: 14px; font-weight: bold; border-bottom: 2px solid #999; flex-wrap: wrap; }
-        .menu-item { cursor: pointer; padding: 3px 6px; border-radius: 3px; user-select: none; }
+        /* Top Navigation & Menus */
+        .menu-bar { background: var(--menu-bar); padding: 5px 10px; display: flex; gap: 10px; font-family: 'Courier New', monospace; font-size: 14px; font-weight: bold; border-bottom: 2px solid #999; flex-wrap: wrap; align-items: center; color: black; }
+        .menu-item { cursor: pointer; padding: 4px 8px; border-radius: 3px; user-select: none; text-decoration: none; color: black; display: flex; align-items: center; gap: 5px; }
         .menu-item:hover { background: #bbb; }
         .menu-item.primary { background: #4CAF50; color: white; }
         .menu-item.magic { background: #9C27B0; color: white; }
+        .menu-item.github { background: #24292e; color: white; }
         
         .toolbar { background: var(--toolbar); padding: 8px; display: flex; gap: 6px; overflow-x: auto; white-space: nowrap; border-bottom: 2px solid #999; }
         .toolbar button { font-weight: bold; padding: 4px 10px; background: #D3D3D3; border: 1px solid #777; cursor: pointer; border-radius: 4px; box-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
         .toolbar button:active { box-shadow: inset 1px 1px 2px rgba(0,0,0,0.3); }
 
-        /* Workspace (Split View) */
+        /* Layout */
+        .app-body { display: flex; flex: 1; overflow: hidden; }
+        
+        /* File Explorer Sidebar (IndexedDB) */
+        .sidebar { width: 250px; background: var(--bg-sidebar); border-right: 2px solid #555; display: flex; flex-direction: column; transition: transform 0.3s ease; }
+        .sidebar.hidden { display: none; }
+        .sidebar-header { background: #333; padding: 10px; font-weight: bold; font-size: 14px; border-bottom: 1px solid #555; display: flex; justify-content: space-between; }
+        .sidebar-header button { background: var(--accent); border: none; color: white; cursor: pointer; padding: 2px 6px; border-radius: 3px; }
+        .file-list { flex: 1; overflow-y: auto; padding: 10px; list-style: none; }
+        .file-item { padding: 6px 8px; cursor: pointer; border-radius: 4px; font-size: 14px; color: #ccc; margin-bottom: 4px; word-break: break-all; }
+        .file-item:hover { background: #333; color: white; }
+        .file-item.active { background: #0055ff; color: white; }
+
+        /* Workspace */
         .workspace { display: flex; flex: 1; flex-direction: column; overflow: hidden; }
         @media (min-width: 768px) { .workspace { flex-direction: row; } }
         
         .pane { flex: 1; display: flex; flex-direction: column; border: 1px solid #555; position: relative; }
-        .pane-header { background: var(--menu-bar); font-family: 'Courier New', monospace; font-weight: bold; padding: 3px 10px; font-size: 12px; }
+        .pane-header { background: var(--menu-bar); color: black; font-family: 'Courier New', monospace; font-weight: bold; padding: 3px 10px; font-size: 12px; display: flex; justify-content: space-between; }
         
-        /* Advanced Custom Code Editor */
-        .editor-container { flex: 1; position: relative; background: var(--bg-editor); overflow: hidden; }
-        .editor-textarea, .editor-highlight { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            padding: 10px; font-family: 'Consolas', monospace; font-size: 16px; 
-            line-height: 1.5; border: none; outline: none; white-space: pre; 
-            overflow: auto; word-wrap: normal;
-        }
-        .editor-textarea { 
-            color: transparent; background: transparent; caret-color: white; z-index: 2; resize: none; 
-        }
-        .editor-highlight { 
-            color: var(--text-light); z-index: 1; pointer-events: none; 
-        }
-        
-        /* Syntax Colors matches Python Tkinter specs */
-        .st-comment { color: #888888; }
-        .st-action { color: #FFB86C; font-weight: bold; }
-        .st-control { color: #F1FA8C; font-weight: bold; }
-        .st-destination { color: #8BE9FD; }
-        .st-string { color: #50FA7B; }
+        /* Monaco Editor Container */
+        #editor-container { flex: 1; background: var(--bg-dark); }
 
         /* Terminal */
         .terminal { flex: 1; background: var(--bg-terminal); color: #00FF00; padding: 10px; font-family: 'Consolas', monospace; font-size: 15px; overflow-y: auto; white-space: pre-wrap; }
+        .terminal .error { color: #FF5555; }
 
         /* Modals */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
@@ -67,87 +67,363 @@
         .modal-content textarea { width: 100%; height: 150px; background: #1E1E1E; color: white; border: 1px solid #555; padding: 10px; font-family: monospace; }
         .modal-btn-row { display: flex; gap: 10px; justify-content: flex-end; }
         .modal-btn { padding: 8px 15px; font-weight: bold; border: none; border-radius: 4px; cursor: pointer; }
-        .btn-close { background: #f44336; color: white; }
-        
-        /* Keyboard Drawer */
-        .keyboard { display: none; background: #2B2B2B; padding: 10px; flex-wrap: wrap; justify-content: center; gap: 4px; border-top: 2px solid #555; }
-        .kb-btn { background: #D3D3D3; border: none; padding: 10px; font-size: 16px; font-weight: bold; border-radius: 4px; cursor: pointer; min-width: 40px; }
-        .kb-btn.kw { background: #4CAF50; color: white; }
-    </style>
+		
+		/* Update Sidebar header to align the close button */
+.sidebar-header { background: #333; padding: 10px; font-weight: bold; font-size: 14px; border-bottom: 1px solid #555; display: flex; justify-content: space-between; align-items: center; }
+.sidebar-header .actions { display: flex; gap: 5px; }
+.sidebar-header button { background: var(--accent); border: none; color: white; cursor: pointer; padding: 4px 8px; border-radius: 3px; font-weight: bold; }
+.sidebar-header button.close-btn { background: #f44336; }
+
+/* Category Headers for Examples */
+.category-header { background: #444; color: #FFB86C; padding: 5px 10px; font-size: 12px; font-weight: bold; text-transform: uppercase; margin-top: 10px; }
+	
+	
+	
+	</style>
 </head>
 <body>
 
-    <!-- Menu Bar -->
-    <div class="menu-bar">
-        <div class="menu-item primary" onclick="runCode()">▶ Run (Ctrl+Enter)</div>
-        <div class="menu-item magic" onclick="openWand()">🪄 Magic Wand</div>
-        <div class="menu-item" onclick="toggleKeyboard()">⌨ Keyboard</div>
-        <div class="menu-item" onclick="formatEditor()">🧹 Format Code</div>
-    </div>
+    <!-- Main Menu -->
+<!-- Main Menu -->
+<div class="menu-bar">
+    <div class="menu-item primary" onclick="runCode()">▶ Run (Ctrl+Enter)</div>
+    
+    <!-- New Buttons for Database Loading -->
+    <div class="menu-item" onclick="loadExamples()" style="background: #FF9800; color: black;">📚 Examples</div>
+    <div class="menu-item" onclick="loadHistory()" style="background: #4CAF50; color: white;">🕒 History</div>
+    
+    <div class="menu-item magic" onclick="openWand()">🪄 Magic Wand</div>
+    <div class="menu-item" onclick="generateShareLink()">🔗 Share</div>
+    
+    <!-- External Navigation -->
+    <a href="readme.html" target="_blank" class="menu-item">📄 Readme</a>
+    <a href="help.html" target="_blank" class="menu-item">❓ Help</a>
+    <a href="https://github.com/MarleshPramodShinde/Panini" target="_blank" class="menu-item github">
+        <svg height="16" width="16" fill="white" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+        Windows App
+    </a>
+</div>
 
     <!-- Shortcut Toolbar -->
     <div class="toolbar" id="toolbar">
-        <button onclick="insertText('वद ')">वद</button>
-        <button onclick="insertText('पृच्छ ')">पृच्छ</button>
-        <button onclick="insertText('स्थापय ')">स्थापय</button>
-        <button onclick="insertText('संयोजय ')">संयोजय (+)</button>
-        <button onclick="insertText('न्यूनय ')">न्यूनय (-)</button>
-        <button onclick="insertText('गुणय ')">गुणय (*)</button>
-        <button onclick="insertText('विभज ')">विभज (/)</button>
-        <button onclick="insertText('यदि ')">यदि</button>
-        <button onclick="insertText('तर्हि ')">तर्हि</button>
-        <button onclick="insertText('यावत् ')">यावत्</button>
-        <button onclick="insertText('-मध्ये ')">-मध्ये</button>
+        <button onclick="insertAtCursor('वद ')">वद</button>
+        <button onclick="insertAtCursor('पृच्छ ')">पृच्छ</button>
+        <button onclick="insertAtCursor('स्थापय ')">स्थापय</button>
+        <button onclick="insertAtCursor('संयोजय ')">संयोजय (+)</button>
+        <button onclick="insertAtCursor('न्यूनय ')">न्यूनय (-)</button>
+        <button onclick="insertAtCursor('गुणय ')">गुणय (*)</button>
+        <button onclick="insertAtCursor('विभज ')">विभज (/)</button>
+        <button onclick="insertAtCursor('यदि ')">यदि</button>
+        <button onclick="insertAtCursor('तर्हि ')">तर्हि</button>
+        <button onclick="insertAtCursor('यावत् ')">यावत्</button>
+        <button onclick="insertAtCursor('-मध्ये ')">-मध्ये</button>
     </div>
 
-    <!-- Workspace -->
-    <div class="workspace">
-        <div class="pane">
-            <div class="pane-header">MAIN.SAN</div>
-            <div class="editor-container">
-                <textarea id="code-editor" class="editor-textarea" spellcheck="false" oninput="syncEditor()" onscroll="syncScroll()" onkeyup="handleKeylogger(event)">// PANINI V11 : The Complete Edition
+    <!-- Application Body -->
+    <div class="app-body">
+        
+    <!-- Local History / Server Examples Sidebar -->
+<div class="sidebar hidden" id="sidebar">
+    <div class="sidebar-header">
+        <span id="sidebar-title">Local History</span>
+        <div class="actions">
+            <button onclick="createNewFile()" id="new-file-btn">+ New</button>
+            <button class="close-btn" onclick="toggleSidebar(false)">✖</button>
+        </div>
+    </div>
+    <div class="file-list" id="fileList"></div>
+    <div style="padding: 10px;" id="save-btn-container">
+        <button style="width:100%; padding: 6px; font-weight:bold; background: #2196F3; color: white; border: none; cursor: pointer;" onclick="saveCurrentFile()">💾 Save to History</button>
+    </div>
+</div>
 
-वद "Welcome to Panini Web Ide!"
-</textarea>
-                <div id="code-highlight" class="editor-highlight"></div>
+        <!-- Editor & Terminal -->
+        <div class="workspace">
+            <div class="pane">
+                <div class="pane-header">
+                    <span id="currentFilename">MAIN.SAN</span>
+                </div>
+                <div id="editor-container"></div>
+            </div>
+            
+            <div class="pane" style="flex: 0.6;">
+                <div class="pane-header">MESSAGE / OUTPUT</div>
+                <div class="terminal" id="terminal">System Ready...\n</div>
             </div>
         </div>
-        <div class="pane" style="flex: 0.6;">
-            <div class="pane-header">MESSAGE / OUTPUT</div>
-            <div class="terminal" id="terminal">System Ready...</div>
-        </div>
     </div>
-
-    <!-- Keyboard Drawer -->
-    <div class="keyboard" id="keyboard"></div>
 
     <!-- Magic Wand Modal -->
     <div class="modal" id="wandModal">
         <div class="modal-content">
             <h3>🪄 C/C++ to Sanskrit Transpiler</h3>
-            <p>Paste School C/C++ Code Here:</p>
             <textarea id="cppCode">#include <iostream>
 using namespace std;
 int main() {
-    int age;
-    cout << "Enter your age: ";
-    cin >> age;
+    int age = 20;
     if (age > 18) {
-        cout << "Adult: " << age;
+        cout << "Adult";
     }
 }</textarea>
-            <div class="terminal" id="cppOutput" style="height: 100px; padding: 5px; font-size: 13px;">C++ Compiler Output...</div>
             <div class="modal-btn-row">
-                <button class="modal-btn" style="background:#2196F3; color:white;" onclick="compileCPP()">▶ Run C++ (G++)</button>
                 <button class="modal-btn" style="background:#9C27B0; color:white;" onclick="transpileCode()">✨ Convert to Panini</button>
-                <button class="modal-btn btn-close" onclick="document.getElementById('wandModal').style.display='none'">Close</button>
+                <button class="modal-btn" style="background:#f44336; color:white;" onclick="document.getElementById('wandModal').style.display='none'">Close</button>
             </div>
         </div>
     </div>
 
+    <!-- Monaco Editor Loader -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.39.0/min/vs/loader.min.js"></script>
+    
     <script>
+        let editorInstance;
+        let currentOpenFilename = "main.san";
+        const term = document.getElementById('terminal');
+// ==========================================
+// 1. DATABASE & SIDEBAR LOGIC
+// ==========================================
+const dbName = "PaniniHistory";
+const storeName = "scripts";
+let db;
+
+// Open Local IndexedDB for History
+const request = indexedDB.open(dbName, 1);
+request.onupgradeneeded = (e) => {
+    db = e.target.result;
+    if (!db.objectStoreNames.contains(storeName)) {
+        db.createObjectStore(storeName, { keyPath: "name" });
+    }
+};
+request.onsuccess = (e) => { db = e.target.result; };
+
+function toggleSidebar(forceShow) {
+    const sidebar = document.getElementById('sidebar');
+    if (forceShow === true) sidebar.classList.remove('hidden');
+    else if (forceShow === false) sidebar.classList.add('hidden');
+    else sidebar.classList.toggle('hidden');
+}
+
+// ---- LOAD LOCAL HISTORY ----
+function loadHistory() {
+    document.getElementById('sidebar-title').innerText = "Local History";
+    document.getElementById('new-file-btn').style.display = "inline-block";
+    document.getElementById('save-btn-container').style.display = "block";
+    
+    const list = document.getElementById('fileList');
+    list.innerHTML = '';
+    
+    const tx = db.transaction(storeName, "readonly");
+    tx.objectStore(storeName).openCursor().onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor) {
+            const li = document.createElement('div');
+            li.className = `file-item ${cursor.value.name === currentOpenFilename ? 'active' : ''}`;
+            li.innerText = cursor.value.name;
+            li.onclick = () => openFile(cursor.value.name, cursor.value.content);
+            list.appendChild(li);
+            cursor.continue();
+        } else if (list.innerHTML === '') {
+            list.innerHTML = '<div style="padding: 10px; color: #888; font-size: 13px;">No history saved yet.</div>';
+        }
+    };
+    toggleSidebar(true);
+}
+
+// ---- LOAD SERVER EXAMPLES DB ----
+async function loadExamples() {
+    document.getElementById('sidebar-title').innerText = "Server Examples";
+    document.getElementById('new-file-btn').style.display = "none";
+    document.getElementById('save-btn-container').style.display = "none";
+    
+    const list = document.getElementById('fileList');
+    list.innerHTML = '<div style="padding: 10px; color: #888;">Fetching from server...</div>';
+    toggleSidebar(true);
+
+    try {
+        // NOTE: Browsers cannot directly read an SQLite '.db' file without WebAssembly. 
+        // Best practice for static websites is to save your 42 samples as a JSON file named 'samples.json' on your server.
+        const response = await fetch('samples.json'); 
+        if (!response.ok) throw new Error("Database not found on server.");
+        
+        const data = await response.json();
+        list.innerHTML = '';
+
+        // Render Basic Category
+        if (data.basic && data.basic.length > 0) {
+            list.innerHTML += `<div class="category-header">🟢 Basic Programs</div>`;
+            data.basic.forEach(file => {
+                const item = document.createElement('div');
+                item.className = 'file-item';
+                item.innerText = file.name;
+                item.onclick = () => openFile(file.name, file.content);
+                list.appendChild(item);
+            });
+        }
+
+        // Render Advance Category
+        if (data.advance && data.advance.length > 0) {
+            list.innerHTML += `<div class="category-header">🔴 Advance Programs</div>`;
+            data.advance.forEach(file => {
+                const item = document.createElement('div');
+                item.className = 'file-item';
+                item.innerText = file.name;
+                item.onclick = () => openFile(file.name, file.content);
+                list.appendChild(item);
+            });
+        }
+    } catch (error) {
+        list.innerHTML = `<div style="padding: 10px; color: #FF5555; font-size: 13px;">Error: Could not load samples database. Ensure 'samples.json' is on your server.</div>`;
+    }
+}
+
+// ---- FILE OPERATIONS ----
+function openFile(name, content) {
+    currentOpenFilename = name;
+    document.getElementById('currentFilename').innerText = name.toUpperCase();
+    if(editorInstance) editorInstance.setValue(content);
+    
+    // Highlight active state in UI
+    document.querySelectorAll('.file-item').forEach(el => el.classList.remove('active'));
+    event.target.classList.add('active');
+}
+
+function saveCurrentFile() {
+    if(!editorInstance) return;
+    const content = editorInstance.getValue();
+    const tx = db.transaction(storeName, "readwrite");
+    tx.objectStore(storeName).put({ name: currentOpenFilename, content: content });
+    tx.oncomplete = () => {
+        term.innerHTML = `<span style="color:yellow;">[System] Saved ${currentOpenFilename} to Local History.</span>`;
+        // Refresh list if currently viewing history
+        if (document.getElementById('sidebar-title').innerText === "Local History") {
+            loadHistory();
+        }
+    };
+}
+
+function createNewFile() {
+    const name = prompt("Enter new filename for your history (e.g., test.san):", "new_file.san");
+    if (name) {
+        currentOpenFilename = name;
+        document.getElementById('currentFilename').innerText = name.toUpperCase();
+        editorInstance.setValue("// New Panini Script");
+        saveCurrentFile();
+    }
+}
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('hidden');
+        }
+
         // ==========================================
-        // 1. PANINI AST ENGINE & LEXER PORT 
+        // 2. MONACO EDITOR CONFIGURATION
+        // ==========================================
+        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.39.0/min/vs' }});
+        require(['vs/editor/editor.main'], function() {
+            
+            // Register Custom Language
+            monaco.languages.register({ id: 'panini' });
+            monaco.languages.setMonarchTokensProvider('panini', {
+                tokenizer: {
+                    root: [
+                        [/\/\/.*$/, 'comment'],
+                        [/"[^"]*"/, 'string'],
+                        [/\b(स्थापय|वद|संयोजय|न्यूनय|गुणय|विभज|पृच्छ)\b/, 'keyword.action'],
+                        [/\b(यदि|तर्हि|यावत्)\b/, 'keyword.control'],
+                        [/[a-zA-Z_\u0900-\u097F]+-मध्ये/, 'type.destination'],
+                        [/[0-9०-९]+/, 'number']
+                    ]
+                }
+            });
+
+            // Set up Tkinter matching colors
+            monaco.editor.defineTheme('panini-dark', {
+                base: 'vs-dark',
+                inherit: true,
+                rules: [
+                    { token: 'comment', foreground: '888888' },
+                    { token: 'string', foreground: '50FA7B' },
+                    { token: 'keyword.action', foreground: 'FFB86C', fontStyle: 'bold' },
+                    { token: 'keyword.control', foreground: 'F1FA8C', fontStyle: 'bold' },
+                    { token: 'type.destination', foreground: '8BE9FD' },
+                    { token: 'number', foreground: 'BD93F9' }
+                ],
+                colors: { 'editor.background': '#0000AA' }
+            });
+
+            // Handle URL Sharing
+            const hash = window.location.hash;
+            let initialCode = "// PANINI V11 : Professional Edition\n\nवद \"Welcome!\"";
+            if (hash && hash.startsWith('#code=')) {
+                try {
+                    initialCode = LZString.decompressFromEncodedURIComponent(hash.replace('#code=', ''));
+                    currentOpenFilename = "shared_snippet.san";
+                } catch(e) {}
+            }
+
+            editorInstance = monaco.editor.create(document.getElementById('editor-container'), {
+                value: initialCode,
+                language: 'panini',
+                theme: 'panini-dark',
+                fontSize: 16,
+                fontFamily: 'Consolas, monospace',
+                minimap: { enabled: false },
+                automaticLayout: true
+            });
+
+            document.getElementById('currentFilename').innerText = currentOpenFilename.toUpperCase();
+
+            // Auto-Correct Keylogger logic in Monaco
+            const translations = {
+                'if': 'यदि', 'else': 'तर्हि', 'while': 'यावत्',
+                'print': 'वद', 'store': 'स्थापय', 
+                'add': 'संयोजय', 'sub': 'न्यूनय', 'mul': 'गुणय', 'div': 'विभज',
+                'ask': 'पृच्छ', 'scan': 'पृच्छ'
+            };
+
+            editorInstance.onKeyUp((e) => {
+                // Space or Enter
+                if (e.keyCode === 10 || e.keyCode === 3) {
+                    const position = editorInstance.getPosition();
+                    const lineContent = editorInstance.getModel().getLineContent(position.lineNumber);
+                    const beforeCursor = lineContent.substring(0, position.column - 2);
+                    
+                    const match = beforeCursor.match(/\b([a-zA-Z]+)$/);
+                    if (match) {
+                        const word = match[1].toLowerCase();
+                        if (translations[word]) {
+                            const range = new monaco.Range(
+                                position.lineNumber, position.column - 1 - match[1].length,
+                                position.lineNumber, position.column - 1
+                            );
+                            editorInstance.executeEdits("autocorrect", [{ range: range, text: translations[word] }]);
+                        }
+                    }
+                }
+            });
+        });
+
+        function insertAtCursor(text) {
+            if(!editorInstance) return;
+            const position = editorInstance.getPosition();
+            editorInstance.executeEdits("toolbar", [{
+                range: new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column),
+                text: text
+            }]);
+            editorInstance.focus();
+        }
+
+        function generateShareLink() {
+            if(!editorInstance) return;
+            const code = editorInstance.getValue();
+            const compressed = LZString.compressToEncodedURIComponent(code);
+            const url = window.location.origin + window.location.pathname + "#code=" + compressed;
+            navigator.clipboard.writeText(url);
+            alert("Shareable link copied to clipboard!");
+        }
+
+        // ==========================================
+        // 3. ENGINE WITH LINE-ACCURATE ERROR TRACKING
         // ==========================================
         class SanskritEngine {
             constructor() {
@@ -182,23 +458,20 @@ int main() {
             tokenize(code) {
                 let tokens = [];
                 let pos = 0;
+                let currentLine = 1;
                 while (pos < code.length) {
                     let match = null;
                     let textSlice = code.slice(pos);
-                    
                     for (let [kind, regex] of this.specs) {
                         let m = regex.exec(textSlice);
-                        if (m && m.index === 0) {
-                            match = { kind, val: m[0] };
-                            break;
-                        }
+                        if (m && m.index === 0) { match = { kind, val: m[0], line: currentLine }; break; }
                     }
-                    if (!match) throw new Error(`व्याकरण दोषः (Syntax Error) near pos ${pos}`);
+                    if (!match) throw new Error(`व्याकरण दोषः (Syntax Error) near Line ${currentLine}`);
                     pos += match.val.length;
-
+                    
+                    if (match.kind === 'NEWLINE') currentLine++;
                     if (match.kind === 'SKIP' || match.kind === 'COMMENT') continue;
 
-                    // Convert Devanagari numerals to standard numbers floats/ints
                     if (match.kind === 'NUMBER') {
                         let eng = match.val.replace(/[०-९]/g, d => '०१२३४५६७८९'.indexOf(d));
                         match.val = eng.includes('.') ? parseFloat(eng) : parseInt(eng, 10);
@@ -214,6 +487,8 @@ int main() {
                 let block = [];
                 let depth = 0;
                 let i = startIdx;
+                let errorLine = tokens[startIdx]?.line || "Unknown";
+                
                 while (i < tokens.length && tokens[i].kind !== openTok) i++;
                 i++;
                 while (i < tokens.length) {
@@ -225,7 +500,7 @@ int main() {
                     block.push(tokens[i]);
                     i++;
                 }
-                throw new Error(`दोषः (Error): Missing closing ${closeTok}`);
+                throw new Error(`दोषः (Error): Missing closing structure starting around Line ${errorLine}`);
             }
 
             evaluateCondition(tokens, memory) {
@@ -234,66 +509,41 @@ int main() {
                     let left = ['NUMBER', 'STRING'].includes(clean[0].kind) ? clean[0].val : (memory[clean[0].val] || 0);
                     let op = clean[1].val;
                     let right = ['NUMBER', 'STRING'].includes(clean[2].kind) ? clean[2].val : (memory[clean[2].val] || 0);
-
                     if (op === '==') return left == right;
                     if (op === '!=') return left != right;
-                    
-                    let ln = parseFloat(left), rn = parseFloat(right);
-                    if (op === '>') return ln > rn;
-                    if (op === '<') return ln < rn;
-                    if (op === '>=') return ln >= rn;
-                    if (op === '<=') return ln <= rn;
+                    if (op === '>') return parseFloat(left) > parseFloat(right);
+                    if (op === '<') return parseFloat(left) < parseFloat(right);
+                    if (op === '>=') return parseFloat(left) >= parseFloat(right);
+                    if (op === '<=') return parseFloat(left) <= parseFloat(right);
                 }
                 return false;
             }
 
             executeKarakaLine(tokens, memory) {
                 if (!tokens.length) return;
+                const getVal = (v) => ['NUMBER', 'STRING'].includes(v.kind) ? v.val : (memory[v.val] || 0);
                 
-                const getTokens = (kind) => tokens.filter(t => t.kind === kind);
-                const has = (kind) => tokens.some(t => t.kind === kind);
-                
-                let destToken = tokens.find(t => t.kind === 'DESTINATION');
+                let dest = tokens.find(t => t.kind === 'DESTINATION');
                 let vals = tokens.filter(t => ['NUMBER', 'STRING', 'ID'].includes(t.kind) && t.kind !== 'DESTINATION');
+                let has = (k) => tokens.some(t => t.kind === k);
                 
-                let getVal = (v) => ['NUMBER', 'STRING'].includes(v.kind) ? v.val : (memory[v.val] || 0);
+                let lineStr = tokens[0].line; // for potential runtime error tracking
 
-                if (has('PRICCHA') && destToken) {
-                    let destVar = destToken.val.replace('-मध्ये', '');
-                    let userInput = prompt(`Enter value for '${destVar}':`, "0") || "0";
+                if (has('PRICCHA') && dest) {
+                    let destVar = dest.val.replace('-मध्ये', '');
+                    let userInput = prompt(`Execution Line ${lineStr} requires input for '${destVar}':`, "0") || "0";
                     let num = parseFloat(userInput);
                     memory[destVar] = isNaN(num) ? userInput : num;
                 }
-                else if (has('STHAPAYA') && destToken && vals.length > 0) {
-                    memory[destToken.val.replace('-मध्ये', '')] = getVal(vals[0]);
-                }
-                else if (has('ADD') && destToken && vals.length >= 2) {
+                else if (has('STHAPAYA') && dest && vals.length) { memory[dest.val.replace('-मध्ये', '')] = getVal(vals[0]); }
+                else if (has('ADD') && dest && vals.length > 1) { memory[dest.val.replace('-मध्ये', '')] = (typeof getVal(vals[0])==='string') ? String(getVal(vals[0])) + String(getVal(vals[1])) : getVal(vals[0]) + getVal(vals[1]); }
+                else if (has('SUB') && dest && vals.length > 1) { memory[dest.val.replace('-मध्ये', '')] = Number(getVal(vals[0])) - Number(getVal(vals[1])); }
+                else if (has('MUL') && dest && vals.length > 1) { memory[dest.val.replace('-मध्ये', '')] = Number(getVal(vals[0])) * Number(getVal(vals[1])); }
+                else if (has('DIV') && dest && vals.length > 1) { 
                     let v1 = getVal(vals[0]), v2 = getVal(vals[1]);
-                    memory[destToken.val.replace('-मध्ये', '')] = (typeof v1 === 'string' || typeof v2 === 'string') ? String(v1) + String(v2) : v1 + v2;
+                    memory[dest.val.replace('-मध्ये', '')] = (Number(v2) === 0) ? "Error: Div by 0" : (Number.isInteger(v1) && Number.isInteger(v2)) ? Math.trunc(v1/v2) : v1/v2; 
                 }
-                else if (has('SUB') && destToken && vals.length >= 2) {
-                    memory[destToken.val.replace('-मध्ये', '')] = Number(getVal(vals[0])) - Number(getVal(vals[1]));
-                }
-                else if (has('MUL') && destToken && vals.length >= 2) {
-                    memory[destToken.val.replace('-मध्ये', '')] = Number(getVal(vals[0])) * Number(getVal(vals[1]));
-                }
-                else if (has('DIV') && destToken && vals.length >= 2) {
-                    let v1 = getVal(vals[0]), v2 = getVal(vals[1]);
-                    if (Number(v2) === 0) {
-                        memory[destToken.val.replace('-मध्ये', '')] = "Error: Div by 0";
-                    } else {
-                        // Integer Truncation Division mimicking C++
-                        if (Number.isInteger(v1) && Number.isInteger(v2)) {
-                            memory[destToken.val.replace('-मध्ये', '')] = Math.trunc(v1 / v2);
-                        } else {
-                            memory[destToken.val.replace('-मध्ये', '')] = v1 / v2;
-                        }
-                    }
-                }
-                else if (has('VADA')) {
-                    let parts = vals.map(v => getVal(v));
-                    this.outputLog.push(parts.join(""));
-                }
+                else if (has('VADA')) { this.outputLog.push(vals.map(v => getVal(v)).join("")); }
             }
 
             runAst(tokens, memory) {
@@ -307,16 +557,13 @@ int main() {
                         let trueBlock = this.extractBlock(tokens, cond.nextIdx, 'LBRACE', 'RBRACE');
                         let falseBlock = [];
                         let lookahead = trueBlock.nextIdx;
-                        
                         while (lookahead < tokens.length && tokens[lookahead].kind === 'NEWLINE') lookahead++;
                         if (lookahead < tokens.length && tokens[lookahead].kind === 'TARHI') {
                             let fb = this.extractBlock(tokens, lookahead + 1, 'LBRACE', 'RBRACE');
                             falseBlock = fb.block;
                             i = fb.nextIdx;
-                        } else {
-                            i = trueBlock.nextIdx;
-                        }
-
+                        } else { i = trueBlock.nextIdx; }
+                        
                         if (this.evaluateCondition(cond.block, memory)) this.runAst(trueBlock.block, memory);
                         else if (falseBlock.length) this.runAst(falseBlock, memory);
                         continue;
@@ -330,15 +577,13 @@ int main() {
                             this.runAst(loopBlock.block, memory);
                             safety++;
                         }
+                        if(safety >= 2000) this.outputLog.push(`[System Warning] Infinite loop prevented at Line ${tokens[i].line}`);
                         i = loopBlock.nextIdx;
                         continue;
                     }
 
                     let lineTokens = [];
-                    while (i < tokens.length && !['NEWLINE', 'LBRACE', 'RBRACE'].includes(tokens[i].kind)) {
-                        lineTokens.push(tokens[i]);
-                        i++;
-                    }
+                    while (i < tokens.length && !['NEWLINE', 'LBRACE', 'RBRACE'].includes(tokens[i].kind)) { lineTokens.push(tokens[i]); i++; }
                     this.executeKarakaLine(lineTokens, memory);
                 }
             }
@@ -347,203 +592,50 @@ int main() {
                 this.outputLog = [];
                 try {
                     let tokens = this.tokenize(code);
-                    let memory = {};
-                    this.runAst(tokens, memory);
+                    this.runAst(tokens, {});
                     return this.outputLog.length ? this.outputLog.join('\n') : "Program finished with no output.";
                 } catch (e) {
-                    return `Execution Error: ${e.message}`;
+                    return `<span class="error">${e.message}</span>`;
                 }
             }
         }
-        
+
         const engine = new SanskritEngine();
 
-        // ==========================================
-        // 2. IDE UI LOGIC & SYNTAX HIGHLIGHTING
-        // ==========================================
-        const editor = document.getElementById('code-editor');
-        const highlight = document.getElementById('code-highlight');
-        const term = document.getElementById('terminal');
-
-        function syncEditor() {
-            let text = editor.value;
-            // Apply Regex Highlights
-            text = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            
-            // Highlight rules based strictly on Python's RetroIDE tagging
-            text = text.replace(/(\/\/.*)/g, '<span class="st-comment">$1</span>');
-            text = text.replace(/("[^"]*")/g, '<span class="st-string">$1</span>');
-            text = text.replace(/\b(स्थापय|वद|संयोजय|न्यूनय|गुणय|विभज|पृच्छ)\b/g, '<span class="st-action">$1</span>');
-            text = text.replace(/\b(यदि|तर्हि|यावत्)\b/g, '<span class="st-control">$1</span>');
-            text = text.replace(/([a-zA-Z_\u0900-\u097F]+-मध्ये)/g, '<span class="st-destination">$1</span>');
-            
-            highlight.innerHTML = text + "<br>"; // Fix last line scrolling
-        }
-
-        function syncScroll() {
-            highlight.scrollTop = editor.scrollTop;
-            highlight.scrollLeft = editor.scrollLeft;
-        }
-
         function runCode() {
-            term.innerText = "Executing...\n";
-            setTimeout(() => { term.innerText = engine.execute(editor.value); }, 50);
+            if(!editorInstance) return;
+            term.innerHTML = "Executing...\n";
+            setTimeout(() => { term.innerHTML = engine.execute(editorInstance.getValue()); }, 50);
         }
 
         // ==========================================
-        // 3. AUTO-CORRECT KEYLOGGER 
-        // ==========================================
-        const translations = {
-            'if': 'यदि', 'else': 'तर्हि', 'while': 'यावत्',
-            'print': 'वद', 'printf': 'वद', 'cout': 'वद',
-            'store': 'स्थापय', 
-            'add': 'संयोजय', 'plus': 'संयोजय',
-            'sub': 'न्यूनय', 'minus': 'न्यूनय',
-            'mul': 'गुणय', 'multiply': 'गुणय',
-            'div': 'विभज', 'divide': 'विभज',
-            'ask': 'पृच्छ', 'scan': 'पृच्छ', 'scanf': 'पृच्छ', 'cin': 'पृच्छ'
-        };
-
-        function handleKeylogger(e) {
-            if ([' ', 'Enter', '(', '{'].includes(e.key)) {
-                let val = editor.value;
-                let caret = editor.selectionStart;
-                let before = val.substring(0, caret - 1);
-                
-                // Find last English word typed
-                let match = before.match(/\b([a-zA-Z]+)$/);
-                if (match) {
-                    let word = match[1].toLowerCase();
-                    if (translations[word]) {
-                        let sans = translations[word];
-                        editor.value = before.substring(0, match.index) + sans + val.substring(caret - 1);
-                        editor.selectionStart = editor.selectionEnd = match.index + sans.length + 1;
-                    }
-                }
-            }
-            syncEditor();
-        }
-
-        function insertText(text) {
-            let start = editor.selectionStart;
-            editor.value = editor.value.substring(0, start) + text + editor.value.substring(editor.selectionEnd);
-            editor.selectionStart = editor.selectionEnd = start + text.length;
-            editor.focus();
-            syncEditor();
-        }
-
-        // ==========================================
-        // 4. DEVANAGARI KEYBOARD
-        // ==========================================
-        const chars = [
-            'अ','आ','इ','ई','उ','ऊ','ऋ','ए','ऐ','ओ','औ',
-            'क','ख','ग','घ','ङ','च','छ','ज','झ','ञ',
-            'ट','ठ','ड','ढ','ण','त','थ','द','ध','न',
-            'प','फ','ब','भ','म','य','र','ल','व','श',
-            'ष','स','ह','क्ष','त्र','ज्ञ','श्र',
-            'ा','ि','ी','ु','ू','ृ','े','ै','ो','ौ','ं','ः','्',
-            '०','१','२','३','४','५','६','७','८','९',
-            'यदि','तर्हि','यावत्','वद','पृच्छ','स्थापय','संयोजय','न्यूनय','गुणय','विभज','-मध्ये'
-        ];
-        const kbDraw = document.getElementById('keyboard');
-        chars.forEach(c => {
-            let btn = document.createElement('button');
-            btn.className = 'kb-btn ' + (c.length > 1 ? 'kw' : '');
-            btn.innerText = c;
-            btn.onclick = () => insertText(c);
-            kbDraw.appendChild(btn);
-        });
-
-        function toggleKeyboard() {
-            kbDraw.style.display = kbDraw.style.display === 'flex' ? 'none' : 'flex';
-        }
-
-        // ==========================================
-        // 5. C/C++ MAGIC WAND TRANSPILER
+        // 4. TRANSPILER MODAL LOGIC
         // ==========================================
         function openWand() { document.getElementById('wandModal').style.display = 'flex'; }
         
-        async function compileCPP() {
-            const code = document.getElementById('cppCode').value;
-            const out = document.getElementById('cppOutput');
-            out.innerText = "Connecting to Public Compiler API (Piston)...\nCompiling...";
-            try {
-                const res = await fetch('https://emkc.org/api/v2/piston/execute', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ language: "c++", version: "10.2.0", files: [{ content: code }] })
-                });
-                const data = await res.json();
-                out.innerText = data.run.output || data.compile.output || "Error compiling.";
-            } catch (e) {
-                out.innerText = "Network Error: Could not reach compiler API.";
-            }
-        }
-
         function transpileCode() {
             let code = document.getElementById('cppCode').value;
-            
-            // Clean boilerplates
-            code = code.replace(/#include\s*<.*?>\n?/g, '');
-            code = code.replace(/using\s+namespace\s+std\s*;\n?/g, '');
-            code = code.replace(/(int|void)\s+main\s*\(\)\s*\{/g, '');
-            code = code.replace(/return\s+0\s*;/g, '');
+            code = code.replace(/#include\s*<.*?>\n?/g, '').replace(/using\s+namespace\s+std\s*;\n?/g, '').replace(/(int|void)\s+main\s*\(\)\s*\{/g, '').replace(/return\s+0\s*;/g, '');
             let lastBrace = code.lastIndexOf('}');
             if (lastBrace !== -1) code = code.substring(0, lastBrace) + code.substring(lastBrace + 1);
 
-            let lines = code.split('\n');
             let outLines = [];
-
-            for (let line of lines) {
+            for (let line of code.split('\n')) {
                 if (!line.trim()) continue;
-                
-                // Basic IO
                 line = line.replace(/cout\s*<<\s*(.*?);/g, (m, p1) => 'वद ' + p1.replace(/<</g, ' ').replace(/endl/g, '').trim());
                 line = line.replace(/cin\s*>>\s*([a-zA-Z0-9_]+)\s*;/g, 'पृच्छ $1-मध्ये');
-                line = line.replace(/printf\s*\(\s*"([^"]*?)(?:%[a-zA-Z])([^"]*?)"\s*,\s*([a-zA-Z0-9_]+)\s*\)\s*;/g, 'वद "$1" $3 "$2"');
-                line = line.replace(/printf\s*\(\s*"([^"]*)"\s*\)\s*;/g, 'वद "$1"');
-                line = line.replace(/scanf\s*\(\s*"[^"]*"\s*,\s*&?([a-zA-Z0-9_]+)\s*\)\s*;/g, 'पृच्छ $1-मध्ये');
-
-                // Flow Control
-                line = line.replace(/if\s*\((.*?)\)/g, 'यदि ( $1 )');
-                line = line.replace(/else/g, 'तर्हि');
-                line = line.replace(/while\s*\((.*?)\)/g, 'यावत् ( $1 )');
-
-                // Advanced Math mappings
-                if (line.includes('*') && line.includes('=')) {
-                    line = line.replace(/(?:int\s+|float\s+|double\s+)?([a-zA-Z_]\w*)\s*=\s*([a-zA-Z0-9_.]+)\s*\*\s*([a-zA-Z0-9_.]+)\s*;?/g, '$2 $3 गुणय $1-मध्ये');
-                } else if (line.includes('/') && line.includes('=')) {
-                    line = line.replace(/(?:int\s+|float\s+|double\s+)?([a-zA-Z_]\w*)\s*=\s*([a-zA-Z0-9_.]+)\s*\/\s*([a-zA-Z0-9_.]+)\s*;?/g, '$2 $3 विभज $1-मध्ये');
-                } else if (line.includes('+') && line.includes('=')) {
-                    line = line.replace(/(?:int\s+|char\s+\*?\s*|float\s+|string\s+)?([a-zA-Z_]\w*)\s*=\s*([a-zA-Z0-9_".]+)\s*\+\s*([a-zA-Z0-9_".]+)\s*;?/g, '$2 $3 संयोजय $1-मध्ये');
-                } else if (line.includes('-') && line.includes('=')) {
-                    line = line.replace(/(?:int\s+|float\s+|double\s+)?([a-zA-Z_]\w*)\s*=\s*([a-zA-Z0-9_.]+)\s*-\s*([a-zA-Z0-9_.]+)\s*;?/g, '$2 $3 न्यूनय $1-मध्ये');
-                } else if (line.includes('=') && !line.includes('==')) {
-                    // Standard Assign
-                    let matches = [...line.matchAll(/([a-zA-Z_]\w*)\s*=\s*("[^"]*"|[a-zA-Z0-9_.]+)/g)];
-                    if (matches.length > 0) {
-                        line = matches.map(m => `${m[2]} ${m[1]}-मध्ये स्थापय`).join('\n');
-                    }
-                } else if (line.match(/(int|float|double|string)\s+([a-zA-Z_]\w*)\s*;/)) {
-                    // Init zero
-                    let matches = [...line.matchAll(/([a-zA-Z_]\w*)/g)].map(m => m[0]).filter(v => !['int','float','double','string'].includes(v));
-                    line = matches.map(v => `० ${v}-मध्ये स्थापय`).join('\n');
-                }
+                line = line.replace(/if\s*\((.*?)\)/g, 'यदि ( $1 )').replace(/else/g, 'तर्हि').replace(/while\s*\((.*?)\)/g, 'यावत् ( $1 )');
+                
+                let matches = [...line.matchAll(/([a-zA-Z_]\w*)\s*=\s*("[^"]*"|[a-zA-Z0-9_.]+)/g)];
+                if (matches.length > 0 && !line.includes('==')) line = matches.map(m => `${m[2]} ${m[1]}-मध्ये स्थापय`).join('\n');
                 outLines.push(line);
             }
-            
             document.getElementById('wandModal').style.display = 'none';
-            editor.value = outLines.join('\n').trim();
-            syncEditor();
+            if(editorInstance) editorInstance.setValue(outLines.join('\n').trim());
         }
 
-        // Init Editor Highlighting
-        syncEditor();
-
-        // Keyboard Shortcut setup
-        document.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); runCode(); }
-        });
+        // Keyboard Shortcut run
+        document.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); runCode(); } });
     </script>
 </body>
 </html>
