@@ -426,6 +426,24 @@ function updateLeftSliderLabels() {
     }
 }
 
+
+function calculateAutoSpeed() {
+    let ageStr = UI.age.value || localStorage.getItem('edu_age');
+    let stdStr = UI.selStd.value || localStorage.getItem('edu_std');
+
+    let finalAge = 10; // Default fallback
+    
+    if (ageStr) {
+        finalAge = parseInt(ageStr);
+    } else if (stdStr) {
+        finalAge = parseInt(stdStr) + 5; // Standard + 5 estimation
+    }
+
+    if (finalAge >= 1 && finalAge <= 4) return "0.8";
+    if (finalAge >= 5 && finalAge <= 7) return "0.9";
+    return "1.0"; // 8 and above
+}
+
 // --- 4. DATA MANAGEMENT & VAULT ---
 function loadData() {
     UI.role.value = localStorage.getItem('edu_role') || "Student";
@@ -461,14 +479,21 @@ function loadData() {
         UI.selSub.value = savedSub;
     }
 
-    if (UI.fontSizeSlider) {
-        UI.fontSizeSlider.value = localStorage.getItem('edu_font_size') || "14";
-        UI.ttsSpeedSlider.value = localStorage.getItem('edu_tts_speed') || "1.0";
-        const savedHighlight = localStorage.getItem('edu_highlight');
-        UI.highlightCheckbox.checked = savedHighlight === 'true'; 
-        updateLeftSliderLabels();
-    }
-
+		if (UI.fontSizeSlider) {
+				UI.fontSizeSlider.value = localStorage.getItem('edu_font_size') || "14";
+				
+				// Check for saved speed. If none exists, calculate it based on age and save it to local storage.
+				const savedSpeed = localStorage.getItem('edu_tts_speed');
+				if (savedSpeed) {
+					UI.ttsSpeedSlider.value = savedSpeed;
+				} else {
+					UI.ttsSpeedSlider.value = calculateAutoSpeed();
+					localStorage.setItem('edu_tts_speed', UI.ttsSpeedSlider.value);
+				}
+				
+				const savedHighlight = localStorage.getItem('edu_highlight');	
+		}
+				
     if (UI.remember.checked) {
         const savedHist = localStorage.getItem('edu_all_history');
         if (savedHist) {
@@ -781,6 +806,18 @@ function setupEventListeners() {
         });
     }
 
+	UI.age.addEventListener('change', () => {
+        UI.ttsSpeedSlider.value = calculateAutoSpeed();
+        updateLeftSliderLabels();
+        saveData();
+    });
+    
+    UI.selStd.addEventListener('change', () => { 
+        updateSubjectsList(); 
+        UI.ttsSpeedSlider.value = calculateAutoSpeed();
+        updateLeftSliderLabels();
+        saveData(); 
+    });
 
     UI.advToggle.onclick = openSettings;
     UI.btnCloseSet.onclick = closeSettings;
