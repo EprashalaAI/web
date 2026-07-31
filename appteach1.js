@@ -184,6 +184,7 @@ const UI = {
 let chatHistory = [];
 let recognition = null;
 let isListening = false; 
+let isManuallyPaused = false;
 let pendingImageData = null; 
 let cropper = null;
 let state = { isProcessing: false, isMuted: false, lastAIMessage: "" };
@@ -464,7 +465,7 @@ function loadData() {
         UI.fontSizeSlider.value = localStorage.getItem('edu_font_size') || "14";
         UI.ttsSpeedSlider.value = localStorage.getItem('edu_tts_speed') || "1.0";
         const savedHighlight = localStorage.getItem('edu_highlight');
-        UI.highlightCheckbox.checked = savedHighlight !== 'false'; 
+        UI.highlightCheckbox.checked = savedHighlight === 'true'; 
         updateLeftSliderLabels();
     }
 
@@ -1272,12 +1273,10 @@ function resetCurrentTTS() {
         const textSpan = currentActiveBtn.querySelector('.play-text');
         if (textSpan) textSpan.innerText = "Play";
         
-        // Snap the button back to its original place in the chat log
         currentActiveBtn.classList.remove('is-floating', ...floatClasses);
         currentActiveBtn = null;
     }
     
-    // Fallback array sweep to maintain clean alignment bounds
     document.querySelectorAll('.msg-play-btn.is-floating').forEach(el => {
         el.classList.remove('is-floating', ...floatClasses);
         el.classList.remove('text-green-400');
@@ -1304,6 +1303,7 @@ function resetCurrentTTS() {
     ttsStatus = 'STOPPED';
     globalWordIndex = 0;
     window.currentPlayingText = "";
+    isManuallyPaused = false;
     setTimeout(updateStopButtonVisibility, 50); 
 }
 
@@ -1321,24 +1321,45 @@ window.toggleSingleMessagePlay = (btnElem) => {
             updateStopButtonVisibility(); 
             
             if (activeEngine === 'cloud') {
+                isManuallyPaused = false;
                 if (currentAudio && currentAudio.src) currentAudio.play();
+                startHighlightTimer(msgId);
             } else {
-                window.speechSynthesis.resume();
+                // NATIVE RESUME FIX: Keep isManuallyPaused = true until cancel() finishes
+                window.speechSynthesis.cancel();
+                
+                setTimeout(() => {
+                    isManuallyPaused = false; 
+                    
+                    if (highlightTimer) {
+                        clearTimeout(highlightTimer);
+                        highlightTimer = null; 
+                    }
+
+                    const remainingText = wordsArray.slice(globalWordIndex).join(" ");
+                    if (remainingText.trim()) {
+                        playNativeAudioSegment(remainingText, msgId, UI.selMedium.value === 'Marathi' ? 'mr-IN' : 'en-IN');
+                    } else {
+                        resetCurrentTTS();
+                    }
+                }, 100);
             }
-            
-            startHighlightTimer(msgId);
             return;
         } else if (ttsStatus === 'PLAYING') {
             ttsStatus = 'PAUSED';
+            isManuallyPaused = true; // Protect pause state from triggering reset handlers
             updatePlayBtnUI(btnElem, false);
             
             if (activeEngine === 'cloud') {
                 if (currentAudio) currentAudio.pause();
             } else {
-                window.speechSynthesis.pause();
+                window.speechSynthesis.cancel(); // Stop Native TTS safely
             }
             
-            if (highlightTimer) clearTimeout(highlightTimer);
+            if (highlightTimer) {
+                clearTimeout(highlightTimer);
+                highlightTimer = null;
+            }
             return;
         }
     }
@@ -1347,6 +1368,7 @@ window.toggleSingleMessagePlay = (btnElem) => {
     currentActiveBtn = btnElem;
     window.currentPlayingText = plainText;
     ttsStatus = 'PLAYING';
+    isManuallyPaused = false;
     updatePlayBtnUI(btnElem, true);
     updateStopButtonVisibility(); 
 
@@ -1358,28 +1380,45 @@ window.toggleSingleMessagePlay = (btnElem) => {
 };
 
 // -- ENGINE 1: NATIVE OS TTS --
+// -- ENGINE 1: NATIVE OS TTS --
 function playNativeAudio(fullText, btnElement) {
     const msgId = btnElement.getAttribute('data-msg-id');
     const langCode = UI.selMedium.value === 'Marathi' ? 'mr-IN' : 'en-IN';
     
     wordsArray = fullText.match(/\S+/g) || [];
     globalWordIndex = 0;
+    
+    playNativeAudioSegment(fullText, msgId, langCode);
+}
 
-    const utterance = new SpeechSynthesisUtterance(fullText);
+function playNativeAudioSegment(text, msgId, langCode) {
+    if (!text.trim()) return;
+    const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = langCode;
     utterance.rate = parseFloat(UI.ttsSpeedSlider ? UI.ttsSpeedSlider.value : 1.0);
     
     utterance.onstart = () => {
-        startHighlightTimer(msgId);
+        if (!highlightTimer) startHighlightTimer(msgId);
     };
 
     utterance.onend = () => {
-        resetCurrentTTS();
+        if (isManuallyPaused) return; // Ignore if paused manually
+        
+        setTimeout(() => {
+            if (isManuallyPaused) return;
+            
+            if (globalWordIndex >= wordsArray.length - 2) {
+                resetCurrentTTS();
+            } else if (ttsStatus === 'PLAYING') {
+                const remainingText = wordsArray.slice(globalWordIndex).join(" ");
+                playNativeAudioSegment(remainingText, msgId, langCode);
+            }
+        }, 150);
     };
 
     utterance.onerror = (e) => {
-        console.warn("Native TTS Error:", e);
-        resetCurrentTTS();
+        if (isManuallyPaused) return; // Ignore cancel errors
+        if (e.error !== 'canceled' && e.error !== 'interrupted') resetCurrentTTS();
     };
 
     window.speechSynthesis.speak(utterance);
