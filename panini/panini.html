@@ -184,24 +184,31 @@
     </div>
 
     <!-- Main Menu -->
+<!-- Main Menu -->
     <div class="menu-bar">
+        <!-- NEW: Hidden File Uploader -->
+        <input type="file" id="fileUploader" style="display: none;" accept=".san,.txt,.cpp,.c" onchange="openFileFromDisk(event)">
+
+        <!-- NEW: Standard File Operations -->
+        <div class="menu-item" style="background: #607D8B; color: white;" onclick="createNewFile()">📄 New</div>
+        <div class="menu-item" style="background: #00BCD4; color: white;" onclick="document.getElementById('fileUploader').click()">📂 Open</div>
+        <div class="menu-item" style="background: #FF5722; color: white;" onclick="downloadCurrentFile()">💾 Save (PC)</div>
+
         <div class="menu-item primary" onclick="runCode()">▶ Run (Ctrl+Enter)</div>
         
         <!-- Buttons for Database Loading -->
         <div class="menu-item" onclick="loadExamples()" style="background: #FF9800; color: black;">📚 Examples</div>
         <div class="menu-item" onclick="loadHistory()" style="background: #4CAF50; color: white;">🕒 History</div>
         
+        <!-- Magic & AI -->
         <div class="menu-item magic" onclick="openWand()">🪄 Magic Wand</div>
-		<div class="menu-item" style="background: #E91E63; color: white;" onclick="openAIModal()">🤖 AI Assistant</div>
+        <div class="menu-item" style="background: #E91E63; color: white;" onclick="openAIModal()">🤖 AI Assistant</div>
         <div class="menu-item" onclick="generateShareLink()">🔗 Share</div>
         
         <!-- External Navigation -->
         <a href="readme.html" target="_blank" class="menu-item">📄 Readme</a>
         <a href="help.html" target="_blank" class="menu-item">❓ Help</a>
-        <a href="https://github.com/MarleshPramodShinde/Panini" target="_blank" class="menu-item github">
-            <svg height="16" width="16" fill="white" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
-            Windows App
-        </a>
+        <a href="https://github.com/MarleshPramodShinde/Panini" target="_blank" class="menu-item github">Windows App</a>
     </div>
 
     <!-- Shortcut Toolbar -->
@@ -409,7 +416,8 @@ int main() {
                 list.innerHTML = `<div style="padding: 10px; color: #FF5555; font-size: 13px;">Error: Could not load samples database. Ensure 'samples.json' is on your server.</div>`;
             }
         }
-
+		
+		
         // ---- FILE OPERATIONS ----
         function openFile(name, content) {
             currentOpenFilename = name;
@@ -437,14 +445,81 @@ int main() {
             };
         }
 
-        function createNewFile() {
-            const name = prompt("Enter new filename for your history (e.g., test.san):", "new_file.san");
+		function createNewFile() {
+            const name = prompt("Enter new filename (e.g., test.san):", "new_file.san");
             if (name) {
-                currentOpenFilename = name;
-                document.getElementById('currentFilename').innerText = name.toUpperCase();
-                editorInstance.setValue("// New Panini Script");
+                // Ensure the filename has an extension
+                const safeName = name.includes('.') ? name : name + '.san';
+                
+                currentOpenFilename = safeName;
+                document.getElementById('currentFilename').innerText = safeName.toUpperCase();
+                editorInstance.setValue("// New Panini Script\n\n");
+                
+                // Save it to the database
                 saveCurrentFile();
+                
+                // Crucial: Open the sidebar so the user can see they now have multiple files!
+                loadHistory(); 
             }
+        }
+		
+		// ==========================================
+        // LOCAL PC FILE OPERATIONS (Open / Download)
+        // ==========================================
+        function downloadCurrentFile() {
+            if (!editorInstance) return;
+            const content = editorInstance.getValue();
+            
+            // Create a virtual file (Blob) 
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            
+            // Create a hidden anchor tag and force a click to trigger download
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = currentOpenFilename || 'program.san';
+            document.body.appendChild(a);
+            a.click();
+            
+            // Clean up
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            // Auto-save to internal browser history too
+            saveCurrentFile();
+            
+            const term = document.getElementById('terminal');
+            term.innerHTML += `<span style="color:#00FF00;">[System] Downloaded ${currentOpenFilename} to your PC successfully.</span>\n`;
+            term.scrollTop = term.scrollHeight;
+        }
+
+        function openFileFromDisk(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                currentOpenFilename = file.name;
+                document.getElementById('currentFilename').innerText = currentOpenFilename.toUpperCase();
+                
+                if (editorInstance) {
+                    editorInstance.setValue(content);
+                }
+                
+                // Immediately save this new file to the internal history sidebar
+                saveCurrentFile();
+                
+                // Open the history sidebar so the user sees their file list
+                loadHistory(); 
+                
+                const term = document.getElementById('terminal');
+                term.innerHTML = `<span style="color:#00FF00;">[System] Opened ${currentOpenFilename} from PC.</span>\n`;
+                
+                // Reset the input so the user can open the exact same file again later if needed
+                event.target.value = '';
+            };
+            reader.readAsText(file);
         }
 
         // ==========================================
