@@ -192,6 +192,7 @@
         <div class="menu-item" onclick="loadHistory()" style="background: #4CAF50; color: white;">🕒 History</div>
         
         <div class="menu-item magic" onclick="openWand()">🪄 Magic Wand</div>
+		<div class="menu-item" style="background: #E91E63; color: white;" onclick="openAIModal()">🤖 AI Assistant</div>
         <div class="menu-item" onclick="generateShareLink()">🔗 Share</div>
         
         <!-- External Navigation -->
@@ -277,6 +278,23 @@ int main() {
                 <button class="modal-btn" style="background:#2196F3; color:white;" onclick="compileCPP()">▶ Run C++ (G++)</button>
                 <button class="modal-btn" style="background:#9C27B0; color:white;" onclick="transpileCode()">✨ Convert to Panini</button>
                 <button class="modal-btn" style="background:#f44336; color:white;" onclick="document.getElementById('wandModal').style.display='none'">Close</button>
+            </div>
+        </div>
+    </div>
+	
+	<!-- AI Assistant Modal -->
+    <div class="modal" id="aiModal">
+        <div class="modal-content">
+            <h3>🤖 Panini AI Assistant</h3>
+            <p style="font-size: 13px; color: #ccc;">Describe the program you want to write (e.g., "Find if a number is even or odd")</p>
+            
+            <textarea id="aiPrompt" style="height: 80px; padding: 10px; font-family: sans-serif; font-size: 14px;" placeholder="Type your logic here..."></textarea>
+            
+            <div class="terminal" id="aiOutput" style="display:none; height: 60px; padding: 10px; font-size: 14px; border: 1px solid #555;"></div>
+            
+            <div class="modal-btn-row">
+                <button class="modal-btn" style="background:#E91E63; color:white;" onclick="generateAICode()" id="aiRunBtn">✨ Generate Code</button>
+                <button class="modal-btn" style="background:#f44336; color:white;" onclick="document.getElementById('aiModal').style.display='none'">Cancel</button>
             </div>
         </div>
     </div>
@@ -745,26 +763,24 @@ class SanskritEngine {
                 return false;
             }
 
-executeKarakaLine(tokens, memory) {
+	async executeKarakaLine(tokens, memory) {
         if (!tokens.length) return;
         const getVal = (v) => ['NUMBER', 'STRING', 'SATYA', 'ASATYA'].includes(v.kind) ? v.val : (memory[v.val] || 0);
         
         let dest = tokens.find(t => t.kind === 'DESTINATION');
         let vals = tokens.filter(t => ['NUMBER', 'STRING', 'ID', 'SATYA', 'ASATYA'].includes(t.kind) && t.kind !== 'DESTINATION');
         let has = (k) => tokens.some(t => t.kind === k);
-        
-        let lineStr = tokens[0].line; 
 
         if (has('PRICCHA') && dest) {
             let destVar = dest.val.replace(/(?:-|\s*)मध्ये/, '');
-            let userInput = prompt(`Execution Line ${lineStr} requires input for '${destVar}':`, "0") || "0";
+            
+            // Wait for the custom terminal input instead of the browser prompt
+            let userInput = await getTerminalInput(`> Enter value for '${destVar}':`);
             let num = parseFloat(userInput);
             memory[destVar] = isNaN(num) ? userInput : num;
         }
         else if (has('STHAPAYA') && dest) { 
             let destVar = dest.val.replace(/(?:-|\s*)मध्ये/, '');
-            
-            // Array Creation Logic
             if (has('LBRACKET') && has('RBRACKET')) {
                 let startIdx = tokens.findIndex(t => t.kind === 'LBRACKET');
                 let endIdx = tokens.findIndex(t => t.kind === 'RBRACKET');
@@ -796,132 +812,163 @@ executeKarakaLine(tokens, memory) {
         else if (has('POW') && dest && vals.length > 1) {
             memory[dest.val.replace(/(?:-|\s*)मध्ये/, '')] = Math.pow(Number(getVal(vals[0])), Number(getVal(vals[1])));
         }
-        else if (has('VADA')) { this.outputLog.push(vals.map(v => getVal(v)).join("")); }
-    }
-
-            runAst(tokens, memory) {
-                let i = 0;
-                while (i < tokens.length) {
-                    let kind = tokens[i].kind;
-                    if (kind === 'NEWLINE') { i++; continue; }
-
-                    if (kind === 'YADI') {
-                        let cond = this.extractBlock(tokens, i, 'LPAREN', 'RPAREN');
-                        let trueBlock = this.extractBlock(tokens, cond.nextIdx, 'LBRACE', 'RBRACE');
-                        let falseBlock = [];
-                        let lookahead = trueBlock.nextIdx;
-                        while (lookahead < tokens.length && tokens[lookahead].kind === 'NEWLINE') lookahead++;
-                        if (lookahead < tokens.length && tokens[lookahead].kind === 'TARHI') {
-                            let fb = this.extractBlock(tokens, lookahead + 1, 'LBRACE', 'RBRACE');
-                            falseBlock = fb.block;
-                            i = fb.nextIdx;
-                        } else { i = trueBlock.nextIdx; }
-                        
-                        if (this.evaluateCondition(cond.block, memory)) this.runAst(trueBlock.block, memory);
-                        else if (falseBlock.length) this.runAst(falseBlock, memory);
-                        continue;
-                    }
-
-                    if (kind === 'YAVAT') {
-                        let cond = this.extractBlock(tokens, i, 'LPAREN', 'RPAREN');
-                        let loopBlock = this.extractBlock(tokens, cond.nextIdx, 'LBRACE', 'RBRACE');
-                        let safety = 0;
-                        while (this.evaluateCondition(cond.block, memory) && safety < 2000) {
-                            this.runAst(loopBlock.block, memory);
-                            safety++;
-                        }
-                        if(safety >= 2000) this.outputLog.push(`[System Warning] Infinite loop prevented at Line ${tokens[i].line}`);
-                        i = loopBlock.nextIdx;
-                        continue;
-                    }
-					
-					// --- DO-WHILE LOOP (कुरु ... यावत्) ---
-if (kind === 'KURU') {
-    let loopBlock = this.extractBlock(tokens, i, 'LBRACE', 'RBRACE');
-    let lookahead = loopBlock.nextIdx;
-    
-    while (lookahead < tokens.length && tokens[lookahead].kind === 'NEWLINE') lookahead++;
-    
-    if (lookahead < tokens.length && tokens[lookahead].kind === 'YAVAT') {
-        let cond = this.extractBlock(tokens, lookahead + 1, 'LPAREN', 'RPAREN');
-        let safety = 0;
-        
-        do {
-            this.runAst(loopBlock.block, memory);
-            safety++;
-            if(safety >= 2000) break;
-        } while (this.evaluateCondition(cond.block, memory));
-        
-        if (safety >= 2000) this.outputLog.push("[System Warning] Infinite do-while loop prevented.");
-        i = cond.nextIdx;
-    } else {
-        throw new Error("व्याकरण दोषः (Syntax Error): 'कुरु' (do) requires a matching 'यावत्' (while) condition.");
-    }
-    continue;
-}
-
-// --- FOR LOOP (कृते) ---
-if (kind === 'KRITE') {
-    let parenBlock = this.extractBlock(tokens, i, 'LPAREN', 'RPAREN');
-    let bodyBlock = this.extractBlock(tokens, parenBlock.nextIdx, 'LBRACE', 'RBRACE');
-    
-    let parts = [];
-    let current = [];
-    for (let t of parenBlock.block) {
-        if (t.kind === 'SEMI') {
-            parts.push(current);
-            current = [];
-        } else {
-            current.push(t);
+        else if (has('VADA')) { 
+            // Print directly to terminal in real-time
+            const term = document.getElementById('terminal');
+            term.innerHTML += vals.map(v => getVal(v)).join("") + "\n";
+            term.scrollTop = term.scrollHeight; 
         }
     }
-    parts.push(current);
+
+    async runAst(tokens, memory) {
+        let i = 0;
+        const term = document.getElementById('terminal');
+        
+        while (i < tokens.length) {
+            let kind = tokens[i].kind;
+            if (kind === 'NEWLINE') { i++; continue; }
+
+            if (kind === 'YADI') {
+                let cond = this.extractBlock(tokens, i, 'LPAREN', 'RPAREN');
+                let trueBlock = this.extractBlock(tokens, cond.nextIdx, 'LBRACE', 'RBRACE');
+                let falseBlock = [];
+                let lookahead = trueBlock.nextIdx;
+                while (lookahead < tokens.length && tokens[lookahead].kind === 'NEWLINE') lookahead++;
+                if (lookahead < tokens.length && tokens[lookahead].kind === 'TARHI') {
+                    let fb = this.extractBlock(tokens, lookahead + 1, 'LBRACE', 'RBRACE');
+                    falseBlock = fb.block;
+                    i = fb.nextIdx;
+                } else { i = trueBlock.nextIdx; }
+                
+                if (this.evaluateCondition(cond.block, memory)) {
+                    await this.runAst(trueBlock.block, memory);
+                } else if (falseBlock.length) {
+                    await this.runAst(falseBlock, memory);
+                }
+                continue;
+            }
+
+            if (kind === 'YAVAT') {
+                let cond = this.extractBlock(tokens, i, 'LPAREN', 'RPAREN');
+                let loopBlock = this.extractBlock(tokens, cond.nextIdx, 'LBRACE', 'RBRACE');
+                let safety = 0;
+                while (this.evaluateCondition(cond.block, memory) && safety < 2000) {
+                    await this.runAst(loopBlock.block, memory);
+                    safety++;
+                }
+                if(safety >= 2000) term.innerHTML += `[System Warning] Infinite loop prevented.\n`;
+                i = loopBlock.nextIdx;
+                continue;
+            }
+            
+            if (kind === 'KURU') {
+                let loopBlock = this.extractBlock(tokens, i, 'LBRACE', 'RBRACE');
+                let lookahead = loopBlock.nextIdx;
+                while (lookahead < tokens.length && tokens[lookahead].kind === 'NEWLINE') lookahead++;
+                
+                if (lookahead < tokens.length && tokens[lookahead].kind === 'YAVAT') {
+                    let cond = this.extractBlock(tokens, lookahead + 1, 'LPAREN', 'RPAREN');
+                    let safety = 0;
+                    do {
+                        await this.runAst(loopBlock.block, memory);
+                        safety++;
+                        if(safety >= 2000) break;
+                    } while (this.evaluateCondition(cond.block, memory));
+                    
+                    if (safety >= 2000) term.innerHTML += "[System Warning] Infinite do-while loop prevented.\n";
+                    i = cond.nextIdx;
+                } else {
+                    throw new Error("व्याकरण दोषः (Syntax Error): 'कुरु' (do) requires a matching 'यावत्' (while) condition.");
+                }
+                continue;
+            }
+
+            if (kind === 'KRITE') {
+                let parenBlock = this.extractBlock(tokens, i, 'LPAREN', 'RPAREN');
+                let bodyBlock = this.extractBlock(tokens, parenBlock.nextIdx, 'LBRACE', 'RBRACE');
+                
+                let parts = [];
+                let current = [];
+                for (let t of parenBlock.block) {
+                    if (t.kind === 'SEMI') { parts.push(current); current = []; } 
+                    else { current.push(t); }
+                }
+                parts.push(current);
+                
+                if (parts.length === 3) {
+                    let [initTokens, condTokens, stepTokens] = parts;
+                    await this.executeKarakaLine(initTokens, memory);
+                    let safety = 0;
+                    
+                    while (this.evaluateCondition(condTokens, memory) && safety < 2000) {
+                        await this.runAst(bodyBlock.block, memory);
+                        await this.executeKarakaLine(stepTokens, memory);
+                        safety++;
+                    }
+                    if (safety >= 2000) term.innerHTML += "[System Warning] Infinite for loop prevented.\n";
+                } else {
+                    throw new Error("व्याकरण दोषः (Syntax Error): 'कृते' (for) requires exactly 3 parts separated by semicolons.");
+                }
+                i = bodyBlock.nextIdx;
+                continue;
+            }
+
+            let lineTokens = [];
+            while (i < tokens.length && !['NEWLINE', 'LBRACE', 'RBRACE'].includes(tokens[i].kind)) { lineTokens.push(tokens[i]); i++; }
+            await this.executeKarakaLine(lineTokens, memory);
+			}
+		}
     
-    if (parts.length === 3) {
-        let [initTokens, condTokens, stepTokens] = parts;
-        
-        this.executeKarakaLine(initTokens, memory);
-        let safety = 0;
-        
-        while (this.evaluateCondition(condTokens, memory) && safety < 2000) {
-            this.runAst(bodyBlock.block, memory);
-            this.executeKarakaLine(stepTokens, memory);
-            safety++;
+
+    async execute(code) {
+        const term = document.getElementById('terminal');
+        term.innerHTML = "System Ready...\n-----------------\n"; 
+        try {
+            let tokens = this.tokenize(code);
+            await this.runAst(tokens, {});
+            term.innerHTML += "\n<span style='color: #4CAF50;'>[Program Finished]</span>\n";
+        } catch (e) {
+            term.innerHTML += `\n<span class="error">${e.message}</span>\n`;
         }
-        
-        if (safety >= 2000) this.outputLog.push("[System Warning] Infinite for loop prevented.");
-    } else {
-        throw new Error("व्याकरण दोषः (Syntax Error): 'कृते' (for) requires exactly 3 parts separated by semicolons.");
+        term.scrollTop = term.scrollHeight;
     }
-    
-    i = bodyBlock.nextIdx;
-    continue;
-}
+        }
 
-                    let lineTokens = [];
-                    while (i < tokens.length && !['NEWLINE', 'LBRACE', 'RBRACE'].includes(tokens[i].kind)) { lineTokens.push(tokens[i]); i++; }
-                    this.executeKarakaLine(lineTokens, memory);
-                }
-            }
-
-            execute(code) {
-                this.outputLog = [];
-                try {
-                    let tokens = this.tokenize(code);
-                    this.runAst(tokens, {});
-                    return this.outputLog.length ? this.outputLog.join('\n') : "Program finished with no output.";
-                } catch (e) {
-                    return `<span class="error">${e.message}</span>`;
-                }
-            }
+// ==========================================
+        // ASYNC TERMINAL INPUT HELPER
+        // ==========================================
+        function getTerminalInput(promptMsg) {
+            return new Promise((resolve) => {
+                const term = document.getElementById('terminal');
+                const inputId = 'term_input_' + Date.now();
+                
+                // Inject the prompt and a styled input field directly into the terminal
+                term.innerHTML += `<span>${promptMsg} </span><input type="text" id="${inputId}" autocomplete="off" style="background: transparent; border: none; border-bottom: 1px dashed #00FF00; color: #00FF00; outline: none; font-family: 'Consolas', monospace; font-size: 15px; width: 150px;">\n`;
+                term.scrollTop = term.scrollHeight; // Auto-scroll to bottom
+                
+                const inputEl = document.getElementById(inputId);
+                inputEl.focus();
+                
+                inputEl.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        const val = inputEl.value;
+                        // Replace the input box with plain text to lock it in the terminal history
+                        inputEl.outerHTML = val + '\n';
+                        resolve(val || "0");
+                    }
+                });
+            });
         }
 
         const engine = new SanskritEngine();
 
-        function runCode() {
+		async function runCode() {
             if(!editorInstance) return;
+            const term = document.getElementById('terminal');
             term.innerHTML = "Executing...\n";
-            setTimeout(() => { term.innerHTML = engine.execute(editorInstance.getValue()); }, 50);
+            
+            // Execute the code asynchronously
+            await engine.execute(editorInstance.getValue());
         }
 
         
@@ -988,6 +1035,96 @@ if (kind === 'KRITE') {
         // Keyboard Shortcut run
         document.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); runCode(); } });
     // ==========================================
+        // AI ASSISTANT LOGIC
+        // ==========================================
+        function openAIModal() { 
+            document.getElementById('aiModal').style.display = 'flex'; 
+            document.getElementById('aiPrompt').value = '';
+            document.getElementById('aiOutput').style.display = 'none';
+        }
+
+async function generateAICode() {
+            const userText = document.getElementById('aiPrompt').value.trim();
+            if (!userText) return;
+
+            const out = document.getElementById('aiOutput');
+            const btn = document.getElementById('aiRunBtn');
+            
+            out.style.display = 'block';
+            out.innerHTML = "<span style='color: yellow;'>🧠 AI is thinking... Please wait.</span>";
+            btn.disabled = true;
+
+            const systemPrompt = `You are a code generator for the Panini Sanskrit programming language.
+Write code for this request: "${userText}"
+
+RULES:
+1. ONLY output raw Panini code and // comments explaining the steps.
+2. DO NOT use markdown code blocks like \`\`\`.
+3. NO English programming words (no if, else, print, int, var).
+
+PANINI SYNTAX CHEATSHEET:
+- Print: वद "text" or वद var
+- Ask User: पृच्छ var-मध्ये
+- Assign Value: 10 var-मध्ये स्थापय
+- Add: a b res-मध्ये संयोजय
+- Modulo (Remainder): a b res-मध्ये शेष
+- If Statement: यदि ( a == b ) { ... }
+- Else Statement: तर्हि { ... }
+- While Loop: यावत् ( a < 10 ) { ... }`;
+
+            try {
+                const response = await fetch('https://eprashala-proxy-511804777001.asia-south1.run.app/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: systemPrompt })
+                });
+                
+                if (!response.ok) throw new Error("API Unavailable");
+                
+                const data = await response.json();
+                
+                // 1. THE FIX: Robust JSON Extraction
+                let generatedCode = "";
+                
+                // Check if it's the raw Gemini format: data.candidates[0].content.parts[0].text
+                if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+                    generatedCode = data.candidates[0].content.parts[0].text;
+                } 
+                // Check standard proxy formats
+                else if (data.text) { 
+                    generatedCode = data.text; 
+                } 
+                else if (data.response) { 
+                    generatedCode = data.response; 
+                } 
+                else if (typeof data === 'string') { 
+                    generatedCode = data; 
+                } 
+                else {
+                    // Fallback: If we still can't find it, print the raw JSON so we can debug the exact structure!
+                    generatedCode = "// UNKNOWN API FORMAT RETURNED:\n" + JSON.stringify(data, null, 2);
+                }
+
+                // Clean up any rogue markdown tags the AI might try to output
+                generatedCode = generatedCode.replace(/^\`\`\`[a-zA-Z]*\n/gm, '').replace(/\`\`\`$/gm, '').trim();
+
+                // 2. THE FIX: Wipe and replace the entire editor content
+                if (editorInstance) {
+                    editorInstance.setValue("// --- AI Generated Logic ---\n\n" + generatedCode);
+                    
+                    document.getElementById('aiModal').style.display = 'none';
+                    editorInstance.focus();
+                }
+            } catch (e) {
+                out.innerHTML = `<span style='color: #FF5555;'>API Error: Could not connect to proxy endpoint.\nDetails: ${e.message}</span>`;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+	
+	
+	
+	// ==========================================
         // PWA SERVICE WORKER REGISTRATION
         // ==========================================
         if ('serviceWorker' in navigator) {
