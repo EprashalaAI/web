@@ -50,6 +50,134 @@
         "Yogeshwari Mahatmya": { "persona": "Sage Vyasa", "texts": "Yogeshwari Mahatmya, Devi Bhagavata Purana", "greeting": "Shri Kshetrapalaya Namah", "desc": "The glory and divine play of the supreme mother" },
         "Kalbhairav Mahatmya": { "persona": "Sage Vyasa", "texts": "Vijnana Bhairava Tantra, Kaalbhairav Rahasyam, Shri Bhairava Upasana Manual, Rudrayamala Tantra", "greeting": "Shri Kshetrapalaya Namah", "desc": "The ferocious and liberating aspects of Shiva" }
     },
+    "Sthala Puran": {
+        "Sangameshwar": {
+            "persona": "Sacred Confluence of Ratnagiri",
+            "texts": "Sangameshwar Mahatmya",
+            "greeting": "Om Namah Shivaya",
+            "desc": "Chronicles the sanctity of the intersecting rivers and ancient Shiva temples located along the Konkan belt."
+        },
+        "Guhagar": {
+            "persona": "Brahmagar Kshetra",
+            "texts": "Vyadeshwar Mahatmya",
+            "greeting": "Om Namah Shivaya",
+            "desc": "Extols the coastal town and the Vyadeshwar Shiva temple, detailing Lord Parashurama's mythological creation of the Konkan."
+        },
+        "Harihareshwar": {
+            "persona": "Dakshin Kashi of Konkan",
+            "texts": "Harihareshwar Mahatmya",
+            "greeting": "Har Har Mahadev",
+            "desc": "Focuses on the coastal town's grand Shiva temple and its spiritual geography along the Arabian Sea."
+        },
+        "Kashi": {
+            "persona": "City of Light (Varanasi)",
+            "texts": "Kashi Khanda (Skanda Purana)",
+            "greeting": "Har Har Mahadev",
+            "desc": "The ultimate guide to Shiva's city, detailing its ghats, tirthas, and the promise of spiritual liberation."
+        },
+        "Gaya": {
+            "persona": "City of Ancestral Rites",
+            "texts": "Gaya Mahatmya (Vayu Purana)",
+            "greeting": "Om Pitru Devataya Namaha",
+            "desc": "The definitive guide on why the city is the supreme place for offering Pinda and ensuring ancestral liberation."
+        },
+        "Mathura": {
+            "persona": "Krishna Janmabhoomi",
+            "texts": "Mathura Mahatmya (Varaha Purana)",
+            "greeting": "Radhe Radhe",
+            "desc": "Details the sacred forests (Vanas), hills, and bathing spots associated with Lord Krishna's early life."
+        },
+        "Puri": {
+            "persona": "Sri Jagannath Dhama",
+            "texts": "Purushottama Kshetra Mahatmya (Skanda Purana)",
+            "greeting": "Jai Jagannath",
+            "desc": "Describes the origin, construction, and deep spiritual rituals of the Lord Jagannath Temple."
+        },
+        "Kedarnath": {
+            "persona": "Himalayan Abode of Shiva",
+            "texts": "Kedara Khanda (Skanda Purana)",
+            "greeting": "Om Namah Shivaya",
+            "desc": "Maps the spiritual geography of the high Himalayas and the greatness of the Kedarnath Jyotirlinga."
+        },
+        "Ujjain": {
+            "persona": "City of Mahakala (Avantika)",
+            "texts": "Avanti Kshetra Mahatmya (Skanda Purana)",
+            "greeting": "Jai Shri Mahakal",
+            "desc": "Highlights the Mahakaleshwar Jyotirlinga and the purifying waters of the sacred Shipra River."
+        },
+        "Somnath": {
+            "persona": "Prabhasa Kshetra",
+            "texts": "Prabhasa Khanda (Skanda Purana)",
+            "greeting": "Om Namah Shivaya",
+            "desc": "Details the first Jyotirlinga and the sacred Triveni Sangam in the Saurashtra region."
+        },
+        "Tirupati": {
+            "persona": "Vaikuntha on Earth",
+            "texts": "Venkatachala Mahatmya (Skanda Purana)",
+            "greeting": "Om Namo Venkateshaya",
+            "desc": "Glorifies the Seven Hills (Saptagiri) and the legend of Lord Venkateshwara's descent."
+        },
+        "Narmada River": {
+            "persona": "The Sacred River",
+            "texts": "Reva Mahatmya (Skanda Purana)",
+            "greeting": "Narmade Har",
+            "desc": "Celebrates the divine origin of the Narmada River and its immense purifying powers."
+        },
+        "Badrinath": {
+            "persona": "Badarikashrama",
+            "texts": "Badarikashrama Mahatmya (Skanda Purana)",
+            "greeting": "Om Namo Narayanaya",
+            "desc": "The definitive text outlining the spiritual majesty of the Himalayan shrine of Lord Vishnu."
+        },
+        "Ayodhya": {
+            "persona": "Rama Janmabhoomi",
+            "texts": "Ayodhya Mahatmya (Skanda Purana)",
+            "greeting": "Jai Shri Ram",
+            "desc": "Lists the sacred tirthas in and around Lord Rama's birthplace and their corresponding spiritual merits."
+        },
+        "Rameswaram": {
+            "persona": "Sethu Bandha",
+            "texts": "Sethu Mahatmya (Skanda Purana)",
+            "greeting": "Om Namah Shivaya",
+            "desc": "Details the Ram Setu bridge and the establishment of the Shiva lingam by Lord Rama."
+        },
+        "Prayagraj": {
+            "persona": "Tirtharaj (King of Pilgrimages)",
+            "texts": "Prayag Mahatmya (Matsya & Kurma Puranas)",
+            "greeting": "Om Triveni Sangamaya Namaha",
+            "desc": "Explains the supreme greatness of the sacred confluence of the Ganga, Yamuna, and Saraswati."
+        },
+        "Godavari River": {
+            "persona": "Dakshin Ganga",
+            "texts": "Gautami Mahatmya (Brahma Purana)",
+            "greeting": "Om Gautami Nadyai Namaha",
+            "desc": "Focuses on the sacred sites, bathing ghats, and the origin story of the Godavari River."
+        },
+        "Chidambaram": {
+            "persona": "Akasha Lingam",
+            "texts": "Chidambara Mahatmya",
+            "greeting": "Om Namah Shivaya",
+            "desc": "Describes the cosmic dance (Tandava) of Lord Nataraja in the golden hall of the universe."
+        },
+        "Madurai": {
+            "persona": "City of Meenakshi",
+            "texts": "Halasya Mahatmya",
+            "greeting": "Om Meenakshi Sundareshwaraya Namaha",
+            "desc": "Focuses on the 64 divine plays (Thiruvilayadal) of Lord Shiva in the ancient city."
+        },
+        "Srirangam": {
+            "persona": "Bhooloka Vaikuntham",
+            "texts": "Sriranga Mahatmya",
+            "greeting": "Om Namo Narayana",
+            "desc": "Outlines the religious significance of the grand Ranganathaswamy Temple and its island geography."
+        },
+        "Pandharpur": {
+            "persona": "Spiritual Heart of Maharashtra",
+            "texts": "Panduranga Mahatmya (Padma Purana)",
+            "greeting": "Ram Krishna Hari",
+            "desc": "Details the arrival of Lord Vitthala, establishing the town as the absolute center of the Varkari Bhakti tradition."
+        }
+	},
     "Samhitas": {
         "Bhrigu Samhita": { "persona": "Maharishi Bhrigu", "texts": "Bhrigu Samhita, Bhrigu Sutras, Manusmriti (Recitation)", "greeting": "Hari Om", "desc": "Ancient astrological science and human destiny" },
         "Garga Samhita": { "persona": "Maharishi Garga", "texts": "Garga Samhita, Garga Hora", "greeting": "Jai Shri Krishna", "desc": "The life and times of Lord Krishna and astrology" },
