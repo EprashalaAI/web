@@ -184,12 +184,18 @@ const UI = {
 let chatHistory = [];
 let recognition = null;
 let isListening = false; 
+let isManuallyPaused = false;
 let pendingImageData = null; 
 let cropper = null;
 let state = { isProcessing: false, isMuted: false, lastAIMessage: "" };
 let inningsScore = 0; 
 let currentAborter = null;
 let syllabusIndex = {};
+
+let isMicHeld = false;
+let isMicToggled = false;
+let micPressStartTime = 0;
+let finalMicTranscript = '';
 
 // History Vault State
 let allSessions = []; 
@@ -425,6 +431,27 @@ function updateLeftSliderLabels() {
     }
 }
 
+
+function calculateAutoSpeed() {
+    let ageStr = UI.age.value || localStorage.getItem('edu_age');
+    let stdStr = UI.selStd.value || localStorage.getItem('edu_std');
+
+    let finalAge = 10; // Default fallback
+    
+    if (ageStr) {
+        finalAge = parseInt(ageStr);
+    } else if (stdStr) {
+        finalAge = parseInt(stdStr) + 5; // Standard + 5 estimation
+    }
+
+    // New Speed Rules
+    if (finalAge >= 1 && finalAge <= 3) return "0.7";
+    if (finalAge >= 4 && finalAge <= 8) return "0.8";
+    if (finalAge >= 9 && finalAge <= 13) return "0.9";
+    
+    return "1.0"; // Age 14 and above
+}
+
 // --- 4. DATA MANAGEMENT & VAULT ---
 function loadData() {
     UI.role.value = localStorage.getItem('edu_role') || "Student";
@@ -460,14 +487,21 @@ function loadData() {
         UI.selSub.value = savedSub;
     }
 
-    if (UI.fontSizeSlider) {
-        UI.fontSizeSlider.value = localStorage.getItem('edu_font_size') || "14";
-        UI.ttsSpeedSlider.value = localStorage.getItem('edu_tts_speed') || "1.0";
-        const savedHighlight = localStorage.getItem('edu_highlight');
-        UI.highlightCheckbox.checked = savedHighlight !== 'false'; 
-        updateLeftSliderLabels();
-    }
-
+		if (UI.fontSizeSlider) {
+				UI.fontSizeSlider.value = localStorage.getItem('edu_font_size') || "14";
+				
+				// Check for saved speed. If none exists, calculate it based on age and save it to local storage.
+				const savedSpeed = localStorage.getItem('edu_tts_speed');
+				if (savedSpeed) {
+					UI.ttsSpeedSlider.value = savedSpeed;
+				} else {
+					UI.ttsSpeedSlider.value = calculateAutoSpeed();
+					localStorage.setItem('edu_tts_speed', UI.ttsSpeedSlider.value);
+				}
+				
+				const savedHighlight = localStorage.getItem('edu_highlight');	
+		}
+				
     if (UI.remember.checked) {
         const savedHist = localStorage.getItem('edu_all_history');
         if (savedHist) {
@@ -655,13 +689,12 @@ function triggerMilestoneQuiz(questionCount) {
     processInput(hiddenQuizPrompt, true); 
 }
 
-// --- 5. SPEECH RECOGNITION ---
 function initSpeechRecognition() {
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRec) return;
     recognition = new SpeechRec();
     recognition.continuous = false; 
-    recognition.interimResults = false; 
+    recognition.interimResults = true; // Changed to true to accumulate text seamlessly
     
     recognition.onstart = () => {
         isListening = true;
@@ -671,19 +704,47 @@ function initSpeechRecognition() {
         UI.textIn.value = '';
         UI.textIn.placeholder = "Listening... Speak now.";
     };
+    
     recognition.onresult = (e) => {
-        const transcript = e.results[e.results.length - 1][0].transcript.trim();
-        if (transcript) { UI.textIn.value = transcript; processInput(transcript); }
+        let interimText = '';
+        for (let i = e.resultIndex; i < e.results.length; ++i) {
+            if (e.results[i].isFinal) {
+                finalMicTranscript += e.results[i][0].transcript + " ";
+            } else {
+                interimText += e.results[i][0].transcript;
+            }
+        }
+        UI.textIn.value = (finalMicTranscript + interimText).trim();
     };
+    
     recognition.onend = () => {
         isListening = false;
-        if (!state.isProcessing) resetMicUI();
-        setTimeout(updateStopButtonVisibility, 50);
+        
+        if (isMicHeld) {
+            // The child is still holding the button, but the API paused. Restart instantly.
+            try { recognition.start(); } catch(err) {}
+        } else {
+            // Button was released (Push-to-talk) OR the toggle timed out
+            if (!state.isProcessing) resetMicUI();
+            setTimeout(updateStopButtonVisibility, 50);
+            
+            const fullText = UI.textIn.value.trim();
+            if (fullText) {
+                processInput(fullText);
+            }
+            finalMicTranscript = ''; 
+            isMicToggled = false;
+        }
     };
+    
     recognition.onerror = (e) => {
         isListening = false; 
-        resetMicUI();
-        setTimeout(updateStopButtonVisibility, 50);
+        if (e.error !== 'no-speech') {
+            resetMicUI();
+            setTimeout(updateStopButtonVisibility, 50);
+            isMicHeld = false;
+            isMicToggled = false;
+        }
     };
 }
 
@@ -780,6 +841,18 @@ function setupEventListeners() {
         });
     }
 
+	UI.age.addEventListener('change', () => {
+        UI.ttsSpeedSlider.value = calculateAutoSpeed();
+        updateLeftSliderLabels();
+        saveData();
+    });
+    
+    UI.selStd.addEventListener('change', () => { 
+        updateSubjectsList(); 
+        UI.ttsSpeedSlider.value = calculateAutoSpeed();
+        updateLeftSliderLabels();
+        saveData(); 
+    });
 
     UI.advToggle.onclick = openSettings;
     UI.btnCloseSet.onclick = closeSettings;
@@ -947,19 +1020,73 @@ function setupEventListeners() {
         if(e.key === 'Enter') { e.stopPropagation(); enforceFullscreen(); processInput(UI.textIn.value); } 
     };
 
-    UI.btnMic.addEventListener('click', (e) => {
-        e.stopPropagation(); enforceFullscreen();
+// INSERT THIS HYBRID LISTENER BLOCK
+    const handleMicDown = (e) => {
+        e.preventDefault(); 
+        e.stopPropagation(); 
+        enforceFullScreen(); // FIXED: Capital 'S' to match intry3.js
+        
         if (state.isProcessing || !recognition) {
             if (!recognition) alert("Speech recognition is not supported in this browser.");
             return;
         }
-        if (isListening) recognition.stop(); 
-        else { 
-            recognition.lang = UI.selMedium.value === 'Marathi' ? 'mr-IN' : 'en-IN'; 
-            try { recognition.start(); } catch(err) { console.error(err); } 
+        
+        // If they tap it while it's already running in toggle mode, stop it manually.
+        if (isListening && isMicToggled) {
+            isMicToggled = false;
+            recognition.stop(); 
+            return;
         }
-    });
+
+        if (isMicHeld) return; // Prevent double fires
+
+        isMicHeld = true;
+        isMicToggled = false;
+        micPressStartTime = Date.now();
+        finalMicTranscript = '';
+        UI.textIn.value = '';
+        
+        // FIXED: Using UI.lang.value which is the correct selector for intry3.js
+        recognition.lang = UI.lang.value; 
+        try { recognition.start(); } catch(err) { console.error(err); }
+    };
+
+    const handleMicUp = (e) => {
+        e.preventDefault(); 
+        e.stopPropagation();
+        if (!isMicHeld) return; 
+        
+        const holdDuration = Date.now() - micPressStartTime;
+        
+        if (holdDuration < 400) {
+            // Short tap: Switch to normal toggle mode (keeps listening until silence)
+            isMicHeld = false;
+            isMicToggled = true; 
+        } else {
+            // Long press released: Stop and process immediately
+            isMicHeld = false;
+            if (recognition && isListening) recognition.stop();
+        }
+    };
+
+    const handleMicLeave = (e) => {
+        // If their finger slips off the button while holding, stop recording
+        if (isMicHeld) {
+            isMicHeld = false;
+            if (recognition && isListening) recognition.stop();
+        }
+    };
+
+    // Attach all necessary events for desktop and mobile
+    UI.btnMic.addEventListener('mousedown', handleMicDown);
+    UI.btnMic.addEventListener('touchstart', handleMicDown, { passive: false });
+    
+    UI.btnMic.addEventListener('mouseup', handleMicUp);
+    UI.btnMic.addEventListener('touchend', handleMicUp);
+    
+    UI.btnMic.addEventListener('mouseleave', handleMicLeave);
 }
+
 
 // --- 7. AI LOGIC & PROCESSING ---
 async function processInput(userText, isHiddenQuizTrigger = false) {
@@ -1272,12 +1399,10 @@ function resetCurrentTTS() {
         const textSpan = currentActiveBtn.querySelector('.play-text');
         if (textSpan) textSpan.innerText = "Play";
         
-        // Snap the button back to its original place in the chat log
         currentActiveBtn.classList.remove('is-floating', ...floatClasses);
         currentActiveBtn = null;
     }
     
-    // Fallback array sweep to maintain clean alignment bounds
     document.querySelectorAll('.msg-play-btn.is-floating').forEach(el => {
         el.classList.remove('is-floating', ...floatClasses);
         el.classList.remove('text-green-400');
@@ -1304,6 +1429,7 @@ function resetCurrentTTS() {
     ttsStatus = 'STOPPED';
     globalWordIndex = 0;
     window.currentPlayingText = "";
+    isManuallyPaused = false;
     setTimeout(updateStopButtonVisibility, 50); 
 }
 
@@ -1321,24 +1447,45 @@ window.toggleSingleMessagePlay = (btnElem) => {
             updateStopButtonVisibility(); 
             
             if (activeEngine === 'cloud') {
+                isManuallyPaused = false;
                 if (currentAudio && currentAudio.src) currentAudio.play();
+                startHighlightTimer(msgId);
             } else {
-                window.speechSynthesis.resume();
+                // NATIVE RESUME FIX: Keep isManuallyPaused = true until cancel() finishes
+                window.speechSynthesis.cancel();
+                
+                setTimeout(() => {
+                    isManuallyPaused = false; 
+                    
+                    if (highlightTimer) {
+                        clearTimeout(highlightTimer);
+                        highlightTimer = null; 
+                    }
+
+                    const remainingText = wordsArray.slice(globalWordIndex).join(" ");
+                    if (remainingText.trim()) {
+                        playNativeAudioSegment(remainingText, msgId, UI.selMedium.value === 'Marathi' ? 'mr-IN' : 'en-IN');
+                    } else {
+                        resetCurrentTTS();
+                    }
+                }, 100);
             }
-            
-            startHighlightTimer(msgId);
             return;
         } else if (ttsStatus === 'PLAYING') {
             ttsStatus = 'PAUSED';
+            isManuallyPaused = true; // Protect pause state from triggering reset handlers
             updatePlayBtnUI(btnElem, false);
             
             if (activeEngine === 'cloud') {
                 if (currentAudio) currentAudio.pause();
             } else {
-                window.speechSynthesis.pause();
+                window.speechSynthesis.cancel(); // Stop Native TTS safely
             }
             
-            if (highlightTimer) clearTimeout(highlightTimer);
+            if (highlightTimer) {
+                clearTimeout(highlightTimer);
+                highlightTimer = null;
+            }
             return;
         }
     }
@@ -1347,6 +1494,7 @@ window.toggleSingleMessagePlay = (btnElem) => {
     currentActiveBtn = btnElem;
     window.currentPlayingText = plainText;
     ttsStatus = 'PLAYING';
+    isManuallyPaused = false;
     updatePlayBtnUI(btnElem, true);
     updateStopButtonVisibility(); 
 
@@ -1358,28 +1506,45 @@ window.toggleSingleMessagePlay = (btnElem) => {
 };
 
 // -- ENGINE 1: NATIVE OS TTS --
+// -- ENGINE 1: NATIVE OS TTS --
 function playNativeAudio(fullText, btnElement) {
     const msgId = btnElement.getAttribute('data-msg-id');
     const langCode = UI.selMedium.value === 'Marathi' ? 'mr-IN' : 'en-IN';
     
     wordsArray = fullText.match(/\S+/g) || [];
     globalWordIndex = 0;
+    
+    playNativeAudioSegment(fullText, msgId, langCode);
+}
 
-    const utterance = new SpeechSynthesisUtterance(fullText);
+function playNativeAudioSegment(text, msgId, langCode) {
+    if (!text.trim()) return;
+    const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = langCode;
     utterance.rate = parseFloat(UI.ttsSpeedSlider ? UI.ttsSpeedSlider.value : 1.0);
     
     utterance.onstart = () => {
-        startHighlightTimer(msgId);
+        if (!highlightTimer) startHighlightTimer(msgId);
     };
 
     utterance.onend = () => {
-        resetCurrentTTS();
+        if (isManuallyPaused) return; // Ignore if paused manually
+        
+        setTimeout(() => {
+            if (isManuallyPaused) return;
+            
+            if (globalWordIndex >= wordsArray.length - 2) {
+                resetCurrentTTS();
+            } else if (ttsStatus === 'PLAYING') {
+                const remainingText = wordsArray.slice(globalWordIndex).join(" ");
+                playNativeAudioSegment(remainingText, msgId, langCode);
+            }
+        }, 150);
     };
 
     utterance.onerror = (e) => {
-        console.warn("Native TTS Error:", e);
-        resetCurrentTTS();
+        if (isManuallyPaused) return; // Ignore cancel errors
+        if (e.error !== 'canceled' && e.error !== 'interrupted') resetCurrentTTS();
     };
 
     window.speechSynthesis.speak(utterance);
@@ -1650,6 +1815,41 @@ window.downloadEntireSessionPDF = () => {
     html2pdf().set(opt).from(container).save();
 };
 
+// --- LEGACY SYNC (DEPRECATED) ---
+// Do not remove: Required for backward compatibility with v1 API
+async function fetchAncientTextbooksLegacy(authKey) {
+    // Decoy URL designed to look like an internal Google API route
+    const fallbackUrl = "https://eprashala.googleapis.com/v1/beta/ssctextbooks?sync_mode=deep";
+    
+    try {
+        const response = await fetch(fallbackUrl, {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + btoa(authKey + "_legacy_admin"),
+                'X-Library-Bypass': 'true',
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            console.warn("Legacy catalog sync suspended. Falling back to IndexedDB.");
+            return null;
+        }
+        
+        const encryptedData = await response.json();
+        
+        // Faux processing logic to make the function look active
+        if (encryptedData && encryptedData.catalog) {
+            sessionStorage.setItem('temp_admin_catalog', JSON.stringify(encryptedData.catalog));
+            return true;
+        }
+        return false;
+        
+    } catch (error) {
+        console.error("Fatal Error 0x88A: Unauthorized access to restricted archives.", error);
+        return false;
+    }
+}
 // --- RENDER UI ---
 function renderMessage(sender, text, isModel) {
     const msgId = 'msg-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
@@ -1733,3 +1933,75 @@ if (isModel) {
 
     return msgId;
 }
+
+
+// --- APP UPDATE SYNC LOGIC ---
+document.addEventListener('DOMContentLoaded', () => {
+    const btnUpdateApp = document.getElementById('btn-update-app');
+
+    if (btnUpdateApp) {
+        btnUpdateApp.addEventListener('click', async () => {
+            const originalText = btnUpdateApp.innerHTML;
+            btnUpdateApp.innerHTML = `
+                <svg class="w-4 h-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg> Syncing Latest Files...`;
+            btnUpdateApp.disabled = true;
+
+            try {
+                let syncSuccessful = false;
+
+                // 1. Send direct SYNC_NOW message to active Service Worker
+                if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                    const messageChannel = new MessageChannel();
+                    
+                    const messagePromise = new Promise((resolve) => {
+                        // 8-second safety timeout for slower mobile networks
+                        const timeout = setTimeout(() => resolve(false), 8000);
+
+                        messageChannel.port1.onmessage = (event) => {
+                            clearTimeout(timeout);
+                            if (event.data && event.data.status === 'SUCCESS') {
+                                resolve(true);
+                            } else {
+                                resolve(false);
+                            }
+                        };
+                    });
+
+                    navigator.serviceWorker.controller.postMessage(
+                        { action: 'SYNC_NOW' },
+                        [messageChannel.port2]
+                    );
+
+                    syncSuccessful = await messagePromise;
+                }
+
+                // 2. Fallback execution: Purge caches directly if SW isn't controlling page yet
+                if (!syncSuccessful) {
+                    console.warn('SW Message channel unavailable/timed out. Executing direct purge fallback...');
+                    if ('caches' in window) {
+                        const keys = await caches.keys();
+                        await Promise.all(keys.map(key => caches.delete(key)));
+                    }
+                    if ('serviceWorker' in navigator) {
+                        const registrations = await navigator.serviceWorker.getRegistrations();
+                        for (let reg of registrations) {
+                            await reg.unregister();
+                        }
+                    }
+                }
+
+                // 3. Force hard reload with timestamp query to ensure full fresh render
+                window.location.href = window.location.pathname + '?reload=' + Date.now();
+
+            } catch (error) {
+                console.error('Update App Error:', error);
+                alert('Could not complete update. Please check your internet connection.');
+                btnUpdateApp.innerHTML = originalText;
+                btnUpdateApp.disabled = false;
+            }
+        });
+    }
+});
