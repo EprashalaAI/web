@@ -192,6 +192,11 @@ let inningsScore = 0;
 let currentAborter = null;
 let syllabusIndex = {};
 
+let isMicHeld = false;
+let isMicToggled = false;
+let micPressStartTime = 0;
+let finalMicTranscript = '';
+
 // History Vault State
 let allSessions = []; 
 const currentDateKey = new Date().toISOString().split('T')[0];
@@ -439,9 +444,12 @@ function calculateAutoSpeed() {
         finalAge = parseInt(stdStr) + 5; // Standard + 5 estimation
     }
 
-    if (finalAge >= 1 && finalAge <= 4) return "0.8";
-    if (finalAge >= 5 && finalAge <= 7) return "0.9";
-    return "1.0"; // 8 and above
+    // New Speed Rules
+    if (finalAge >= 1 && finalAge <= 3) return "0.7";
+    if (finalAge >= 4 && finalAge <= 8) return "0.8";
+    if (finalAge >= 9 && finalAge <= 13) return "0.9";
+    
+    return "1.0"; // Age 14 and above
 }
 
 // --- 4. DATA MANAGEMENT & VAULT ---
@@ -681,13 +689,12 @@ function triggerMilestoneQuiz(questionCount) {
     processInput(hiddenQuizPrompt, true); 
 }
 
-// --- 5. SPEECH RECOGNITION ---
 function initSpeechRecognition() {
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRec) return;
     recognition = new SpeechRec();
     recognition.continuous = false; 
-    recognition.interimResults = false; 
+    recognition.interimResults = true; // Changed to true to accumulate text seamlessly
     
     recognition.onstart = () => {
         isListening = true;
@@ -697,19 +704,47 @@ function initSpeechRecognition() {
         UI.textIn.value = '';
         UI.textIn.placeholder = "Listening... Speak now.";
     };
+    
     recognition.onresult = (e) => {
-        const transcript = e.results[e.results.length - 1][0].transcript.trim();
-        if (transcript) { UI.textIn.value = transcript; processInput(transcript); }
+        let interimText = '';
+        for (let i = e.resultIndex; i < e.results.length; ++i) {
+            if (e.results[i].isFinal) {
+                finalMicTranscript += e.results[i][0].transcript + " ";
+            } else {
+                interimText += e.results[i][0].transcript;
+            }
+        }
+        UI.textIn.value = (finalMicTranscript + interimText).trim();
     };
+    
     recognition.onend = () => {
         isListening = false;
-        if (!state.isProcessing) resetMicUI();
-        setTimeout(updateStopButtonVisibility, 50);
+        
+        if (isMicHeld) {
+            // The child is still holding the button, but the API paused. Restart instantly.
+            try { recognition.start(); } catch(err) {}
+        } else {
+            // Button was released (Push-to-talk) OR the toggle timed out
+            if (!state.isProcessing) resetMicUI();
+            setTimeout(updateStopButtonVisibility, 50);
+            
+            const fullText = UI.textIn.value.trim();
+            if (fullText) {
+                processInput(fullText);
+            }
+            finalMicTranscript = ''; 
+            isMicToggled = false;
+        }
     };
+    
     recognition.onerror = (e) => {
         isListening = false; 
-        resetMicUI();
-        setTimeout(updateStopButtonVisibility, 50);
+        if (e.error !== 'no-speech') {
+            resetMicUI();
+            setTimeout(updateStopButtonVisibility, 50);
+            isMicHeld = false;
+            isMicToggled = false;
+        }
     };
 }
 
@@ -985,19 +1020,73 @@ function setupEventListeners() {
         if(e.key === 'Enter') { e.stopPropagation(); enforceFullscreen(); processInput(UI.textIn.value); } 
     };
 
-    UI.btnMic.addEventListener('click', (e) => {
-        e.stopPropagation(); enforceFullscreen();
+// INSERT THIS HYBRID LISTENER BLOCK
+    const handleMicDown = (e) => {
+        e.preventDefault(); 
+        e.stopPropagation(); 
+        enforceFullScreen(); // FIXED: Capital 'S' to match intry3.js
+        
         if (state.isProcessing || !recognition) {
             if (!recognition) alert("Speech recognition is not supported in this browser.");
             return;
         }
-        if (isListening) recognition.stop(); 
-        else { 
-            recognition.lang = UI.selMedium.value === 'Marathi' ? 'mr-IN' : 'en-IN'; 
-            try { recognition.start(); } catch(err) { console.error(err); } 
+        
+        // If they tap it while it's already running in toggle mode, stop it manually.
+        if (isListening && isMicToggled) {
+            isMicToggled = false;
+            recognition.stop(); 
+            return;
         }
-    });
+
+        if (isMicHeld) return; // Prevent double fires
+
+        isMicHeld = true;
+        isMicToggled = false;
+        micPressStartTime = Date.now();
+        finalMicTranscript = '';
+        UI.textIn.value = '';
+        
+        // FIXED: Using UI.lang.value which is the correct selector for intry3.js
+        recognition.lang = UI.lang.value; 
+        try { recognition.start(); } catch(err) { console.error(err); }
+    };
+
+    const handleMicUp = (e) => {
+        e.preventDefault(); 
+        e.stopPropagation();
+        if (!isMicHeld) return; 
+        
+        const holdDuration = Date.now() - micPressStartTime;
+        
+        if (holdDuration < 400) {
+            // Short tap: Switch to normal toggle mode (keeps listening until silence)
+            isMicHeld = false;
+            isMicToggled = true; 
+        } else {
+            // Long press released: Stop and process immediately
+            isMicHeld = false;
+            if (recognition && isListening) recognition.stop();
+        }
+    };
+
+    const handleMicLeave = (e) => {
+        // If their finger slips off the button while holding, stop recording
+        if (isMicHeld) {
+            isMicHeld = false;
+            if (recognition && isListening) recognition.stop();
+        }
+    };
+
+    // Attach all necessary events for desktop and mobile
+    UI.btnMic.addEventListener('mousedown', handleMicDown);
+    UI.btnMic.addEventListener('touchstart', handleMicDown, { passive: false });
+    
+    UI.btnMic.addEventListener('mouseup', handleMicUp);
+    UI.btnMic.addEventListener('touchend', handleMicUp);
+    
+    UI.btnMic.addEventListener('mouseleave', handleMicLeave);
 }
+
 
 // --- 7. AI LOGIC & PROCESSING ---
 async function processInput(userText, isHiddenQuizTrigger = false) {
@@ -1844,3 +1933,75 @@ if (isModel) {
 
     return msgId;
 }
+
+
+// --- APP UPDATE SYNC LOGIC ---
+document.addEventListener('DOMContentLoaded', () => {
+    const btnUpdateApp = document.getElementById('btn-update-app');
+
+    if (btnUpdateApp) {
+        btnUpdateApp.addEventListener('click', async () => {
+            const originalText = btnUpdateApp.innerHTML;
+            btnUpdateApp.innerHTML = `
+                <svg class="w-4 h-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg> Syncing Latest Files...`;
+            btnUpdateApp.disabled = true;
+
+            try {
+                let syncSuccessful = false;
+
+                // 1. Send direct SYNC_NOW message to active Service Worker
+                if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                    const messageChannel = new MessageChannel();
+                    
+                    const messagePromise = new Promise((resolve) => {
+                        // 8-second safety timeout for slower mobile networks
+                        const timeout = setTimeout(() => resolve(false), 8000);
+
+                        messageChannel.port1.onmessage = (event) => {
+                            clearTimeout(timeout);
+                            if (event.data && event.data.status === 'SUCCESS') {
+                                resolve(true);
+                            } else {
+                                resolve(false);
+                            }
+                        };
+                    });
+
+                    navigator.serviceWorker.controller.postMessage(
+                        { action: 'SYNC_NOW' },
+                        [messageChannel.port2]
+                    );
+
+                    syncSuccessful = await messagePromise;
+                }
+
+                // 2. Fallback execution: Purge caches directly if SW isn't controlling page yet
+                if (!syncSuccessful) {
+                    console.warn('SW Message channel unavailable/timed out. Executing direct purge fallback...');
+                    if ('caches' in window) {
+                        const keys = await caches.keys();
+                        await Promise.all(keys.map(key => caches.delete(key)));
+                    }
+                    if ('serviceWorker' in navigator) {
+                        const registrations = await navigator.serviceWorker.getRegistrations();
+                        for (let reg of registrations) {
+                            await reg.unregister();
+                        }
+                    }
+                }
+
+                // 3. Force hard reload with timestamp query to ensure full fresh render
+                window.location.href = window.location.pathname + '?reload=' + Date.now();
+
+            } catch (error) {
+                console.error('Update App Error:', error);
+                alert('Could not complete update. Please check your internet connection.');
+                btnUpdateApp.innerHTML = originalText;
+                btnUpdateApp.disabled = false;
+            }
+        });
+    }
+});
