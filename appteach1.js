@@ -507,7 +507,7 @@ function loadData() {
         if (savedHist) {
             try {
                 allSessions = JSON.parse(savedHist);
-                const todaySession = allSessions.find(s => s.date === currentDateKey);
+                const todaySession = [...allSessions].reverse().find(s => s.date === currentDateKey);
                 if (todaySession) {
                     currentSessionId = todaySession.id;
                     chatHistory = todaySession.messages;
@@ -547,23 +547,37 @@ function saveData() {
     localStorage.setItem('edu_highlight', UI.highlightCheckbox.checked);
     
     if (UI.remember.checked && chatHistory.length > 0) {
-        let sessionIndex = allSessions.findIndex(s => s.id === currentSessionId);
-        
-        if (sessionIndex > -1) {
-            allSessions[sessionIndex].messages = chatHistory; 
-        } else {
-            let timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            let displayTitle = `${currentDateKey} (${timeString})`;
+            let sessionIndex = allSessions.findIndex(s => s.id === currentSessionId);
             
-            allSessions.push({ 
-                id: currentSessionId, 
-                date: currentDateKey, 
-                title: displayTitle, 
-                messages: chatHistory 
-            });
-        }
-        localStorage.setItem('edu_all_history', JSON.stringify(allSessions));
-    } else if (!UI.remember.checked) {
+            if (sessionIndex > -1) {
+                allSessions[sessionIndex].messages = chatHistory; 
+            } else {
+                let timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                let displayTitle = `${currentDateKey} (${timeString})`;
+                
+                allSessions.push({ 
+                    id: currentSessionId, 
+                    date: currentDateKey, 
+                    title: displayTitle, 
+                    messages: chatHistory 
+                });
+            }
+            
+            // FIX: Safely strip massive Base64 image strings before saving to prevent local storage crashes
+            try {
+                const safeSessions = allSessions.map(session => ({
+                    ...session,
+                    messages: session.messages.map(msg => ({
+                        ...msg,
+                        parts: msg.parts.map(part => part.inlineData ? { text: "📷 [Image attached]" } : part)
+                    }))
+                }));
+                localStorage.setItem('edu_all_history', JSON.stringify(safeSessions));
+            } catch (err) {
+                console.warn("Storage quota exceeded. History could not be saved.", err);
+            }
+            
+        } else if (!UI.remember.checked) {
         localStorage.removeItem('edu_all_history');
     }
 }
@@ -1021,24 +1035,25 @@ function setupEventListeners() {
     };
 
 // INSERT THIS HYBRID LISTENER BLOCK
-    const handleMicDown = (e) => {
+	const handleMicDown = (e) => {
         e.preventDefault(); 
         e.stopPropagation(); 
-        enforceFullScreen(); // FIXED: Capital 'S' to match intry3.js
+        
+        // FIX 1: Use lowercase 's' for enforceFullscreen
+        enforceFullscreen(); 
         
         if (state.isProcessing || !recognition) {
             if (!recognition) alert("Speech recognition is not supported in this browser.");
             return;
         }
         
-        // If they tap it while it's already running in toggle mode, stop it manually.
         if (isListening && isMicToggled) {
             isMicToggled = false;
             recognition.stop(); 
             return;
         }
 
-        if (isMicHeld) return; // Prevent double fires
+        if (isMicHeld) return; 
 
         isMicHeld = true;
         isMicToggled = false;
@@ -1046,8 +1061,9 @@ function setupEventListeners() {
         finalMicTranscript = '';
         UI.textIn.value = '';
         
-        // FIXED: Using UI.lang.value which is the correct selector for intry3.js
-        recognition.lang = UI.lang.value; 
+        // FIX 2: Check the medium-selector to set the correct language string
+        recognition.lang = UI.selMedium.value === 'Marathi' ? 'mr-IN' : 'en-IN'; 
+        
         try { recognition.start(); } catch(err) { console.error(err); }
     };
 
