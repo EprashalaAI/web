@@ -285,7 +285,7 @@
                     📚
                 </button>
                 <a href="RAG.html" target="_blank" class="text-xl opacity-80 hover:opacity-100 hover:scale-110 transition-all cursor-pointer drop-shadow-md" title="Scan New Book">
-                    ➕📖
+                    ➕
                 </a>
             </div>
 
@@ -382,17 +382,28 @@
         </footer>
     </div>
   
-  <!-- Book Library Modal -->
-    <div id="library-modal" class="hidden fixed inset-0 bg-black/80 z-[160] flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-sm shadow-[0_0_30px_rgba(2,132,199,0.2)] relative flex flex-col h-[70vh]">
-            <button id="btn-close-library" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl z-20 outline-none">✕</button>
-            <h2 class="text-xl font-bold text-sky-400 mb-2 cinzel">Book Library</h2>
-            <p class="text-xs text-slate-400 mb-4 pb-3 border-b border-slate-700/50">Select a scanned book to converse with.</p>
-            <div id="library-list-container" class="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                <!-- Book items will be injected here via JS -->
-            </div>
+ <!-- Book Library Modal -->
+<div id="library-modal" class="hidden fixed inset-0 bg-black/80 z-[160] flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-[0_0_30px_rgba(2,132,199,0.2)] relative flex flex-col h-[75vh]">
+        <button id="btn-close-library" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl z-20 outline-none">✕</button>
+        
+        <div class="flex items-center justify-between mb-2 pr-8">
+            <h2 class="text-xl font-bold text-sky-400 cinzel">Book Library</h2>
+            <!-- Import Button -->
+            <button id="btn-import-book" class="flex items-center gap-1.5 bg-sky-700 hover:bg-sky-600 text-white text-xs font-bold py-1.5 px-3 rounded-xl transition-colors border border-sky-500/50 shadow-md outline-none">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                Import JSON
+            </button>
+            <input type="file" id="import-book-input" accept=".json" class="hidden">
+        </div>
+
+        <p class="text-xs text-slate-400 mb-3 pb-3 border-b border-slate-700/50">Manage, share, or click a book to start asking questions.</p>
+        
+        <div id="library-list-container" class="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+            <!-- Dynamic cards injected via appteach1.js -->
         </div>
     </div>
+</div>
 
     <!-- SERVICE WORKER REGISTRATION -->
     <script>
