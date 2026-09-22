@@ -396,6 +396,37 @@
   @media (prefers-reduced-motion: reduce){
     *{ transition:none !important; }
   }
+  /* ---------- MOBILE RESPONSIVENESS OVERRIDES ---------- */
+  @media (max-width: 768px) {
+    main { padding: 12px; gap: 16px; }
+    
+    /* Stack the header colophon */
+    header .colophon { margin-left: 0; text-align: left; width: 100%; padding-top: 8px; border-top: 1px dashed var(--line); margin-top: 8px; }
+    
+    /* Form rows stack vertically */
+    .row2 { grid-template-columns: 1fr; }
+    
+    /* Fix the Output Bar (Tabs + Buttons) */
+    .output-tabs { flex-wrap: wrap; border-bottom: none; background: var(--paper-2); }
+    .output-tabs button { flex: 1; min-width: 100px; text-align: center; border-bottom: 2px solid transparent !important; }
+    .output-tabs button.active { border-bottom: 2px solid var(--accent) !important; background: var(--paper-3); font-weight: 600; }
+    
+    .output-actions { margin-left: 0; width: 100%; flex-wrap: wrap; padding: 12px; gap: 8px; justify-content: stretch; border-bottom: 1px solid var(--line); }
+    .output-actions button.ghost { flex: 1; min-width: 120px; }
+    
+    /* Make the Voice button a large, full-width tap target */
+    .output-actions #startVoiceChatBtn { flex-basis: 100%; margin: 4px 0 0 0 !important; padding: 14px !important; font-size: 14px; }
+    
+    /* Stats Bar Grid */
+    .stats-bar { grid-template-columns: 1fr 1fr; display: grid; }
+    .stat { border-right: 1px solid var(--line) !important; border-bottom: 1px solid var(--line); }
+    .stat:nth-child(even) { border-right: none !important; }
+    
+    /* Extracted Cards */
+    .cards-wrap { grid-template-columns: 1fr; padding: 12px; }
+  }
+  
+  
 </style>
 </head>
 <body>
@@ -1058,12 +1089,11 @@
  els.processBtn.addEventListener('click', runPipeline);
 
   renderFileList();
-  // ---------------------------------------------------------------
-  // DATABASE BRIDGE: SEND JSON TO DHWANI.HTML
+// ---------------------------------------------------------------
+  // DATABASE BRIDGE: SAVE TO LOCAL LIBRARY
   // ---------------------------------------------------------------
   const startVoiceChatBtn = $('startVoiceChatBtn');
   
-  // Enable Start Button when processing completes
   const origRenderOutput = renderOutput;
   renderOutput = function() {
     origRenderOutput();
@@ -1072,38 +1102,45 @@
     }
   };
 
-  startVoiceChatBtn.addEventListener('click', () => {
-    startVoiceChatBtn.textContent = "Loading Book into Dhwani...";
-    
-    // Use IndexedDB to bypass 5MB localStorage limits for large books
-    const request = indexedDB.open("EprashalaRAG", 1);
-    
-    request.onupgradeneeded = (e) => {
-      const db = e.target.result;
-      if (!db.objectStoreNames.contains("bookData")) {
-        db.createObjectStore("bookData");
-      }
-    };
-    
-    request.onsuccess = (e) => {
-      const db = e.target.result;
-      const tx = db.transaction("bookData", "readwrite");
-      const store = tx.objectStore("bookData");
+  if (startVoiceChatBtn) {
+    startVoiceChatBtn.addEventListener('click', () => {
+      startVoiceChatBtn.textContent = "Saving to Library...";
       
-      const bookPayload = {
-        title: els.bookTitle.value.trim() || 'Custom Book',
-        chunks: allChunks
+      const request = indexedDB.open("EprashalaRAG", 1);
+      
+      request.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains("bookData")) {
+          db.createObjectStore("bookData");
+        }
       };
       
-      store.put(bookPayload, "activeBook");
-      
-      tx.oncomplete = () => {
-        // Redirect to Dhwani and trigger Book Mode
-        window.location.href = 'teacher.html?mode=book';
+      request.onsuccess = (e) => {
+        const db = e.target.result;
+        const tx = db.transaction("bookData", "readwrite");
+        const store = tx.objectStore("bookData");
+        
+        // Generate a unique ID for the book
+        const bookId = els.bookId.value.trim() || slugify(els.bookTitle.value) || ('book-' + Date.now());
+        
+        const bookPayload = {
+          id: bookId,
+          title: els.bookTitle.value.trim() || 'Custom Book',
+          dateAdded: new Date().toISOString(),
+          chunks: allChunks
+        };
+        
+        store.put(bookPayload, bookId); // Save using the unique ID
+        
+        tx.oncomplete = () => {
+          // Send the unique ID in the URL to Dhwani
+          window.location.href = 'teacher.html?mode=book&id=' + encodeURIComponent(bookId);
+        };
       };
-    };
-  });
-})(); // <-- End of RAG.html IIFE
+    });
+  }
+
+})(); // <-- END OF SCRIPT
 </script>
 
 </body>

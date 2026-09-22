@@ -177,7 +177,13 @@ const UI = {
     
     selMedium: document.getElementById('medium-selector'),
     selStd: document.getElementById('std-selector'),
-    selSub: document.getElementById('subject-selector')
+    selSub: document.getElementById('subject-selector'),
+	btnLibrary: document.getElementById('btn-open-library'),
+    libraryModal: document.getElementById('library-modal'),
+    btnCloseLibrary: document.getElementById('btn-close-library'),
+    libraryContainer: document.getElementById('library-list-container'),
+    syllabusSelectors: document.getElementById('syllabus-selectors'),
+    headerTitle: document.getElementById('main-header-title')
 };
 
 // --- GLOBAL STATE ---
@@ -204,6 +210,95 @@ let currentSessionId = Date.now();
 let isBookMode = false;
 let activeBookChunks = [];
 let activeBookTitle = "";
+
+function openLibraryModal() {
+    UI.libraryModal.classList.remove('hidden');
+    renderBookLibrary();
+}
+
+function activateBookMode(bookObj) {
+    isBookMode = true;
+    activeBookChunks = bookObj.chunks;
+    activeBookTitle = bookObj.title;
+
+    // Hide normal syllabus selectors
+    if (UI.syllabusSelectors) UI.syllabusSelectors.style.display = 'none';
+    if (UI.selSub) UI.selSub.style.display = 'none';
+
+    // Update Header
+    if (UI.headerTitle) {
+        UI.headerTitle.innerHTML = `<span class="text-sky-400 text-xs">Conversing with Book:</span><br><span class="text-white text-lg font-normal break-words">${activeBookTitle}</span>`;
+    }
+
+    clearData();
+    renderSystemMessage("Local Library", `📚 <b>${activeBookTitle}</b> loaded securely from your phone's storage.<br><br>Tap the mic and ask me anything about this book!`);
+}
+
+function renderBookLibrary() {
+    UI.libraryContainer.innerHTML = '<div class="text-center text-slate-500 text-sm mt-10">Loading library...</div>';
+    
+    const request = indexedDB.open("EprashalaRAG", 1);
+    request.onsuccess = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains("bookData")) {
+            UI.libraryContainer.innerHTML = '<div class="text-center text-slate-500 text-sm mt-10">Library is empty.<br><br>Click the ➕📖 icon in the top right to scan a book!</div>';
+            return;
+        }
+        
+        const tx = db.transaction("bookData", "readonly");
+        const store = tx.objectStore("bookData");
+        const getAllReq = store.getAll();
+
+        getAllReq.onsuccess = () => {
+            const books = getAllReq.result;
+            if (!books || books.length === 0) {
+                UI.libraryContainer.innerHTML = '<div class="text-center text-slate-500 text-sm mt-10">Library is empty.<br><br>Click the ➕📖 icon in the top right to scan a book!</div>';
+                return;
+            }
+
+            UI.libraryContainer.innerHTML = '';
+            books.sort((a,b) => new Date(b.dateAdded) - new Date(a.dateAdded)); // Newest first
+
+            books.forEach(book => {
+                const card = document.createElement('div');
+                card.className = "w-full text-left text-sm text-slate-300 bg-slate-800/80 hover:bg-slate-700 p-3 rounded-xl transition-colors border border-slate-700 hover:border-sky-500/50 flex justify-between items-center cursor-pointer shadow-sm";
+                
+                const dateObj = new Date(book.dateAdded);
+                const dateStr = dateObj.toLocaleDateString([], {month:'short', day:'numeric'});
+                
+                card.innerHTML = `
+                    <div class="flex-1 overflow-hidden pr-2">
+                        <div class="font-bold tracking-wide text-sky-100 truncate">${book.title}</div>
+                        <div class="text-[10px] text-slate-500 mt-1">${book.chunks.length} extracted chunks • ${dateStr}</div>
+                    </div>
+                    <button class="delete-book-btn text-red-500/60 hover:text-red-400 p-2 outline-none transition-colors" title="Delete Book">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                `;
+
+                // Click to load book
+                card.onclick = (e) => {
+                    if (e.target.closest('.delete-book-btn')) return;
+                    activateBookMode(book);
+                    UI.libraryModal.classList.add('hidden');
+                };
+
+                // Click to delete book
+                const delBtn = card.querySelector('.delete-book-btn');
+                delBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    if (confirm(`Delete "${book.title}" from your phone's storage?`)) {
+                        const delTx = db.transaction("bookData", "readwrite");
+                        delTx.objectStore("bookData").delete(book.id);
+                        delTx.oncomplete = () => renderBookLibrary();
+                    }
+                };
+
+                UI.libraryContainer.appendChild(card);
+            });
+        };
+    };
+}
 
 // Cloud/Native TTS & Highlight State
 let ttsStatus = 'STOPPED';
@@ -287,38 +382,27 @@ function updateRightSliderLabels() {
 }
 // --- 3. INITIALIZATION ---
 window.onload = async () => {
-    // --- NEW: Check if we are booting into Book Mode ---
+    // --- LOAD SPECIFIC BOOK FROM RAG.HTML ---
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('mode') === 'book') {
-        isBookMode = true;
-        
-        // Hide standard syllabus selectors
-        UI.selMedium.style.display = 'none';
-        UI.selStd.style.display = 'none';
-        UI.selSub.style.display = 'none';
-        
-        // Load the JSON chunks from IndexedDB
+    const urlBookId = urlParams.get('id');
+
+    if (urlBookId) {
         const request = indexedDB.open("EprashalaRAG", 1);
         request.onsuccess = (e) => {
             const db = e.target.result;
             if (!db.objectStoreNames.contains("bookData")) return;
             const tx = db.transaction("bookData", "readonly");
             const store = tx.objectStore("bookData");
-            const getReq = store.get("activeBook");
+            const getReq = store.get(urlBookId);
             
             getReq.onsuccess = () => {
                 if (getReq.result) {
-                    activeBookChunks = getReq.result.chunks;
-                    activeBookTitle = getReq.result.title;
-                    
-                    // Update header UI
-                    const headerText = document.querySelector('header h1');
-                    headerText.innerHTML = `<span class="text-sky-400">Conversing with:</span> <br><span class="text-white text-sm font-normal">${activeBookTitle}</span>`;
-                    
-                    renderSystemMessage("System", `📚 <b>${activeBookTitle}</b> loaded successfully with ${activeBookChunks.length} chunks. <br><br>Tap the mic and ask me anything about this book!`);
+                    activateBookMode(getReq.result);
                 }
             };
         };
+        // Clean the URL bar so a page refresh doesn't force-reload the book 
+        window.history.replaceState({}, document.title, window.location.pathname);
     }
 
     try {
@@ -880,6 +964,9 @@ function setupEventListeners() {
             }
         }, 300);
     };
+
+if (UI.btnLibrary) UI.btnLibrary.onclick = openLibraryModal;
+    if (UI.btnCloseLibrary) UI.btnCloseLibrary.onclick = () => UI.libraryModal.classList.add('hidden');
 // --- Entire Session PDF Listener ---
     if (UI.btnSharePdf) {
         UI.btnSharePdf.addEventListener('click', (e) => {
