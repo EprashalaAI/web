@@ -492,10 +492,25 @@
               <input type="number" id="overlapSentences" value="2" min="0" step="1">
             </div>
           </div>
-          <div class="field">
-            <label for="ocrLang">OCR language code(s) — Tesseract</label>
-            <input type="text" id="ocrLang" placeholder="eng  ·  eng+hin  ·  jpn  ·  ara …" value="eng">
-            <div class="sub">Used only for scanned pages/images. Combine with + for multi-script pages.</div>
+			<div class="field">
+            <label for="ocrLang">Book Language (For Scanning & OCR)</label>
+            <select id="ocrLang" style="font-weight: 600;">
+              <option value="eng">English Only</option>
+              <option value="mar+eng" selected>Marathi + English (मराठी)</option>
+              <option value="hin+eng">Hindi + English (हिंदी)</option>
+              <option value="san+eng">Sanskrit + English (संस्कृत)</option>
+              <option value="ben+eng">Bengali + English (বাংলা)</option>
+              <option value="guj+eng">Gujarati + English (ગુજરાતી)</option>
+              <option value="tam+eng">Tamil + English (தமிழ்)</option>
+              <option value="tel+eng">Telugu + English (తెలుగు)</option>
+              <option value="kan+eng">Kannada + English (ಕನ್ನಡ)</option>
+              <option value="mal+eng">Malayalam + English (മലയാളം)</option>
+              <option value="pan+eng">Punjabi + English (ਪੰਜਾਬੀ)</option>
+              <option value="ori+eng">Odia + English (ଓଡ଼ିଆ)</option>
+              <option value="urd+eng">Urdu + English (اردو)</option>
+              <option value="asm+eng">Assamese + English (অসমীয়া)</option>
+            </select>
+            <div class="sub">Downloads language packs on first use. "Force OCR" below ignores DRM locks.</div>
           </div>
           <div class="field">
             <label class="checkfield"><input type="checkbox" id="stripHeaders" checked> Strip repeated headers/footers</label>
@@ -858,7 +873,7 @@
         if (!ocrWorker){
           ocrWorker = await Tesseract.createWorker(opts.ocrLang || 'eng');
         }
-        const viewport = page.getViewport({ scale: 2 });
+        const viewport = page.getViewport({ scale: 3 });
         const canvas = document.createElement('canvas');
         canvas.width = viewport.width;
         canvas.height = viewport.height;
