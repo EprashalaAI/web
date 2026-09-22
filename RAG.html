@@ -499,6 +499,9 @@
       <div class="output-actions">
         <button class="ghost" id="copyBtn" disabled>copy json</button>
         <button class="ghost" id="downloadBtn" disabled>download json</button>
+		<button class="primary" id="startVoiceChatBtn" disabled style="margin:0; padding:6px 12px; background:var(--accent);">
+    🎙️ Start Conversing with this Book
+  </button>
       </div>
     </div>
 
@@ -530,6 +533,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+
+
 
 <script>
 (function(){
@@ -1050,10 +1055,56 @@
     log('Downloaded ' + bookId + '_chunks.json', 'ok');
   });
 
-  els.processBtn.addEventListener('click', runPipeline);
+ els.processBtn.addEventListener('click', runPipeline);
 
   renderFileList();
-})();
+  // ---------------------------------------------------------------
+  // DATABASE BRIDGE: SEND JSON TO DHWANI.HTML
+  // ---------------------------------------------------------------
+  const startVoiceChatBtn = $('startVoiceChatBtn');
+  
+  // Enable Start Button when processing completes
+  const origRenderOutput = renderOutput;
+  renderOutput = function() {
+    origRenderOutput();
+    if (startVoiceChatBtn) {
+      startVoiceChatBtn.disabled = !(allChunks && allChunks.length > 0);
+    }
+  };
+
+  startVoiceChatBtn.addEventListener('click', () => {
+    startVoiceChatBtn.textContent = "Loading Book into Dhwani...";
+    
+    // Use IndexedDB to bypass 5MB localStorage limits for large books
+    const request = indexedDB.open("EprashalaRAG", 1);
+    
+    request.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains("bookData")) {
+        db.createObjectStore("bookData");
+      }
+    };
+    
+    request.onsuccess = (e) => {
+      const db = e.target.result;
+      const tx = db.transaction("bookData", "readwrite");
+      const store = tx.objectStore("bookData");
+      
+      const bookPayload = {
+        title: els.bookTitle.value.trim() || 'Custom Book',
+        chunks: allChunks
+      };
+      
+      store.put(bookPayload, "activeBook");
+      
+      tx.oncomplete = () => {
+        // Redirect to Dhwani and trigger Book Mode
+        window.location.href = 'teacher.html?mode=book';
+      };
+    };
+  });
+})(); // <-- End of RAG.html IIFE
 </script>
+
 </body>
 </html>

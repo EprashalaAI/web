@@ -201,6 +201,9 @@ let finalMicTranscript = '';
 let allSessions = []; 
 const currentDateKey = new Date().toISOString().split('T')[0];
 let currentSessionId = Date.now();
+let isBookMode = false;
+let activeBookChunks = [];
+let activeBookTitle = "";
 
 // Cloud/Native TTS & Highlight State
 let ttsStatus = 'STOPPED';
@@ -284,17 +287,49 @@ function updateRightSliderLabels() {
 }
 // --- 3. INITIALIZATION ---
 window.onload = async () => {
+    // --- NEW: Check if we are booting into Book Mode ---
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('mode') === 'book') {
+        isBookMode = true;
+        
+        // Hide standard syllabus selectors
+        UI.selMedium.style.display = 'none';
+        UI.selStd.style.display = 'none';
+        UI.selSub.style.display = 'none';
+        
+        // Load the JSON chunks from IndexedDB
+        const request = indexedDB.open("EprashalaRAG", 1);
+        request.onsuccess = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains("bookData")) return;
+            const tx = db.transaction("bookData", "readonly");
+            const store = tx.objectStore("bookData");
+            const getReq = store.get("activeBook");
+            
+            getReq.onsuccess = () => {
+                if (getReq.result) {
+                    activeBookChunks = getReq.result.chunks;
+                    activeBookTitle = getReq.result.title;
+                    
+                    // Update header UI
+                    const headerText = document.querySelector('header h1');
+                    headerText.innerHTML = `<span class="text-sky-400">Conversing with:</span> <br><span class="text-white text-sm font-normal">${activeBookTitle}</span>`;
+                    
+                    renderSystemMessage("System", `📚 <b>${activeBookTitle}</b> loaded successfully with ${activeBookChunks.length} chunks. <br><br>Tap the mic and ask me anything about this book!`);
+                }
+            };
+        };
+    }
+
     try {
-        // Fetch the external JSON index
+        // Fetch the external JSON index (Keep your existing code here)
         const response = await fetch('./syllabus.json');
         if (!response.ok) throw new Error("Failed to load syllabus index.");
         syllabusIndex = await response.json();
     } catch (error) {
         console.error("Error loading syllabus data:", error);
-        alert("Failed to load curriculum data. Please refresh.");
     }
 
-    // Proceed with existing initialization
     loadData();
     initSpeechRecognition(); 
     
@@ -1185,6 +1220,26 @@ async function processInput(userText, isHiddenQuizTrigger = false) {
     setTimeout(updateStopButtonVisibility, 100);
 }
 
+function retrieveRelevantChunks(query, topK = 4) {
+    if (!activeBookChunks || activeBookChunks.length === 0) return [];
+    
+    const queryTerms = query.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+    if (!queryTerms.length) return activeBookChunks.slice(0, topK);
+
+    const scored = activeBookChunks.map(chunk => {
+        let score = 0;
+        const textLower = chunk.text.toLowerCase();
+        queryTerms.forEach(term => {
+            const matches = (textLower.match(new RegExp(term, 'g')) || []).length;
+            score += matches * (1 + 10 / (chunk.char_count || 100)); 
+        });
+        return { chunk, score };
+    });
+
+    scored.sort((a, b) => b.score - a.score);
+    return scored.slice(0, topK).map(s => s.chunk);
+}
+
 async function getAIResponse(history) {
     const role = UI.role.value;
     const med = UI.selMedium.value;
@@ -1200,60 +1255,76 @@ async function getAIResponse(history) {
 
     let prompt = "";
 
-    // GROUND TRUTH DIRECTIVE FOR RECENT SYLLABUS REVISIONS
-    const syllabusAuthorityNotice = `
-    CRITICAL SYLLABUS DIRECTIVE:
-    The Maharashtra State Board (Balbharati) textbook curriculum has undergone major updates. 
-    You MUST treat the exact chapter title specified in the user request as the absolute ground-truth topic from the latest official textbook. 
-    Do NOT attempt to correct, rename, or substitute chapter titles based on older textbook editions, legacy syllabus mappings, or historical memory. Teach strictly according to the chapter name provided.`;
-
-    if (role === 'Teacher') {
-        const teacherName = UI.name.value ? ` as ${UI.name.value}` : "";
-        prompt = `You are an expert educational assistant helping a fellow teacher${teacherName}.
-        Context: Maharashtra State Board (Balbharati), Standard ${std}, Subject: "${sub}", Medium: ${med}.
+// --- BOOK MODE INTERCEPTOR ---
+    if (isBookMode) {
+        // Retrieve the top contextual chunks based on the user's last question
+        const userQuery = history[history.length - 1].parts.find(p => p.text)?.text || "";
         
-        ${syllabusAuthorityNotice}
+        // Increased from 4 to 8 chunks to give the AI a wider context net
+        const topChunks = retrieveRelevantChunks(userQuery, 8);
+        const contextText = topChunks.map(c => `[Page ${c.page_start}]: ${c.text}`).join('\n\n');
 
-        CRITICAL RULES:
-        1. Strictly adhere to the updated syllabus topic requested.
-        2. Tone: Professional, helpful, collaborative.
-        3. Language: Primary language is ${med}.
-        4. ACCURACY RATIO: Maintain ${bookRatio}% factual alignment with the requested chapter and ${aiRatio}% gentle contextual teaching.
-        5. FORMATTING: Use Markdown to format your response neatly (use **bold** for emphasis, bullet points for lists, and short paragraphs). Do NOT use complex LaTeX.
-        6. MEDIA LINKS: At the very end of your response, provide EXACTLY two lines formatted like this:
-           YT_SEARCH: Standard ${std} ${sub} ${med} medium relevant_topic_keywords
-           IMG_SEARCH: Standard ${std} ${sub} ${med} medium relevant_topic_keywords`;
-    } else {
-        const studentName = UI.name.value || "Child";
-        const estimatedAge = parseInt(std) + 5;
-        const finalAge = UI.age.value ? parseInt(UI.age.value) : estimatedAge;
-        const isYoung = finalAge <= 11 || parseInt(std) <= 5;
+        prompt = `You are the interactive voice avatar of the book titled "${activeBookTitle}".
+        Answer the user's questions based on the following retrieved book excerpts. 
         
-        const toneInstruction = isYoung ? 
-            "Use EXTREMELY simple words. Keep answers SHORT, highly nurturing. Talk to them like a loving primary school teacher." : 
-            "Use clear, encouraging explanations appropriate for a teenager.";
-
-        prompt = `You are a highly polite, caring, and expert teacher.
-        Context: You are teaching a student named ${studentName} (Age: ~${finalAge}), in Standard ${std}, Subject: "${sub}", Medium: ${med} (Maharashtra State Board).
+        CRITICAL INSTRUCTION: If the exact specific word the user asked for (like 'thickness') is not found, do not just give up. Intelligently scan the excerpts for related descriptive concepts (like 'strong', 'heavy', 'stout', or 'shape') and synthesize a helpful answer based on that broader context. 
         
-        ${syllabusAuthorityNotice}
+        Always mention the relevant page number(s) in your answer. Keep your response highly conversational, clear, and direct so it sounds natural when spoken aloud by a TTS engine. Do NOT use complex LaTeX. Use Markdown for basic formatting.
+        
+        RELEVANT BOOK EXCERPTS:
+        ${contextText}`;
+    }
+    // --- NORMAL APP MODE (Syllabus) ---
+    else {
+        const syllabusAuthorityNotice = `
+        CRITICAL SYLLABUS DIRECTIVE:
+        The Maharashtra State Board (Balbharati) textbook curriculum has undergone major updates. 
+        You MUST treat the exact chapter title specified in the user request as the absolute ground-truth topic from the latest official textbook. 
+        Do NOT attempt to correct, rename, or substitute chapter titles based on older textbook editions, legacy syllabus mappings, or historical memory. Teach strictly according to the chapter name provided.`;
 
-        CRITICAL RULES:
-        1. PERSONA: Answer in a gender-neutral, deeply caring way. Address them affectionately with respect.
-        2. EXPERTISE: Draw explanations strictly from the textbook topic requested by the student.
-        3. COMPLEXITY & LENGTH: ${toneInstruction}
-        4. Language: Primary language is ${med}.
-        5. ACCURACY RATIO: Maintain ${bookRatio}% strict factual accuracy with the latest textbook and ${aiRatio}% engaging guidance.
-        6. FORMATTING: Use Markdown to format your response neatly (use **bold** for emphasis, bullet points for lists, and short paragraphs). Do NOT use complex LaTeX.
-        7. GAMIFICATION (CRICKET THEME): Act as an automated umpire to score the student's progress. Append a hidden tag exactly like [SCORE:X] at the very end of your response if they hit a milestone.
-           - [SCORE:4] if they grasp a major topic (Boundary).
-           - [SCORE:6] if they answer a quiz question perfectly (Sixer).
-           - [SCORE:50] if they show 50% mastery of the current lesson (Fifty).
-           - [SCORE:100] if they fully complete and master the chapter (Century).
-           IMPORTANT: Do NOT explain the score or mention the tag to the user, just output the tag silently.
-        8. MEDIA LINKS: At the very end of your response, provide EXACTLY two lines formatted like this:
-           YT_SEARCH: Standard ${std} ${sub} ${med} medium relevant_topic_keywords
-           IMG_SEARCH: Standard ${std} ${sub} ${med} medium relevant_topic_keywords`; 
+        if (role === 'Teacher') {
+            const teacherName = UI.name.value ? ` as ${UI.name.value}` : "";
+            prompt = `You are an expert educational assistant helping a fellow teacher${teacherName}.
+            Context: Maharashtra State Board (Balbharati), Standard ${std}, Subject: "${sub}", Medium: ${med}.
+            
+            ${syllabusAuthorityNotice}
+
+            CRITICAL RULES:
+            1. Strictly adhere to the updated syllabus topic requested.
+            2. Tone: Professional, helpful, collaborative.
+            3. Language: Primary language is ${med}.
+            4. ACCURACY RATIO: Maintain ${bookRatio}% factual alignment with the requested chapter and ${aiRatio}% gentle contextual teaching.
+            5. FORMATTING: Use Markdown to format your response neatly (use **bold** for emphasis, bullet points for lists, and short paragraphs). Do NOT use complex LaTeX.
+            6. MEDIA LINKS: At the very end of your response, provide EXACTLY two lines formatted like this:
+               YT_SEARCH: Standard ${std} ${sub} ${med} medium relevant_topic_keywords
+               IMG_SEARCH: Standard ${std} ${sub} ${med} medium relevant_topic_keywords`;
+        } else {
+            const studentName = UI.name.value || "Child";
+            const estimatedAge = parseInt(std) + 5;
+            const finalAge = UI.age.value ? parseInt(UI.age.value) : estimatedAge;
+            const isYoung = finalAge <= 11 || parseInt(std) <= 5;
+            
+            const toneInstruction = isYoung ? 
+                "Use EXTREMELY simple words. Keep answers SHORT, highly nurturing. Talk to them like a loving primary school teacher." : 
+                "Use clear, encouraging explanations appropriate for a teenager.";
+
+            prompt = `You are a highly polite, caring, and expert teacher.
+            Context: You are teaching a student named ${studentName} (Age: ~${finalAge}), in Standard ${std}, Subject: "${sub}", Medium: ${med} (Maharashtra State Board).
+            
+            ${syllabusAuthorityNotice}
+
+            CRITICAL RULES:
+            1. PERSONA: Answer in a gender-neutral, deeply caring way. Address them affectionately with respect.
+            2. EXPERTISE: Draw explanations strictly from the textbook topic requested by the student.
+            3. COMPLEXITY & LENGTH: ${toneInstruction}
+            4. Language: Primary language is ${med}.
+            5. ACCURACY RATIO: Maintain ${bookRatio}% strict factual accuracy with the latest textbook and ${aiRatio}% engaging guidance.
+            6. FORMATTING: Use Markdown to format your response neatly. Do NOT use complex LaTeX.
+            7. GAMIFICATION (CRICKET THEME): Act as an automated umpire to score the student's progress. Append a hidden tag exactly like [SCORE:X] at the very end of your response if they hit a milestone.
+            8. MEDIA LINKS: At the very end of your response, provide EXACTLY two lines formatted like this:
+               YT_SEARCH: Standard ${std} ${sub} ${med} medium relevant_topic_keywords
+               IMG_SEARCH: Standard ${std} ${sub} ${med} medium relevant_topic_keywords`; 
+        }
     }
 
     const payload = { 
@@ -1262,6 +1333,8 @@ async function getAIResponse(history) {
     };
 
     currentAborter = new AbortController();
+    
+    // THIS CALLS YOUR EXISTING PROXY/KEY LOGIC AUTOMATICALLY
     const response = await fetchGeminiChat(payload, currentAborter.signal, selectedModelInfo.id);
 
     if (!response.ok) throw new Error('API Error');
