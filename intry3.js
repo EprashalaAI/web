@@ -7,6 +7,11 @@ let isManuallyPaused = false;
 let selectedLibraryItem = "Bhagavad Gita|Bhagavad Gita";
 let state = { isProcessing: false, isMuted: false, lastAIMessage: "", sessionActive: false };
 
+let isMicHeld = false;
+let isMicToggled = false;
+let micPressStartTime = 0;
+let finalMicTranscript = '';
+
 let ttsStatus = 'STOPPED';
 let currentActiveBtn = null;
 let currentAudio = new Audio(); // Cloud audio singleton
@@ -232,10 +237,32 @@ document.addEventListener("DOMContentLoaded", async () => {
 		btnCloseApp: document.getElementById('btn-close-app'),
 		btnExport: document.getElementById('btn-export-session'),
         btnImport: document.getElementById('btn-import-session'),
-        fileImport: document.getElementById('file-import-input')
+        fileImport: document.getElementById('file-import-input'),
+		btnLibrary: document.getElementById('btn-open-library'),
+        libraryModal: document.getElementById('library-modal'),
+        btnCloseLibrary: document.getElementById('btn-close-library'),
+        libraryContainer: document.getElementById('library-list-container'),
+        headerTitle: document.getElementById('main-header-title'),
+        btnImportBook: document.getElementById('btn-import-book'),
+        importBookInput: document.getElementById('import-book-input')
     };
 
 	if (UI.overlay) {
+		const urlParams = new URLSearchParams(window.location.search);
+        const urlBookId = urlParams.get('id');
+
+        if (urlBookId) {
+            const request = indexedDB.open("EprashalaRAG", 1);
+            request.onsuccess = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains("bookData")) return;
+                const getReq = db.transaction("bookData", "readonly").objectStore("bookData").get(urlBookId);
+                getReq.onsuccess = () => {
+                    if (getReq.result) activateBookMode(getReq.result);
+                };
+            };
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
         await ChatDB.init(); // Initialize robust database layer
         await loadLibraryConfig();
         if (UI.ddBtn) initCustomDropdown(); // Only call this ONCE, after the config loads!
@@ -302,7 +329,7 @@ document.addEventListener('click', enforceFullScreen, { capture: true });
 document.addEventListener('touchstart', enforceFullScreen, { capture: true, passive: true });
 
 // --- 2. THE ANCIENT LIBRARY CONFIGURATION ---
-const PROXY_URL = "https://eprashala-proxy-511804777001.asia-south1.run.app/api/chat";
+const PROXY_URL = "https://eprashala.pythonanywhere.com";
 
 let LIBRARY_CONFIG = {};
 async function loadLibraryConfig() {
@@ -497,13 +524,52 @@ function renderDropdownList(filterText = "") {
             UI.ddList.appendChild(groupDiv);
         }
     }
+
+    // --- NEW: GLOBAL INTERNET ARCHIVE FALLBACK ---
+    if (filterText.trim().length > 0) {
+        const archiveDiv = document.createElement('div');
+        archiveDiv.innerHTML = `<div class="text-[10px] uppercase text-orange-500 font-bold px-3 py-1.5 mt-1 bg-slate-900 sticky top-0 z-10 shadow-sm">Global Internet Archives</div>`;
+        
+        const itemDiv = document.createElement('div');
+        itemDiv.className = "px-3 py-2 cursor-pointer hover:bg-slate-700 rounded-lg transition-colors flex flex-col mx-1 my-0.5 border border-orange-500/30 bg-orange-900/20";
+        itemDiv.innerHTML = `
+            <span class="text-sm font-bold text-orange-400 leading-tight">Search for: "${filterText}"</span>
+            <span class="text-[10px] text-slate-400 mt-0.5 leading-tight">Access modern & global books beyond the ancient library.</span>
+        `;
+        
+        itemDiv.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            // Prefixing with "Archive|" tells our system how to handle this
+            selectedLibraryItem = `Archive|${filterText.trim()}`;
+            UI.ddText.innerText = `[Archive] ${filterText.trim()}`;
+            
+            UI.ddMenu.style.display = 'none';
+            UI.ddMenu.classList.add('hidden');
+            UI.ddSearch.value = ''; 
+            renderDropdownList();   
+        };
+        
+        archiveDiv.appendChild(itemDiv);
+        UI.ddList.appendChild(archiveDiv);
+    }
 }
 
 function getSelectedConfig() {
     const [group, item] = selectedLibraryItem.split('|');
+    
+    // Intercept Archive requests and generate a temporary virtual config
+    if (group === 'Archive') {
+        return {
+            persona: "Global Archive AI",
+            texts: item,
+            greeting: "Namaste",
+            desc: "Accessing the global internet archives."
+        };
+    }
+    
     return LIBRARY_CONFIG[group][item];
 }
-
 function getSelectedItemName() {
     return selectedLibraryItem.split('|')[1];
 }
@@ -612,6 +678,8 @@ async function loadData() {
         UI.name.value = localStorage.getItem('darshan_name') || "";
         UI.age.value = localStorage.getItem('darshan_age') || "";
         UI.remember.checked = localStorage.getItem('darshan_remember') === 'true';
+		const savedRemember = localStorage.getItem('darshan_remember');
+        UI.remember.checked = savedRemember !== null ? savedRemember === 'true' : true;
         
         UI.ratioSlider.value = localStorage.getItem('darshan_ratio') || "80";
         UI.modelSlider.value = localStorage.getItem('darshan_model') || "40";
@@ -696,7 +764,9 @@ function renderHistoryList() {
     sorted.forEach(session => {
         const card = document.createElement('div');
         card.className = "w-full text-left text-sm text-slate-300 bg-slate-800/80 hover:bg-slate-700 p-4 rounded-xl transition-colors border border-slate-700 hover:border-cyan-500/50 flex flex-col gap-2 outline-none mb-2 shadow-sm cursor-pointer group";
-        
+		const rawPreview = session.messages.length > 0 ? session.messages[0].parts[0].text : 'Empty session';
+        const safePreview = rawPreview.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+		
         card.innerHTML = `
             <div class="flex justify-between items-center w-full">
                 <div class="flex items-center gap-2 overflow-hidden flex-1">
@@ -806,6 +876,50 @@ function loadSpecificSession(targetId) {
 }
 
 function setupEventListeners() {
+	
+	// --- BOOK LIBRARY & IMPORT LISTENERS ---
+    if (UI.btnLibrary) UI.btnLibrary.onclick = openLibraryModal;
+    if (UI.btnCloseLibrary) UI.btnCloseLibrary.onclick = () => UI.libraryModal.classList.add('hidden');
+
+    if (UI.btnImportBook && UI.importBookInput) {
+        UI.btnImportBook.onclick = (e) => {
+            e.stopPropagation();
+            UI.importBookInput.value = '';
+            UI.importBookInput.click();
+        };
+
+        UI.importBookInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const parsed = JSON.parse(event.target.result);
+                    let importedBook = null;
+
+                    if (Array.isArray(parsed)) {
+                        const fallbackTitle = parsed[0].book_title || file.name.replace(/\.[^.]+$/, '');
+                        importedBook = { id: 'book-' + Date.now(), title: fallbackTitle, dateAdded: new Date().toISOString(), chunks: parsed };
+                    } else if (parsed && Array.isArray(parsed.chunks)) {
+                        importedBook = { id: 'book-' + Date.now(), title: parsed.title || file.name, dateAdded: new Date().toISOString(), chunks: parsed.chunks };
+                    } else {
+                        alert("Invalid JSON format.");
+                        return;
+                    }
+
+                    const request = indexedDB.open("EprashalaRAG", 1);
+                    request.onsuccess = (ev) => {
+                        const tx = ev.target.result.transaction("bookData", "readwrite");
+                        tx.objectStore("bookData").put(importedBook, importedBook.id);
+                        tx.oncomplete = () => { alert("Imported!"); renderBookLibrary(); };
+                    };
+                } catch (err) { alert("Could not parse JSON."); }
+            };
+            reader.readAsText(file);
+        };
+    }
+	
     // 1. Chat Log Listener (Plays audio and single PDFs)
     UI.log.addEventListener('click', (e) => {
         const playBtn = e.target.closest('.btn-play-msg');
@@ -987,35 +1101,231 @@ UI.textIn.addEventListener('focus', () => {
         UI.textIn.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }, 300);
 });
-	UI.btnMic.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (state.isProcessing) return;
-        
-        if (!recognition) {
-            alert("⚠️ Speech Recognition is not supported by this browser.");
-            return;
-        }
 
-        if (isListening) { recognition.stop(); } 
-        else { recognition.lang = UI.lang.value; try { recognition.start(); } catch(err) {} }
+// INSERT THIS HYBRID LISTENER BLOCK
+// Change to async arrow function
+const handleMicDown = async (e) => {
+    e.preventDefault(); 
+    e.stopPropagation(); 
+    enforceFullScreen(); 
+    
+    if (state.isProcessing || !recognition) {
+        if (!recognition) alert("Speech recognition is not supported in this browser.");
+        return;
+    }
+    
+    if (isListening && isMicToggled) {
+        isMicToggled = false;
+        recognition.stop(); 
+        return;
+    }
+
+    if (isMicHeld) return; 
+
+    isMicHeld = true;
+    isMicToggled = false;
+    micPressStartTime = Date.now();
+    finalMicTranscript = '';
+    UI.textIn.value = '';
+    
+    recognition.lang = UI.lang.value; 
+
+    // --- AUDIO ROUTING FIX START ---
+    try {
+        // Force the OS to switch to the Bluetooth/Wired headset profile
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                audio: { echoCancellation: true, noiseSuppression: true } 
+            });
+            // Immediately stop the tracks so the Web Speech API can take control of the mic
+            stream.getTracks().forEach(track => track.stop());
+        }
+        
+        // Now start the recognition engine
+        recognition.start(); 
+    } catch(err) { 
+        console.error("Hardware routing failed:", err);
+        // Fallback: Attempt to start anyway if permission was denied or stream failed
+        try { recognition.start(); } catch(fallbackErr) { console.error(fallbackErr); }
+    }
+    // --- AUDIO ROUTING FIX END ---
+};
+
+    const handleMicUp = (e) => {
+        e.preventDefault(); 
+        e.stopPropagation();
+        if (!isMicHeld) return; 
+        
+        const holdDuration = Date.now() - micPressStartTime;
+        
+        if (holdDuration < 400) {
+            // Short tap: Switch to normal toggle mode (keeps listening until silence)
+            isMicHeld = false;
+            isMicToggled = true; 
+        } else {
+            // Long press released: Stop and process immediately
+            isMicHeld = false;
+            if (recognition && isListening) recognition.stop();
+        }
+    };
+
+    const handleMicLeave = (e) => {
+        // If their finger slips off the button while holding, stop recording
+        if (isMicHeld) {
+            isMicHeld = false;
+            if (recognition && isListening) recognition.stop();
+        }
+    };
+
+    // Attach all necessary events for desktop and mobile
+    UI.btnMic.addEventListener('mousedown', handleMicDown);
+    UI.btnMic.addEventListener('touchstart', handleMicDown, { passive: false });
+    
+    UI.btnMic.addEventListener('mouseup', handleMicUp);
+    UI.btnMic.addEventListener('touchend', handleMicUp);
+    
+    UI.btnMic.addEventListener('mouseleave', handleMicLeave);
+	// --- HEADSET BUTTON (ANSWER CALL / PLAY-PAUSE) INTERCEPTOR ---
+    const toggleMicFromHeadset = () => {
+        if (state.isProcessing || !recognition) return;
+
+        if (isListening) {
+            // If already listening, stop it (mimics tapping to stop)
+            isMicToggled = false;
+            if (recognition) recognition.stop();
+        } else {
+            // If not listening, start it in "Toggle" mode
+            // We create a dummy event to bypass preventDefault/stopPropagation errors
+            const dummyEvent = { preventDefault: () => {}, stopPropagation: () => {} };
+            
+            // 1. Trigger the down action
+            handleMicDown(dummyEvent);
+            
+            // 2. Trigger the up action immediately (100ms) to force it into "short tap" toggle mode
+            setTimeout(() => {
+                handleMicUp(dummyEvent);
+            }, 100); 
+        }
+    };
+
+    // 1. Media Session API (Captures Bluetooth & most modern wired headsets)
+    if ('mediaSession' in navigator) {
+        // Hijack the OS media controls so the headset button routes to our PWA
+        navigator.mediaSession.metadata = new MediaMetadata({
+            title: 'Dhwani AI',
+            artist: 'Active Session',
+        });
+
+        navigator.mediaSession.setActionHandler('play', toggleMicFromHeadset);
+        navigator.mediaSession.setActionHandler('pause', toggleMicFromHeadset);
+        navigator.mediaSession.setActionHandler('stop', () => {
+            if (isListening && recognition) recognition.stop();
+        });
+    }
+
+    // 2. Keyboard Fallback (Captures older wired headsets that send raw keycodes)
+    document.addEventListener('keydown', (e) => {
+        // 'MediaPlayPause' is the standard web keycode for the headset hook/call button
+        if (e.key === 'MediaPlayPause' || e.key === 'Call') {
+            e.preventDefault();
+            toggleMicFromHeadset();
+        }
     });
 	
 	// --- SMART BOOK SUGGESTIONS LOGIC ---
+// --- SMART BOOK SUGGESTIONS LOGIC ---
     // Map everyday keywords to specific groups and books from your library
     const keywordMap = {
+        // 1. Core Health & Wellness
         "health": { group: "Ayurveda", item: "Charaka Samhita", label: "Health (Charaka)" },
         "medicine": { group: "Ayurveda", item: "Sushruta Samhita", label: "Medicine (Sushruta)" },
         "surgery": { group: "Ayurveda", item: "Sushruta Samhita", label: "Surgery (Sushruta)" },
+        "pregnancy": { group: "Ayurveda", item: "Garbha Sanskar", label: "Garbha Sanskar" },
+        "women": { group: "Prominent Personalities", item: "Dr. Pihu Gynecology & Women's Health", label: "Women's Health" },
+        "beauty": { group: "Prominent Personalities", item: "Dr. Rupali - Ayurvedic Cosmetology", label: "Beauty & Skin" },
+        "addiction": { group: "Ayurveda", item: "Vedic & Ayurvedic De-Addiction Science", label: "De-Addiction" },
+        "drugs": { group: "Ayurveda", item: "Vedic & Ayurvedic De-Addiction Science", label: "Mind Recovery" },
+        
+        // 2. Relationships & Mind
         "relationship": { group: "Shastra", item: "Kama Shastra", label: "Relationships" },
         "love": { group: "Shastra", item: "Kama Shastra", label: "Love & Aesthetics" },
+        "mind": { group: "Philosophical Sutras", item: "Patanjali Yoga Sutras", label: "Yoga & Mind" },
+        "yoga": { group: "Philosophical Sutras", item: "Patanjali Yoga Sutras", label: "Patanjali Yoga" },
+        "meditation": { group: "Modern Spiritual", item: "Paramahansa Yogananda", label: "Kriya Yoga" },
+        
+        // 3. Ancient Sciences, Math & Engineering
         "science": { group: "Vedic Sciences", item: "Vedic Quantum Physics", label: "Quantum Science" },
         "physics": { group: "Vedic Sciences", item: "Vedic Quantum Physics", label: "Vedic Physics" },
         "astronomy": { group: "Jyotish", item: "Surya Siddhanta", label: "Astronomy" },
         "stars": { group: "Jyotish", item: "Brihat Parashara", label: "Astrology" },
         "math": { group: "Ancient Scientists & Mathematicians", item: "Aryabhata", label: "Mathematics" },
-        "law": { group: "Dharma Shastra", item: "Manusmriti", label: "Ancient Law" },
+        "water": { group: "Shastra", item: "Jala Samrakshana & Engineering", label: "Water Conservation" },
+        "aviation": { group: "Shastra", item: "Vaimanika Shastra", label: "Ancient Aviation" },
+        "gems": { group: "Ratna Pariksha (Ancient Gemology)", item: "Ratnapariksha", label: "Gemology" },
+        "diamond": { group: "Ratna Pariksha (Ancient Gemology)", item: "Ratnapariksha", label: "Gem Testing" },
+        "animals": { group: "Shastra", item: "Pashu Ayurveda", label: "Veterinary Science" },
+        "architecture": { group: "Shastra", item: "Vastu Shastra", label: "Vastu Shastra" },
+        "vastu": { group: "Shastra", item: "Vastu Shastra", label: "Vastu" },
+        "engineering": { group: "Shastra", item: "Shilpa Shastra", label: "Shilpa Shastra" },
+
+        // 4. Modern Law, Governance & Tax
+        "law": { group: "Laws In India", item: "Constitution", label: "Constitution of India" },
+        "ancient law": { group: "Dharma Shastra", item: "Manusmriti", label: "Ancient Law" },
+        "crime": { group: "Laws In India", item: "Substantive Criminal Law", label: "Criminal Law" },
+        "police": { group: "Laws In India", item: "Central Police Framework", label: "Police Framework" },
+        "tax": { group: "Laws In India", item: "Direct Taxes", label: "Taxation Laws" },
+        "driving": { group: "Laws In India", item: "Road Safety & Violations", label: "Traffic Laws" },
+        "politics": { group: "Dharma Shastra", item: "Arthashastra", label: "Chanakya's Politics" },
+
+        // 5. Tech & Modern Influencers
+        "computer": { group: "Real Influencers", item: "Linus Torvalds", label: "Linux & Computing" },
+        "tech": { group: "Real Influencers", item: "Steve Jobs", label: "Tech Innovation" },
+        "apple": { group: "Real Influencers", item: "Steve Jobs", label: "Apple History" },
+        "iphone": { group: "Real Influencers", item: "Steve Jobs", label: "Apple History" },
+        "google": { group: "Real Influencers", item: "Sundar Pichai", label: "Google Tech" },
+        "ai": { group: "Real Influencers", item: "Sam Altman", label: "Artificial Intelligence" },
+        "tesla": { group: "Real Influencers", item: "Elon Musk", label: "SpaceX & Tesla" },
+
+        // 6. Business & Economy
+        "business": { group: "Business Tycoons of India", item: "Ratan Naval Tata", label: "Tata Legacy" },
+        "startup": { group: "Business Tycoons of India", item: "Sachin Bansal", label: "Startups (Flipkart)" },
+        "invest": { group: "Business Tycoons of India", item: "Radhakishan Damani", label: "Investing (DMart)" },
+        "stocks": { group: "Business Tycoons of India", item: "Nithin Kamath", label: "Retail Broking" },
+        "reliance": { group: "Business Tycoons of India", item: "Dhirubhai Ambani", label: "Reliance Legacy" },
+
+        // 7. Government Schemes & Agriculture
+        "scheme": { group: "PMO schemes", item: "PMJAY", label: "Govt Health Schemes" },
+        "farming": { group: "Prominent Personalities", item: "Baliraja - Agricultural Science", label: "Farming Science" },
+        "agriculture": { group: "Prominent Personalities", item: "Baliraja - Agricultural Science", label: "Agricultural Wisdom" },
+        "kisan": { group: "PMO schemes", item: "PM-KISAN", label: "PM-KISAN" },
+
+        // 8. Sports Science
         "sports": { group: "Ancient Sports and Martial Arts", item: "Ancient Sports and Martial Arts", label: "Ancient Sports" },
-        "cricket": { group: "Sports Science & Mindset", item: "Sachin Tendulkar", label: "Cricket Mindset" }
+        "cricket": { group: "Sports Science & Mindset", item: "Sachin Tendulkar", label: "Cricket Mindset" },
+        "chess": { group: "Sports Science & Mindset", item: "Viswanathan Anand", label: "Chess Mastery" },
+        "olympics": { group: "Sports Science & Mindset", item: "Abhinav Bindra", label: "Olympic Focus" },
+        "boxing": { group: "Sports Science & Mindset", item: "Mary Kom", label: "Boxing Champion" },
+
+        // 9. Arts, Music & Culture
+        "music": { group: "Arts & Applied Sciences", item: "Sangita Ratnakara", label: "Classical Music" },
+        "dance": { group: "Classical Literature", item: "Natyashastra", label: "Natyashastra" },
+        "singing": { group: "Visionaries & Cultural Icons", item: "Lata Mangeshkar", label: "Indian Playback" },
+
+        // 10. History, Heroes & Freedom
+        "shivaji": { group: "Maratha Empire", item: "Chhatrapati Shivaji Maharaj", label: "Shivaji Maharaj" },
+        "maratha": { group: "Maratha Empire", item: "Chhatrapati Sambhaji Maharaj", label: "Sambhaji Maharaj" },
+        "freedom": { group: "Indian Freedom Fighters", item: "Mahatma Gandhi", label: "Freedom Struggle" },
+        "revolution": { group: "Indian Freedom Fighters", item: "Bhagat Singh", label: "Bhagat Singh" },
+        "space": { group: "Visionaries & Cultural Icons", item: "A.P.J. Abdul Kalam", label: "Space & Missiles" },
+        
+        // 11. Deep Spiritual & Epics
+        "gita": { group: "Bhagavad Gita", item: "Bhagavad Gita", label: "Bhagavad Gita" },
+        "ram": { group: "Gods", item: "Rama", label: "Lord Rama" },
+        "ramayana": { group: "Epics", item: "Ramayana", label: "Ramayana Epic" },
+        "krishna": { group: "Gods", item: "Krishna", label: "Lord Krishna" },
+        "mahabharata": { group: "Epics", item: "Mahabharata", label: "Mahabharata" },
+        "shiv": { group: "Gods", item: "Shiv", label: "Lord Shiva" },
+        "buddha": { group: "Gods", item: "Gautam Buddha", label: "Lord Buddha" }
     };
 
     const suggestionsContainer = document.getElementById('book-suggestions');
@@ -1080,51 +1390,210 @@ UI.textIn.addEventListener('focus', () => {
 	
 }
 
-function initSpeechRecognition() {
-    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRec) return; 
+let isBookMode = false;
+let activeBookChunks = [];
+let activeBookTitle = "";
+
+function openLibraryModal() {
+    UI.libraryModal.classList.remove('hidden');
+    renderBookLibrary();
+}
+
+function activateBookMode(bookObj) {
+    isBookMode = true;
+    activeBookChunks = bookObj.chunks;
+    activeBookTitle = bookObj.title;
+
+    // Hide the ancient library dropdown
+    const ddContainer = document.getElementById('custom-dropdown-container');
+    if (ddContainer) ddContainer.style.display = 'none';
+
+    if (UI.headerTitle) {
+        UI.headerTitle.innerHTML = `<span class="text-sky-400 text-xs">Conversing with Book:</span><br><span class="text-white text-lg font-normal break-words">${activeBookTitle}</span>`;
+    }
+
+    clearData();
+    const initMsgId = renderMessage("System", `📚 <b>${activeBookTitle}</b> loaded securely from your phone's storage.<br><br>Tap the mic and ask me anything about this book!`, true);
+    if (!state.isMuted) {
+        const btn = document.getElementById(`play-btn-${initMsgId}`);
+        if (btn) window.toggleSingleMessagePlay(btn);
+    }
+}
+
+function retrieveRelevantChunks(query, topK = 8) {
+    if (!activeBookChunks || activeBookChunks.length === 0) return [];
+    const queryTerms = query.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+    if (!queryTerms.length) return activeBookChunks.slice(0, topK);
+
+    const scored = activeBookChunks.map(chunk => {
+        let score = 0;
+        const textLower = chunk.text.toLowerCase();
+        queryTerms.forEach(term => {
+            const matches = (textLower.match(new RegExp(term, 'g')) || []).length;
+            score += matches * (1 + 10 / (chunk.char_count || 100)); 
+        });
+        return { chunk, score };
+    });
+
+    scored.sort((a, b) => b.score - a.score);
+    return scored.slice(0, topK).map(s => s.chunk);
+}
+
+function renderBookLibrary() {
+    UI.libraryContainer.innerHTML = '<div class="text-center text-slate-500 text-sm mt-10">Loading library...</div>';
     
-    recognition = new SpeechRec();
-    recognition.continuous = false; 
-    recognition.interimResults = false; 
-    
-    recognition.onstart = () => {
-        isListening = true;
-        updateStopButtonVisibility(); 
-        UI.btnMic.classList.add('mic-pulse');
-        UI.status.style.backgroundColor = '#ef4444'; 
-        UI.textIn.value = '';
-        UI.textIn.placeholder = "Listening... Speak now.";
-    };
-    
-    recognition.onresult = (e) => {
-        const transcript = e.results[e.results.length - 1][0].transcript.trim();
-        if (transcript) { UI.textIn.value = transcript; processInput(transcript); }
-    };
-    
-    recognition.onend = () => {
-        isListening = false;
-        if (!state.isProcessing) resetMicUI();
-        setTimeout(updateStopButtonVisibility, 50);
-    };
-    
-    recognition.onerror = (e) => {
-        console.error("Mic Error:", e.error);
-        isListening = false; 
-        resetMicUI(); 
-        setTimeout(updateStopButtonVisibility, 50); 
-        
-        if (e.error === 'no-speech') {
-            return; 
-        } else if (e.error === 'network') {
-            alert("⚠️ Network Error: Android's Google App cannot reach the speech servers.");
-        } else if (e.error === 'not-allowed' || e.error === 'audio-capture') {
-            alert("⚠️ Mic Blocked: Please ensure BOTH Google Chrome and the 'Google' app have microphone permissions in phone settings.");
-        } else {
-            alert("⚠️ Speech Engine Error: " + e.error);
+    const request = indexedDB.open("EprashalaRAG", 1);
+    request.onsuccess = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains("bookData")) {
+            UI.libraryContainer.innerHTML = '<div class="text-center text-slate-500 text-sm mt-10">Library is empty.<br><br>Click the ➕📖 icon in the top right to scan a book, or Import a JSON.</div>';
+            return;
         }
+        
+        const tx = db.transaction("bookData", "readonly");
+        const getAllReq = tx.objectStore("bookData").getAll();
+
+        getAllReq.onsuccess = () => {
+            const books = getAllReq.result;
+            if (!books || books.length === 0) {
+                UI.libraryContainer.innerHTML = '<div class="text-center text-slate-500 text-sm mt-10">Library is empty.</div>';
+                return;
+            }
+
+            UI.libraryContainer.innerHTML = '';
+            books.sort((a,b) => new Date(b.dateAdded || 0) - new Date(a.dateAdded || 0));
+
+            books.forEach(book => {
+                const card = document.createElement('div');
+                card.className = "w-full text-left bg-slate-800/80 hover:bg-slate-700/80 p-3.5 rounded-xl transition-all border border-slate-700 hover:border-sky-500/50 flex flex-col gap-2.5 cursor-pointer shadow-sm group";
+                
+                const safeTitle = typeof book.title === 'string' ? book.title : 'book';
+                const dateObj = new Date(book.dateAdded || Date.now());
+                const chunkCount = Array.isArray(book.chunks) ? book.chunks.length : 0;
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start gap-2">
+                        <div class="flex-1 min-w-0">
+                            <div class="font-bold text-sky-100 text-sm truncate book-title-display">${safeTitle}</div>
+                            <div class="text-[11px] text-slate-400 mt-0.5">${chunkCount} chunks • ${dateObj.toLocaleDateString()}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-end gap-1.5 pt-2 border-t border-slate-700/50 mt-1">
+                        <button class="edit-book-btn p-1.5 text-slate-400 hover:text-sky-300 hover:bg-slate-600/50 rounded-lg transition-colors" title="Rename Book">✏️</button>
+                        <button class="share-book-btn p-1.5 text-slate-400 hover:text-green-400 hover:bg-slate-600/50 rounded-lg transition-colors" title="Share Book JSON">📤</button>
+                        <button class="delete-book-btn p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-600/50 rounded-lg transition-colors" title="Delete Book">🗑️</button>
+                    </div>
+                `;
+
+                card.onclick = (ev) => {
+                    if (ev.target.closest('button')) return;
+                    activateBookMode(book);
+                    UI.libraryModal.classList.add('hidden');
+                };
+
+                card.querySelector('.edit-book-btn').onclick = (ev) => {
+                    ev.stopPropagation();
+                    const newTitle = prompt("Enter a new title:", safeTitle);
+                    if (newTitle && newTitle.trim()) {
+                        book.title = newTitle.trim();
+                        const updateTx = db.transaction("bookData", "readwrite");
+                        updateTx.objectStore("bookData").put(book, book.id);
+                        updateTx.oncomplete = () => renderBookLibrary();
+                    }
+                };
+
+                card.querySelector('.share-book-btn').onclick = async (ev) => {
+                    ev.stopPropagation();
+                    const cleanFileName = safeTitle.toLowerCase().replace(/[^a-z0-9]+/g, '_') + '_rag.json';
+                    const jsonString = JSON.stringify(book, null, 2);
+                    const blob = new Blob([jsonString], { type: 'application/json' });
+                    const file = new File([blob], cleanFileName, { type: 'application/json' });
+
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        try { await navigator.share({ files: [file], title: safeTitle }); return; } catch (err) {}
+                    }
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = cleanFileName;
+                    a.click();
+                };
+
+                card.querySelector('.delete-book-btn').onclick = (ev) => {
+                    ev.stopPropagation();
+                    if (confirm(`Delete "${safeTitle}"?`)) {
+                        const delTx = db.transaction("bookData", "readwrite");
+                        delTx.objectStore("bookData").delete(book.id);
+                        delTx.oncomplete = () => renderBookLibrary();
+                    }
+                };
+
+                UI.libraryContainer.appendChild(card);
+            });
+        };
     };
 }
+
+
+
+			function initSpeechRecognition() {
+				const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+				if (!SpeechRec) return;
+				recognition = new SpeechRec();
+				recognition.continuous = false; 
+				recognition.interimResults = true; // Changed to true to accumulate text seamlessly
+				
+				recognition.onstart = () => {
+					isListening = true;
+					updateStopButtonVisibility();
+					UI.btnMic.classList.add('mic-pulse');
+					UI.status.style.backgroundColor = '#ef4444'; 
+					UI.textIn.value = '';
+					UI.textIn.placeholder = "Listening... Speak now.";
+				};
+				
+				recognition.onresult = (e) => {
+					let interimText = '';
+					for (let i = e.resultIndex; i < e.results.length; ++i) {
+						if (e.results[i].isFinal) {
+							finalMicTranscript += e.results[i][0].transcript + " ";
+						} else {
+							interimText += e.results[i][0].transcript;
+						}
+					}
+					UI.textIn.value = (finalMicTranscript + interimText).trim();
+				};
+				
+				recognition.onend = () => {
+					isListening = false;
+					
+					if (isMicHeld) {
+						// The child is still holding the button, but the API paused. Restart instantly.
+						try { recognition.start(); } catch(err) {}
+					} else {
+						// Button was released (Push-to-talk) OR the toggle timed out
+						if (!state.isProcessing) resetMicUI();
+						setTimeout(updateStopButtonVisibility, 50);
+						
+						const fullText = UI.textIn.value.trim();
+						if (fullText) {
+							processInput(fullText);
+						}
+						finalMicTranscript = ''; 
+						isMicToggled = false;
+					}
+				};
+				
+				recognition.onerror = (e) => {
+					isListening = false; 
+					if (e.error !== 'no-speech') {
+						resetMicUI();
+						setTimeout(updateStopButtonVisibility, 50);
+						isMicHeld = false;
+						isMicToggled = false;
+					}
+				};
+			}
+			
 function resetMicUI() {
     UI.btnMic.classList.remove('mic-pulse');
     UI.status.style.backgroundColor = '#4b5563'; 
@@ -1323,9 +1792,18 @@ async function processInput(userText) {
 
     let introMsgId = null;
 
-    // 2. INSTANT GREETING: Catch the user gesture before it expires!
+ 
+// 2. INSTANT GREETING: Catch the user gesture before it expires!
     if (isFirstMessage) {
-        const greetingText = getDhwaniGreeting(UI.lang.value, config.persona, config.texts);
+        let greetingText = "";
+        
+        // Custom greeting if it's a global archive book
+		if (selectedLibraryItem.startsWith('Archive|')) {
+            greetingText = `Hello ${userName}. I am Dhwani, a interpreter of the book "${config.texts}". I am ready to break down its chapters, theories, and concepts for you.`;
+        } else {
+            // Standard ancient library greeting
+            greetingText = getDhwaniGreeting(UI.lang.value, config.persona, config.texts);
+        }
         
         chatHistory.push({ role: 'user', parts: [{ text: "Pranam." }] });
         chatHistory.push({ role: 'model', parts: [{ text: greetingText }] });
@@ -1344,17 +1822,25 @@ async function processInput(userText) {
     saveData();
 
 
-    try {
-        const rawRes = await getAIResponse(chatHistory, config);
+try {
+        let rawRes = await getAIResponse(chatHistory, config);
+        
+        // 4. FIX: Trim FIRST! If the AI starts with a space/newline, the ^ anchor fails.
+        rawRes = rawRes.trim();
+        
+        // 5. FIX: Expanded the filter to catch "verified records", "global library databases", and "I apologize"
+        rawRes = rawRes.replace(/^.*?(global library records|verified digital entry|databases queried|digital lookup|public records|verified records|global library databases).*?(\n\n|\.\s+)/is, '');
+        rawRes = rawRes.replace(/^(Although |Even though |I cannot locate |I am unable |While the |I apologize).*?\n\n/is, '');
+        
+        // Trim again to clean up any leftover whitespace
+        rawRes = rawRes.trim();
         
         state.lastAIMessage = rawRes;
         chatHistory.push({ role: 'model', parts: [{ text: rawRes }] });
         
         if (isFirstMessage && introMsgId) {
-            // Appends to the existing greeting bubble
             appendToExistingMessage(introMsgId, rawRes);
         } else {
-            // Renders standard separate bubble for all subsequent messages
             const newMsgId = renderMessage("Dhwani", rawRes, true); 
             if (!state.isMuted && ttsStatus !== 'PLAYING') {
                 const btn = document.getElementById(`play-btn-${newMsgId}`);
@@ -1381,6 +1867,59 @@ async function processInput(userText) {
     setTimeout(updateStopButtonVisibility, 100); 
 }
 
+// Universal metadata fetcher for the background LLM prompt
+async function fetchGlobalBookMetadata(query) {
+    try {
+        // 1. Try Google Books API (General search, NO strict 'intitle:' filter)
+        const gbResponse = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=1&printType=books`);
+        const gbData = await gbResponse.json();
+
+        if (gbResponse.ok && gbData.items && gbData.items.length > 0) {
+            const info = gbData.items[0].volumeInfo;
+            return `--- GOOGLE BOOKS RECORD ---\nTitle: ${info.title || query}\nAuthor(s): ${info.authors ? info.authors.join(", ") : "Unknown"}\nSynopsis: ${info.description ? info.description.substring(0, 1200) : "No official synopsis available."}\n`;
+        }
+        
+        // 2. FALLBACK: Open Library API (Bypasses Google API blocks)
+        const olResponse = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=1`);
+        const olData = await olResponse.json();
+        
+        if (olData.docs && olData.docs.length > 0) {
+            const doc = olData.docs[0];
+            return `--- OPEN LIBRARY RECORD ---\nTitle: ${doc.title || query}\nAuthor(s): ${doc.author_name ? doc.author_name.join(", ") : "Unknown"}\nFirst Published: ${doc.first_publish_year || 'Unknown'}\n`;
+        }
+
+        return null; // Both failed
+
+    } catch (error) {
+        console.error("Global Metadata Fetch Error:", error);
+        return null;
+    }
+}
+
+// Fetches public domain records, historical summaries, and alternate metadata
+async function fetchArchiveOrgData(query) {
+    try {
+        const url = `https://archive.org/advancedsearch.php?q=title:(${encodeURIComponent(query)})&fl[]=identifier,title,creator,description,year&sort[]=downloads+desc&rows=1&output=json`;
+        const res = await fetch(url);
+        const data = await res.json();
+        
+        if (data.response && data.response.docs.length > 0) {
+            const doc = data.response.docs[0];
+            return {
+                title: doc.title || query,
+                authors: doc.creator ? doc.creator.join(", ") : "Unknown",
+                year: doc.year || "Unknown",
+                // Strip raw HTML tags that often appear in Archive.org descriptions
+                description: doc.description ? doc.description.toString().replace(/<[^>]*>?/gm, '').substring(0, 1200) : "No description available."
+            };
+        }
+        return null;
+    } catch (e) {
+        console.error("Archive.org Fetch Error:", e);
+        return null;
+    }
+}
+
 async function getAIResponse(history, config) {
     const customKey = (UI.keyIn.value.length > 10) ? UI.keyIn.value : null;
     const headers = { 'Content-Type': 'application/json' };
@@ -1393,41 +1932,86 @@ async function getAIResponse(history, config) {
     const aiRatio = 100 - bookRatio;
     const selectedModelInfo = getModelInfo(UI.modelSlider.value);
 
-	   
-	       
- const prompt = `You are Dhwani, an AI female interpreter and guide to ancient Indian texts. You are NOT the author and you are NOT a god. You are interpreting the text: "${config.texts}" which is associated with ${config.persona}.
+    const [group, itemName] = selectedLibraryItem.split('|');
+    const isArchive = (group === 'Archive');
+
+    let prompt = "";
+    let bookTitle = "";
+    let bookAuthor = "";
+    let bookOverview = "";
+	
+	if (isBookMode) {
+        const userQuery = history[history.length - 1].parts[0].text || "";
+        const topChunks = retrieveRelevantChunks(userQuery, 8);
+        const contextText = topChunks.map(c => `[Page ${c.page_start}]: ${c.text}`).join('\n\n');
+
+        prompt = `You are the interactive voice avatar of the book titled "${activeBookTitle}".
+        Answer the user's questions based on the following retrieved book excerpts. 
+        
+        CRITICAL INSTRUCTION: If the exact specific word the user asked for is not found, intelligently scan the excerpts for related descriptive concepts and synthesize a helpful answer based on that broader context. 
+        Always mention the relevant page number(s) in your answer. Keep your response highly conversational, clear, and direct so it sounds natural when spoken aloud by a TTS engine. Do NOT use complex LaTeX.
+        
+        RELEVANT BOOK EXCERPTS:
+        ${contextText}`;
+    }
+
+    else if (isArchive) {
+        // Use the metadata already loaded by the search UI
+        const bookInfo = window.currentBookContext || { title: itemName, authors: "", snippet: "" };
+        bookTitle = bookInfo.title || itemName;
+        bookAuthor = (bookInfo.authors && bookInfo.authors !== "Unknown Author") ? ` by ${bookInfo.authors}` : "";
+        bookOverview = (bookInfo.snippet && !bookInfo.snippet.includes("No description")) ? `Summary Context: ${bookInfo.snippet}` : "";
+
+        // --- GLOBAL MASTER PROFESSOR PROMPT ---
+        // 2. FIX: Added the CRITICAL RULES (Anti-apology) to the Archive prompt
+        prompt = `You are Dhwani, an expert university professor and master tutor. You have complete, encyclopedic mastery of the book "${bookTitle}"${bookAuthor}.
+
+${bookOverview}
+
+CRITICAL RULES:
+1. Master Authority: You MUST act as if you have the book right in front of you. NEVER mention "library records", "verified digital entry", "metadata", "databases", or state that you cannot locate the book. NEVER apologize for lack of records. If the specific edition is obscure, discuss the core themes of the primary text confidently.
+2. Structure & Breadth: Immediately outline the primary volumes, units, or major theoretical sections of "${bookTitle}"${bookAuthor}, explaining how the concepts build on each other.
+3. Proactive Engagement: Conclude by asking the student which specific chapter, theorem, formula, or problem they want to work through today.
+4. Tone: Academic, rigorous, encouraging, and clear. Tailored for a ${UI.age.value || '25'}-year-old student. ${contextAddon}
+5. Language: Strictly ${UI.lang.value}.
+6. Formatting: Use clean Markdown with bold topic headers and bullet points.
+7. Media Links: At the very end, provide EXACTLY two lines:
+   YT_SEARCH: ${bookTitle} lectures
+   IMG_SEARCH: ${bookTitle} diagram`;
+
+    } else {
+        // --- ANCIENT LIBRARY PROMPT ---
+        // 3. FIX: Define the ancient library variables correctly here
+        bookTitle = config.texts || itemName;
+        bookAuthor = config.persona ? ` (Wisdom of ${config.persona})` : "";
+        bookOverview = config.desc ? `Context: ${config.desc}` : "";
+
+        prompt = `You are Dhwani, an expert university professor and master tutor. You have complete, encyclopedic mastery of the book "${bookTitle}"${bookAuthor}.
+
+${bookOverview}
+
+CRITICAL RULES:
+1. Master Authority: You MUST act as if you are holding the book. NEVER mention "library records", "digital entry", "metadata", or "databases". NEVER apologize.
+2. Structure & Breadth: Immediately outline the primary volumes, units, or major theoretical sections of "${bookTitle}"${bookAuthor}, explaining how the concepts build on each other.
+3. Proactive Engagement: Conclude by asking the student which specific chapter, theorem, formula, or problem they want to work through today.
+4. Tone: Academic, rigorous, encouraging, and clear. Tailored for a ${UI.age.value || '25'}-year-old student. ${contextAddon}
+5. Language: Strictly ${UI.lang.value}.
+6. Formatting: Use clean Markdown with bold topic headers and bullet points.
+7. Media Links: At the very end, provide EXACTLY two lines:
+   YT_SEARCH: ${bookTitle} lectures
+   IMG_SEARCH: ${bookTitle} diagram`;
+    }
     
-    CRITICAL AND UNBREAKABLE RULES FOR YOUR RESPONSE:
-    1. PERSONA: Your name is Dhwani. Address the user respectfully and affectionately using gender-neutral terms like "Vatsa" (child/seeker) or "Bhakta" (devotee). Do NOT pretend to be ${config.persona}. Act strictly as a humble interpreter sharing their wisdom. IMPORTANT: Do NOT begin your response with a greeting (e.g., Namaste, Pranam, Hello) as the user has already been greeted. Dive straight into the wisdom.
-    2. EXCLUSIVE SOURCE MATERIAL: You MUST derive your entire answer, philosophy, and worldview EXCLUSIVELY from "${config.texts}". Do NOT mix in concepts, verses, or ideas from other texts.
-    3. EXACT VERSE/QUOTE: You MUST select a real, highly relevant verse, sutra, shloka, or phrase from "${config.texts}" that directly addresses the user's query. If you cannot recall the exact verbatim words, paraphrase the concept accurately rather than fabricating a fake verse.
-    4. THE REFERENCE (ANTI-HALLUCINATION GUARDRAIL): State the exact structural reference (e.g., Book, Chapter, Canto, Verse) ONLY if you are 100% certain. If there is even a slight ambiguity across different historical recensions/editions, DO NOT guess or invent numbers. Instead, omit the digits and use a phrase like: "In a celebrated section of the ${config.texts}..." or describe its conceptual placement. Never invent chapter/verse numbers.
-    5. THE RECITATION: Recite the original verse accurately in the requested language.
-    6. THE EXPLANATION: Explain the profound meaning of this specific verse strictly within the context of "${config.texts}" as an interpreter. Apply it directly to the user's question to provide actionable guidance.
-    7. LANGUAGE: Speak strictly in the language code: ${UI.lang.value}.
-    8. FORMATTING: Use rich Markdown formatting (bolding, headers, lists) to make the text beautiful and structured for the user to read.
-    9. TONE & RATIO: Maintain an objective, knowledgeable, yet compassionate tone. Your answer must be exactly ${bookRatio}% strict traditional quotation/interpretation of "${config.texts}" and ${aiRatio}% compassionate contextualization for the modern user. ${contextAddon}
-    10. MEDIA LINKS: At the very end of your response, provide EXACTLY two lines formatted like this for further exploration (translate the descriptive text to ${UI.lang.value}):
-       YT_SEARCH: relevant_topic_keywords
-       IMG_SEARCH: relevant_topic_keywords`;
-    
-   // Core payload format (without the model ID, which is handled in the URL for direct calls)
     const payload = { 
         contents: history.slice(-10), 
-        systemInstruction: { parts: [{ text: prompt }] } 
+        systemInstruction: { parts: [{ text: prompt }] }
     };
 
-    let fetchUrl;
+    let fetchUrl = customKey 
+        ? `https://generativelanguage.googleapis.com/v1beta/models/${selectedModelInfo.id}:generateContent?key=${customKey}` 
+        : `${PROXY_URL}/api/chat`;
 
-		if (customKey) {
-        // Direct to Google AI Studio endpoint
-        fetchUrl = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModelInfo.id}:generateContent?key=${customKey}`;
-    } else {
-        // Route through your Cloud Run proxy
-        fetchUrl = `${PROXY_URL}/api/chat`; // <-- FIX: Added the endpoint
-        // The proxy likely expects the model name in the body payload
-        payload.model = selectedModelInfo.id;
-    }
+    if (!customKey) payload.model = selectedModelInfo.id;
 
     currentAborter = new AbortController();
 
@@ -1449,10 +2033,12 @@ async function getAIResponse(history, config) {
         return data.candidates[0].content.parts[0].text;
 
     } catch (err) {
-        // Re-throw to allow processInput() to handle the UI reset
         throw err; 
     }
 }
+
+
+
 
 // --- DUAL TTS ENGINE (CLOUD & NATIVE) ---
 function prepareTextForTTSAndHighlighting(container, msgId) {
@@ -2109,3 +2695,203 @@ function renderMessage(sender, text, isModel) {
     return msgId;
 }
 
+// --- APP UPDATE SYNC LOGIC ---
+document.addEventListener('DOMContentLoaded', () => {
+    const btnUpdateApp = document.getElementById('btn-update-app');
+
+    if (btnUpdateApp) {
+        btnUpdateApp.addEventListener('click', async () => {
+            const originalText = btnUpdateApp.innerHTML;
+            btnUpdateApp.innerHTML = `
+                <svg class="w-4 h-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg> Syncing Latest Files...`;
+            btnUpdateApp.disabled = true;
+
+            try {
+                let syncSuccessful = false;
+
+                // 1. Send direct SYNC_NOW message to active Service Worker
+                if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                    const messageChannel = new MessageChannel();
+                    
+                    const messagePromise = new Promise((resolve) => {
+                        // 8-second safety timeout for slower mobile networks
+                        const timeout = setTimeout(() => resolve(false), 8000);
+
+                        messageChannel.port1.onmessage = (event) => {
+                            clearTimeout(timeout);
+                            if (event.data && event.data.status === 'SUCCESS') {
+                                resolve(true);
+                            } else {
+                                resolve(false);
+                            }
+                        };
+                    });
+
+                    navigator.serviceWorker.controller.postMessage(
+                        { action: 'SYNC_NOW' },
+                        [messageChannel.port2]
+                    );
+
+                    syncSuccessful = await messagePromise;
+                }
+
+                // 2. Fallback execution: Purge caches directly if SW isn't controlling page yet
+                if (!syncSuccessful) {
+                    console.warn('SW Message channel unavailable/timed out. Executing direct purge fallback...');
+                    if ('caches' in window) {
+                        const keys = await caches.keys();
+                        await Promise.all(keys.map(key => caches.delete(key)));
+                    }
+                    if ('serviceWorker' in navigator) {
+                        const registrations = await navigator.serviceWorker.getRegistrations();
+                        for (let reg of registrations) {
+                            await reg.unregister();
+                        }
+                    }
+                }
+
+                // 3. Force hard reload with timestamp query to ensure full fresh render
+                window.location.href = window.location.pathname + '?reload=' + Date.now();
+
+            } catch (error) {
+                console.error('Update App Error:', error);
+                alert('Could not complete update. Please check your internet connection.');
+                btnUpdateApp.innerHTML = originalText;
+                btnUpdateApp.disabled = false;
+            }
+        });
+    }
+});
+
+// --- GOOGLE BOOKS GLOBAL SEARCH ENGINE ---
+
+document.addEventListener("DOMContentLoaded", () => {
+    const globalModal = document.getElementById('global-search-modal');
+    const btnOpenGlobal = document.getElementById('btn-open-global-search');
+    const btnCloseGlobal = document.getElementById('btn-close-global-search');
+    const searchInput = document.getElementById('global-search-input');
+    const btnSearch = document.getElementById('btn-trigger-global-search');
+    const resultsContainer = document.getElementById('global-search-results');
+
+    if (!globalModal || !btnOpenGlobal) return;
+
+    // Open/Close Modal
+    btnOpenGlobal.addEventListener('click', (e) => {
+        e.preventDefault(); e.stopPropagation();
+        globalModal.classList.remove('hidden');
+        searchInput.focus();
+    });
+
+    btnCloseGlobal.addEventListener('click', () => {
+        globalModal.classList.add('hidden');
+    });
+
+// Trigger Search
+    const executeSearch = async () => {
+        const query = searchInput.value.trim();
+        if (!query) return;
+
+        resultsContainer.innerHTML = `<div class="text-center text-orange-400 mt-10 animate-pulse font-bold">Consulting global archives...</div>`;
+
+        try {
+            let booksData = [];
+            
+            // 1. Try Google Books API First (Best for plot descriptions)
+            const gbResponse = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=10&printType=books`);
+            const gbData = await gbResponse.json();
+
+		// If Google Books succeeds and isn't blocking us
+            if (gbResponse.ok && gbData.items && gbData.items.length > 0) {
+                booksData = gbData.items.map(book => {
+                    // 1. Force HTTPS on Google Book Thumbnails to prevent Mixed Content blocking
+                    let thumbUrl = 'https://via.placeholder.com/128x192.png?text=No+Cover';
+                    if (book.volumeInfo.imageLinks) {
+                        thumbUrl = book.volumeInfo.imageLinks.thumbnail || book.volumeInfo.imageLinks.smallThumbnail || thumbUrl;
+                        thumbUrl = thumbUrl.replace(/^http:\/\//i, 'https://');
+                    }
+                    
+                    return {
+                        title: book.volumeInfo.title || "Unknown Title",
+                        authors: book.volumeInfo.authors ? book.volumeInfo.authors.join(", ") : "Unknown Author",
+                        thumbnail: thumbUrl,
+                        snippet: book.volumeInfo.description ? book.volumeInfo.description.substring(0, 120) + "..." : "No description available."
+                    };
+                });
+            } else {
+                // 2. FALLBACK: Open Library API (100% free, ignores IP blocks, no API key needed)
+                const olResponse = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=10`);
+                const olData = await olResponse.json();
+                
+                if (olData.docs && olData.docs.length > 0) {
+                    booksData = olData.docs.map(doc => ({
+                        title: doc.title || "Unknown Title",
+                        authors: doc.author_name ? doc.author_name.join(", ") : "Unknown Author",
+                        thumbnail: doc.cover_i ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg` : 'https://via.placeholder.com/128x192.png?text=No+Cover',
+                        snippet: `First published in ${doc.first_publish_year || 'Unknown'}.`
+                    }));
+                }
+            }
+
+            resultsContainer.innerHTML = '';
+
+            // If BOTH databases fail to find it
+            if (booksData.length === 0) {
+                resultsContainer.innerHTML = `<div class="text-center text-red-400 mt-10">No books found for "${query}".</div>`;
+                return;
+            }
+
+            // Render Results
+            booksData.forEach(book => {
+                const card = document.createElement('div');
+                card.className = "flex gap-4 p-3 bg-slate-800/80 hover:bg-slate-700 border border-slate-600 rounded-xl cursor-pointer transition-colors shadow-md";
+                card.innerHTML = `
+                    <img src="${book.thumbnail}" class="w-16 h-24 object-cover rounded shadow-sm flex-shrink-0 bg-slate-900" alt="Cover">
+                    <div class="flex flex-col flex-1 overflow-hidden">
+                        <h3 class="text-sm font-bold text-orange-400 truncate">${book.title}</h3>
+                        <p class="text-xs text-slate-300 font-semibold truncate mb-1">By: ${book.authors}</p>
+                        <p class="text-[10px] text-slate-400 leading-tight">${book.snippet}</p>
+                    </div>
+                `;
+
+
+// When user clicks a book, set it as the active entity in Dhwani
+                card.onclick = () => {
+                    // Cache the exact book data from the search result
+                    window.currentBookContext = book;
+                    selectedLibraryItem = `Archive|${book.title}`; 
+                    
+                    if (UI.ddText) {
+                        UI.ddText.innerText = `[Global] ${book.title}`;
+                    }
+                    globalModal.classList.add('hidden');
+                    
+                    // 1. CRITICAL: Clear old contaminated chat history so prior apologies do not repeat
+                    chatHistory = [];
+                    UI.log.innerHTML = '';
+                    if (UI.welcome) UI.welcome.style.display = 'none';
+                    
+                    let authorText = (book.authors && book.authors !== "Unknown Author") ? ` by ${book.authors}` : "";
+                    
+                    // 2. Direct, constructive initial prompt
+                    const initialQuery = `Please provide an overview of "${book.title}"${authorText} and outline its core chapters or syllabus so we can begin.`;
+                    
+                    processInput(initialQuery);
+                };
+
+                resultsContainer.appendChild(card);
+            });
+
+        } catch (error) {
+            console.error("Search Error:", error);
+            resultsContainer.innerHTML = `<div class="text-center text-red-500 mt-10">Network error fetching books.</div>`;
+        }
+    };
+
+    btnSearch.addEventListener('click', executeSearch);
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') executeSearch();
+    });
+});

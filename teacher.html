@@ -17,13 +17,14 @@
         
         :root { --chat-font-size: 14px; }
 
-        body { 
-            font-family: 'Inter', sans-serif; 
-            touch-action: manipulation; 
-            user-select: none; 
-            -webkit-user-select: none;
-            background-color: #020617; 
-        }
+		body { 
+			font-family: 'Inter', sans-serif; 
+			touch-action: manipulation; 
+			user-select: none;
+			background-color: #020617;
+			height: 100vh; /* Fallback for older browsers */
+			height: 100dvh; /* Modern dynamic height */
+		}
 
         input, select, textarea {
             user-select: auto !important;
@@ -111,7 +112,7 @@
     </style>
 </head>
 
-<body class="text-white flex flex-col items-center h-screen overflow-hidden" ondragstart="return false;" ondrop="return false;">
+<body class="text-white flex flex-col items-center h-[100dvh] overflow-hidden" ondragstart="return false;" ondrop="return false;">
 
     <div id="start-overlay" class="cursor-pointer text-center px-4 absolute inset-0 z-[100] bg-[radial-gradient(circle_at_center,#1e293b_0%,#020617_100%)] flex flex-col items-center justify-center">
         <div class="text-xl text-sky-400 font-bold mb-2 uppercase tracking-widest">Eprashala Education</div>

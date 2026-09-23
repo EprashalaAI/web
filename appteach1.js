@@ -183,7 +183,9 @@ const UI = {
     btnCloseLibrary: document.getElementById('btn-close-library'),
     libraryContainer: document.getElementById('library-list-container'),
     syllabusSelectors: document.getElementById('syllabus-selectors'),
-    headerTitle: document.getElementById('main-header-title')
+    headerTitle: document.getElementById('main-header-title'),
+	btnImportBook: document.getElementById('btn-import-book'),
+    importBookInput: document.getElementById('import-book-input')
 };
 
 // --- GLOBAL STATE ---
@@ -241,7 +243,7 @@ function renderBookLibrary() {
     request.onsuccess = (e) => {
         const db = e.target.result;
         if (!db.objectStoreNames.contains("bookData")) {
-            UI.libraryContainer.innerHTML = '<div class="text-center text-slate-500 text-sm mt-10">Library is empty.<br><br>Click the ➕📖 icon in the top right to scan a book!</div>';
+            UI.libraryContainer.innerHTML = '<div class="text-center text-slate-500 text-sm mt-10">Library is empty.<br><br>Click the ➕📖 icon in the top right to scan a book, or Import a JSON.</div>';
             return;
         }
         
@@ -252,42 +254,116 @@ function renderBookLibrary() {
         getAllReq.onsuccess = () => {
             const books = getAllReq.result;
             if (!books || books.length === 0) {
-                UI.libraryContainer.innerHTML = '<div class="text-center text-slate-500 text-sm mt-10">Library is empty.<br><br>Click the ➕📖 icon in the top right to scan a book!</div>';
+                UI.libraryContainer.innerHTML = '<div class="text-center text-slate-500 text-sm mt-10">Library is empty.<br><br>Click the ➕📖 icon in the top right to scan a book, or Import a JSON.</div>';
                 return;
             }
 
             UI.libraryContainer.innerHTML = '';
-            books.sort((a,b) => new Date(b.dateAdded) - new Date(a.dateAdded)); // Newest first
+            books.sort((a,b) => new Date(b.dateAdded || 0) - new Date(a.dateAdded || 0));
 
             books.forEach(book => {
                 const card = document.createElement('div');
-                card.className = "w-full text-left text-sm text-slate-300 bg-slate-800/80 hover:bg-slate-700 p-3 rounded-xl transition-colors border border-slate-700 hover:border-sky-500/50 flex justify-between items-center cursor-pointer shadow-sm";
+                card.className = "w-full text-left bg-slate-800/80 hover:bg-slate-700/80 p-3.5 rounded-xl transition-all border border-slate-700 hover:border-sky-500/50 flex flex-col gap-2.5 cursor-pointer shadow-sm group";
                 
-                const dateObj = new Date(book.dateAdded);
-                const dateStr = dateObj.toLocaleDateString([], {month:'short', day:'numeric'});
-                
+                const dateObj = new Date(book.dateAdded || Date.now());
+                const dateStr = dateObj.toLocaleDateString([], {month:'short', day:'numeric', year:'numeric'});
+                const chunkCount = Array.isArray(book.chunks) ? book.chunks.length : 0;
+
                 card.innerHTML = `
-                    <div class="flex-1 overflow-hidden pr-2">
-                        <div class="font-bold tracking-wide text-sky-100 truncate">${book.title}</div>
-                        <div class="text-[10px] text-slate-500 mt-1">${book.chunks.length} extracted chunks • ${dateStr}</div>
+                    <div class="flex justify-between items-start gap-2">
+                        <div class="flex-1 min-w-0">
+                            <div class="font-bold text-sky-100 text-sm truncate book-title-display">${book.title}</div>
+                            <div class="text-[11px] text-slate-400 mt-0.5">${chunkCount} chunks • ${dateStr}</div>
+                        </div>
+                        <span class="text-[10px] bg-sky-950 text-sky-300 border border-sky-800/60 px-2 py-0.5 rounded-full font-mono flex-shrink-0">RAG Ready</span>
                     </div>
-                    <button class="delete-book-btn text-red-500/60 hover:text-red-400 p-2 outline-none transition-colors" title="Delete Book">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                    </button>
+
+                    <div class="flex items-center justify-end gap-1.5 pt-2 border-t border-slate-700/50 mt-1">
+                        <!-- Rename Button -->
+                        <button class="edit-book-btn p-1.5 text-slate-400 hover:text-sky-300 hover:bg-slate-600/50 rounded-lg transition-colors" title="Rename Book">
+                            <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                        </button>
+
+                        <!-- Share Button -->
+                        <button class="share-book-btn p-1.5 text-slate-400 hover:text-green-400 hover:bg-slate-600/50 rounded-lg transition-colors" title="Share Book JSON">
+                            <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                        </button>
+
+                        <!-- Delete Button -->
+                        <button class="delete-book-btn p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-600/50 rounded-lg transition-colors" title="Delete Book">
+                            <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                    </div>
                 `;
 
-                // Click to load book
+                // 1. Click Card: Activate Book Mode
                 card.onclick = (e) => {
-                    if (e.target.closest('.delete-book-btn')) return;
+                    if (e.target.closest('button')) return;
                     activateBookMode(book);
                     UI.libraryModal.classList.add('hidden');
                 };
 
-                // Click to delete book
+                // 2. Rename Book
+                const editBtn = card.querySelector('.edit-book-btn');
+                editBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    const newTitle = prompt("Enter a new title for this book:", book.title);
+                    if (newTitle && newTitle.trim() && newTitle.trim() !== book.title) {
+                        book.title = newTitle.trim();
+                        const updateTx = db.transaction("bookData", "readwrite");
+                        updateTx.objectStore("bookData").put(book, book.id);
+                        updateTx.oncomplete = () => {
+                            if (isBookMode && activeBookTitle) {
+                                activeBookTitle = book.title;
+                                if (UI.headerTitle) {
+                                    UI.headerTitle.innerHTML = `<span class="text-sky-400 text-xs">Conversing with Book:</span><br><span class="text-white text-lg font-normal break-words">${activeBookTitle}</span>`;
+                                }
+                            }
+                            renderBookLibrary();
+                        };
+                    }
+                };
+
+                // 3. Share / Export Book JSON
+                const shareBtn = card.querySelector('.share-book-btn');
+                shareBtn.onclick = async (e) => {
+                    e.stopPropagation();
+					const safeTitle = typeof book.title === 'string' ? book.title : 'book';
+					const cleanFileName = safeTitle.toLowerCase().replace(/[^a-z0-9]+/g, '_') + '_rag.json';
+                    const jsonString = JSON.stringify(book, null, 2);
+                    const blob = new Blob([jsonString], { type: 'application/json' });
+                    const file = new File([blob], cleanFileName, { type: 'application/json' });
+
+                    // Web Share API (WhatsApp, Drive, Nearby Share on Android/iOS)
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        try {
+                            await navigator.share({
+                                files: [file],
+                                title: book.title,
+                                text: `Here is the Eprashala RAG knowledge file for "${book.title}".`
+                            });
+                            return;
+                        } catch (err) {
+                            if (err.name !== 'AbortError') console.warn('Native share failed, downloading instead.', err);
+                        }
+                    }
+
+                    // Fallback Direct File Download
+                    const downloadUrl = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = downloadUrl;
+                    a.download = cleanFileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(downloadUrl);
+                };
+
+                // 4. Delete Book
                 const delBtn = card.querySelector('.delete-book-btn');
                 delBtn.onclick = (e) => {
                     e.stopPropagation();
-                    if (confirm(`Delete "${book.title}" from your phone's storage?`)) {
+                    if (confirm(`Are you sure you want to delete "${book.title}" from your phone's storage?`)) {
                         const delTx = db.transaction("bookData", "readwrite");
                         delTx.objectStore("bookData").delete(book.id);
                         delTx.oncomplete = () => renderBookLibrary();
@@ -1223,6 +1299,69 @@ if (UI.btnLibrary) UI.btnLibrary.onclick = openLibraryModal;
     UI.btnMic.addEventListener('touchend', handleMicUp);
     
     UI.btnMic.addEventListener('mouseleave', handleMicLeave);
+	
+	// --- BOOK LIBRARY & IMPORT LISTENERS ---
+    if (UI.btnLibrary) UI.btnLibrary.onclick = openLibraryModal;
+    if (UI.btnCloseLibrary) UI.btnCloseLibrary.onclick = () => UI.libraryModal.classList.add('hidden');
+
+    if (UI.btnImportBook && UI.importBookInput) {
+        UI.btnImportBook.onclick = (e) => {
+            e.stopPropagation();
+            UI.importBookInput.value = '';
+            UI.importBookInput.click();
+        };
+
+        UI.importBookInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const parsed = JSON.parse(event.target.result);
+                    let importedBook = null;
+
+                    // Handles both full Library export ({ title, chunks }) and raw array exports ([{ text, ... }])
+                    if (Array.isArray(parsed)) {
+                        const firstChunk = parsed[0] || {};
+                        const fallbackTitle = firstChunk.book_title || file.name.replace(/\.[^.]+$/, '');
+                        importedBook = {
+                            id: (firstChunk.book_id || 'book') + '-' + Date.now(),
+                            title: fallbackTitle,
+                            dateAdded: new Date().toISOString(),
+                            chunks: parsed
+                        };
+                    } else if (parsed && Array.isArray(parsed.chunks)) {
+                        importedBook = {
+                            id: (parsed.id || 'book') + '-' + Date.now(),
+                            title: parsed.title || file.name.replace(/\.[^.]+$/, ''),
+                            dateAdded: new Date().toISOString(),
+                            chunks: parsed.chunks
+                        };
+                    } else {
+                        alert("Invalid file format. Please upload a valid Eprashala RAG JSON book file.");
+                        return;
+                    }
+
+                    // Save directly into IndexedDB
+                    const request = indexedDB.open("EprashalaRAG", 1);
+                    request.onsuccess = (ev) => {
+                        const db = ev.target.result;
+                        const tx = db.transaction("bookData", "readwrite");
+                        tx.objectStore("bookData").put(importedBook, importedBook.id);
+                        tx.oncomplete = () => {
+                            alert(`"${importedBook.title}" imported successfully!`);
+                            renderBookLibrary();
+                        };
+                    };
+                } catch (err) {
+                    console.error("Import parsing error:", err);
+                    alert("Could not parse JSON file. Ensure the file is uncorrupted.");
+                }
+            };
+            reader.readAsText(file);
+        };
+    }
 }
 
 
