@@ -177,7 +177,15 @@ const UI = {
     
     selMedium: document.getElementById('medium-selector'),
     selStd: document.getElementById('std-selector'),
-    selSub: document.getElementById('subject-selector')
+    selSub: document.getElementById('subject-selector'),
+	btnLibrary: document.getElementById('btn-open-library'),
+    libraryModal: document.getElementById('library-modal'),
+    btnCloseLibrary: document.getElementById('btn-close-library'),
+    libraryContainer: document.getElementById('library-list-container'),
+    syllabusSelectors: document.getElementById('syllabus-selectors'),
+    headerTitle: document.getElementById('main-header-title'),
+	btnImportBook: document.getElementById('btn-import-book'),
+    importBookInput: document.getElementById('import-book-input')
 };
 
 // --- GLOBAL STATE ---
@@ -201,6 +209,172 @@ let finalMicTranscript = '';
 let allSessions = []; 
 const currentDateKey = new Date().toISOString().split('T')[0];
 let currentSessionId = Date.now();
+let isBookMode = false;
+let activeBookChunks = [];
+let activeBookTitle = "";
+
+function openLibraryModal() {
+    UI.libraryModal.classList.remove('hidden');
+    renderBookLibrary();
+}
+
+function activateBookMode(bookObj) {
+    isBookMode = true;
+    activeBookChunks = bookObj.chunks;
+    activeBookTitle = bookObj.title;
+
+    // Hide normal syllabus selectors
+    if (UI.syllabusSelectors) UI.syllabusSelectors.style.display = 'none';
+    if (UI.selSub) UI.selSub.style.display = 'none';
+
+    // Update Header
+    if (UI.headerTitle) {
+        UI.headerTitle.innerHTML = `<span class="text-sky-400 text-xs">Conversing with Book:</span><br><span class="text-white text-lg font-normal break-words">${activeBookTitle}</span>`;
+    }
+
+    clearData();
+    renderSystemMessage("Local Library", `📚 <b>${activeBookTitle}</b> loaded securely from your phone's storage.<br><br>Tap the mic and ask me anything about this book!`);
+}
+
+function renderBookLibrary() {
+    UI.libraryContainer.innerHTML = '<div class="text-center text-slate-500 text-sm mt-10">Loading library...</div>';
+    
+    const request = indexedDB.open("EprashalaRAG", 1);
+    request.onsuccess = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains("bookData")) {
+            UI.libraryContainer.innerHTML = '<div class="text-center text-slate-500 text-sm mt-10">Library is empty.<br><br>Click the ➕📖 icon in the top right to scan a book, or Import a JSON.</div>';
+            return;
+        }
+        
+        const tx = db.transaction("bookData", "readonly");
+        const store = tx.objectStore("bookData");
+        const getAllReq = store.getAll();
+
+        getAllReq.onsuccess = () => {
+            const books = getAllReq.result;
+            if (!books || books.length === 0) {
+                UI.libraryContainer.innerHTML = '<div class="text-center text-slate-500 text-sm mt-10">Library is empty.<br><br>Click the ➕📖 icon in the top right to scan a book, or Import a JSON.</div>';
+                return;
+            }
+
+            UI.libraryContainer.innerHTML = '';
+            books.sort((a,b) => new Date(b.dateAdded || 0) - new Date(a.dateAdded || 0));
+
+            books.forEach(book => {
+                const card = document.createElement('div');
+                card.className = "w-full text-left bg-slate-800/80 hover:bg-slate-700/80 p-3.5 rounded-xl transition-all border border-slate-700 hover:border-sky-500/50 flex flex-col gap-2.5 cursor-pointer shadow-sm group";
+                
+                const dateObj = new Date(book.dateAdded || Date.now());
+                const dateStr = dateObj.toLocaleDateString([], {month:'short', day:'numeric', year:'numeric'});
+                const chunkCount = Array.isArray(book.chunks) ? book.chunks.length : 0;
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start gap-2">
+                        <div class="flex-1 min-w-0">
+                            <div class="font-bold text-sky-100 text-sm truncate book-title-display">${book.title}</div>
+                            <div class="text-[11px] text-slate-400 mt-0.5">${chunkCount} chunks • ${dateStr}</div>
+                        </div>
+                        <span class="text-[10px] bg-sky-950 text-sky-300 border border-sky-800/60 px-2 py-0.5 rounded-full font-mono flex-shrink-0">RAG Ready</span>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-1.5 pt-2 border-t border-slate-700/50 mt-1">
+                        <!-- Rename Button -->
+                        <button class="edit-book-btn p-1.5 text-slate-400 hover:text-sky-300 hover:bg-slate-600/50 rounded-lg transition-colors" title="Rename Book">
+                            <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                        </button>
+
+                        <!-- Share Button -->
+                        <button class="share-book-btn p-1.5 text-slate-400 hover:text-green-400 hover:bg-slate-600/50 rounded-lg transition-colors" title="Share Book JSON">
+                            <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                        </button>
+
+                        <!-- Delete Button -->
+                        <button class="delete-book-btn p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-600/50 rounded-lg transition-colors" title="Delete Book">
+                            <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                    </div>
+                `;
+
+                // 1. Click Card: Activate Book Mode
+                card.onclick = (e) => {
+                    if (e.target.closest('button')) return;
+                    activateBookMode(book);
+                    UI.libraryModal.classList.add('hidden');
+                };
+
+                // 2. Rename Book
+                const editBtn = card.querySelector('.edit-book-btn');
+                editBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    const newTitle = prompt("Enter a new title for this book:", book.title);
+                    if (newTitle && newTitle.trim() && newTitle.trim() !== book.title) {
+                        book.title = newTitle.trim();
+                        const updateTx = db.transaction("bookData", "readwrite");
+                        updateTx.objectStore("bookData").put(book, book.id);
+                        updateTx.oncomplete = () => {
+                            if (isBookMode && activeBookTitle) {
+                                activeBookTitle = book.title;
+                                if (UI.headerTitle) {
+                                    UI.headerTitle.innerHTML = `<span class="text-sky-400 text-xs">Conversing with Book:</span><br><span class="text-white text-lg font-normal break-words">${activeBookTitle}</span>`;
+                                }
+                            }
+                            renderBookLibrary();
+                        };
+                    }
+                };
+
+                // 3. Share / Export Book JSON
+                const shareBtn = card.querySelector('.share-book-btn');
+                shareBtn.onclick = async (e) => {
+                    e.stopPropagation();
+					const safeTitle = typeof book.title === 'string' ? book.title : 'book';
+					const cleanFileName = safeTitle.toLowerCase().replace(/[^a-z0-9]+/g, '_') + '_rag.json';
+                    const jsonString = JSON.stringify(book, null, 2);
+                    const blob = new Blob([jsonString], { type: 'application/json' });
+                    const file = new File([blob], cleanFileName, { type: 'application/json' });
+
+                    // Web Share API (WhatsApp, Drive, Nearby Share on Android/iOS)
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        try {
+                            await navigator.share({
+                                files: [file],
+                                title: book.title,
+                                text: `Here is the Eprashala RAG knowledge file for "${book.title}".`
+                            });
+                            return;
+                        } catch (err) {
+                            if (err.name !== 'AbortError') console.warn('Native share failed, downloading instead.', err);
+                        }
+                    }
+
+                    // Fallback Direct File Download
+                    const downloadUrl = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = downloadUrl;
+                    a.download = cleanFileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(downloadUrl);
+                };
+
+                // 4. Delete Book
+                const delBtn = card.querySelector('.delete-book-btn');
+                delBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    if (confirm(`Are you sure you want to delete "${book.title}" from your phone's storage?`)) {
+                        const delTx = db.transaction("bookData", "readwrite");
+                        delTx.objectStore("bookData").delete(book.id);
+                        delTx.oncomplete = () => renderBookLibrary();
+                    }
+                };
+
+                UI.libraryContainer.appendChild(card);
+            });
+        };
+    };
+}
 
 // Cloud/Native TTS & Highlight State
 let ttsStatus = 'STOPPED';
@@ -284,17 +458,38 @@ function updateRightSliderLabels() {
 }
 // --- 3. INITIALIZATION ---
 window.onload = async () => {
+    // --- LOAD SPECIFIC BOOK FROM RAG.HTML ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlBookId = urlParams.get('id');
+
+    if (urlBookId) {
+        const request = indexedDB.open("EprashalaRAG", 1);
+        request.onsuccess = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains("bookData")) return;
+            const tx = db.transaction("bookData", "readonly");
+            const store = tx.objectStore("bookData");
+            const getReq = store.get(urlBookId);
+            
+            getReq.onsuccess = () => {
+                if (getReq.result) {
+                    activateBookMode(getReq.result);
+                }
+            };
+        };
+        // Clean the URL bar so a page refresh doesn't force-reload the book 
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
     try {
-        // Fetch the external JSON index
+        // Fetch the external JSON index (Keep your existing code here)
         const response = await fetch('./syllabus.json');
         if (!response.ok) throw new Error("Failed to load syllabus index.");
         syllabusIndex = await response.json();
     } catch (error) {
         console.error("Error loading syllabus data:", error);
-        alert("Failed to load curriculum data. Please refresh.");
     }
 
-    // Proceed with existing initialization
     loadData();
     initSpeechRecognition(); 
     
@@ -845,6 +1040,9 @@ function setupEventListeners() {
             }
         }, 300);
     };
+
+if (UI.btnLibrary) UI.btnLibrary.onclick = openLibraryModal;
+    if (UI.btnCloseLibrary) UI.btnCloseLibrary.onclick = () => UI.libraryModal.classList.add('hidden');
 // --- Entire Session PDF Listener ---
     if (UI.btnSharePdf) {
         UI.btnSharePdf.addEventListener('click', (e) => {
@@ -1101,6 +1299,69 @@ function setupEventListeners() {
     UI.btnMic.addEventListener('touchend', handleMicUp);
     
     UI.btnMic.addEventListener('mouseleave', handleMicLeave);
+	
+	// --- BOOK LIBRARY & IMPORT LISTENERS ---
+    if (UI.btnLibrary) UI.btnLibrary.onclick = openLibraryModal;
+    if (UI.btnCloseLibrary) UI.btnCloseLibrary.onclick = () => UI.libraryModal.classList.add('hidden');
+
+    if (UI.btnImportBook && UI.importBookInput) {
+        UI.btnImportBook.onclick = (e) => {
+            e.stopPropagation();
+            UI.importBookInput.value = '';
+            UI.importBookInput.click();
+        };
+
+        UI.importBookInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const parsed = JSON.parse(event.target.result);
+                    let importedBook = null;
+
+                    // Handles both full Library export ({ title, chunks }) and raw array exports ([{ text, ... }])
+                    if (Array.isArray(parsed)) {
+                        const firstChunk = parsed[0] || {};
+                        const fallbackTitle = firstChunk.book_title || file.name.replace(/\.[^.]+$/, '');
+                        importedBook = {
+                            id: (firstChunk.book_id || 'book') + '-' + Date.now(),
+                            title: fallbackTitle,
+                            dateAdded: new Date().toISOString(),
+                            chunks: parsed
+                        };
+                    } else if (parsed && Array.isArray(parsed.chunks)) {
+                        importedBook = {
+                            id: (parsed.id || 'book') + '-' + Date.now(),
+                            title: parsed.title || file.name.replace(/\.[^.]+$/, ''),
+                            dateAdded: new Date().toISOString(),
+                            chunks: parsed.chunks
+                        };
+                    } else {
+                        alert("Invalid file format. Please upload a valid Eprashala RAG JSON book file.");
+                        return;
+                    }
+
+                    // Save directly into IndexedDB
+                    const request = indexedDB.open("EprashalaRAG", 1);
+                    request.onsuccess = (ev) => {
+                        const db = ev.target.result;
+                        const tx = db.transaction("bookData", "readwrite");
+                        tx.objectStore("bookData").put(importedBook, importedBook.id);
+                        tx.oncomplete = () => {
+                            alert(`"${importedBook.title}" imported successfully!`);
+                            renderBookLibrary();
+                        };
+                    };
+                } catch (err) {
+                    console.error("Import parsing error:", err);
+                    alert("Could not parse JSON file. Ensure the file is uncorrupted.");
+                }
+            };
+            reader.readAsText(file);
+        };
+    }
 }
 
 
@@ -1185,6 +1446,26 @@ async function processInput(userText, isHiddenQuizTrigger = false) {
     setTimeout(updateStopButtonVisibility, 100);
 }
 
+function retrieveRelevantChunks(query, topK = 4) {
+    if (!activeBookChunks || activeBookChunks.length === 0) return [];
+    
+    const queryTerms = query.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+    if (!queryTerms.length) return activeBookChunks.slice(0, topK);
+
+    const scored = activeBookChunks.map(chunk => {
+        let score = 0;
+        const textLower = chunk.text.toLowerCase();
+        queryTerms.forEach(term => {
+            const matches = (textLower.match(new RegExp(term, 'g')) || []).length;
+            score += matches * (1 + 10 / (chunk.char_count || 100)); 
+        });
+        return { chunk, score };
+    });
+
+    scored.sort((a, b) => b.score - a.score);
+    return scored.slice(0, topK).map(s => s.chunk);
+}
+
 async function getAIResponse(history) {
     const role = UI.role.value;
     const med = UI.selMedium.value;
@@ -1200,60 +1481,76 @@ async function getAIResponse(history) {
 
     let prompt = "";
 
-    // GROUND TRUTH DIRECTIVE FOR RECENT SYLLABUS REVISIONS
-    const syllabusAuthorityNotice = `
-    CRITICAL SYLLABUS DIRECTIVE:
-    The Maharashtra State Board (Balbharati) textbook curriculum has undergone major updates. 
-    You MUST treat the exact chapter title specified in the user request as the absolute ground-truth topic from the latest official textbook. 
-    Do NOT attempt to correct, rename, or substitute chapter titles based on older textbook editions, legacy syllabus mappings, or historical memory. Teach strictly according to the chapter name provided.`;
-
-    if (role === 'Teacher') {
-        const teacherName = UI.name.value ? ` as ${UI.name.value}` : "";
-        prompt = `You are an expert educational assistant helping a fellow teacher${teacherName}.
-        Context: Maharashtra State Board (Balbharati), Standard ${std}, Subject: "${sub}", Medium: ${med}.
+// --- BOOK MODE INTERCEPTOR ---
+    if (isBookMode) {
+        // Retrieve the top contextual chunks based on the user's last question
+        const userQuery = history[history.length - 1].parts.find(p => p.text)?.text || "";
         
-        ${syllabusAuthorityNotice}
+        // Increased from 4 to 8 chunks to give the AI a wider context net
+        const topChunks = retrieveRelevantChunks(userQuery, 8);
+        const contextText = topChunks.map(c => `[Page ${c.page_start}]: ${c.text}`).join('\n\n');
 
-        CRITICAL RULES:
-        1. Strictly adhere to the updated syllabus topic requested.
-        2. Tone: Professional, helpful, collaborative.
-        3. Language: Primary language is ${med}.
-        4. ACCURACY RATIO: Maintain ${bookRatio}% factual alignment with the requested chapter and ${aiRatio}% gentle contextual teaching.
-        5. FORMATTING: Use Markdown to format your response neatly (use **bold** for emphasis, bullet points for lists, and short paragraphs). Do NOT use complex LaTeX.
-        6. MEDIA LINKS: At the very end of your response, provide EXACTLY two lines formatted like this:
-           YT_SEARCH: Standard ${std} ${sub} ${med} medium relevant_topic_keywords
-           IMG_SEARCH: Standard ${std} ${sub} ${med} medium relevant_topic_keywords`;
-    } else {
-        const studentName = UI.name.value || "Child";
-        const estimatedAge = parseInt(std) + 5;
-        const finalAge = UI.age.value ? parseInt(UI.age.value) : estimatedAge;
-        const isYoung = finalAge <= 11 || parseInt(std) <= 5;
+        prompt = `You are the interactive voice avatar of the book titled "${activeBookTitle}".
+        Answer the user's questions based on the following retrieved book excerpts. 
         
-        const toneInstruction = isYoung ? 
-            "Use EXTREMELY simple words. Keep answers SHORT, highly nurturing. Talk to them like a loving primary school teacher." : 
-            "Use clear, encouraging explanations appropriate for a teenager.";
-
-        prompt = `You are a highly polite, caring, and expert teacher.
-        Context: You are teaching a student named ${studentName} (Age: ~${finalAge}), in Standard ${std}, Subject: "${sub}", Medium: ${med} (Maharashtra State Board).
+        CRITICAL INSTRUCTION: If the exact specific word the user asked for (like 'thickness') is not found, do not just give up. Intelligently scan the excerpts for related descriptive concepts (like 'strong', 'heavy', 'stout', or 'shape') and synthesize a helpful answer based on that broader context. 
         
-        ${syllabusAuthorityNotice}
+        Always mention the relevant page number(s) in your answer. Keep your response highly conversational, clear, and direct so it sounds natural when spoken aloud by a TTS engine. Do NOT use complex LaTeX. Use Markdown for basic formatting.
+        
+        RELEVANT BOOK EXCERPTS:
+        ${contextText}`;
+    }
+    // --- NORMAL APP MODE (Syllabus) ---
+    else {
+        const syllabusAuthorityNotice = `
+        CRITICAL SYLLABUS DIRECTIVE:
+        The Maharashtra State Board (Balbharati) textbook curriculum has undergone major updates. 
+        You MUST treat the exact chapter title specified in the user request as the absolute ground-truth topic from the latest official textbook. 
+        Do NOT attempt to correct, rename, or substitute chapter titles based on older textbook editions, legacy syllabus mappings, or historical memory. Teach strictly according to the chapter name provided.`;
 
-        CRITICAL RULES:
-        1. PERSONA: Answer in a gender-neutral, deeply caring way. Address them affectionately with respect.
-        2. EXPERTISE: Draw explanations strictly from the textbook topic requested by the student.
-        3. COMPLEXITY & LENGTH: ${toneInstruction}
-        4. Language: Primary language is ${med}.
-        5. ACCURACY RATIO: Maintain ${bookRatio}% strict factual accuracy with the latest textbook and ${aiRatio}% engaging guidance.
-        6. FORMATTING: Use Markdown to format your response neatly (use **bold** for emphasis, bullet points for lists, and short paragraphs). Do NOT use complex LaTeX.
-        7. GAMIFICATION (CRICKET THEME): Act as an automated umpire to score the student's progress. Append a hidden tag exactly like [SCORE:X] at the very end of your response if they hit a milestone.
-           - [SCORE:4] if they grasp a major topic (Boundary).
-           - [SCORE:6] if they answer a quiz question perfectly (Sixer).
-           - [SCORE:50] if they show 50% mastery of the current lesson (Fifty).
-           - [SCORE:100] if they fully complete and master the chapter (Century).
-           IMPORTANT: Do NOT explain the score or mention the tag to the user, just output the tag silently.
-        8. MEDIA LINKS: At the very end of your response, provide EXACTLY two lines formatted like this:
-           YT_SEARCH: Standard ${std} ${sub} ${med} medium relevant_topic_keywords
-           IMG_SEARCH: Standard ${std} ${sub} ${med} medium relevant_topic_keywords`; 
+        if (role === 'Teacher') {
+            const teacherName = UI.name.value ? ` as ${UI.name.value}` : "";
+            prompt = `You are an expert educational assistant helping a fellow teacher${teacherName}.
+            Context: Maharashtra State Board (Balbharati), Standard ${std}, Subject: "${sub}", Medium: ${med}.
+            
+            ${syllabusAuthorityNotice}
+
+            CRITICAL RULES:
+            1. Strictly adhere to the updated syllabus topic requested.
+            2. Tone: Professional, helpful, collaborative.
+            3. Language: Primary language is ${med}.
+            4. ACCURACY RATIO: Maintain ${bookRatio}% factual alignment with the requested chapter and ${aiRatio}% gentle contextual teaching.
+            5. FORMATTING: Use Markdown to format your response neatly (use **bold** for emphasis, bullet points for lists, and short paragraphs). Do NOT use complex LaTeX.
+            6. MEDIA LINKS: At the very end of your response, provide EXACTLY two lines formatted like this:
+               YT_SEARCH: Standard ${std} ${sub} ${med} medium relevant_topic_keywords
+               IMG_SEARCH: Standard ${std} ${sub} ${med} medium relevant_topic_keywords`;
+        } else {
+            const studentName = UI.name.value || "Child";
+            const estimatedAge = parseInt(std) + 5;
+            const finalAge = UI.age.value ? parseInt(UI.age.value) : estimatedAge;
+            const isYoung = finalAge <= 11 || parseInt(std) <= 5;
+            
+            const toneInstruction = isYoung ? 
+                "Use EXTREMELY simple words. Keep answers SHORT, highly nurturing. Talk to them like a loving primary school teacher." : 
+                "Use clear, encouraging explanations appropriate for a teenager.";
+
+            prompt = `You are a highly polite, caring, and expert teacher.
+            Context: You are teaching a student named ${studentName} (Age: ~${finalAge}), in Standard ${std}, Subject: "${sub}", Medium: ${med} (Maharashtra State Board).
+            
+            ${syllabusAuthorityNotice}
+
+            CRITICAL RULES:
+            1. PERSONA: Answer in a gender-neutral, deeply caring way. Address them affectionately with respect.
+            2. EXPERTISE: Draw explanations strictly from the textbook topic requested by the student.
+            3. COMPLEXITY & LENGTH: ${toneInstruction}
+            4. Language: Primary language is ${med}.
+            5. ACCURACY RATIO: Maintain ${bookRatio}% strict factual accuracy with the latest textbook and ${aiRatio}% engaging guidance.
+            6. FORMATTING: Use Markdown to format your response neatly. Do NOT use complex LaTeX.
+            7. GAMIFICATION (CRICKET THEME): Act as an automated umpire to score the student's progress. Append a hidden tag exactly like [SCORE:X] at the very end of your response if they hit a milestone.
+            8. MEDIA LINKS: At the very end of your response, provide EXACTLY two lines formatted like this:
+               YT_SEARCH: Standard ${std} ${sub} ${med} medium relevant_topic_keywords
+               IMG_SEARCH: Standard ${std} ${sub} ${med} medium relevant_topic_keywords`; 
+        }
     }
 
     const payload = { 
@@ -1262,6 +1559,8 @@ async function getAIResponse(history) {
     };
 
     currentAborter = new AbortController();
+    
+    // THIS CALLS YOUR EXISTING PROXY/KEY LOGIC AUTOMATICALLY
     const response = await fetchGeminiChat(payload, currentAborter.signal, selectedModelInfo.id);
 
     if (!response.ok) throw new Error('API Error');

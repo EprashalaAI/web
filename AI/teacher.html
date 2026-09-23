@@ -17,13 +17,14 @@
         
         :root { --chat-font-size: 14px; }
 
-        body { 
-            font-family: 'Inter', sans-serif; 
-            touch-action: manipulation; 
-            user-select: none; 
-            -webkit-user-select: none;
-            background-color: #020617; 
-        }
+		body { 
+			font-family: 'Inter', sans-serif; 
+			touch-action: manipulation; 
+			user-select: none;
+			background-color: #020617;
+			height: 100vh; /* Fallback for older browsers */
+			height: 100dvh; /* Modern dynamic height */
+		}
 
         input, select, textarea {
             user-select: auto !important;
@@ -111,7 +112,7 @@
     </style>
 </head>
 
-<body class="text-white flex flex-col items-center h-screen overflow-hidden" ondragstart="return false;" ondrop="return false;">
+<body class="text-white flex flex-col items-center h-[100dvh] overflow-hidden" ondragstart="return false;" ondrop="return false;">
 
     <div id="start-overlay" class="cursor-pointer text-center px-4 absolute inset-0 z-[100] bg-[radial-gradient(circle_at_center,#1e293b_0%,#020617_100%)] flex flex-col items-center justify-center">
         <div class="text-xl text-sky-400 font-bold mb-2 uppercase tracking-widest">Eprashala Education</div>
@@ -277,14 +278,25 @@
 
     <div class="flex flex-col w-full h-full max-w-2xl relative shadow-2xl bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]">
         
-        <header class="flex-shrink-0 pt-4 pb-4 px-4 glass-panel z-20 rounded-b-3xl relative">
+		<header class="flex-shrink-0 pt-4 pb-4 px-4 glass-panel z-20 rounded-b-3xl relative">
+            
+            <!-- NEW: Top Right Library & Scan Icons -->
+            <div class="absolute right-4 top-4 flex gap-4 z-30">
+                <button id="btn-open-library" class="text-xl opacity-80 hover:opacity-100 hover:scale-110 transition-all cursor-pointer drop-shadow-md outline-none" title="My Saved Books">
+                    📚
+                </button>
+                <a href="RAG.html" target="_blank" class="text-xl opacity-80 hover:opacity-100 hover:scale-110 transition-all cursor-pointer drop-shadow-md" title="Scan New Book">
+                    ➕
+                </a>
+            </div>
+
             <div class="flex flex-col items-center justify-center mb-5 relative mt-2">
                 <div id="status-indicator" class="absolute left-0 top-0 w-2.5 h-2.5 rounded-full bg-gray-600 shadow-[0_0_8px_rgba(75,85,99,0.8)]" title="Idle"></div>
-                <h1 class="text-xl md:text-2xl font-bold tracking-widest text-center uppercase mb-3">
+                <h1 id="main-header-title" class="text-xl md:text-2xl font-bold tracking-widest text-center uppercase mb-3 pr-16 pl-4">
                     <span class="text-sky-400">Eprashala AI Teacher</span> 
                 </h1>
             </div>
-            <div class="grid grid-cols-2 gap-2 mb-2">
+            <div id="syllabus-selectors" class="grid grid-cols-2 gap-2 mb-2 transition-all">
                 <select id="medium-selector" class="custom-input !py-2 text-sm font-bold cursor-pointer">
                     <option value="Marathi">Marathi Medium</option>
                     <option value="English">English Medium</option>
@@ -370,7 +382,29 @@
             </div>
         </footer>
     </div>
-    <script src="appteach1.js"></script>
+  
+ <!-- Book Library Modal -->
+<div id="library-modal" class="hidden fixed inset-0 bg-black/80 z-[160] flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-[0_0_30px_rgba(2,132,199,0.2)] relative flex flex-col h-[75vh]">
+        <button id="btn-close-library" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl z-20 outline-none">✕</button>
+        
+        <div class="flex items-center justify-between mb-2 pr-8">
+            <h2 class="text-xl font-bold text-sky-400 cinzel">Book Library</h2>
+            <!-- Import Button -->
+            <button id="btn-import-book" class="flex items-center gap-1.5 bg-sky-700 hover:bg-sky-600 text-white text-xs font-bold py-1.5 px-3 rounded-xl transition-colors border border-sky-500/50 shadow-md outline-none">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                Import JSON
+            </button>
+            <input type="file" id="import-book-input" accept=".json" class="hidden">
+        </div>
+
+        <p class="text-xs text-slate-400 mb-3 pb-3 border-b border-slate-700/50">Manage, share, or click a book to start asking questions.</p>
+        
+        <div id="library-list-container" class="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+            <!-- Dynamic cards injected via appteach1.js -->
+        </div>
+    </div>
+</div>
 
     <!-- SERVICE WORKER REGISTRATION -->
     <script>

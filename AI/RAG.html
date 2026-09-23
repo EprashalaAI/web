@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eprashala — Book to RAG to LLM</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📖</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --paper:#E7E1CB;
+    --paper-2:#DDD3B2;
+    --paper-3:#EFE9D8;
+    --ink:#20261C;
+    --ink-soft:#4A5040;
+    --ink-faint:#7A7660;
+    --accent:#BE4E1E;
+    --accent-dark:#8F3714;
+    --line:#B8AA82;
+    --drawer:#1B2016;
+    --drawer-2:#242A1D;
+    --drawer-text:#E7E1CB;
+    --success:#3F6B45;
+    --error:#A63D2F;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Source Serif 4', Georgia, serif;
+    line-height:1.5;
+    min-height:100vh;
+  }
+  ::selection{background:var(--accent); color:var(--paper-3);}
+
+  .mono{ font-family:'IBM Plex Mono', ui-monospace, monospace; }
+
+  a{color:var(--accent-dark);}
+
+  /* ---------- Header ---------- */
+  header.masthead{
+    border-bottom:3px solid var(--ink);
+    padding:22px clamp(16px,4vw,40px) 16px;
+    display:flex;
+    align-items:flex-end;
+    gap:18px;
+    flex-wrap:wrap;
+    background:
+      repeating-linear-gradient(90deg, transparent 0 38px, rgba(32,38,28,0.035) 38px 39px);
+  }
+  .spine{
+    width:10px;
+    align-self:stretch;
+    background:var(--accent);
+    flex-shrink:0;
+  }
+  header.masthead h1{
+    font-size:clamp(26px,4vw,38px);
+    font-weight:700;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  header.masthead .tagline{
+    margin:4px 0 0;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    letter-spacing:.02em;
+  }
+  header .colophon{
+    margin-left:auto;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--ink-faint);
+    text-align:right;
+    line-height:1.6;
+    padding-bottom:2px;
+  }
+
+  /* ---------- Layout ---------- */
+  main{
+    max-width:1360px;
+    margin:0 auto;
+    padding:clamp(16px,3vw,32px);
+    display:grid;
+    grid-template-columns:380px 1fr;
+    gap:clamp(16px,2.5vw,28px);
+    align-items:start;
+  }
+  @media (max-width: 940px){
+    main{ grid-template-columns:1fr; }
+  }
+
+  .panel{
+    background:var(--paper-3);
+    border:1px solid var(--line);
+  }
+  .panel > .panel-head{
+    padding:10px 16px;
+    border-bottom:1px solid var(--line);
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .panel-head h2{
+    margin:0;
+    font-size:13px;
+    font-family:'IBM Plex Mono', monospace;
+    letter-spacing:.06em;
+    color:var(--ink-soft);
+    font-weight:600;
+  }
+  .panel-head .hint{ font-size:11px; color:var(--ink-faint); font-family:'IBM Plex Mono',monospace; }
+  .panel-body{ padding:16px; }
+
+  /* ---------- Left column stack ---------- */
+  .stack{ display:flex; flex-direction:column; gap:16px; position:sticky; top:16px; }
+
+  .dropzone{
+    border:2px dashed var(--line);
+    padding:26px 14px;
+    text-align:center;
+    cursor:pointer;
+    transition:border-color .15s, background .15s;
+  }
+  .dropzone:hover, .dropzone.drag{
+    border-color:var(--accent);
+    background:rgba(190,78,30,0.06);
+  }
+  .dropzone .icon{ font-size:26px; display:block; margin-bottom:8px; }
+  .dropzone .primary{ font-size:14.5px; }
+  .dropzone .secondary{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-faint); margin-top:6px; }
+  input[type=file]{ display:none; }
+
+  .filelist{ list-style:none; margin:12px 0 0; padding:0; display:flex; flex-direction:column; gap:6px; }
+  .filelist li{
+    display:flex; align-items:center; gap:8px;
+    padding:7px 9px;
+    background:var(--paper-2);
+    border:1px solid var(--line);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+  }
+  .filelist li .fname{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .filelist li .fstatus{ flex-shrink:0; padding:1px 6px; border:1px solid var(--line); font-size:10px; }
+  .filelist li .fstatus.queued{ color:var(--ink-faint); }
+  .filelist li .fstatus.working{ color:var(--accent-dark); border-color:var(--accent); }
+  .filelist li .fstatus.done{ color:var(--success); border-color:var(--success); }
+  .filelist li .fstatus.error{ color:var(--error); border-color:var(--error); }
+  .filelist li button.rm{
+    flex-shrink:0; border:none; background:none; cursor:pointer;
+    color:var(--ink-faint); font-size:13px; padding:0 2px;
+  }
+  .filelist li button.rm:hover{ color:var(--error); }
+
+  .field{ margin-bottom:12px; }
+  .field:last-child{ margin-bottom:0; }
+  .field label{
+    display:block; font-family:'IBM Plex Mono',monospace; font-size:11px;
+    color:var(--ink-soft); margin-bottom:4px; letter-spacing:.02em;
+  }
+  .field .sub{ font-size:10.5px; color:var(--ink-faint); margin-top:3px; font-family:'IBM Plex Mono',monospace;}
+  .field input[type=text], .field input[type=number], .field select, .field textarea{
+    width:100%;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12.5px;
+    padding:7px 8px;
+    border:1px solid var(--line);
+    background:var(--paper-3);
+    color:var(--ink);
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{
+    outline:2px solid var(--accent);
+    outline-offset:-1px;
+  }
+  .field textarea{ resize:vertical; min-height:64px; }
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .checkfield{ display:flex; align-items:center; gap:7px; font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--ink-soft); }
+  .checkfield input{ accent-color:var(--accent-dark); }
+
+  details.adv{ border-top:1px dashed var(--line); margin-top:14px; padding-top:12px; }
+  details.adv summary{
+    cursor:pointer; font-family:'IBM Plex Mono',monospace; font-size:11px;
+    color:var(--ink-soft); letter-spacing:.03em; margin-bottom:10px;
+  }
+  details.adv[open] summary{ margin-bottom:12px; }
+
+  button.primary{
+    width:100%;
+    background:var(--ink);
+    color:var(--paper-3);
+    border:none;
+    padding:12px 14px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    letter-spacing:.03em;
+    cursor:pointer;
+    margin-top:14px;
+    transition:background .15s;
+  }
+  button.primary:hover:not(:disabled){ background:var(--accent-dark); }
+  button.primary:disabled{ opacity:.45; cursor:not-allowed; }
+
+  button.ghost{
+    background:none;
+    border:1px solid var(--line);
+    color:var(--ink-soft);
+    padding:7px 11px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+    cursor:pointer;
+  }
+  button.ghost:hover{ border-color:var(--accent); color:var(--accent-dark); }
+  button.ghost:disabled{ opacity:.4; cursor:not-allowed; }
+
+  /* ---------- Progress / log drawer ---------- */
+  .drawer{
+    background:var(--drawer);
+    color:var(--drawer-text);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+    padding:12px 14px;
+    max-height:150px;
+    overflow-y:auto;
+  }
+  .drawer .line{ padding:1px 0; opacity:.9; white-space:pre-wrap; word-break:break-word; }
+  .drawer .line.err{ color:#e08a6f; }
+  .drawer .line.ok{ color:#9cc79f; }
+
+  .progressbar{
+    height:6px;
+    background:var(--paper-2);
+    border:1px solid var(--line);
+    margin-top:10px;
+    overflow:hidden;
+  }
+  .progressbar .fill{
+    height:100%;
+    width:0%;
+    background:var(--accent);
+    transition:width .2s;
+  }
+  .progress-label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    color:var(--ink-faint);
+    margin-top:5px;
+    display:flex;
+    justify-content:space-between;
+  }
+
+  /* ---------- Output area ---------- */
+  .output-tabs{
+    display:flex;
+    gap:0;
+    border-bottom:1px solid var(--line);
+  }
+  .output-tabs button{
+    background:none;
+    border:none;
+    border-bottom:2px solid transparent;
+    padding:10px 16px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    letter-spacing:.03em;
+    color:var(--ink-faint);
+    cursor:pointer;
+  }
+  .output-tabs button.active{
+    color:var(--ink);
+    border-bottom-color:var(--accent);
+  }
+  .output-actions{
+    margin-left:auto;
+    display:flex;
+    gap:8px;
+    align-items:center;
+    padding-right:6px;
+  }
+
+  .empty-state{
+    padding:60px 24px;
+    text-align:center;
+    color:var(--ink-faint);
+  }
+  .empty-state .glyph{ font-size:32px; display:block; margin-bottom:10px; }
+  .empty-state p{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; max-width:420px; margin:0 auto; }
+
+  .stats-bar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:0;
+    border-bottom:1px solid var(--line);
+  }
+  .stat{
+    flex:1;
+    min-width:110px;
+    padding:10px 16px;
+    border-right:1px solid var(--line);
+  }
+  .stat:last-child{ border-right:none; }
+  .stat .num{ font-family:'IBM Plex Mono',monospace; font-size:19px; font-weight:600; color:var(--accent-dark); }
+  .stat .lbl{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--ink-faint); letter-spacing:.03em; margin-top:2px; }
+
+  .search-row{
+    padding:10px 16px;
+    border-bottom:1px solid var(--line);
+    display:flex;
+    gap:10px;
+  }
+  .search-row input{
+    flex:1;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    padding:7px 9px;
+    border:1px solid var(--line);
+    background:var(--paper-3);
+  }
+
+  .cards-wrap{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(280px,1fr));
+    gap:12px;
+    padding:16px;
+    max-height:640px;
+    overflow-y:auto;
+  }
+  .chunk-card{
+    background:var(--paper-3);
+    border:1px solid var(--line);
+    padding:12px 13px;
+    position:relative;
+  }
+  .chunk-card::before{
+    content:"";
+    position:absolute; left:0; top:0; bottom:0; width:3px;
+    background:var(--accent);
+    opacity:.55;
+  }
+  .chunk-card .ccid{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;
+    color:var(--ink-faint);
+    display:flex;
+    justify-content:space-between;
+    margin-bottom:7px;
+  }
+  .chunk-card .cctext{
+    font-size:13px;
+    line-height:1.55;
+    color:var(--ink);
+    max-height:150px;
+    overflow-y:auto;
+  }
+  .chunk-card .ccmeta{
+    margin-top:8px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:9.5px;
+    color:var(--ink-faint);
+  }
+
+  .json-wrap{
+    padding:0;
+    max-height:640px;
+    overflow:auto;
+    background:var(--drawer);
+  }
+  .json-wrap pre{
+    margin:0;
+    padding:16px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+    line-height:1.55;
+    color:#d7e5d3;
+    white-space:pre-wrap;
+    word-break:break-word;
+  }
+  .json-wrap .jk{ color:#8fbfe0; }
+  .json-wrap .js{ color:#d0b26b; }
+  .json-wrap .jn{ color:#c78a63; }
+
+  footer{
+    text-align:center;
+    padding:22px 16px 34px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    color:var(--ink-faint);
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ transition:none !important; }
+  }
+/* ---------- MOBILE RESPONSIVENESS OVERRIDES ---------- */
+  @media (max-width: 940px) {
+    /* 1. CRITICAL OVERLAP FIX: Disable sticky positioning on mobile */
+    main { grid-template-columns: 1fr; display: flex; flex-direction: column; }
+    .stack { position: relative !important; top: 0 !important; width: 100%; }
+    #outputPanel { width: 100%; }
+  }
+
+  @media (max-width: 768px) {
+    /* 2. Fix page padding and header stacking */
+    main { padding: 12px; gap: 16px; }
+    header.masthead { padding: 16px; flex-direction: column; align-items: flex-start; gap: 12px; }
+    header .colophon { margin-left: 0; text-align: left; width: 100%; padding-top: 10px; border-top: 1px dashed var(--line); margin-top: 4px; }
+    
+    /* 3. Prevent Android/iOS auto-zoom by forcing 16px font size on inputs */
+    .field input[type=text], .field input[type=number], .field select, .field textarea { 
+      font-size: 16px !important; 
+      padding: 10px !important;
+    }
+
+    /* 4. Stack form columns vertically */
+    .row2 { grid-template-columns: 1fr; gap: 12px; }
+    
+    /* 5. Fix the Output Bar (Index/JSON Tabs) */
+    .output-tabs { flex-direction: column; background: var(--paper-2); border-bottom: none; }
+    .output-tabs > button { width: 100%; border-bottom: 1px solid var(--line) !important; padding: 12px 8px; }
+    .output-tabs > button.active { border-bottom: 2px solid var(--accent) !important; background: var(--paper-3); font-weight: 600; }
+    
+    /* 6. Stack Action Buttons (Copy, Download, Voice) */
+    .output-actions { margin-left: 0; width: 100%; display: flex; flex-direction: column; padding: 12px; gap: 8px; border-bottom: 1px solid var(--line); }
+    .output-actions button.ghost { width: 100%; padding: 10px; }
+    .output-actions #startVoiceChatBtn { width: 100%; margin: 0 !important; padding: 14px !important; font-size: 15px; border-radius: 8px; }
+    
+    /* 7. Clean up Stats Bar Grid into a 2x2 square */
+    .stats-bar { display: grid; grid-template-columns: 1fr 1fr; }
+    .stat { border-right: 1px solid var(--line) !important; border-bottom: 1px solid var(--line); padding: 12px; }
+    .stat:nth-child(even) { border-right: none !important; }
+    
+    /* 8. Widen Extracted Cards */
+    .cards-wrap { grid-template-columns: 1fr; padding: 12px; gap: 16px; }
+    .chunk-card { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="spine"></div>
+  <div>
+    <h1>Eprashala</h1>
+    <p class="tagline">book → text → cleaned chunks → RAG-ready json, entirely in your browser</p>
+  </div>
+  <div class="colophon">no. 01 · any language · client-side<br>pdf · image · txt → ocr → chunks</div>
+</header>
+
+<main>
+  <!-- LEFT: Intake & settings -->
+  <div class="stack">
+
+    <div class="panel">
+      <div class="panel-head"><h2>01 — INTAKE</h2><span class="hint" id="fileCountHint">0 files</span></div>
+      <div class="panel-body">
+        <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Upload book files">
+          <span class="icon">📚</span>
+          <div class="primary">Drop book files here, or click to browse</div>
+          <div class="secondary">PDF · PNG / JPG (scanned pages) · TXT</div>
+        </div>
+        <input type="file" id="fileInput" multiple accept=".pdf,.txt,.png,.jpg,.jpeg,.webp">
+        <ul class="filelist" id="fileList"></ul>
+
+        <div class="field" style="margin-top:14px;">
+          <label for="pasteText">or paste text directly (optional)</label>
+          <textarea id="pasteText" placeholder="Paste raw text here to chunk it without a file…"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>02 — METADATA & SETTINGS</h2></div>
+      <div class="panel-body">
+        <div class="field">
+          <label for="bookTitle">Book title</label>
+          <input type="text" id="bookTitle" placeholder="e.g. War and Peace" value="">
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="bookId">Book ID (slug)</label>
+            <input type="text" id="bookId" placeholder="auto from title">
+          </div>
+          <div class="field">
+            <label for="bookLang">Text language (tag)</label>
+            <input type="text" id="bookLang" placeholder="e.g. ru, hi, ja" value="">
+          </div>
+        </div>
+
+        <details class="adv" open>
+          <summary>chunking &amp; extraction options</summary>
+          <div class="row2">
+            <div class="field">
+              <label for="chunkSize">Chunk size (chars)</label>
+              <input type="number" id="chunkSize" value="1200" min="200" step="50">
+            </div>
+            <div class="field">
+              <label for="overlapSentences">Overlap (sentences)</label>
+              <input type="number" id="overlapSentences" value="2" min="0" step="1">
+            </div>
+          </div>
+			<div class="field">
+            <label for="ocrLang">Book Language (For Scanning & OCR)</label>
+            <select id="ocrLang" style="font-weight: 600;">
+              <option value="eng">English Only</option>
+              <option value="mar+eng" selected>Marathi + English (मराठी)</option>
+              <option value="hin+eng">Hindi + English (हिंदी)</option>
+              <option value="san+eng">Sanskrit + English (संस्कृत)</option>
+              <option value="ben+eng">Bengali + English (বাংলা)</option>
+              <option value="guj+eng">Gujarati + English (ગુજરાતી)</option>
+              <option value="tam+eng">Tamil + English (தமிழ்)</option>
+              <option value="tel+eng">Telugu + English (తెలుగు)</option>
+              <option value="kan+eng">Kannada + English (ಕನ್ನಡ)</option>
+              <option value="mal+eng">Malayalam + English (മലയാളം)</option>
+              <option value="pan+eng">Punjabi + English (ਪੰਜਾਬੀ)</option>
+              <option value="ori+eng">Odia + English (ଓଡ଼ିଆ)</option>
+              <option value="urd+eng">Urdu + English (اردو)</option>
+              <option value="asm+eng">Assamese + English (অসমীয়া)</option>
+            </select>
+            <div class="sub">Downloads language packs on first use. "Force OCR" below ignores DRM locks.</div>
+          </div>
+          <div class="field">
+            <label class="checkfield"><input type="checkbox" id="stripHeaders" checked> Strip repeated headers/footers</label>
+          </div>
+          <div class="field">
+            <label class="checkfield"><input type="checkbox" id="forceOcr"> Force OCR on every PDF page</label>
+            <div class="sub">Off = use embedded text layer when present, OCR only pages that look scanned.</div>
+          </div>
+        </details>
+
+        <button class="primary" id="processBtn">Process → build chunks</button>
+
+        <div class="progressbar"><div class="fill" id="progressFill"></div></div>
+        <div class="progress-label"><span id="progressLabel">Idle</span><span id="progressPct"></span></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>03 — LOG</h2></div>
+      <div class="drawer" id="logDrawer">
+        <div class="line">Waiting for input…</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT: Output -->
+  <div class="panel" id="outputPanel">
+    <div class="output-tabs">
+      <button class="active" data-tab="cards">index cards</button>
+      <button data-tab="json">json</button>
+      <div class="output-actions">
+        <button class="ghost" id="copyBtn" disabled>copy json</button>
+        <button class="ghost" id="downloadBtn" disabled>download json</button>
+		<button class="primary" id="startVoiceChatBtn" disabled style="margin:0; padding:6px 12px; background:var(--accent); color:#000;">
+    🎙️ Start Conversing with this Book
+  </button>
+      </div>
+    </div>
+
+    <div id="statsBar" class="stats-bar" style="display:none;">
+      <div class="stat"><div class="num" id="statChunks">0</div><div class="lbl">CHUNKS</div></div>
+      <div class="stat"><div class="num" id="statFiles">0</div><div class="lbl">SOURCES</div></div>
+      <div class="stat"><div class="num" id="statChars">0</div><div class="lbl">TOTAL CHARS</div></div>
+      <div class="stat"><div class="num" id="statAvg">0</div><div class="lbl">AVG CHUNK LEN</div></div>
+    </div>
+
+    <div id="searchRow" class="search-row" style="display:none;">
+      <input type="text" id="searchBox" placeholder="Filter chunks by text…">
+    </div>
+
+    <div id="cardsView" class="cards-wrap">
+      <div class="empty-state" style="grid-column:1/-1;">
+        <span class="glyph">🗂️</span>
+        <p>Add a book, paste some text, or drop a few pages — then hit <em>Process</em>. Extracted chunks will appear here as index cards, ready to feed a RAG pipeline.</p>
+      </div>
+    </div>
+
+    <div id="jsonView" class="json-wrap" style="display:none;">
+      <pre id="jsonPre"></pre>
+    </div>
+  </div>
+</main>
+
+<footer>runs entirely in your browser · nothing is uploaded anywhere · pdf.js + tesseract.js</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+
+
+
+<script>
+(function(){
+  'use strict';
+
+  // ---------------------------------------------------------------
+  // Setup
+  // ---------------------------------------------------------------
+  if (window['pdfjsLib']) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+  }
+
+  const $ = (id) => document.getElementById(id);
+
+  const els = {
+    dropzone: $('dropzone'),
+    fileInput: $('fileInput'),
+    fileList: $('fileList'),
+    fileCountHint: $('fileCountHint'),
+    pasteText: $('pasteText'),
+    bookTitle: $('bookTitle'),
+    bookId: $('bookId'),
+    bookLang: $('bookLang'),
+    chunkSize: $('chunkSize'),
+    overlapSentences: $('overlapSentences'),
+    ocrLang: $('ocrLang'),
+    stripHeaders: $('stripHeaders'),
+    forceOcr: $('forceOcr'),
+    processBtn: $('processBtn'),
+    progressFill: $('progressFill'),
+    progressLabel: $('progressLabel'),
+    progressPct: $('progressPct'),
+    logDrawer: $('logDrawer'),
+    outputPanel: $('outputPanel'),
+    statsBar: $('statsBar'),
+    statChunks: $('statChunks'),
+    statFiles: $('statFiles'),
+    statChars: $('statChars'),
+    statAvg: $('statAvg'),
+    searchRow: $('searchRow'),
+    searchBox: $('searchBox'),
+    cardsView: $('cardsView'),
+    jsonView: $('jsonView'),
+    jsonPre: $('jsonPre'),
+    copyBtn: $('copyBtn'),
+    downloadBtn: $('downloadBtn'),
+  };
+
+  let files = [];       // { id, file, name, type, status, error }
+  let allChunks = [];   // final chunk objects
+  let bookIdManuallyEdited = false;
+  let fileCounter = 0;
+
+  // ---------------------------------------------------------------
+  // Logging / progress
+  // ---------------------------------------------------------------
+  function log(msg, level){
+    const line = document.createElement('div');
+    line.className = 'line' + (level ? ' ' + level : '');
+    const t = new Date().toTimeString().slice(0,8);
+    line.textContent = '[' + t + '] ' + msg;
+    els.logDrawer.appendChild(line);
+    els.logDrawer.scrollTop = els.logDrawer.scrollHeight;
+  }
+
+  function setProgress(pct, label){
+    els.progressFill.style.width = Math.max(0, Math.min(100, pct)) + '%';
+    els.progressLabel.textContent = label || '';
+    els.progressPct.textContent = pct ? Math.round(pct) + '%' : '';
+  }
+
+  // ---------------------------------------------------------------
+  // File intake
+  // ---------------------------------------------------------------
+  function slugify(str){
+    return (str || 'untitled')
+      .toLowerCase()
+      .normalize('NFKD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/[^a-z0-9]+/g,'-')
+      .replace(/(^-|-$)/g,'') || 'untitled';
+  }
+
+  els.bookTitle.addEventListener('input', () => {
+    if (!bookIdManuallyEdited) els.bookId.value = slugify(els.bookTitle.value);
+  });
+  els.bookId.addEventListener('input', () => { bookIdManuallyEdited = true; });
+
+  function fileTypeOf(file){
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (ext === 'pdf') return 'pdf';
+    if (ext === 'txt') return 'txt';
+    if (['png','jpg','jpeg','webp'].includes(ext)) return 'image';
+    return 'unknown';
+  }
+
+  function addFiles(fileListLike){
+    const arr = Array.from(fileListLike);
+    for (const f of arr){
+      const type = fileTypeOf(f);
+      if (type === 'unknown'){
+        log('Skipped unsupported file: ' + f.name, 'err');
+        continue;
+      }
+      files.push({ id: ++fileCounter, file: f, name: f.name, type, status: 'queued', error: null });
+      log('Added ' + f.name + ' (' + type.toUpperCase() + ', ' + Math.round(f.size/1024) + ' KB)');
+    }
+    if (!els.bookTitle.value && arr.length){
+      const first = arr[0].name.replace(/\.[^.]+$/, '');
+      els.bookTitle.value = first;
+      els.bookId.value = slugify(first);
+    }
+    renderFileList();
+  }
+
+  function removeFile(id){
+    files = files.filter(f => f.id !== id);
+    renderFileList();
+  }
+
+  function renderFileList(){
+    els.fileList.innerHTML = '';
+    els.fileCountHint.textContent = files.length + ' file' + (files.length===1?'':'s');
+    for (const f of files){
+      const li = document.createElement('li');
+      const fname = document.createElement('span');
+      fname.className = 'fname';
+      fname.textContent = f.name;
+      const status = document.createElement('span');
+      status.className = 'fstatus ' + (f.status === 'queued' ? 'queued' : f.status === 'done' ? 'done' : f.status === 'error' ? 'error' : 'working');
+      status.textContent = f.status;
+      const rm = document.createElement('button');
+      rm.className = 'rm';
+      rm.textContent = '✕';
+      rm.title = 'Remove';
+      rm.addEventListener('click', () => removeFile(f.id));
+      li.appendChild(fname);
+      li.appendChild(status);
+      li.appendChild(rm);
+      els.fileList.appendChild(li);
+    }
+  }
+
+  els.dropzone.addEventListener('click', () => els.fileInput.click());
+  els.dropzone.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') els.fileInput.click(); });
+  els.fileInput.addEventListener('change', (e) => { addFiles(e.target.files); els.fileInput.value = ''; });
+
+  ['dragenter','dragover'].forEach(evt => {
+    els.dropzone.addEventListener(evt, (e) => { e.preventDefault(); els.dropzone.classList.add('drag'); });
+  });
+  ['dragleave','drop'].forEach(evt => {
+    els.dropzone.addEventListener(evt, (e) => { e.preventDefault(); els.dropzone.classList.remove('drag'); });
+  });
+  els.dropzone.addEventListener('drop', (e) => {
+    if (e.dataTransfer && e.dataTransfer.files) addFiles(e.dataTransfer.files);
+  });
+
+  // ---------------------------------------------------------------
+  // Text cleaning
+  // ---------------------------------------------------------------
+  function normalizeLineForCompare(line){
+    return line.trim().toLowerCase().replace(/[0-9]+/g,'#').replace(/\s+/g,' ');
+  }
+
+  function stripRepeatedHeadersFooters(pages){
+    if (pages.length < 4) return pages;
+    const firstCount = {}, lastCount = {};
+    for (const p of pages){
+      const lines = p.text.split('\n').map(l => l.trim()).filter(Boolean);
+      if (!lines.length) continue;
+      const f = normalizeLineForCompare(lines[0]);
+      const l = normalizeLineForCompare(lines[lines.length-1]);
+      if (f.length > 0 && f.length < 80) firstCount[f] = (firstCount[f]||0) + 1;
+      if (l.length > 0 && l.length < 80) lastCount[l] = (lastCount[l]||0) + 1;
+    }
+    const threshold = Math.max(3, Math.floor(pages.length * 0.35));
+    const commonFirst = new Set(Object.keys(firstCount).filter(k => firstCount[k] >= threshold));
+    const commonLast = new Set(Object.keys(lastCount).filter(k => lastCount[k] >= threshold));
+    if (!commonFirst.size && !commonLast.size) return pages;
+    return pages.map(p => {
+      let lines = p.text.split('\n');
+      while (lines.length && commonFirst.has(normalizeLineForCompare(lines[0]))) lines.shift();
+      while (lines.length && commonLast.has(normalizeLineForCompare(lines[lines.length-1]))) lines.pop();
+      return { pageNum: p.pageNum, text: lines.join('\n') };
+    });
+  }
+
+  function fixHyphenation(text){
+    return text.replace(/(\p{L})-\n(\p{L})/gu, '$1$2');
+  }
+
+  function normalizeWhitespace(text){
+    return text
+      .replace(/\r/g,'')
+      .replace(/[ \t]+/g,' ')
+      .replace(/\n[ \t]+/g,'\n')
+      .replace(/\n{2,}/g,'\n')
+      .replace(/\n/g,' ')
+      .replace(/ {2,}/g,' ')
+      .trim();
+  }
+
+  function cleanPages(pages, stripHeaders){
+    let p = stripHeaders ? stripRepeatedHeadersFooters(pages) : pages;
+    return p.map(pg => ({
+      pageNum: pg.pageNum,
+      text: normalizeWhitespace(fixHyphenation(pg.text))
+    }));
+  }
+
+  // ---------------------------------------------------------------
+  // Sentence segmentation & chunking
+  // ---------------------------------------------------------------
+  function segmentPagesToSentences(pages, locale){
+    let segmenter;
+    try {
+      segmenter = new Intl.Segmenter(locale || undefined, { granularity: 'sentence' });
+    } catch(e){
+      segmenter = new Intl.Segmenter('en', { granularity: 'sentence' });
+    }
+    const flat = [];
+    for (const p of pages){
+      if (!p.text || !p.text.trim()) continue;
+      for (const seg of segmenter.segment(p.text)){
+        const s = seg.segment.trim();
+        if (s.length > 0) flat.push({ page: p.pageNum, sentence: s });
+      }
+    }
+    return flat;
+  }
+
+  function chunkFlatSentences(flat, maxChars, overlapSentences){
+    const out = [];
+    let current = [];
+    let currentLen = 0;
+    for (let i = 0; i < flat.length; i++){
+      const item = flat[i];
+      if (currentLen + item.sentence.length + 1 > maxChars && current.length){
+        out.push(current.slice());
+        current = overlapSentences > 0 ? current.slice(-overlapSentences) : [];
+        currentLen = current.reduce((a,c) => a + c.sentence.length + 1, 0);
+      }
+      current.push(item);
+      currentLen += item.sentence.length + 1;
+    }
+    if (current.length) out.push(current);
+    return out;
+  }
+
+  // ---------------------------------------------------------------
+  // Extraction: TXT
+  // ---------------------------------------------------------------
+  function extractTxt(file){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve([{ pageNum: 1, text: reader.result }]);
+      reader.onerror = () => reject(new Error('Could not read text file'));
+      reader.readAsText(file);
+    });
+  }
+
+  // ---------------------------------------------------------------
+  // Extraction: PDF (text layer + OCR fallback per page)
+  // ---------------------------------------------------------------
+  async function extractPdf(file, opts, onPageProgress){
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+    const pages = [];
+    let ocrWorker = null;
+
+    for (let i = 1; i <= pdf.numPages; i++){
+      onPageProgress(i, pdf.numPages);
+      const page = await pdf.getPage(i);
+      let pageText = '';
+
+      if (!opts.forceOcr){
+        const content = await page.getTextContent();
+        let buf2 = '';
+        for (const item of content.items){
+          buf2 += item.str;
+          if (item.hasEOL) buf2 += '\n'; else buf2 += ' ';
+        }
+        pageText = buf2.trim();
+      }
+
+      const looksScanned = opts.forceOcr || pageText.replace(/\s+/g,'').length < 20;
+
+      if (looksScanned){
+        log('Page ' + i + '/' + pdf.numPages + ' looks scanned — running OCR…');
+        if (!ocrWorker){
+          ocrWorker = await Tesseract.createWorker(opts.ocrLang || 'eng');
+        }
+        const viewport = page.getViewport({ scale: 3 });
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext('2d');
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        const { data } = await ocrWorker.recognize(canvas);
+        pageText = data.text.trim();
+      }
+
+      pages.push({ pageNum: i, text: pageText });
+    }
+
+    if (ocrWorker) await ocrWorker.terminate();
+    return pages;
+  }
+
+  // ---------------------------------------------------------------
+  // Extraction: Image (full-page OCR)
+  // ---------------------------------------------------------------
+  async function extractImage(file, opts){
+    log('Running OCR on ' + file.name + '…');
+    const worker = await Tesseract.createWorker(opts.ocrLang || 'eng');
+    const { data } = await worker.recognize(file);
+    await worker.terminate();
+    return [{ pageNum: 1, text: data.text.trim() }];
+  }
+
+  // ---------------------------------------------------------------
+  // Pipeline
+  // ---------------------------------------------------------------
+  async function runPipeline(){
+    const pasted = els.pasteText.value.trim();
+    if (!files.length && !pasted){
+      log('Nothing to process — add a file or paste some text.', 'err');
+      return;
+    }
+
+    els.processBtn.disabled = true;
+    allChunks = [];
+    const bookTitle = els.bookTitle.value.trim() || 'untitled';
+    const bookId = slugify(els.bookId.value.trim() || bookTitle);
+    const bookLang = els.bookLang.value.trim() || null;
+    const chunkSize = Math.max(200, parseInt(els.chunkSize.value, 10) || 1200);
+    const overlap = Math.max(0, parseInt(els.overlapSentences.value, 10) || 0);
+    const opts = {
+      ocrLang: els.ocrLang.value.trim() || 'eng',
+      forceOcr: els.forceOcr.checked,
+    };
+    const stripHeaders = els.stripHeaders.checked;
+
+    const sources = [];
+    for (const f of files) sources.push(f);
+
+    const totalUnits = sources.length + (pasted ? 1 : 0);
+    let unitsDone = 0;
+    const perFileChunks = [];
+
+    async function handleOneSource(sourceLabel, pagesPromiseFn, setStatus){
+      try {
+        setStatus && setStatus('working');
+        const pages = await pagesPromiseFn();
+        const cleaned = cleanPages(pages, stripHeaders);
+        const flat = segmentPagesToSentences(cleaned, bookLang);
+        const groups = chunkFlatSentences(flat, chunkSize, overlap);
+        const chunksForSource = groups.map(items => {
+          const text = items.map(i => i.sentence).join(' ');
+          const pageNums = items.map(i => i.page);
+          return {
+            book_id: bookId,
+            book_title: bookTitle,
+            source_file: sourceLabel,
+            language: bookLang,
+            chunk_id: '', // assigned globally later
+            chunk_index: 0,
+            page_start: Math.min(...pageNums),
+            page_end: Math.max(...pageNums),
+            text,
+            char_count: text.length,
+          };
+        });
+        perFileChunks.push(...chunksForSource);
+        setStatus && setStatus('done');
+        log('✓ ' + sourceLabel + ' → ' + chunksForSource.length + ' chunks', 'ok');
+      } catch (err){
+        console.error(err);
+        setStatus && setStatus('error');
+        log('✗ ' + sourceLabel + ': ' + err.message, 'err');
+      }
+      unitsDone++;
+      setProgress((unitsDone/totalUnits)*100, 'Processed ' + unitsDone + '/' + totalUnits);
+    }
+
+    setProgress(2, 'Starting…');
+
+    for (const f of sources){
+      f.status = 'working';
+      renderFileList();
+      const label = f.name;
+      await handleOneSource(label, async () => {
+        if (f.type === 'pdf'){
+          return extractPdf(f.file, opts, (pg, total) => {
+            setProgress((unitsDone/totalUnits)*100 + (pg/total)*(100/totalUnits)*0.9, label + ' — page ' + pg + '/' + total);
+          });
+        } else if (f.type === 'image'){
+          return extractImage(f.file, opts);
+        } else if (f.type === 'txt'){
+          return extractTxt(f.file);
+        }
+        throw new Error('Unsupported file type');
+      }, (s) => { f.status = s; renderFileList(); });
+    }
+
+    if (pasted){
+      await handleOneSource('pasted-text', async () => [{ pageNum: 1, text: pasted }]);
+    }
+
+    // Global re-indexing
+    allChunks = perFileChunks.map((c, idx) => ({
+      ...c,
+      chunk_index: idx,
+      chunk_id: bookId + '_' + String(idx).padStart(4, '0'),
+    }));
+
+    setProgress(100, 'Done');
+    log('Pipeline complete — ' + allChunks.length + ' total chunks.', 'ok');
+    els.processBtn.disabled = false;
+    renderOutput();
+  }
+
+  // ---------------------------------------------------------------
+  // Output rendering
+  // ---------------------------------------------------------------
+  function escapeHtml(s){
+    return s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  }
+
+  function renderOutput(){
+    const hasChunks = allChunks.length > 0;
+    els.statsBar.style.display = hasChunks ? 'flex' : 'none';
+    els.searchRow.style.display = hasChunks ? 'flex' : 'none';
+    els.copyBtn.disabled = !hasChunks;
+    els.downloadBtn.disabled = !hasChunks;
+
+    if (!hasChunks){
+      els.cardsView.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><span class="glyph">🗂️</span><p>No chunks yet. Add a book or paste text, then hit Process.</p></div>';
+      els.jsonPre.textContent = '';
+      return;
+    }
+
+    const totalChars = allChunks.reduce((a,c) => a + c.char_count, 0);
+    const sourceSet = new Set(allChunks.map(c => c.source_file));
+    els.statChunks.textContent = allChunks.length;
+    els.statFiles.textContent = sourceSet.size;
+    els.statChars.textContent = totalChars.toLocaleString();
+    els.statAvg.textContent = Math.round(totalChars / allChunks.length);
+
+    renderCards(allChunks);
+    renderJson(allChunks);
+  }
+
+  function renderCards(chunks){
+    if (!chunks.length){
+      els.cardsView.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><span class="glyph">🔎</span><p>No chunks match that filter.</p></div>';
+      return;
+    }
+    const frag = document.createDocumentFragment();
+    for (const c of chunks){
+      const card = document.createElement('div');
+      card.className = 'chunk-card';
+      card.innerHTML =
+        '<div class="ccid"><span>' + escapeHtml(c.chunk_id) + '</span><span>p.' + c.page_start + (c.page_end !== c.page_start ? '–' + c.page_end : '') + '</span></div>' +
+        '<div class="cctext">' + escapeHtml(c.text) + '</div>' +
+        '<div class="ccmeta">' + escapeHtml(c.source_file) + ' · ' + c.char_count + ' chars' + (c.language ? ' · ' + escapeHtml(c.language) : '') + '</div>';
+      frag.appendChild(card);
+    }
+    els.cardsView.innerHTML = '';
+    els.cardsView.appendChild(frag);
+  }
+
+  function renderJson(chunks){
+    const json = JSON.stringify(chunks, null, 2);
+    els.jsonPre.textContent = json;
+  }
+
+  els.searchBox.addEventListener('input', () => {
+    const q = els.searchBox.value.trim().toLowerCase();
+    const filtered = q ? allChunks.filter(c => c.text.toLowerCase().includes(q)) : allChunks;
+    renderCards(filtered);
+  });
+
+  // Tabs
+  document.querySelectorAll('.output-tabs button[data-tab]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.output-tabs button[data-tab]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const tab = btn.dataset.tab;
+      els.cardsView.style.display = tab === 'cards' ? 'grid' : 'none';
+      els.jsonView.style.display = tab === 'json' ? 'block' : 'none';
+      els.searchRow.style.display = (tab === 'cards' && allChunks.length) ? 'flex' : 'none';
+    });
+  });
+
+  // Copy / download
+  els.copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(allChunks, null, 2));
+      els.copyBtn.textContent = 'copied ✓';
+      setTimeout(() => els.copyBtn.textContent = 'copy json', 1200);
+    } catch(e){
+      log('Clipboard copy failed — select and copy manually from the JSON tab.', 'err');
+    }
+  });
+
+  els.downloadBtn.addEventListener('click', () => {
+    const bookId = slugify(els.bookId.value.trim() || els.bookTitle.value.trim() || 'book');
+    const blob = new Blob([JSON.stringify(allChunks, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = bookId + '_chunks.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    log('Downloaded ' + bookId + '_chunks.json', 'ok');
+  });
+
+ els.processBtn.addEventListener('click', runPipeline);
+
+  renderFileList();
+// ---------------------------------------------------------------
+  // DATABASE BRIDGE: SAVE TO LOCAL LIBRARY
+  // ---------------------------------------------------------------
+  const startVoiceChatBtn = $('startVoiceChatBtn');
+  
+  const origRenderOutput = renderOutput;
+  renderOutput = function() {
+    origRenderOutput();
+    if (startVoiceChatBtn) {
+      startVoiceChatBtn.disabled = !(allChunks && allChunks.length > 0);
+    }
+  };
+
+  if (startVoiceChatBtn) {
+    startVoiceChatBtn.addEventListener('click', () => {
+      startVoiceChatBtn.textContent = "Saving to Library...";
+      
+      const request = indexedDB.open("EprashalaRAG", 1);
+      
+      request.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains("bookData")) {
+          db.createObjectStore("bookData");
+        }
+      };
+      
+      request.onsuccess = (e) => {
+        const db = e.target.result;
+        const tx = db.transaction("bookData", "readwrite");
+        const store = tx.objectStore("bookData");
+        
+        // Generate a unique ID for the book
+        const bookId = els.bookId.value.trim() || slugify(els.bookTitle.value) || ('book-' + Date.now());
+        
+        const bookPayload = {
+          id: bookId,
+          title: els.bookTitle.value.trim() || 'Custom Book',
+          dateAdded: new Date().toISOString(),
+          chunks: allChunks
+        };
+        
+        store.put(bookPayload, bookId); // Save using the unique ID
+        
+        tx.oncomplete = () => {
+          // Send the unique ID in the URL to Dhwani
+          window.location.href = 'teacher.html?mode=book&id=' + encodeURIComponent(bookId);
+        };
+      };
+    });
+  }
+
+})(); // <-- END OF SCRIPT
+</script>
+
+</body>
+</html>
