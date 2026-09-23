@@ -396,37 +396,48 @@
   @media (prefers-reduced-motion: reduce){
     *{ transition:none !important; }
   }
-  /* ---------- MOBILE RESPONSIVENESS OVERRIDES ---------- */
+/* ---------- MOBILE RESPONSIVENESS OVERRIDES ---------- */
+  @media (max-width: 940px) {
+    /* 1. CRITICAL OVERLAP FIX: Disable sticky positioning on mobile */
+    main { grid-template-columns: 1fr; display: flex; flex-direction: column; }
+    .stack { position: relative !important; top: 0 !important; width: 100%; }
+    #outputPanel { width: 100%; }
+  }
+
   @media (max-width: 768px) {
+    /* 2. Fix page padding and header stacking */
     main { padding: 12px; gap: 16px; }
+    header.masthead { padding: 16px; flex-direction: column; align-items: flex-start; gap: 12px; }
+    header .colophon { margin-left: 0; text-align: left; width: 100%; padding-top: 10px; border-top: 1px dashed var(--line); margin-top: 4px; }
     
-    /* Stack the header colophon */
-    header .colophon { margin-left: 0; text-align: left; width: 100%; padding-top: 8px; border-top: 1px dashed var(--line); margin-top: 8px; }
+    /* 3. Prevent Android/iOS auto-zoom by forcing 16px font size on inputs */
+    .field input[type=text], .field input[type=number], .field select, .field textarea { 
+      font-size: 16px !important; 
+      padding: 10px !important;
+    }
+
+    /* 4. Stack form columns vertically */
+    .row2 { grid-template-columns: 1fr; gap: 12px; }
     
-    /* Form rows stack vertically */
-    .row2 { grid-template-columns: 1fr; }
+    /* 5. Fix the Output Bar (Index/JSON Tabs) */
+    .output-tabs { flex-direction: column; background: var(--paper-2); border-bottom: none; }
+    .output-tabs > button { width: 100%; border-bottom: 1px solid var(--line) !important; padding: 12px 8px; }
+    .output-tabs > button.active { border-bottom: 2px solid var(--accent) !important; background: var(--paper-3); font-weight: 600; }
     
-    /* Fix the Output Bar (Tabs + Buttons) */
-    .output-tabs { flex-wrap: wrap; border-bottom: none; background: var(--paper-2); }
-    .output-tabs button { flex: 1; min-width: 100px; text-align: center; border-bottom: 2px solid transparent !important; }
-    .output-tabs button.active { border-bottom: 2px solid var(--accent) !important; background: var(--paper-3); font-weight: 600; }
+    /* 6. Stack Action Buttons (Copy, Download, Voice) */
+    .output-actions { margin-left: 0; width: 100%; display: flex; flex-direction: column; padding: 12px; gap: 8px; border-bottom: 1px solid var(--line); }
+    .output-actions button.ghost { width: 100%; padding: 10px; }
+    .output-actions #startVoiceChatBtn { width: 100%; margin: 0 !important; padding: 14px !important; font-size: 15px; border-radius: 8px; }
     
-    .output-actions { margin-left: 0; width: 100%; flex-wrap: wrap; padding: 12px; gap: 8px; justify-content: stretch; border-bottom: 1px solid var(--line); }
-    .output-actions button.ghost { flex: 1; min-width: 120px; }
-    
-    /* Make the Voice button a large, full-width tap target */
-    .output-actions #startVoiceChatBtn { flex-basis: 100%; margin: 4px 0 0 0 !important; padding: 14px !important; font-size: 14px; }
-    
-    /* Stats Bar Grid */
-    .stats-bar { grid-template-columns: 1fr 1fr; display: grid; }
-    .stat { border-right: 1px solid var(--line) !important; border-bottom: 1px solid var(--line); }
+    /* 7. Clean up Stats Bar Grid into a 2x2 square */
+    .stats-bar { display: grid; grid-template-columns: 1fr 1fr; }
+    .stat { border-right: 1px solid var(--line) !important; border-bottom: 1px solid var(--line); padding: 12px; }
     .stat:nth-child(even) { border-right: none !important; }
     
-    /* Extracted Cards */
-    .cards-wrap { grid-template-columns: 1fr; padding: 12px; }
+    /* 8. Widen Extracted Cards */
+    .cards-wrap { grid-template-columns: 1fr; padding: 12px; gap: 16px; }
+    .chunk-card { padding: 16px; }
   }
-  
-  
 </style>
 </head>
 <body>
@@ -545,7 +556,7 @@
       <div class="output-actions">
         <button class="ghost" id="copyBtn" disabled>copy json</button>
         <button class="ghost" id="downloadBtn" disabled>download json</button>
-		<button class="primary" id="startVoiceChatBtn" disabled style="margin:0; padding:6px 12px; background:var(--accent);">
+		<button class="primary" id="startVoiceChatBtn" disabled style="margin:0; padding:6px 12px; background:var(--accent); color:#000;">
     🎙️ Start Conversing with this Book
   </button>
       </div>
