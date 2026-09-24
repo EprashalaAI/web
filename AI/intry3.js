@@ -1850,6 +1850,7 @@ try {
         
         saveData();
         updateEditPencil();
+		logQAToSupabase(userText, rawRes);
         
     } catch (err) {
         if (err.name === 'AbortError') {
@@ -2766,6 +2767,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+
 // --- GOOGLE BOOKS GLOBAL SEARCH ENGINE ---
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -2895,3 +2897,159 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.key === 'Enter') executeSearch();
     });
 });
+
+// =====================================================================
+// SUPABASE ZERO-TOKEN FAQ & LOGGING ENGINE
+// =====================================================================
+const SUPABASE_URL = "https://yoybrfalvzutrwyhpoxp.supabase.co/rest/v1/qa_knowledge_base";
+const SUPABASE_ANON_KEY = "sb_publishable_07dbWoR3gAQ52BeIYAasUA_81Ga14Sw";
+
+// 1. SILENT LOGGING (Fires after Gemini answers)
+function logQAToSupabase(userQuery, botReply) {
+    const isLibrary = document.title.includes("Library");
+    let contextStr = "General";
+    
+    if (isLibrary) {
+        contextStr = typeof selectedLibraryItem !== 'undefined' ? selectedLibraryItem : "General";
+    } else {
+        const med = document.getElementById('medium-selector')?.value || "Unknown";
+        const std = document.getElementById('std-selector')?.value || "Unknown";
+        const sub = document.getElementById('subject-selector')?.value || "Unknown";
+        contextStr = `${med}_Std${std}_${sub}`;
+    }
+
+    const payload = {
+        app_source: isLibrary ? "library" : "teacher",
+        context: contextStr,
+        question: userQuery.trim(),
+        answer: botReply.trim()
+    };
+
+    fetch(SUPABASE_URL, {
+        method: "POST",
+        headers: {
+            "apikey": SUPABASE_ANON_KEY,
+            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+            "Content-Type": "application/json",
+            "Prefer": "return=minimal"
+        },
+        body: JSON.stringify(payload)
+    }).catch(err => console.debug("Supabase log failed:", err));
+}
+
+// 2. LIVE FAQ SEARCH (Fires as user types)
+let faqSearchTimeout = null;
+
+async function searchFAQs(inputText) {
+    if (inputText.trim().length < 4) {
+        hideFAQSuggestions();
+        return;
+    }
+
+    const isLibrary = document.title.includes("Library");
+    let contextStr = isLibrary 
+        ? (typeof selectedLibraryItem !== 'undefined' ? selectedLibraryItem : "General")
+        : `${document.getElementById('medium-selector')?.value}_Std${document.getElementById('std-selector')?.value}_${document.getElementById('subject-selector')?.value}`;
+
+    // Query Supabase for approved FAQs matching the context and the typed keywords
+    const queryUrl = `${SUPABASE_URL}?select=question,answer&is_approved=eq.true&context=eq.${encodeURIComponent(contextStr)}&question=ilike.*${encodeURIComponent(inputText.trim())}*&limit=5`;
+
+    try {
+        const response = await fetch(queryUrl, {
+            method: "GET",
+            headers: {
+                "apikey": SUPABASE_ANON_KEY,
+                "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+            }
+        });
+
+        if (response.ok) {
+            const matches = await response.json();
+            renderFAQSuggestions(matches);
+        }
+    } catch (err) {
+        console.debug("FAQ search failed:", err);
+    }
+}
+
+// Hook into the chat input box
+document.addEventListener("DOMContentLoaded", () => {
+    const textInput = document.getElementById('text-input');
+    if (textInput) {
+        textInput.addEventListener('input', (e) => {
+            clearTimeout(faqSearchTimeout);
+            faqSearchTimeout = setTimeout(() => {
+                searchFAQs(e.target.value);
+            }, 400); // 400ms debounce saves bandwidth
+        });
+    }
+});
+
+// 3. RENDER FAQ UI (Zero Token Delivery)
+function renderFAQSuggestions(matches) {
+    let container = document.getElementById('faq-suggestions-box');
+    const inputWrapper = document.getElementById('text-input').closest('.relative') || document.getElementById('text-input').parentNode;
+    
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'faq-suggestions-box';
+        // Floats right above the chat input box
+        container.className = 'absolute bottom-full left-0 w-full bg-slate-900/95 border border-cyan-500/50 rounded-t-2xl p-2 shadow-[0_-10px_30px_rgba(0,0,0,0.6)] z-[150] max-h-60 overflow-y-auto backdrop-blur-md mb-2';
+        inputWrapper.appendChild(container);
+    }
+
+    if (matches.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+
+    container.style.display = 'block';
+    container.innerHTML = `
+        <div class="text-[10px] text-cyan-400 font-bold uppercase tracking-wider px-2 py-1 border-b border-slate-700/50 mb-1 flex justify-between items-center">
+            <span>💡 Instant Answers (0 Tokens)</span>
+            <button class="text-slate-400 hover:text-red-400 text-lg leading-none outline-none" onclick="hideFAQSuggestions()">&times;</button>
+        </div>
+    `;
+
+    matches.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'px-3 py-2.5 hover:bg-slate-800 rounded-lg cursor-pointer text-sm text-yellow-300 font-medium transition-colors border-b border-slate-800/40';
+        row.innerText = item.question;
+        
+        row.onclick = () => {
+            hideFAQSuggestions();
+            const textInput = document.getElementById('text-input');
+            textInput.value = ''; 
+            
+            const isLibrary = document.title.includes("Library");
+            const userName = document.getElementById('manual-name')?.value || (isLibrary ? "Bhakt" : (document.getElementById('user-role')?.value || "Student"));
+            const botName = isLibrary ? (typeof getSelectedItemName === 'function' ? getSelectedItemName() : "Dhwani") : "Teacher";
+
+            // 1. Render User Question
+            renderMessage(userName, item.question, false);
+            
+            // 2. Render Cached Answer Instantly
+            const msgId = renderMessage(botName, item.answer, true);
+            
+            // 3. Play Audio
+            if (typeof state !== 'undefined' && !state.isMuted) {
+                const playBtn = document.getElementById(`play-btn-${msgId}`);
+                if (playBtn) window.toggleSingleMessagePlay(playBtn);
+            }
+            
+            // 4. Save to Local Session History
+            if (typeof chatHistory !== 'undefined') {
+                chatHistory.push({ role: 'user', parts: [{ text: item.question }] });
+                chatHistory.push({ role: 'model', parts: [{ text: item.answer }] });
+                if (typeof saveData === 'function') saveData();
+                if (typeof updateEditPencil === 'function') updateEditPencil();
+            }
+        };
+        container.appendChild(row);
+    });
+}
+
+window.hideFAQSuggestions = function() {
+    const container = document.getElementById('faq-suggestions-box');
+    if (container) container.style.display = 'none';
+};
