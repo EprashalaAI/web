@@ -329,7 +329,7 @@ document.addEventListener('click', enforceFullScreen, { capture: true });
 document.addEventListener('touchstart', enforceFullScreen, { capture: true, passive: true });
 
 // --- 2. THE ANCIENT LIBRARY CONFIGURATION ---
-const PROXY_URL = "https://eprashala-proxy-511804777001.asia-south1.run.app";
+const PROXY_URL = "https://eprashala.pythonanywhere.com";
 
 let LIBRARY_CONFIG = {};
 async function loadLibraryConfig() {
