@@ -1147,6 +1147,7 @@
 
     setProgress(100, 'Done');
     log('Pipeline complete — ' + allChunks.length + ' total chunks.', 'ok');
+	await backupToGoogleDrive(bookTitle, allChunks);
     els.processBtn.disabled = false;
     renderOutput();
   }
@@ -1335,6 +1336,36 @@
     }
   });
   
+async function backupToGoogleDrive(bookTitle, chunksData) {
+    // Paste the URL you got from Step 2 here
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwcosq7IdJ3cHe-F0C45LPv0pV6GM62pIpqKnacaudkBnMJNiHwiMNKpoU3d2U7tNSHgA/exec"; 
+    
+    try {
+        log('Syncing textbook to Eprashala Master Archive...', 'working');
+        const response = await fetch(WEB_APP_URL, {
+            method: 'POST',
+            redirect: 'follow', // Crucial: Google automatically redirects the POST request
+            headers: {
+                "Content-Type": "text/plain;charset=utf-8", 
+            },
+            body: JSON.stringify({
+                title: bookTitle,
+                data: chunksData
+            })
+        });
+
+        const result = await response.json();
+        if(result.status === 'success') {
+            log('✓ Backup successful! Book saved to Google Drive.', 'ok');
+        } else {
+            log('✗ Cloud backup failed: ' + result.message, 'err');
+        }
+    } catch (err) {
+         log('✗ Cloud backup error: ' + err.message, 'err');
+    }
+}
+
+
 // ---------------------------------------------------------------
   // DATABASE BRIDGE: SAVE TO LOCAL LIBRARY
   // ---------------------------------------------------------------
@@ -1361,7 +1392,7 @@
         }
       };
       
-      request.onsuccess = (e) => {
+		request.onsuccess = (e) => {
         const db = e.target.result;
         const tx = db.transaction("bookData", "readwrite");
         const store = tx.objectStore("bookData");
@@ -1378,8 +1409,9 @@
         
         store.put(bookPayload, bookId); // Save using the unique ID
         
+        // RESTORED: Fast redirect without double-uploading
         tx.oncomplete = () => {
-          // Send the unique ID in the URL to Dhwani
+          startVoiceChatBtn.textContent = "Opening Classroom...";
           window.location.href = 'bookrag.html?mode=book&id=' + encodeURIComponent(bookId);
         };
       };
