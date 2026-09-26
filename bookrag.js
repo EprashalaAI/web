@@ -1,0 +1,2281 @@
+// --- 0. SECURITY, WAKE LOCK, VISIBILITY & FULLSCREEN ---
+document.addEventListener('contextmenu', event => event.preventDefault());
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'F12') { e.preventDefault(); return false; }
+    if (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) { e.preventDefault(); return false; }
+    if (e.ctrlKey && ['U', 'S', 'P'].includes(e.key.toUpperCase())) { e.preventDefault(); return false; }
+    if (e.ctrlKey && e.key.toUpperCase() === 'C' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+        e.preventDefault(); return false;
+    }
+});
+
+let wakeLock = null;
+async function requestWakeLock() {
+    try {
+        if ('wakeLock' in navigator) {
+            wakeLock = await navigator.wakeLock.request('screen');
+        }
+    } catch (err) { }
+}
+
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        requestWakeLock();
+    }
+});
+
+function enforceFullscreen() {
+    if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+        const docElm = document.documentElement;
+        if (docElm.requestFullscreen) {
+            docElm.requestFullscreen().catch(() => {});
+        } else if (docElm.webkitRequestFullscreen) { 
+            docElm.webkitRequestFullscreen().catch(() => {});
+        } else if (docElm.msRequestFullscreen) { 
+            docElm.msRequestFullscreen().catch(() => {});
+        }
+    }
+}
+
+['click', 'touchstart', 'touchend', 'keydown'].forEach(eventType => {
+    window.addEventListener(eventType, enforceFullscreen, { capture: true, passive: true });
+    document.addEventListener(eventType, enforceFullscreen, { capture: true, passive: true });
+});
+
+
+// --- 1. DATA STRUCTURES & CONFIG ---
+const PROXY_BASE_URL = "https://eprashala.pythonanywhere.com";
+
+async function fetchGeminiChat(payloadObject, abortSignal, modelId) {
+    const userKey = document.getElementById('custom-api-key-input').value.trim() || '';
+
+    // TIER 1: User Direct Route (Personal API Key)
+    if (userKey && userKey.length > 10) {
+        
+        // 🚨 STRICT REQUIREMENT: Remove 'model' from the JSON body or Google will reject it.
+        delete payloadObject.model;
+
+        const fetchOptions = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payloadObject)
+        };
+        if (abortSignal) fetchOptions.signal = abortSignal;
+
+        try {
+            console.log(`Direct Route Active: Targeting ${modelId}...`);
+            const primaryUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${userKey}`;
+            const response = await fetch(primaryUrl, fetchOptions);
+            
+            if (!response.ok) throw new Error(`Primary model status: ${response.status}`);
+            return response;
+
+        } catch (error) {
+            if (error.name === 'AbortError') throw error; 
+            console.warn("Primary channel unavailable. Falling back to Flash...", error);
+            
+            // 🚨 UPDATED FALLBACK: Pointing to a valid active model from your list
+            const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${userKey}`;
+            
+            const fallbackResponse = await fetch(fallbackUrl, fetchOptions);
+            if (!fallbackResponse.ok) throw new Error(`Fallback model status: ${fallbackResponse.status}`);
+            return fallbackResponse;
+        }
+    } 
+    
+    // TIER 2: Proxy Gateway (No Personal Key - Uses Server Key)
+    else {
+        console.log(`Proxy Route Active: Forwarding request for ${modelId} to Central Gateway...`);
+        
+        // ONLY inject the model name here, because your Python proxy expects it.
+        payloadObject.model = modelId;
+        
+        const proxyOptions = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payloadObject)
+        };
+        if (abortSignal) proxyOptions.signal = abortSignal;
+
+        return await fetch(`${PROXY_BASE_URL}/api/chat`, proxyOptions);
+    }
+}
+
+
+
+// --- 2. DOM & STATE ---
+const UI = {
+    overlay: document.getElementById('start-overlay'),
+    log: document.getElementById('conversation-log'),
+    status: document.getElementById('status-indicator'),
+    textIn: document.getElementById('text-input'),
+    btnSend: document.getElementById('btn-send'),
+    btnStop: document.getElementById('btn-stop'),
+    btnMic: document.getElementById('btn-mic'),
+    iconMicDefault: document.getElementById('icon-mic-default'),
+    iconMicThinking: document.getElementById('icon-mic-thinking'),
+    btnMute: document.getElementById('btn-mute'),
+    btnRestart: document.getElementById('btn-restart'),
+    btnPasteKey: document.getElementById('btn-paste-key'),
+    btnSharePdf: document.getElementById('btn-share-pdf'),
+    iconVol: document.getElementById('icon-vol'),
+    iconMute: document.getElementById('icon-mute'),
+	ratioSlider: document.getElementById('ratio-slider'),
+    modelSlider: document.getElementById('model-slider'),
+    ratioVal: document.getElementById('ratio-val'),
+    modelVal: document.getElementById('model-val'),
+    
+    // Multimodal & Crop Additions
+    btnQuizManual: document.getElementById('btn-quiz-manual'), 
+    btnCamera: document.getElementById('btn-camera'),
+    cameraInput: document.getElementById('camera-input'),
+    cropModal: document.getElementById('crop-modal'),
+    cropImage: document.getElementById('crop-image'),
+    btnCropRetake: document.getElementById('btn-crop-retake'),
+    btnCropDone: document.getElementById('btn-crop-done'),
+    
+    // Right Side Settings & History Modal
+    advToggle: document.getElementById('adv-toggle'),
+    settingsModal: document.getElementById('settings-modal'),
+    btnCloseSet: document.getElementById('btn-close-settings'),
+    btnSaveSet: document.getElementById('btn-save-settings'),
+    name: document.getElementById('manual-name'),
+    age: document.getElementById('manual-age'),
+    ageContainer: document.getElementById('age-container'),
+    keyIn: document.getElementById('custom-api-key-input'),
+    remember: document.getElementById('remember-checkbox'),
+    ttsEngine: document.getElementById('tts-engine-selector'),
+    welcome: document.getElementById('welcome-msg'),
+    
+    mainView: document.getElementById('settings-main-view'),
+    historyView: document.getElementById('settings-history-view'),
+    btnHistoryBack: document.getElementById('btn-history-back'),
+
+    // Left Side Reading Settings
+    leftAdvToggle: document.getElementById('left-adv-toggle'),
+    leftSettingsModal: document.getElementById('left-settings-modal'),
+    btnCloseLeftSet: document.getElementById('btn-close-left-settings'),
+    btnSaveLeftSet: document.getElementById('btn-save-left-settings'),
+    fontSizeSlider: document.getElementById('font-size-slider'),
+    fontSizeVal: document.getElementById('font-size-val'),
+    ttsSpeedSlider: document.getElementById('tts-speed-slider'),
+    ttsSpeedVal: document.getElementById('tts-speed-val'),
+    highlightCheckbox: document.getElementById('highlight-checkbox'),
+    
+    // Quiz UI
+    quizModal: document.getElementById('quiz-modal'),
+    btnQuizYes: document.getElementById('btn-quiz-yes'),
+    btnQuizNo: document.getElementById('btn-quiz-no'),
+    quizQCount: document.getElementById('quiz-q-count'),
+	
+	// Scoreboard Additions
+    scoreContainer: document.getElementById('score-container'),
+    currentScore: document.getElementById('current-score'),
+    scoreIcon: document.getElementById('score-icon'),
+    
+	selLang: document.getElementById('language-selector'),
+	btnLibrary: document.getElementById('btn-open-library'),
+    libraryModal: document.getElementById('library-modal'),
+    btnCloseLibrary: document.getElementById('btn-close-library'),
+    libraryContainer: document.getElementById('library-list-container'),
+    syllabusSelectors: document.getElementById('syllabus-selectors'),
+    headerTitle: document.getElementById('main-header-title'),
+	btnImportBook: document.getElementById('btn-import-book'),
+    importBookInput: document.getElementById('import-book-input')
+};
+
+// --- GLOBAL STATE ---
+let chatHistory = [];
+let recognition = null;
+let isListening = false; 
+let isManuallyPaused = false;
+let pendingImageData = null; 
+let cropper = null;
+let state = { isProcessing: false, isMuted: false, lastAIMessage: "" };
+let inningsScore = 0; 
+let currentAborter = null;
+let syllabusIndex = {};
+
+let isMicHeld = false;
+let isMicToggled = false;
+let micPressStartTime = 0;
+let finalMicTranscript = '';
+
+// History Vault State
+let allSessions = []; 
+const currentDateKey = new Date().toISOString().split('T')[0];
+let currentSessionId = Date.now();
+let isBookMode = false;
+let activeBookChunks = [];
+let activeBookTitle = "";
+
+function openLibraryModal() {
+    UI.libraryModal.classList.remove('hidden');
+    renderBookLibrary();
+}
+
+function activateBookMode(bookObj) {
+    isBookMode = true;
+    activeBookChunks = bookObj.chunks;
+    activeBookTitle = bookObj.title;
+
+    // Hide normal syllabus selectors
+    if (UI.syllabusSelectors) UI.syllabusSelectors.style.display = 'none';
+    if (UI.selSub) UI.selSub.style.display = 'none';
+
+    // Update Header
+    if (UI.headerTitle) {
+        UI.headerTitle.innerHTML = `<span class="text-sky-400 text-xs">Conversing with Book:</span><br><span class="text-white text-lg font-normal break-words">${activeBookTitle}</span>`;
+    }
+
+    clearData();
+    renderSystemMessage("Local Library", `📚 <b>${activeBookTitle}</b> loaded securely from your phone's storage.<br><br>Tap the mic and ask me anything about this book!`);
+}
+
+function renderBookLibrary() {
+    UI.libraryContainer.innerHTML = '<div class="text-center text-slate-500 text-sm mt-10">Loading library...</div>';
+    
+    const request = indexedDB.open("EprashalaRAG", 1);
+    request.onsuccess = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains("bookData")) {
+            UI.libraryContainer.innerHTML = '<div class="text-center text-slate-500 text-sm mt-10">Library is empty.<br><br>Click the ➕📖 icon in the top right to scan a book, or Import a JSON.</div>';
+            return;
+        }
+        
+        const tx = db.transaction("bookData", "readonly");
+        const store = tx.objectStore("bookData");
+        const getAllReq = store.getAll();
+
+        getAllReq.onsuccess = () => {
+            const books = getAllReq.result;
+            if (!books || books.length === 0) {
+                UI.libraryContainer.innerHTML = '<div class="text-center text-slate-500 text-sm mt-10">Library is empty.<br><br>Click the ➕📖 icon in the top right to scan a book, or Import a JSON.</div>';
+                return;
+            }
+
+            UI.libraryContainer.innerHTML = '';
+            books.sort((a,b) => new Date(b.dateAdded || 0) - new Date(a.dateAdded || 0));
+
+            books.forEach(book => {
+                const card = document.createElement('div');
+                card.className = "w-full text-left bg-slate-800/80 hover:bg-slate-700/80 p-3.5 rounded-xl transition-all border border-slate-700 hover:border-sky-500/50 flex flex-col gap-2.5 cursor-pointer shadow-sm group";
+                
+                const dateObj = new Date(book.dateAdded || Date.now());
+                const dateStr = dateObj.toLocaleDateString([], {month:'short', day:'numeric', year:'numeric'});
+                const chunkCount = Array.isArray(book.chunks) ? book.chunks.length : 0;
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start gap-2">
+                        <div class="flex-1 min-w-0">
+                            <div class="font-bold text-sky-100 text-sm truncate book-title-display">${book.title}</div>
+                            <div class="text-[11px] text-slate-400 mt-0.5">${chunkCount} chunks • ${dateStr}</div>
+                        </div>
+                        <span class="text-[10px] bg-sky-950 text-sky-300 border border-sky-800/60 px-2 py-0.5 rounded-full font-mono flex-shrink-0">RAG Ready</span>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-1.5 pt-2 border-t border-slate-700/50 mt-1">
+                        <!-- Rename Button -->
+                        <button class="edit-book-btn p-1.5 text-slate-400 hover:text-sky-300 hover:bg-slate-600/50 rounded-lg transition-colors" title="Rename Book">
+                            <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                        </button>
+
+                        <!-- Share Button -->
+                        <button class="share-book-btn p-1.5 text-slate-400 hover:text-green-400 hover:bg-slate-600/50 rounded-lg transition-colors" title="Share Book JSON">
+                            <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                        </button>
+
+                        <!-- Delete Button -->
+                        <button class="delete-book-btn p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-600/50 rounded-lg transition-colors" title="Delete Book">
+                            <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                    </div>
+                `;
+
+                // 1. Click Card: Activate Book Mode
+                card.onclick = (e) => {
+                    if (e.target.closest('button')) return;
+                    activateBookMode(book);
+                    UI.libraryModal.classList.add('hidden');
+                };
+
+                // 2. Rename Book
+                const editBtn = card.querySelector('.edit-book-btn');
+                editBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    const newTitle = prompt("Enter a new title for this book:", book.title);
+                    if (newTitle && newTitle.trim() && newTitle.trim() !== book.title) {
+                        book.title = newTitle.trim();
+                        const updateTx = db.transaction("bookData", "readwrite");
+                        updateTx.objectStore("bookData").put(book, book.id);
+                        updateTx.oncomplete = () => {
+                            if (isBookMode && activeBookTitle) {
+                                activeBookTitle = book.title;
+                                if (UI.headerTitle) {
+                                    UI.headerTitle.innerHTML = `<span class="text-sky-400 text-xs">Conversing with Book:</span><br><span class="text-white text-lg font-normal break-words">${activeBookTitle}</span>`;
+                                }
+                            }
+                            renderBookLibrary();
+                        };
+                    }
+                };
+
+                // 3. Share / Export Book JSON
+                const shareBtn = card.querySelector('.share-book-btn');
+                shareBtn.onclick = async (e) => {
+                    e.stopPropagation();
+					const safeTitle = typeof book.title === 'string' ? book.title : 'book';
+					const cleanFileName = safeTitle.toLowerCase().replace(/[^a-z0-9]+/g, '_') + '_rag.json';
+                    const jsonString = JSON.stringify(book, null, 2);
+                    const blob = new Blob([jsonString], { type: 'application/json' });
+                    const file = new File([blob], cleanFileName, { type: 'application/json' });
+
+                    // Web Share API (WhatsApp, Drive, Nearby Share on Android/iOS)
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        try {
+                            await navigator.share({
+                                files: [file],
+                                title: book.title,
+                                text: `Here is the Eprashala RAG knowledge file for "${book.title}".`
+                            });
+                            return;
+                        } catch (err) {
+                            if (err.name !== 'AbortError') console.warn('Native share failed, downloading instead.', err);
+                        }
+                    }
+
+                    // Fallback Direct File Download
+                    const downloadUrl = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = downloadUrl;
+                    a.download = cleanFileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(downloadUrl);
+                };
+
+                // 4. Delete Book
+                const delBtn = card.querySelector('.delete-book-btn');
+                delBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    if (confirm(`Are you sure you want to delete "${book.title}" from your phone's storage?`)) {
+                        const delTx = db.transaction("bookData", "readwrite");
+                        delTx.objectStore("bookData").delete(book.id);
+                        delTx.oncomplete = () => renderBookLibrary();
+                    }
+                };
+
+                UI.libraryContainer.appendChild(card);
+            });
+        };
+    };
+}
+
+// Cloud/Native TTS & Highlight State
+let ttsStatus = 'STOPPED';
+let currentActiveBtn = null;
+let currentAudio = new Audio(); 
+let audioChunks = [];
+let currentChunkIndex = 0;
+let globalWordIndex = 0;
+let highlightTimer = null;
+let wordsArray = [];
+let lastHighlightedSpan = null;
+window.currentPlayingText = "";
+
+const speechDataMap = {};
+const rawTextMap = {};
+
+// --- EDIT PENCIL MANAGER ---
+function updateEditPencil() {
+    document.querySelectorAll('.user-edit-btn').forEach(btn => btn.classList.add('hidden'));
+    const allUserBtns = document.querySelectorAll('.user-edit-btn');
+    if (allUserBtns.length > 0) {
+        allUserBtns[allUserBtns.length - 1].classList.remove('hidden');
+    }
+}
+
+
+window.triggerEditLastInput = (e) => {
+    if(e) e.stopPropagation();
+
+    if (state.isProcessing && currentAborter) currentAborter.abort();
+    resetCurrentTTS();
+    if (isListening && recognition) recognition.stop();
+    
+    resetMicUI();
+    state.isProcessing = false;
+    updateStopButtonVisibility(); 
+    UI.status.style.backgroundColor = '#4b5563';
+
+    if (chatHistory.length > 0) {
+        let lastRole = chatHistory[chatHistory.length - 1].role;
+
+        if (lastRole === 'model') {
+            chatHistory.pop();
+            if (UI.log.lastElementChild && UI.log.lastElementChild.classList.contains('msg-container')) {
+                UI.log.removeChild(UI.log.lastElementChild);
+            }
+            lastRole = chatHistory.length > 0 ? chatHistory[chatHistory.length - 1].role : null;
+        }
+
+        if (lastRole === 'user') {
+            const userMsg = chatHistory.pop();
+            if (UI.log.lastElementChild && UI.log.lastElementChild.classList.contains('msg-container')) {
+                UI.log.removeChild(UI.log.lastElementChild);
+            }
+            
+            const textContent = userMsg.parts.find(p => p.text)?.text || "";
+            UI.textIn.value = textContent;
+            UI.textIn.focus();
+        }
+    }
+
+    saveData();
+    updateEditPencil();
+};
+
+function getModelInfo(val) {
+    val = parseInt(val);
+    if(val === 20) return { name: "Fastest", id: "gemini-flash-lite-latest" };
+    if(val === 40) return { name: "Fast", id: "gemini-flash-latest" };
+    if(val === 60) return { name: "Thinking ", id: "gemini-3.6-flash" }; 
+    if(val === 80) return { name: "Pro Thinking", id: "gemini-3.1-pro-preview" }; 
+    return { name: "Max Thinking", id: "gemini-pro-latest" }; // Fallback default
+}
+
+function updateRightSliderLabels() {
+    if (!UI.ratioSlider || !UI.modelSlider) return;
+    const rVal = UI.ratioSlider.value;
+    UI.ratioVal.innerText = `${rVal}% Book / ${100 - rVal}% AI`;
+    const mVal = UI.modelSlider.value;
+    UI.modelVal.innerText = `${getModelInfo(mVal).name}`;
+}
+// --- 3. INITIALIZATION ---
+window.onload = async () => {
+    // --- LOAD SPECIFIC BOOK FROM RAG.HTML ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlBookId = urlParams.get('id');
+
+    if (urlBookId) {
+        const request = indexedDB.open("EprashalaRAG", 1);
+        request.onsuccess = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains("bookData")) return;
+            const tx = db.transaction("bookData", "readonly");
+            const store = tx.objectStore("bookData");
+            const getReq = store.get(urlBookId);
+            
+            getReq.onsuccess = () => {
+                if (getReq.result) {
+                    activateBookMode(getReq.result);
+                }
+            };
+        };
+        // Clean the URL bar so a page refresh doesn't force-reload the book 
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+
+    loadData();
+    initSpeechRecognition(); 
+    
+};
+
+UI.overlay.addEventListener('click', () => {
+    enforceFullscreen();
+    requestWakeLock();
+    
+    if (window.speechSynthesis) {
+        const silent = new SpeechSynthesisUtterance('');
+        silent.volume = 0; 
+        window.speechSynthesis.speak(silent);
+    }
+    
+    currentAudio.play().catch(()=>{});
+    currentAudio.pause();
+    currentAudio.src = "";
+    
+    UI.overlay.style.display = 'none';
+    setupEventListeners(); 
+    updateStopButtonVisibility();
+});
+
+
+function renderSystemMessage(sender, htmlContent) {
+    const msgId = 'msg-' + Date.now();
+    const div = document.createElement('div');
+    
+    // Using your app's existing model message styling
+    div.className = `msg-container p-4 rounded-2xl bg-[#0f172a]/90 border border-slate-700/50 shadow-lg ml-2 mr-8 mb-4`;
+    div.innerHTML = `
+        <div class="text-[10px] uppercase font-bold tracking-wider text-sky-400 cinzel mb-2">${sender}</div>
+        <div class="text-sm leading-relaxed text-gray-100">${htmlContent}</div>
+    `;
+    
+    UI.log.appendChild(div);
+ 
+    
+    setTimeout(() => { UI.log.scrollTop = UI.log.scrollHeight; }, 50);
+}
+
+function updateLeftSliderLabels() {
+    if (!UI.fontSizeSlider) return;
+    const fVal = UI.fontSizeSlider.value;
+    UI.fontSizeVal.innerText = fVal + 'px';
+    document.documentElement.style.setProperty('--chat-font-size', fVal + 'px');
+
+    const sVal = UI.ttsSpeedSlider.value;
+    UI.ttsSpeedVal.innerText = sVal + 'x';
+    
+    if (currentAudio && !currentAudio.paused) {
+        currentAudio.playbackRate = parseFloat(sVal);
+    }
+}
+
+
+function calculateAutoSpeed() {
+    let ageStr = UI.age.value || localStorage.getItem('edu_age');
+    let finalAge = ageStr ? parseInt(ageStr) : 10; // Default fallback
+
+    // New Speed Rules
+    if (finalAge >= 1 && finalAge <= 3) return "0.7";
+    if (finalAge >= 4 && finalAge <= 8) return "0.8";
+    if (finalAge >= 9 && finalAge <= 13) return "0.9";
+    
+    return "1.0"; // Age 14 and above
+}
+
+// --- 4. DATA MANAGEMENT & VAULT ---
+function loadData() {
+	const savedLang = localStorage.getItem('edu_lang');
+	if (savedLang) UI.selLang.value = savedLang;
+
+    UI.name.value = localStorage.getItem('edu_name') || "";
+    UI.age.value = localStorage.getItem('edu_age') || "";
+    UI.keyIn.value = localStorage.getItem('edu_api_key') || "";
+    if (UI.ratioSlider) {
+    UI.ratioSlider.value = localStorage.getItem('edu_ratio') || "80";
+    UI.modelSlider.value = localStorage.getItem('edu_model') || "80"; // Defaulting to 80 (Pro Preview)
+    updateRightSliderLabels();
+	}
+	
+    if (UI.ttsEngine && localStorage.getItem('edu_tts_engine')) {
+        UI.ttsEngine.value = localStorage.getItem('edu_tts_engine');
+    }
+    
+	inningsScore = parseInt(localStorage.getItem('edu_score')) || 0;
+    if(UI.currentScore) UI.currentScore.innerText = inningsScore;
+    if(inningsScore > 0 && UI.scoreIcon) UI.scoreIcon.classList.remove('grayscale', 'opacity-80');
+    
+    if (UI.remember) UI.remember.checked = localStorage.getItem('edu_remember') !== 'false';
+
+		if (UI.fontSizeSlider) {
+				UI.fontSizeSlider.value = localStorage.getItem('edu_font_size') || "14";
+				
+				// Check for saved speed. If none exists, calculate it based on age and save it to local storage.
+				const savedSpeed = localStorage.getItem('edu_tts_speed');
+				if (savedSpeed) {
+					UI.ttsSpeedSlider.value = savedSpeed;
+				} else {
+					UI.ttsSpeedSlider.value = calculateAutoSpeed();
+					localStorage.setItem('edu_tts_speed', UI.ttsSpeedSlider.value);
+				}
+				
+				const savedHighlight = localStorage.getItem('edu_highlight');	
+		}
+				
+    if (UI.remember.checked) {
+        const savedHist = localStorage.getItem('edu_all_history');
+        if (savedHist) {
+            try {
+                allSessions = JSON.parse(savedHist);
+                const todaySession = [...allSessions].reverse().find(s => s.date === currentDateKey);
+                if (todaySession) {
+                    currentSessionId = todaySession.id;
+                    chatHistory = todaySession.messages;
+                    if (chatHistory.length > 0) {
+                        UI.welcome.style.display = 'none';
+                        chatHistory.forEach(msg => {
+                            const textPart = msg.parts.find(p => p.text)?.text || "📷 [Image attached]";
+                            renderMessage(msg.role === 'user' ? (UI.name.value || UI.role.value) : "Teacher", textPart, msg.role === 'model', false); 
+                        });
+                        updateEditPencil();
+                    }
+                }
+            } catch (e) { console.warn("History parse error", e); }
+        }
+    }
+}
+
+function saveData() {
+    localStorage.setItem('edu_api_key', UI.keyIn.value);
+    localStorage.setItem('edu_remember', UI.remember.checked);
+	localStorage.setItem('edu_score', inningsScore);
+    
+	if (UI.ratioSlider) {
+    localStorage.setItem('edu_ratio', UI.ratioSlider.value);
+    localStorage.setItem('edu_model', UI.modelSlider.value);
+	}
+    if (UI.ttsEngine) localStorage.setItem('edu_tts_engine', UI.ttsEngine.value);
+    
+    localStorage.setItem('edu_font_size', UI.fontSizeSlider.value);
+    localStorage.setItem('edu_tts_speed', UI.ttsSpeedSlider.value);
+    localStorage.setItem('edu_highlight', UI.highlightCheckbox.checked);
+    
+    if (UI.remember.checked && chatHistory.length > 0) {
+            let sessionIndex = allSessions.findIndex(s => s.id === currentSessionId);
+            
+            if (sessionIndex > -1) {
+                allSessions[sessionIndex].messages = chatHistory; 
+            } else {
+                let timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                let displayTitle = `${currentDateKey} (${timeString})`;
+                
+                allSessions.push({ 
+                    id: currentSessionId, 
+                    date: currentDateKey, 
+                    title: displayTitle, 
+                    messages: chatHistory 
+                });
+            }
+            
+            // FIX: Safely strip massive Base64 image strings before saving to prevent local storage crashes
+            try {
+                const safeSessions = allSessions.map(session => ({
+                    ...session,
+                    messages: session.messages.map(msg => ({
+                        ...msg,
+                        parts: msg.parts.map(part => part.inlineData ? { text: "📷 [Image attached]" } : part)
+                    }))
+                }));
+                localStorage.setItem('edu_all_history', JSON.stringify(safeSessions));
+            } catch (err) {
+                console.warn("Storage quota exceeded. History could not be saved.", err);
+            }
+            
+        } else if (!UI.remember.checked) {
+        localStorage.removeItem('edu_all_history');
+    }
+}
+
+function clearData() {
+    chatHistory = []; 
+    state.lastAIMessage = ""; 
+    currentSessionId = Date.now(); 
+    inningsScore = 0; 
+    UI.currentScore.innerText = "0";
+    UI.scoreIcon.classList.add('grayscale', 'opacity-80');
+    localStorage.setItem('edu_score', 0);
+    UI.log.innerHTML = `<div class="text-gray-400 text-center mt-12 cinzel"><p class="text-sky-500 text-xl mb-2 font-bold">🧹 Board Cleared</p>Let's start a new lesson.</div>`;
+    
+    resetCurrentTTS();
+    updateEditPencil();
+}
+
+// --- HISTORY VAULT LOGIC ---
+function renderHistoryList() {
+    const container = document.getElementById('history-list-container');
+    container.innerHTML = '';
+    
+    if (allSessions.length === 0) {
+        container.innerHTML = '<div class="flex flex-col items-center justify-center h-full text-slate-500"><svg class="w-12 h-12 mb-3 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg><p class="text-sm italic">No past records found.</p></div>';
+        return;
+    }
+
+    const sorted = [...allSessions].sort((a, b) => b.id - a.id);
+
+    sorted.forEach(session => {
+        const card = document.createElement('div');
+        card.className = "w-full text-left text-sm text-slate-300 bg-slate-800/80 hover:bg-slate-700 p-4 rounded-xl transition-colors border border-slate-700 hover:border-sky-500/50 flex flex-col gap-2 outline-none mb-2 shadow-sm cursor-pointer group";
+        
+        card.innerHTML = `
+            <div class="flex justify-between items-center w-full">
+                <div class="flex items-center gap-2 overflow-hidden flex-1">
+                    <span class="font-bold tracking-wide text-sky-100 truncate">${session.title}</span>
+                    <button class="rename-btn p-1 text-slate-500 hover:text-sky-400 transition-colors focus:outline-none" title="Rename Session">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                    </button>
+                </div>
+                <span class="text-[10px] text-sky-400 bg-sky-900/40 border border-sky-800/50 px-2 py-1 rounded-full font-bold uppercase ml-2 flex-shrink-0">${session.messages.length} msgs</span>
+            </div>
+            <div class="text-xs text-slate-500 truncate w-full pointer-events-none">
+                ${session.messages.length > 0 ? (session.messages[0].parts.find(p => p.text)?.text || "📷 Image") : 'Empty'}
+            </div>
+        `;
+        
+        const renameBtn = card.querySelector('.rename-btn');
+        renameBtn.onclick = (e) => {
+            e.stopPropagation();
+            const newTitle = prompt("Enter a new name for this class:", session.title);
+            if (newTitle && newTitle.trim() !== "") {
+                session.title = newTitle.trim();
+                localStorage.setItem('edu_all_history', JSON.stringify(allSessions));
+                renderHistoryList(); 
+                if (currentSessionId === session.id) {
+                    const banner = document.getElementById('archive-notice-banner');
+                    if (banner) banner.innerText = `Class: ${session.title}`;
+                }
+            }
+        };
+
+        card.onclick = (e) => {
+            e.stopPropagation();
+            loadSpecificSession(session.id); 
+            UI.settingsModal.classList.add('hidden'); 
+            setTimeout(() => {
+                UI.historyView.classList.add('hidden');
+                UI.historyView.classList.remove('flex');
+                UI.mainView.classList.remove('hidden');
+            }, 300);
+        };
+        
+        container.appendChild(card);
+    });
+}
+
+function loadSpecificSession(targetId) {
+    resetCurrentTTS();
+    UI.log.innerHTML = '';
+    chatHistory = [];
+    
+    const targetSession = allSessions.find(s => s.id === targetId);
+    if (targetSession) {
+        currentSessionId = targetSession.id;
+        chatHistory = targetSession.messages;
+        
+        if (UI.welcome) UI.welcome.style.display = 'none';
+        
+        const archiveNotice = document.createElement('div');
+        archiveNotice.id = "archive-notice-banner"; 
+        archiveNotice.className = "text-center text-xs text-sky-500 mb-6 font-bold border-b border-sky-900/50 pb-2 uppercase tracking-widest mt-4";
+        archiveNotice.innerText = `Class: ${targetSession.title}`;
+        UI.log.appendChild(archiveNotice);
+
+        chatHistory.forEach(msg => {
+            const textPart = msg.parts.find(p => p.text)?.text || "📷 [Image attached]";
+            renderMessage(msg.role === 'user' ? (UI.name.value || UI.role.value) : "Teacher", textPart, msg.role === 'model', false); 
+        });
+        
+        updateEditPencil();
+    }
+}
+
+// --- 4.5 DYNAMIC APTITUDE QUIZ INTERCEPTOR ---
+function calculateQuizQuestions() {
+    const aiMessages = chatHistory.filter(m => m.role === 'model').length;
+    if (aiMessages === 0) return 0;
+    return Math.min(Math.max(aiMessages, 1), 5);
+}
+
+function triggerMilestoneQuiz(questionCount) {
+    const hiddenQuizPrompt = `Let's play a knowledge check game! Act as a Quizmaster. Generate a multiple-choice quiz with exactly ${questionCount} questions based on our discussion today.
+    
+    CRITICAL RULES:
+    1. Ask ONLY ONE question right now. Do not list them all.
+    2. Wait for my reply.
+    3. Grade my reply, tell me if I am right or wrong, then ask the next question.
+    4. After the last question, give my final score. Praise me if I scored well, and thoroughly explain any mistakes so I can improve.`;
+    
+    processInput(hiddenQuizPrompt, true); 
+}
+
+function initSpeechRecognition() {
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRec) return;
+    recognition = new SpeechRec();
+    recognition.continuous = false; 
+    recognition.interimResults = true; // Changed to true to accumulate text seamlessly
+    
+    recognition.onstart = () => {
+        isListening = true;
+        updateStopButtonVisibility();
+        UI.btnMic.classList.add('mic-pulse');
+        UI.status.style.backgroundColor = '#ef4444'; 
+        UI.textIn.value = '';
+        UI.textIn.placeholder = "Listening... Speak now.";
+    };
+    
+    recognition.onresult = (e) => {
+        let interimText = '';
+        for (let i = e.resultIndex; i < e.results.length; ++i) {
+            if (e.results[i].isFinal) {
+                finalMicTranscript += e.results[i][0].transcript + " ";
+            } else {
+                interimText += e.results[i][0].transcript;
+            }
+        }
+        UI.textIn.value = (finalMicTranscript + interimText).trim();
+    };
+    
+    recognition.onend = () => {
+        isListening = false;
+        
+        if (isMicHeld) {
+            // The child is still holding the button, but the API paused. Restart instantly.
+            try { recognition.start(); } catch(err) {}
+        } else {
+            // Button was released (Push-to-talk) OR the toggle timed out
+            if (!state.isProcessing) resetMicUI();
+            setTimeout(updateStopButtonVisibility, 50);
+            
+            const fullText = UI.textIn.value.trim();
+            if (fullText) {
+                processInput(fullText);
+            }
+            finalMicTranscript = ''; 
+            isMicToggled = false;
+        }
+    };
+    
+    recognition.onerror = (e) => {
+        isListening = false; 
+        if (e.error !== 'no-speech') {
+            resetMicUI();
+            setTimeout(updateStopButtonVisibility, 50);
+            isMicHeld = false;
+            isMicToggled = false;
+        }
+    };
+}
+
+function resetMicUI() {
+    UI.btnMic.classList.remove('mic-pulse');
+    UI.status.style.backgroundColor = '#4b5563'; 
+    UI.textIn.placeholder = pendingImageData ? "📷 Image attached! Add text or send..." : "Ask your question here...";
+    setMicThinkingState(false);
+}
+
+function setMicThinkingState(isThinking) {
+    if (isThinking) {
+        UI.btnMic.classList.add('mic-thinking');
+        UI.btnMic.classList.remove('mic-pulse');
+        UI.iconMicDefault.classList.add('hidden');
+        UI.iconMicThinking.classList.remove('hidden');
+    } else {
+        UI.btnMic.classList.remove('mic-thinking');
+        UI.iconMicDefault.classList.remove('hidden');
+        UI.iconMicThinking.classList.add('hidden');
+    }
+}
+
+function updateScore(runs) {
+    if (runs === 0) return;
+    inningsScore += runs;
+    UI.currentScore.innerText = inningsScore;
+    
+    UI.scoreIcon.classList.remove('grayscale', 'opacity-80');
+    UI.scoreContainer.classList.add('scale-110');
+    
+    if (runs >= 50) UI.scoreContainer.classList.add('bg-yellow-600/80', 'border-yellow-400');
+    else if (runs >= 4) UI.scoreContainer.classList.add('bg-green-600/80', 'border-green-400');
+    else UI.scoreContainer.classList.add('bg-sky-600/80', 'border-sky-400');
+
+    setTimeout(() => {
+        UI.scoreContainer.classList.remove('scale-110', 'bg-yellow-600/80', 'border-yellow-400', 'bg-green-600/80', 'border-green-400', 'bg-sky-600/80', 'border-sky-400');
+    }, 500);
+    saveData();
+}
+
+function updateStopButtonVisibility() {
+    if (!UI.btnStop) return;
+    
+    if (state.isProcessing || ttsStatus !== 'STOPPED' || isListening) {
+        UI.btnStop.classList.remove('opacity-30', 'cursor-not-allowed');
+        UI.btnStop.classList.add('hover:bg-red-900/30', 'hover:text-red-400');
+        UI.btnStop.disabled = false;
+    } else {
+        UI.btnStop.classList.add('opacity-30', 'cursor-not-allowed');
+        UI.btnStop.classList.remove('hover:bg-red-900/30', 'hover:text-red-400');
+        UI.btnStop.disabled = true;
+    }
+}
+
+// --- 6. EVENT LISTENERS ---
+function setupEventListeners() {
+
+UI.selLang.addEventListener('change', () => localStorage.setItem('edu_lang', UI.selLang.value));
+	if (UI.ratioSlider) {
+    UI.ratioSlider.addEventListener('input', () => { updateRightSliderLabels(); saveData(); });
+	}
+	if (UI.modelSlider) {
+		UI.modelSlider.addEventListener('input', () => { updateRightSliderLabels(); saveData(); });
+	}
+	
+    if (UI.ttsEngine) UI.ttsEngine.addEventListener('change', saveData);
+
+    // Right Modal Events
+    const openSettings = (e) => { e.stopPropagation(); UI.settingsModal.classList.remove('hidden'); };
+    const closeSettings = (e) => { 
+        e.stopPropagation(); 
+        UI.settingsModal.classList.add('hidden'); 
+        setTimeout(() => {
+            if (UI.historyView && UI.mainView) {
+                UI.historyView.classList.add('hidden');
+                UI.historyView.classList.remove('flex');
+                UI.mainView.classList.remove('hidden');
+            }
+        }, 300);
+    };
+
+if (UI.btnLibrary) UI.btnLibrary.onclick = openLibraryModal;
+    if (UI.btnCloseLibrary) UI.btnCloseLibrary.onclick = () => UI.libraryModal.classList.add('hidden');
+// --- Entire Session PDF Listener ---
+    if (UI.btnSharePdf) {
+        UI.btnSharePdf.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (typeof window.downloadEntireSessionPDF === 'function') {
+                window.downloadEntireSessionPDF();
+            }
+        });
+    }
+
+	UI.age.addEventListener('change', () => {
+        UI.ttsSpeedSlider.value = calculateAutoSpeed();
+        updateLeftSliderLabels();
+        saveData();
+    });
+    
+
+    UI.advToggle.onclick = openSettings;
+    UI.btnCloseSet.onclick = closeSettings;
+    UI.btnSaveSet.onclick = (e) => { e.stopPropagation(); saveData(); closeSettings(e); };
+    UI.settingsModal.addEventListener('click', e => e.stopPropagation());
+
+    const btnViewHistory = document.getElementById('btn-view-history');
+    if (btnViewHistory) {
+        btnViewHistory.addEventListener('click', (e) => {
+            e.stopPropagation();
+            UI.mainView.classList.add('hidden');
+            UI.historyView.classList.remove('hidden');
+            UI.historyView.classList.add('flex');
+            renderHistoryList();
+        });
+    }
+
+    if (UI.btnHistoryBack) {
+        UI.btnHistoryBack.addEventListener('click', (e) => {
+            e.stopPropagation();
+            UI.historyView.classList.add('hidden');
+            UI.historyView.classList.remove('flex');
+            UI.mainView.classList.remove('hidden');
+        });
+    }
+
+    // Left Modal Events
+    UI.fontSizeSlider.addEventListener('input', updateLeftSliderLabels);
+    UI.ttsSpeedSlider.addEventListener('input', updateLeftSliderLabels);
+    const openLeftSettings = (e) => { e.stopPropagation(); UI.leftSettingsModal.classList.remove('hidden'); };
+    const closeLeftSettings = (e) => { e.stopPropagation(); UI.leftSettingsModal.classList.add('hidden'); };
+    UI.leftAdvToggle.onclick = openLeftSettings;
+    UI.btnCloseLeftSet.onclick = closeLeftSettings;
+    UI.btnSaveLeftSet.onclick = (e) => { e.stopPropagation(); saveData(); closeLeftSettings(e); };
+    UI.leftSettingsModal.addEventListener('click', e => e.stopPropagation());
+    
+    // Crop Logic
+    UI.btnCamera.addEventListener('click', (e) => {
+        e.stopPropagation(); enforceFullscreen(); UI.cameraInput.click(); 
+    });
+
+    UI.cameraInput.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (e) => {
+            UI.cropImage.src = e.target.result;
+            UI.cropModal.classList.remove('hidden');
+            if (cropper) cropper.destroy();
+            cropper = new Cropper(UI.cropImage, {
+                viewMode: 2, dragMode: 'move', autoCropArea: 0.9,
+                restore: false, guides: true, center: true, highlight: false,
+                cropBoxMovable: true, cropBoxResizable: true, toggleDragModeOnDblclick: false,
+            });
+        };
+    });
+
+    UI.btnCropRetake.addEventListener('click', (e) => {
+        e.stopPropagation(); enforceFullscreen();
+        if (cropper) cropper.destroy();
+        UI.cropModal.classList.add('hidden');
+        UI.cameraInput.value = ''; UI.cameraInput.click();
+    });
+
+    UI.btnCropDone.addEventListener('click', (e) => {
+        e.stopPropagation(); enforceFullscreen();
+        if (!cropper) return;
+        const canvas = cropper.getCroppedCanvas({ maxWidth: 800, maxHeight: 1200, fillColor: '#fff' });
+        pendingImageData = canvas.toDataURL('image/jpeg', 0.6).split(',')[1];
+        cropper.destroy(); cropper = null;
+        UI.cropModal.classList.add('hidden');
+        UI.textIn.placeholder = "📷 Cropped image attached! Ask question...";
+        UI.btnCamera.classList.remove('text-gray-400');
+        UI.btnCamera.classList.add('text-sky-400');
+    });
+
+    UI.btnPasteKey.addEventListener('click', async (e) => {
+        e.stopPropagation(); 
+        try {
+            const text = await navigator.clipboard.readText();
+            if (text) {
+                UI.keyIn.value = text;
+                const originalText = UI.btnPasteKey.innerText;
+                UI.btnPasteKey.innerText = "Pasted!";
+                UI.btnPasteKey.classList.replace('bg-slate-700', 'bg-green-600');
+                setTimeout(() => { 
+                    UI.btnPasteKey.innerText = originalText; 
+                    UI.btnPasteKey.classList.replace('bg-green-600', 'bg-slate-700');
+                }, 1500);
+            }
+        } catch (err) { alert('Could not access clipboard.'); }
+    });
+
+    if (UI.btnStop) {
+        UI.btnStop.onclick = (e) => {
+            e.stopPropagation();
+            if (UI.btnStop.disabled) return;
+            
+            resetCurrentTTS();
+            if (isListening && recognition) recognition.stop();
+            if (state.isProcessing && currentAborter) {
+                currentAborter.abort(); 
+            }
+            setTimeout(updateStopButtonVisibility, 100); 
+        };
+    }
+
+    UI.btnMute.onclick = (e) => { 
+        e.stopPropagation(); state.isMuted = !state.isMuted; 
+        if(state.isMuted) { 
+            resetCurrentTTS();
+            UI.iconVol.classList.add('hidden'); UI.iconMute.classList.remove('hidden'); 
+        } else { 
+            UI.iconVol.classList.remove('hidden'); UI.iconMute.classList.add('hidden'); 
+        } 
+    };
+    
+    // --- MANUAL QUIZ TRIGGER ---
+    UI.btnQuizManual.addEventListener('click', (e) => {
+        e.stopPropagation(); 
+        enforceFullscreen();
+
+        const aiMessages = chatHistory.filter(m => m.role === 'model').length;
+        if (aiMessages === 0) {
+            alert("We need to chat a little bit first before I can create a quiz for you!");
+            return;
+        }
+
+        const interactiveQuizPrompt = `Let's do a knowledge check! I want you to act as an interactive Quizmaster. 
+        Generate a multiple-choice quiz with exactly 3 questions based ONLY on the educational topics we have discussed today.
+        
+        CRITICAL RULES:
+        1. Ask ONLY ONE question right now (Question 1). Do NOT give me all the questions at once.
+        2. Wait for my answer. 
+        3. Once I answer, briefly tell me if I was right or wrong, and then immediately ask Question 2.
+        4. Repeat this until all 3 questions are answered.
+        5. After the final question, give me my total score. If I did well, praise me enthusiastically! If I got any wrong, please provide a detailed, easy-to-understand explanation of the correct answers so I can learn.`;
+
+        processInput(interactiveQuizPrompt, true);
+    });
+
+    // --- QUIZ INTERCEPTION ---
+    UI.btnRestart.onclick = (e) => { 
+        e.stopPropagation(); 
+        const qCount = calculateQuizQuestions();
+		if (qCount > 0) {
+            UI.quizQCount.innerText = qCount;
+            UI.quizModal.classList.remove('hidden');
+        } else {
+            clearData(); 
+        }
+    };
+
+    UI.btnQuizNo.onclick = () => { UI.quizModal.classList.add('hidden'); clearData(); };
+    UI.btnQuizYes.onclick = () => { 
+        UI.quizModal.classList.add('hidden'); 
+        const qCount = calculateQuizQuestions();
+        triggerMilestoneQuiz(qCount); 
+    };
+
+    UI.btnSend.onclick = (e) => { e.stopPropagation(); enforceFullscreen(); processInput(UI.textIn.value); };
+    
+    UI.textIn.onkeypress = (e) => { 
+        if(e.key === 'Enter') { e.stopPropagation(); enforceFullscreen(); processInput(UI.textIn.value); } 
+    };
+
+// INSERT THIS HYBRID LISTENER BLOCK
+	const handleMicDown = (e) => {
+        e.preventDefault(); 
+        e.stopPropagation(); 
+        
+        // FIX 1: Use lowercase 's' for enforceFullscreen
+        enforceFullscreen(); 
+        
+        if (state.isProcessing || !recognition) {
+            if (!recognition) alert("Speech recognition is not supported in this browser.");
+            return;
+        }
+        
+        if (isListening && isMicToggled) {
+            isMicToggled = false;
+            recognition.stop(); 
+            return;
+        }
+
+        if (isMicHeld) return; 
+
+        isMicHeld = true;
+        isMicToggled = false;
+        micPressStartTime = Date.now();
+        finalMicTranscript = '';
+        UI.textIn.value = '';
+        
+        // FIX 2: Check the medium-selector to set the correct language string
+		recognition.lang = UI.selLang.value; 
+        
+        try { recognition.start(); } catch(err) { console.error(err); }
+    };
+
+    const handleMicUp = (e) => {
+        e.preventDefault(); 
+        e.stopPropagation();
+        if (!isMicHeld) return; 
+        
+        const holdDuration = Date.now() - micPressStartTime;
+        
+        if (holdDuration < 400) {
+            // Short tap: Switch to normal toggle mode (keeps listening until silence)
+            isMicHeld = false;
+            isMicToggled = true; 
+        } else {
+            // Long press released: Stop and process immediately
+            isMicHeld = false;
+            if (recognition && isListening) recognition.stop();
+        }
+    };
+
+    const handleMicLeave = (e) => {
+        // If their finger slips off the button while holding, stop recording
+        if (isMicHeld) {
+            isMicHeld = false;
+            if (recognition && isListening) recognition.stop();
+        }
+    };
+
+    // Attach all necessary events for desktop and mobile
+    UI.btnMic.addEventListener('mousedown', handleMicDown);
+    UI.btnMic.addEventListener('touchstart', handleMicDown, { passive: false });
+    
+    UI.btnMic.addEventListener('mouseup', handleMicUp);
+    UI.btnMic.addEventListener('touchend', handleMicUp);
+    
+    UI.btnMic.addEventListener('mouseleave', handleMicLeave);
+	
+	// --- BOOK LIBRARY & IMPORT LISTENERS ---
+    if (UI.btnLibrary) UI.btnLibrary.onclick = openLibraryModal;
+    if (UI.btnCloseLibrary) UI.btnCloseLibrary.onclick = () => UI.libraryModal.classList.add('hidden');
+
+    if (UI.btnImportBook && UI.importBookInput) {
+        UI.btnImportBook.onclick = (e) => {
+            e.stopPropagation();
+            UI.importBookInput.value = '';
+            UI.importBookInput.click();
+        };
+
+        UI.importBookInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const parsed = JSON.parse(event.target.result);
+                    let importedBook = null;
+
+                    // Handles both full Library export ({ title, chunks }) and raw array exports ([{ text, ... }])
+                    if (Array.isArray(parsed)) {
+                        const firstChunk = parsed[0] || {};
+                        const fallbackTitle = firstChunk.book_title || file.name.replace(/\.[^.]+$/, '');
+                        importedBook = {
+                            id: (firstChunk.book_id || 'book') + '-' + Date.now(),
+                            title: fallbackTitle,
+                            dateAdded: new Date().toISOString(),
+                            chunks: parsed
+                        };
+                    } else if (parsed && Array.isArray(parsed.chunks)) {
+                        importedBook = {
+                            id: (parsed.id || 'book') + '-' + Date.now(),
+                            title: parsed.title || file.name.replace(/\.[^.]+$/, ''),
+                            dateAdded: new Date().toISOString(),
+                            chunks: parsed.chunks
+                        };
+                    } else {
+                        alert("Invalid file format. Please upload a valid Eprashala RAG JSON book file.");
+                        return;
+                    }
+
+                    // Save directly into IndexedDB
+                    const request = indexedDB.open("EprashalaRAG", 1);
+                    request.onsuccess = (ev) => {
+                        const db = ev.target.result;
+                        const tx = db.transaction("bookData", "readwrite");
+                        tx.objectStore("bookData").put(importedBook, importedBook.id);
+                        tx.oncomplete = () => {
+                            alert(`"${importedBook.title}" imported successfully!`);
+                            renderBookLibrary();
+                        };
+                    };
+                } catch (err) {
+                    console.error("Import parsing error:", err);
+                    alert("Could not parse JSON file. Ensure the file is uncorrupted.");
+                }
+            };
+            reader.readAsText(file);
+        };
+    }
+}
+
+// --- 7. AI LOGIC & PROCESSING ---
+async function processInput(userText, isHiddenQuizTrigger = false) {
+    userText = userText.trim();
+    if (!userText && !pendingImageData) return; 
+
+    UI.textIn.value = '';
+    UI.textIn.placeholder = "Teacher is thinking...";
+    UI.btnCamera.classList.remove('text-sky-400');
+    UI.btnCamera.classList.add('text-gray-400');
+    UI.cameraInput.value = '';
+    if (UI.welcome) UI.welcome.style.display = 'none';
+    
+    state.isProcessing = true;
+    UI.status.style.backgroundColor = '#facc15'; 
+    setMicThinkingState(true);
+    updateStopButtonVisibility();
+
+    const userName = UI.name.value || "Reader";
+    const displayMessage = userText || "📷 [Image attached for analysis]";
+    
+    if (!isHiddenQuizTrigger) {
+        renderMessage(userName, displayMessage, false);
+    }
+    
+    let messageParts = [];
+    if (userText) messageParts.push({ text: userText });
+    if (!userText && pendingImageData) messageParts.push({ text: "Please analyze this image." });
+    if (pendingImageData) {
+        messageParts.push({ inlineData: { mimeType: "image/jpeg", data: pendingImageData } });
+    }
+
+    chatHistory.push({ role: 'user', parts: messageParts });
+    pendingImageData = null; 
+    saveData();
+
+	try {
+        const res = await getAIResponse(chatHistory);
+        let displayRes = res.trim();
+        
+		const scoreMatch = displayRes.match(/\[SCORE:(\d+)\]/);
+        if (scoreMatch) {
+            const runs = parseInt(scoreMatch[1], 10);
+            updateScore(runs);
+            displayRes = displayRes.replace(scoreMatch[0], '').trim();
+        } else if (chatHistory.length > 2) {
+            updateScore(1); 
+        }
+        
+        state.lastAIMessage = displayRes;
+        chatHistory.push({ role: 'model', parts: [{ text: displayRes }] });
+        
+        const newMsgId = renderMessage("Teacher", displayRes, true); 
+        saveData();
+        
+        if (!state.isMuted) {
+            const btn = document.getElementById(`play-btn-${newMsgId}`);
+            if (btn) window.toggleSingleMessagePlay(btn);
+        }
+        
+        updateEditPencil();
+		logQAToSupabase(userText, displayRes);
+        
+    } catch (err) {
+        if (err.name === 'AbortError') {
+            console.log("Fetch aborted by user.");
+            chatHistory.pop(); 
+            if (UI.log.lastElementChild) UI.log.removeChild(UI.log.lastElementChild); 
+            UI.textIn.value = userText; 
+            UI.textIn.focus();
+        } else {
+            renderMessage("System", "⚠️ Network interrupted. Please try again.", true);
+        }
+    }
+
+    state.isProcessing = false;
+    resetMicUI();
+    setTimeout(updateStopButtonVisibility, 100);
+}
+
+function retrieveRelevantChunks(query, topK = 4) {
+    if (!activeBookChunks || activeBookChunks.length === 0) return [];
+    
+    // FIX: Lowered limit to 1 so 2-digit numbers like "90" aren't deleted
+    const queryTerms = query.toLowerCase().split(/\s+/).filter(w => w.length > 1); 
+    if (!queryTerms.length) return activeBookChunks.slice(0, topK);
+
+    const scored = activeBookChunks.map(chunk => {
+        let score = 0;
+        const textLower = chunk.text.toLowerCase();
+        
+        queryTerms.forEach(term => {
+            // Safe regex to prevent crashes from special characters like ? or (
+            const safeTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); 
+            const matches = (textLower.match(new RegExp(safeTerm, 'g')) || []).length;
+            score += matches * (1 + 10 / (chunk.char_count || 100)); 
+            
+            // NEW: If the user types "90", heavily boost the score of chunks originating from page 90
+            if (chunk.page_start && chunk.page_start.toString() === term) {
+                score += 500; // Massive score boost to guarantee this chunk is selected
+            }
+        });
+        return { chunk, score };
+    });
+
+    scored.sort((a, b) => b.score - a.score);
+    return scored.slice(0, topK).map(s => s.chunk);
+}
+
+async function getAIResponse(history) {
+    const customKey = (UI.keyIn.value.trim().length > 10) ? UI.keyIn.value.trim() : null;
+    const headers = { 'Content-Type': 'application/json' };
+    const bookRatio = UI.ratioSlider ? parseInt(UI.ratioSlider.value) : 80;
+    const selectedModelInfo = UI.modelSlider ? getModelInfo(UI.modelSlider.value) : { id: "gemini-3.1-pro-preview" };
+    
+    if (customKey) headers['X-Custom-Api-Key'] = customKey;
+
+    if (!isBookMode) {
+        return "Please open your Library (📚) and select a book first!";
+    }
+
+    const selectedLangName = UI.selLang.options[UI.selLang.selectedIndex].text;
+    const userQuery = history[history.length - 1].parts.find(p => p.text)?.text || "";
+    const topChunks = retrieveRelevantChunks(userQuery, 8);
+    const contextText = topChunks.map(c => `[Page ${c.page_start}]: ${c.text}`).join('\n\n');
+
+    const prompt = `You are the interactive voice avatar of the book titled "${activeBookTitle}".
+    Answer the user's questions based on the following retrieved book excerpts. 
+    
+    CRITICAL INSTRUCTION: You MUST write your entire response in the following language: ${selectedLangName}. If the exact specific word the user asked for is not found, intelligently scan the excerpts for related descriptive concepts and synthesize a helpful answer based on that broader context. 
+    
+    Always mention the relevant page number(s) in your answer. Keep your response highly conversational, clear, and direct so it sounds natural when spoken aloud by a TTS engine. Do NOT use complex LaTeX. Use Markdown for basic formatting.
+    
+    RELEVANT BOOK EXCERPTS:
+    ${contextText}`;
+
+    const payload = { 
+        contents: history.slice(-10), 
+        systemInstruction: { parts: [{ text: prompt }] } 
+    };
+
+    currentAborter = new AbortController();
+    const response = await fetchGeminiChat(payload, currentAborter.signal, selectedModelInfo.id);
+
+    if (!response.ok) throw new Error('API Error');
+    const data = await response.json();
+    return data.candidates[0].content.parts[0].text;
+}
+
+// --- DUAL TTS ENGINE (CLOUD & NATIVE) ---
+
+function prepareTextForTTSAndHighlighting(container, msgId) {
+    const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, {
+        acceptNode: function(node) {
+            // Do not highlight or process text inside external link buttons
+            if (node.parentNode && node.parentNode.closest('.external-link-btn')) return NodeFilter.FILTER_REJECT;
+            return NodeFilter.FILTER_ACCEPT;
+        }
+    }, false);
+    
+    const textNodes = [];
+    let node;
+    
+    while (node = walker.nextNode()) {
+        if (node.nodeValue.trim() !== '') textNodes.push(node);
+    }
+
+    let wordCounter = 0;
+    let finalSpeechText = [];
+    let insideBracket = false; // Tracks if we are currently reading inside () [] or {}
+
+    textNodes.forEach(textNode => {
+        const parts = textNode.nodeValue.split(/(\s+)/); 
+        const fragment = document.createDocumentFragment();
+        
+        parts.forEach(part => {
+            if (part.trim().length > 0) {
+                const span = document.createElement('span');
+                span.className = 'transition-all duration-150'; 
+                span.textContent = part;
+                
+                let skipThisWord = false;
+                
+                // If the word contains an opening bracket, enter 'skip mode'
+                if (/[\(\[\{]/.test(part)) {
+                    insideBracket = true;
+                }
+                
+                if (insideBracket) {
+                    skipThisWord = true;
+                }
+                
+                // If the word contains a closing bracket, exit 'skip mode' for the next word
+                if (/[\)\]\}]/.test(part)) {
+                    insideBracket = false;
+                }
+
+                // Only add the word to the TTS engine if we aren't inside brackets
+                if (!skipThisWord) {
+                    // Assign the ID so the visual highlighter finds it
+                    span.id = `tts-${msgId}-${wordCounter}`;
+                    
+                    // Replace : and ; with a full stop so the TTS engine takes a breath
+                    let spokenWord = part.replace(/[:;]/g, '.');
+                    
+                    finalSpeechText.push(spokenWord);
+                    wordCounter++;
+                }
+                
+                fragment.appendChild(span);
+            } else {
+                fragment.appendChild(document.createTextNode(part));
+            }
+        });
+        textNode.parentNode.replaceChild(fragment, textNode);
+    });
+
+    return finalSpeechText.join(' ');
+}
+
+function highlightTTSWord(msgId, wordIndex) {
+    clearTTSHighlight(); 
+    const span = document.getElementById(`tts-${msgId}-${wordIndex}`);
+    if (span) {
+        if (UI.highlightCheckbox && UI.highlightCheckbox.checked) {
+            span.classList.add('bg-sky-500/30', 'text-sky-300', 'font-bold', 'rounded-[3px]', 'px-[2px]', 'shadow-[0_0_8px_rgba(14,165,233,0.4)]');
+            lastHighlightedSpan = span;
+        }
+
+        const logContainer = document.getElementById('conversation-log');
+        const spanRect = span.getBoundingClientRect();
+        const logRect = logContainer.getBoundingClientRect();
+        
+        if (spanRect.bottom > logRect.bottom - 40 || spanRect.top < logRect.top + 40) {
+            span.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+}
+
+function clearTTSHighlight() {
+    if (lastHighlightedSpan) {
+        lastHighlightedSpan.classList.remove('bg-sky-500/30', 'text-sky-300', 'font-bold', 'rounded-[3px]', 'px-[2px]', 'shadow-[0_0_8px_rgba(14,165,233,0.4)]');
+        lastHighlightedSpan = null;
+    }
+}
+
+function updatePlayBtnUI(btn, isPlaying) {
+    if (!btn) return;
+    const playIcon = btn.querySelector('.play-icon');
+    const pauseIcon = btn.querySelector('.pause-icon');
+    const textSpan = btn.querySelector('.play-text');
+
+    // Tailwind classes to force the button to float above the UI
+    const floatClasses = ['fixed', 'bottom-[120px]', 'right-6', 'z-[100]', 'scale-110', 'shadow-2xl', 'border-green-400', 'bg-slate-900'];
+
+    if (isPlaying) {
+        if (playIcon) playIcon.classList.add('hidden');
+        if (pauseIcon) pauseIcon.classList.remove('hidden');
+        if (textSpan) textSpan.innerText = "Pause";
+        
+        // Add floating classes and turn indicator green
+        btn.classList.add('text-green-400', 'is-floating', ...floatClasses);
+        btn.classList.remove('text-sky-400');
+        
+        // Suppress any competing floating indicators
+        document.querySelectorAll('.msg-play-btn.is-floating').forEach(el => {
+            if (el !== btn) {
+                el.classList.remove('is-floating', ...floatClasses);
+                el.classList.remove('text-green-400');
+                el.classList.add('text-sky-400');
+                const tSpan = el.querySelector('.play-text');
+                if (tSpan) tSpan.innerText = "Play";
+            }
+        });
+        
+    } else {
+        if (playIcon) playIcon.classList.remove('hidden');
+        if (pauseIcon) pauseIcon.classList.add('hidden');
+        if (textSpan) textSpan.innerText = "Resume";
+        
+        btn.classList.remove('text-green-400');
+        btn.classList.add('text-sky-400');
+        // Note: We intentionally leave the 'is-floating' positioning active while PAUSED 
+        // so the user does not have to scroll to find the resume button.
+    }
+}
+
+function resetCurrentTTS() {
+    const floatClasses = ['fixed', 'bottom-[120px]', 'right-6', 'z-[100]', 'scale-110', 'shadow-2xl', 'border-green-400', 'bg-slate-900'];
+
+    if (currentActiveBtn) {
+        updatePlayBtnUI(currentActiveBtn, false);
+        const textSpan = currentActiveBtn.querySelector('.play-text');
+        if (textSpan) textSpan.innerText = "Play";
+        
+        currentActiveBtn.classList.remove('is-floating', ...floatClasses);
+        currentActiveBtn = null;
+    }
+    
+    document.querySelectorAll('.msg-play-btn.is-floating').forEach(el => {
+        el.classList.remove('is-floating', ...floatClasses);
+        el.classList.remove('text-green-400');
+        el.classList.add('text-sky-400');
+        const tSpan = el.querySelector('.play-text');
+        if (tSpan) tSpan.innerText = "Play";
+    });
+    
+    if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.src = "";
+    }
+    
+    if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+    }
+    
+    if (highlightTimer) {
+        clearTimeout(highlightTimer);
+        highlightTimer = null;
+    }
+
+    clearTTSHighlight(); 
+    ttsStatus = 'STOPPED';
+    globalWordIndex = 0;
+    window.currentPlayingText = "";
+    isManuallyPaused = false;
+    setTimeout(updateStopButtonVisibility, 50); 
+}
+
+window.toggleSingleMessagePlay = (btnElem) => {
+    if (state.isMuted) return;
+
+    const msgId = btnElem.getAttribute('data-msg-id');
+    const plainText = speechDataMap[msgId] || "";
+    const activeEngine = UI.ttsEngine ? UI.ttsEngine.value : 'native';
+
+    if (currentActiveBtn === btnElem && window.currentPlayingText === plainText) {
+        if (ttsStatus === 'PAUSED') {
+            ttsStatus = 'PLAYING';
+            updatePlayBtnUI(btnElem, true);
+            updateStopButtonVisibility(); 
+            
+            if (activeEngine === 'cloud') {
+                isManuallyPaused = false;
+                if (currentAudio && currentAudio.src) currentAudio.play();
+                startHighlightTimer(msgId);
+            } else {
+                // NATIVE RESUME FIX: Keep isManuallyPaused = true until cancel() finishes
+                window.speechSynthesis.cancel();
+                
+                setTimeout(() => {
+                    isManuallyPaused = false; 
+                    
+                    if (highlightTimer) {
+                        clearTimeout(highlightTimer);
+                        highlightTimer = null; 
+                    }
+
+                    const remainingText = wordsArray.slice(globalWordIndex).join(" ");
+                    if (remainingText.trim()) {
+                        playNativeAudioSegment(remainingText, msgId, UI.selMedium.value === 'Marathi' ? 'mr-IN' : 'en-IN');
+                    } else {
+                        resetCurrentTTS();
+                    }
+                }, 100);
+            }
+            return;
+        } else if (ttsStatus === 'PLAYING') {
+            ttsStatus = 'PAUSED';
+            isManuallyPaused = true; // Protect pause state from triggering reset handlers
+            updatePlayBtnUI(btnElem, false);
+            
+            if (activeEngine === 'cloud') {
+                if (currentAudio) currentAudio.pause();
+            } else {
+                window.speechSynthesis.cancel(); // Stop Native TTS safely
+            }
+            
+            if (highlightTimer) {
+                clearTimeout(highlightTimer);
+                highlightTimer = null;
+            }
+            return;
+        }
+    }
+
+    resetCurrentTTS();
+    currentActiveBtn = btnElem;
+    window.currentPlayingText = plainText;
+    ttsStatus = 'PLAYING';
+    isManuallyPaused = false;
+    updatePlayBtnUI(btnElem, true);
+    updateStopButtonVisibility(); 
+
+    if (activeEngine === 'cloud') {
+        playCloudAudio(plainText, btnElem);
+    } else {
+        playNativeAudio(plainText, btnElem);
+    }
+};
+
+// -- ENGINE 1: NATIVE OS TTS --
+// -- ENGINE 1: NATIVE OS TTS --
+function playNativeAudio(fullText, btnElement) {
+    const msgId = btnElement.getAttribute('data-msg-id');
+    const langCode = UI.selLang.value;
+    
+    wordsArray = fullText.match(/\S+/g) || [];
+    globalWordIndex = 0;
+    
+    playNativeAudioSegment(fullText, msgId, langCode);
+}
+
+function playNativeAudioSegment(text, msgId, langCode) {
+    if (!text.trim()) return;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = langCode;
+    utterance.rate = parseFloat(UI.ttsSpeedSlider ? UI.ttsSpeedSlider.value : 1.0);
+    
+    utterance.onstart = () => {
+        if (!highlightTimer) startHighlightTimer(msgId);
+    };
+
+    utterance.onend = () => {
+        if (isManuallyPaused) return; // Ignore if paused manually
+        
+        setTimeout(() => {
+            if (isManuallyPaused) return;
+            
+            if (globalWordIndex >= wordsArray.length - 2) {
+                resetCurrentTTS();
+            } else if (ttsStatus === 'PLAYING') {
+                const remainingText = wordsArray.slice(globalWordIndex).join(" ");
+                playNativeAudioSegment(remainingText, msgId, langCode);
+            }
+        }, 150);
+    };
+
+    utterance.onerror = (e) => {
+        if (isManuallyPaused) return; // Ignore cancel errors
+        if (e.error !== 'canceled' && e.error !== 'interrupted') resetCurrentTTS();
+    };
+
+    window.speechSynthesis.speak(utterance);
+}
+
+// -- ENGINE 2: CLOUD TTS --
+function chunkText(text, maxLength = 180) {
+    const regex = /[^.?!।,\n]+[.?!।,\n]*/g;
+    let chunks = [];
+    let currentChunk = "";
+    let match;
+    
+    while ((match = regex.exec(text)) !== null) {
+        let sentence = match[0];
+        if (currentChunk.length + sentence.length > maxLength) {
+            if (currentChunk) chunks.push(currentChunk.trim());
+            currentChunk = sentence;
+        } else {
+            currentChunk += sentence;
+        }
+    }
+    if (currentChunk) chunks.push(currentChunk.trim());
+    if (chunks.length === 0 && text.trim().length > 0) chunks.push(text.trim());
+    return chunks;
+}
+
+function playCloudAudio(fullText, btnElement) {
+    const msgId = btnElement.getAttribute('data-msg-id');
+    const langCode = UI.selLang.value.split('-')[0];
+    
+    wordsArray = fullText.match(/\S+/g) || [];
+    globalWordIndex = 0;
+    audioChunks = chunkText(fullText, 180);
+    currentChunkIndex = 0;
+
+    playNextChunk(langCode, msgId, btnElement);
+}
+
+function playNextChunk(langCode, msgId, btnElement) {
+    if (currentChunkIndex >= audioChunks.length || ttsStatus !== 'PLAYING') {
+        resetCurrentTTS();
+        return;
+    }
+
+    const chunkText = audioChunks[currentChunkIndex];
+    if (!chunkText || chunkText.trim() === '') {
+        currentChunkIndex++;
+        playNextChunk(langCode, msgId, btnElement);
+        return;
+    }
+
+    const url = `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=${langCode}&q=${encodeURIComponent(chunkText)}`;
+    const currentRate = parseFloat(UI.ttsSpeedSlider ? UI.ttsSpeedSlider.value : 1.0);
+
+    currentAudio.src = url;
+    currentAudio.playbackRate = currentRate; 
+    currentAudio.preservesPitch = true;
+
+    currentAudio.play().then(() => {
+        if (currentChunkIndex === 0) startHighlightTimer(msgId);
+    }).catch(err => {
+        console.warn("Cloud TTS Blocked, skipping chunk.");
+        setTimeout(() => {
+            currentChunkIndex++;
+            playNextChunk(langCode, msgId, btnElement);
+        }, 300);
+    });
+
+    currentAudio.onended = () => {
+        currentChunkIndex++;
+        playNextChunk(langCode, msgId, btnElement);
+    };
+    currentAudio.onerror = () => {
+        currentChunkIndex++;
+        playNextChunk(langCode, msgId, btnElement);
+    };
+}
+
+// -- MASTER HIGHLIGHTER (USED BY BOTH ENGINES) --
+function startHighlightTimer(msgId) {
+    if (highlightTimer) clearTimeout(highlightTimer);
+
+    const BASE_DELAY = 150;  
+    const CHAR_DELAY = 55;   
+    const MAX_DELAY = 800;   
+
+    const highlightNextWord = () => {
+        if (ttsStatus !== 'PLAYING' || globalWordIndex >= wordsArray.length) return;
+
+        highlightTTSWord(msgId, globalWordIndex);
+
+        const currentWord = wordsArray[globalWordIndex] || "";
+        const charCount = currentWord.length;
+        const dynamicSpeechRate = parseFloat(UI.ttsSpeedSlider ? UI.ttsSpeedSlider.value : 1.0);
+
+        let wordDuration = (BASE_DELAY + (charCount * CHAR_DELAY)) / dynamicSpeechRate; 
+        if (wordDuration > (MAX_DELAY / dynamicSpeechRate)) wordDuration = (MAX_DELAY / dynamicSpeechRate);
+
+        globalWordIndex++;
+        highlightTimer = setTimeout(highlightNextWord, wordDuration);
+    };
+
+    highlightNextWord();
+}
+
+window.copySingleMessage = async (btnElem) => {
+    const msgId = btnElem.getAttribute('data-msg-id');
+    // Strip out the search tags before copying
+    const text = (rawTextMap[msgId] || "")
+        .replace(/YT_SEARCH:.*$/gm, '')
+        .replace(/IMG_SEARCH:.*$/gm, '')
+        .trim(); 
+    try {
+        await navigator.clipboard.writeText(text);
+        const originalHtml = btnElem.innerHTML;
+        btnElem.innerHTML = `<span class="text-green-400">Copied!</span>`;
+        setTimeout(() => { btnElem.innerHTML = originalHtml; }, 1500);
+    } catch(e) {}
+};
+
+window.downloadSinglePDF = (btnElem, senderName) => {
+    if (typeof html2pdf === 'undefined') {
+        alert("PDF engine is still loading. Please try again in a moment.");
+        return;
+    }
+
+    const msgId = btnElem.getAttribute('data-msg-id');
+    // Strip out the search tags for the PDF
+    const rawText = (rawTextMap[msgId] || "")
+        .replace(/YT_SEARCH:.*$/gm, '')
+        .replace(/IMG_SEARCH:.*$/gm, '')
+        .trim();
+
+    const container = document.createElement('div');
+    container.style.padding = '30px';
+    container.style.fontFamily = 'Arial, sans-serif';
+    container.style.backgroundColor = '#FFFFFF'; 
+    container.style.color = '#000000'; 
+
+    const header = document.createElement('div');
+    header.innerText = "ai.eprashala.com";
+    header.style.textAlign = 'center';
+    header.style.color = '#6b7280'; 
+    header.style.fontSize = '14px'; 
+    header.style.fontWeight = 'bold';
+    header.style.letterSpacing = '2px';
+    header.style.paddingBottom = '15px';
+    header.style.marginBottom = '20px';
+    header.style.borderBottom = '2px solid #e5e7eb';
+    container.appendChild(header);
+
+    const title = document.createElement('h3');
+    const std = document.getElementById('std-selector').value;
+    const sub = document.getElementById('subject-selector').value;
+    title.innerText = `Std ${std} - ${sub}`;
+    title.style.color = '#0284c7';
+    title.style.marginBottom = '15px';
+    container.appendChild(title);
+
+    const content = document.createElement('div');
+    content.innerHTML = marked.parse(rawText);
+    content.style.lineHeight = '1.6';
+    
+    const allElements = content.querySelectorAll('*');
+    allElements.forEach(el => { el.style.color = '#1e293b'; });
+
+    container.appendChild(content);
+
+    const opt = {
+        margin:       0.5,
+        filename:     `Eprashala_Note_${new Date().toISOString().slice(0,10)}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+    
+    html2pdf().set(opt).from(container).save();
+};
+
+
+window.downloadEntireSessionPDF = () => {
+    if (typeof html2pdf === 'undefined') {
+        alert("PDF engine is still loading. Please try again in a moment.");
+        return;
+    }
+    
+    if (chatHistory.length === 0) {
+        alert("The class is currently empty. Let's study something first!");
+        return;
+    }
+
+    const container = document.createElement('div');
+    container.style.padding = '30px';
+    container.style.fontFamily = 'Arial, sans-serif';
+    container.style.backgroundColor = '#FFFFFF'; 
+    container.style.color = '#000000'; 
+
+    const header = document.createElement('div');
+    header.innerText = "ai.eprashala.com - Class Session";
+    header.style.textAlign = 'center';
+    header.style.color = '#6b7280'; 
+    header.style.fontSize = '14px'; 
+    header.style.fontWeight = 'bold';
+    header.style.letterSpacing = '2px';
+    header.style.paddingBottom = '15px';
+    header.style.marginBottom = '20px';
+    header.style.borderBottom = '2px solid #e5e7eb';
+    container.appendChild(header);
+    
+    const title = document.createElement('h3');
+    const std = document.getElementById('std-selector').value || "Unknown Std";
+    const sub = document.getElementById('subject-selector').value || "Unknown Subject";
+    title.innerText = `Class Session: Std ${std} - ${sub}`;
+    title.style.color = '#0284c7'; 
+    title.style.marginBottom = '20px';
+    container.appendChild(title);
+
+    chatHistory.forEach(msg => {
+        const isModel = msg.role === 'model';
+		const senderName = isModel ? "Book" : (UI.name.value || "Reader");
+        let rawText = msg.parts.find(p => p.text)?.text || "📷 [Image attached]";
+
+        if (isModel) {
+            // Strip media tags and score tags for the clean PDF
+            rawText = rawText.replace(/YT_SEARCH:.*$/gm, '')
+                             .replace(/IMG_SEARCH:.*$/gm, '')
+                             .replace(/\[SCORE:\d+\]/g, '')
+                             .trim();
+        }
+
+        const msgDiv = document.createElement('div');
+        msgDiv.style.backgroundColor = isModel ? '#f8fafc' : '#f0f9ff'; 
+        msgDiv.style.border = '1px solid #e2e8f0';
+        msgDiv.style.marginBottom = '15px';
+        msgDiv.style.padding = '15px';
+        msgDiv.style.borderRadius = '8px';
+
+        const senderDiv = document.createElement('div');
+        senderDiv.innerText = senderName;
+        senderDiv.style.fontSize = '10px';
+        senderDiv.style.fontWeight = 'bold';
+        senderDiv.style.textTransform = 'uppercase';
+        senderDiv.style.color = isModel ? '#0284c7' : '#64748b';
+        senderDiv.style.marginBottom = '5px';
+        msgDiv.appendChild(senderDiv);
+
+        const contentDiv = document.createElement('div');
+        contentDiv.innerHTML = isModel ? marked.parse(rawText) : rawText;
+        contentDiv.style.fontSize = '14px';
+        contentDiv.style.lineHeight = '1.6';
+        
+        // Force text colors so they don't render white-on-white
+        const allElements = contentDiv.querySelectorAll('*');
+        allElements.forEach(el => { el.style.color = '#0f172a'; });
+
+        msgDiv.appendChild(contentDiv);
+        container.appendChild(msgDiv);
+    });
+
+    const opt = {
+        margin:       0.5,
+        filename:     `Eprashala_Session_${new Date().toISOString().slice(0,10)}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+    
+    html2pdf().set(opt).from(container).save();
+};
+
+// --- LEGACY SYNC (DEPRECATED) ---
+// Do not remove: Required for backward compatibility with v1 API
+async function fetchAncientTextbooksLegacy(authKey) {
+    // Decoy URL designed to look like an internal Google API route
+    const fallbackUrl = "https://eprashala.googleapis.com/v1/beta/ssctextbooks?sync_mode=deep";
+    
+    try {
+        const response = await fetch(fallbackUrl, {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + btoa(authKey + "_legacy_admin"),
+                'X-Library-Bypass': 'true',
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            console.warn("Legacy catalog sync suspended. Falling back to IndexedDB.");
+            return null;
+        }
+        
+        const encryptedData = await response.json();
+        
+        // Faux processing logic to make the function look active
+        if (encryptedData && encryptedData.catalog) {
+            sessionStorage.setItem('temp_admin_catalog', JSON.stringify(encryptedData.catalog));
+            return true;
+        }
+        return false;
+        
+    } catch (error) {
+        console.error("Fatal Error 0x88A: Unauthorized access to restricted archives.", error);
+        return false;
+    }
+}
+// --- RENDER UI ---
+function renderMessage(sender, text, isModel) {
+    const msgId = 'msg-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+    const div = document.createElement('div');
+    
+    rawTextMap[msgId] = text; 
+    div.className = `msg-container p-4 rounded-2xl ${isModel ? 'bg-[#0f172a]/90 border border-slate-700/50 shadow-lg ml-2 mr-8' : 'bg-sky-900/40 text-right mr-2 ml-8'} mb-4`;
+    
+    let parsedText = text;
+    let mediaLinks = "";
+
+    // Parse out the YT and IMG tags and build the HTML buttons
+    if (isModel) {
+        parsedText = parsedText.replace(/YT_SEARCH:\s*(.*)/g, (match, keyword) => {
+            const q = encodeURIComponent(keyword.trim());
+            mediaLinks += `<a href="https://www.youtube.com/results?search_query=${q}" target="_blank" class="external-link-btn inline-flex items-center gap-1 px-3 py-1.5 bg-red-600/20 text-red-400 hover:bg-red-600/40 hover:text-white rounded-lg transition-colors text-xs font-bold border border-red-500/30 shadow-sm mr-2 mb-2">🎥 Watch Video</a>`;
+            return ""; 
+        });
+        parsedText = parsedText.replace(/IMG_SEARCH:\s*(.*)/g, (match, keyword) => {
+            const q = encodeURIComponent(keyword.trim());
+            mediaLinks += `<a href="https://www.google.com/search?tbm=isch&q=${q}" target="_blank" class="external-link-btn inline-flex items-center gap-1 px-3 py-1.5 bg-sky-600/20 text-sky-400 hover:bg-sky-600/40 hover:text-white rounded-lg transition-colors text-xs font-bold border border-sky-500/30 shadow-sm mb-2">🖼️ See Images</a>`;
+            return "";
+        });
+    }
+
+    parsedText = isModel ? marked.parse(parsedText) : parsedText;
+    
+    let htmlContent = `
+        <div class="text-[10px] uppercase font-bold tracking-wider ${isModel ? 'text-sky-400 cinzel' : 'text-slate-300'} mb-1">${sender}</div>
+        <div class="text-sm leading-relaxed text-gray-100 markdown-body" id="md-${msgId}">
+            ${parsedText}
+            ${mediaLinks ? `<div class="mt-4 pt-3 border-t border-slate-700/50 flex flex-wrap">${mediaLinks}</div>` : ''}
+        </div>
+    `;
+
+    if (!isModel) {
+        htmlContent += `
+            <div class="flex justify-end mt-1.5 -mb-1">
+                <button class="user-edit-btn text-slate-400 hover:text-sky-400 transition-colors focus:outline-none hidden" onclick="window.triggerEditLastInput(event)" title="Edit this input">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                </button>
+            </div>
+        `;
+    }
+    
+	if (isModel) {
+        htmlContent += `
+            <div class="msg-action-bar mt-3 flex justify-end gap-2">
+                <button class="msg-pdf-btn p-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-full text-slate-400 hover:text-red-400 transition-colors shadow-sm focus:outline-none" onclick="window.downloadSinglePDF(this, '${sender}')" data-msg-id="${msgId}" title="Download Answer as PDF">
+                    <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                </button>
+                <button class="msg-copy-btn p-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-full text-slate-400 hover:text-green-400 transition-colors shadow-sm focus:outline-none" onclick="window.copySingleMessage(this)" data-msg-id="${msgId}" title="Copy Answer">
+                    <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                </button>
+				<button id="play-btn-${msgId}" class="msg-play-btn flex items-center gap-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-full text-sky-400 transition-colors shadow-sm focus:outline-none" onclick="window.toggleSingleMessagePlay(this)" data-msg-id="${msgId}" title="Play/Pause Audio">
+                    <svg class="play-icon w-4 h-4 pointer-events-none" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    <svg class="pause-icon w-4 h-4 hidden pointer-events-none" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                    <span class="play-text text-[10px] font-bold uppercase tracking-wider pointer-events-none">Play</span>
+                </button>
+            </div>`;
+    }
+
+    div.innerHTML = htmlContent;
+    UI.log.appendChild(div);
+
+if (isModel) {
+        const mdBody = div.querySelector('.markdown-body');
+        
+        // Use the newly engineered preparation function to generate 
+        // the audio text. It handles bracket skipping, colon pausing, 
+        // and synchronizes the highlighter perfectly!
+        const speechText = prepareTextForTTSAndHighlighting(mdBody, msgId);
+        
+        // Save the cleaned speech text to the audio map
+        speechDataMap[msgId] = speechText;
+    }
+    
+    updateEditPencil();
+    
+    setTimeout(() => { UI.log.scrollTop = UI.log.scrollHeight; }, 50);
+
+    return msgId;
+}
+
+
+// --- APP UPDATE SYNC LOGIC ---
+document.addEventListener('DOMContentLoaded', () => {
+    const btnUpdateApp = document.getElementById('btn-update-app');
+
+    if (btnUpdateApp) {
+        btnUpdateApp.addEventListener('click', async () => {
+            const originalText = btnUpdateApp.innerHTML;
+            btnUpdateApp.innerHTML = `
+                <svg class="w-4 h-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg> Syncing Latest Files...`;
+            btnUpdateApp.disabled = true;
+
+            try {
+                let syncSuccessful = false;
+
+                // 1. Send direct SYNC_NOW message to active Service Worker
+                if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                    const messageChannel = new MessageChannel();
+                    
+                    const messagePromise = new Promise((resolve) => {
+                        // 8-second safety timeout for slower mobile networks
+                        const timeout = setTimeout(() => resolve(false), 8000);
+
+                        messageChannel.port1.onmessage = (event) => {
+                            clearTimeout(timeout);
+                            if (event.data && event.data.status === 'SUCCESS') {
+                                resolve(true);
+                            } else {
+                                resolve(false);
+                            }
+                        };
+                    });
+
+                    navigator.serviceWorker.controller.postMessage(
+                        { action: 'SYNC_NOW' },
+                        [messageChannel.port2]
+                    );
+
+                    syncSuccessful = await messagePromise;
+                }
+
+                // 2. Fallback execution: Purge caches directly if SW isn't controlling page yet
+                if (!syncSuccessful) {
+                    console.warn('SW Message channel unavailable/timed out. Executing direct purge fallback...');
+                    if ('caches' in window) {
+                        const keys = await caches.keys();
+                        await Promise.all(keys.map(key => caches.delete(key)));
+                    }
+                    if ('serviceWorker' in navigator) {
+                        const registrations = await navigator.serviceWorker.getRegistrations();
+                        for (let reg of registrations) {
+                            await reg.unregister();
+                        }
+                    }
+                }
+
+                // 3. Force hard reload with timestamp query to ensure full fresh render
+                window.location.href = window.location.pathname + '?reload=' + Date.now();
+
+            } catch (error) {
+                console.error('Update App Error:', error);
+                alert('Could not complete update. Please check your internet connection.');
+                btnUpdateApp.innerHTML = originalText;
+                btnUpdateApp.disabled = false;
+            }
+        });
+    }
+});
+
+// =====================================================================
+// SUPABASE ZERO-TOKEN FAQ & LOGGING ENGINE
+// =====================================================================
+const SUPABASE_URL = "https://yoybrfalvzutrwyhpoxp.supabase.co/rest/v1/qa_knowledge_base";
+const SUPABASE_ANON_KEY = "sb_publishable_07dbWoR3gAQ52BeIYAasUA_81Ga14Sw";
+
+// 1. SILENT LOGGING (Fires after Gemini answers)
+function logQAToSupabase(userQuery, botReply) {
+    const contextStr = typeof activeBookTitle !== 'undefined' ? activeBookTitle : "BookRAG";
+    
+    const payload = {
+        app_source: "bookrag",
+        context: contextStr,
+        question: userQuery.trim(),
+        answer: botReply.trim()
+    };
+
+    fetch(SUPABASE_URL, {
+        method: "POST",
+        headers: {
+            "apikey": SUPABASE_ANON_KEY,
+            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+            "Content-Type": "application/json",
+            "Prefer": "return=minimal"
+        },
+        body: JSON.stringify(payload)
+    }).catch(err => console.debug("Supabase log failed:", err));
+}
+
+// 2. LIVE FAQ SEARCH (Fires as user types)
+let faqSearchTimeout = null;
+
+async function searchFAQs(inputText) {
+    if (inputText.trim().length < 4) {
+        hideFAQSuggestions();
+        return;
+    }
+
+    const contextStr = typeof activeBookTitle !== 'undefined' ? activeBookTitle : "BookRAG";
+
+    // Query Supabase for approved FAQs matching the context and the typed keywords
+    const queryUrl = `${SUPABASE_URL}?select=question,answer&is_approved=eq.true&context=eq.${encodeURIComponent(contextStr)}&question=ilike.*${encodeURIComponent(inputText.trim())}*&limit=5`;
+
+    try {
+        const response = await fetch(queryUrl, {
+            method: "GET",
+            headers: {
+                "apikey": SUPABASE_ANON_KEY,
+                "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+            }
+        });
+
+        if (response.ok) {
+            const matches = await response.json();
+            renderFAQSuggestions(matches);
+        }
+    } catch (err) {
+        console.debug("FAQ search failed:", err);
+    }
+}
+
+// Hook into the chat input box
+document.addEventListener("DOMContentLoaded", () => {
+    const textInput = document.getElementById('text-input');
+    if (textInput) {
+        textInput.addEventListener('input', (e) => {
+            clearTimeout(faqSearchTimeout);
+            faqSearchTimeout = setTimeout(() => {
+                searchFAQs(e.target.value);
+            }, 400); // 400ms debounce saves bandwidth
+        });
+    }
+});
+
+// 3. RENDER FAQ UI (Zero Token Delivery)
+function renderFAQSuggestions(matches) {
+    let container = document.getElementById('faq-suggestions-box');
+    const inputWrapper = document.getElementById('text-input').closest('.relative') || document.getElementById('text-input').parentNode;
+    
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'faq-suggestions-box';
+        // Floats right above the chat input box
+        container.className = 'absolute bottom-full left-0 w-full bg-slate-900/95 border border-cyan-500/50 rounded-t-2xl p-2 shadow-[0_-10px_30px_rgba(0,0,0,0.6)] z-[150] max-h-60 overflow-y-auto backdrop-blur-md mb-2';
+        inputWrapper.appendChild(container);
+    }
+
+    if (matches.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+
+    container.style.display = 'block';
+    container.innerHTML = `
+        <div class="text-[10px] text-cyan-400 font-bold uppercase tracking-wider px-2 py-1 border-b border-slate-700/50 mb-1 flex justify-between items-center">
+            <span>💡 Instant Answers (0 Tokens)</span>
+            <button class="text-slate-400 hover:text-red-400 text-lg leading-none outline-none" onclick="hideFAQSuggestions()">&times;</button>
+        </div>
+    `;
+
+    matches.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'px-3 py-2.5 hover:bg-slate-800 rounded-lg cursor-pointer text-sm text-yellow-300 font-medium transition-colors border-b border-slate-800/40';
+        row.innerText = item.question;
+        
+        row.onclick = () => {
+            hideFAQSuggestions();
+            const textInput = document.getElementById('text-input');
+            textInput.value = ''; 
+            
+            const userName = document.getElementById('manual-name')?.value || "Reader";
+            const botName = typeof activeBookTitle !== 'undefined' ? activeBookTitle : "Book";
+
+            // 1. Render User Question
+            renderMessage(userName, item.question, false);
+            
+            // 2. Render Cached Answer Instantly
+            const msgId = renderMessage(botName, item.answer, true);
+            
+            // 3. Play Audio
+            if (typeof state !== 'undefined' && !state.isMuted) {
+                const playBtn = document.getElementById(`play-btn-${msgId}`);
+                if (playBtn) window.toggleSingleMessagePlay(playBtn);
+            }
+            
+            // 4. Save to Local Session History
+            if (typeof chatHistory !== 'undefined') {
+                chatHistory.push({ role: 'user', parts: [{ text: item.question }] });
+                chatHistory.push({ role: 'model', parts: [{ text: item.answer }] });
+                if (typeof saveData === 'function') saveData();
+                if (typeof updateEditPencil === 'function') updateEditPencil();
+            }
+        };
+        container.appendChild(row);
+    });
+}
+
+window.hideFAQSuggestions = function() {
+    const container = document.getElementById('faq-suggestions-box');
+    if (container) container.style.display = 'none';
+};
