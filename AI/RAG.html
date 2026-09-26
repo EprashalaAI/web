@@ -441,7 +441,9 @@
 </style>
 </head>
 <body>
-
+<a href="bookrag.html" title="Open AI Teacher" style="position: absolute; top: 22px; right: clamp(16px, 4vw, 40px); font-size: 32px; text-decoration: none; z-index: 100; transition: transform 0.2s ease;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">
+  📚
+</a>
 <header class="masthead">
   <div class="spine"></div>
   <div>
@@ -476,11 +478,17 @@
     <div class="panel">
       <div class="panel-head"><h2>02 — METADATA & SETTINGS</h2></div>
       <div class="panel-body">
-        <div class="field">
+        <div class="field" style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px dashed var(--line);">
+          <label for="ragApiKey" style="color:var(--accent-dark);">Gemini API Key (Independent)</label>
+          <input type="password" id="ragApiKey" placeholder="Paste standalone API key here to enable the AI Optimizer...">
+          <div class="sub">This key is saved exclusively for this RAG utility and will not sync with your main LMS student database.</div>
+        </div>
+		<div class="field">
           <label for="bookTitle">Book title</label>
           <input type="text" id="bookTitle" placeholder="e.g. War and Peace" value="">
         </div>
         <div class="row2">
+		
           <div class="field">
             <label for="bookId">Book ID (slug)</label>
             <input type="text" id="bookId" placeholder="auto from title">
@@ -524,6 +532,10 @@
             <div class="sub">Downloads language packs on first use. "Force OCR" below ignores DRM locks.</div>
           </div>
           <div class="field">
+            <label class="checkfield"><input type="checkbox" id="extractImages" checked> Extract descriptions from images & diagrams</label>
+            <div class="sub">Uses Gemini Vision to read charts/pictures. Takes extra time per page. Requires API key.</div>
+          </div>
+		  <div class="field">
             <label class="checkfield"><input type="checkbox" id="stripHeaders" checked> Strip repeated headers/footers</label>
           </div>
           <div class="field">
@@ -550,6 +562,34 @@
 
   <!-- RIGHT: Output -->
   <div class="panel" id="outputPanel">
+  <!-- NEW: Magic Wand Toolbar -->
+    <div style="padding:10px 16px; border-bottom:1px solid var(--line); background: rgba(190,78,30,0.05); display: flex; justify-content: space-between; align-items: center;">
+      <span style="font-size:12px; font-family:'IBM Plex Mono',monospace; color:var(--accent-dark); font-weight: 600;">✨ AI Chunk Optimizer</span>
+      <button id="magicWandBtn" class="ghost" style="border-color:var(--accent); color:var(--accent-dark); font-weight: bold;" disabled>🪄 Optimize Chunks</button>
+    </div>
+
+    <!-- NEW: Magic Input Modal (Hidden by default) -->
+    <div id="magicModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center; backdrop-filter: blur(4px);">
+      <div style="background:var(--paper); padding:24px; max-width:550px; width:90%; border:1px solid var(--line); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <h3 style="margin-top:0; font-family:'IBM Plex Mono',monospace; color:var(--ink);">🪄 Magic AI Optimizer</h3>
+        <p style="font-size:12.5px; color:var(--ink-soft); margin-bottom: 20px;">Provide instructions to restructure, simplify, or fix the extracted chunks. The AI will process the entire document and return clean, RAG-ready JSON.</p>
+        
+        <div class="field">
+          <label>API Key (Optional)</label>
+          <input type="password" id="magicApiKey" placeholder="Paste Gemini Key here to bypass proxy limits for large books">
+        </div>
+        <div class="field">
+          <label>Optimization Instructions</label>
+          <textarea id="magicPrompt" style="min-height: 80px;" placeholder="e.g. Optimize these chunks into standalone, easily understandable flashcards for a 6th standard textbook. Fix any broken sentences."></textarea>
+        </div>
+        
+        <div style="display:flex; gap:10px; margin-top:20px;">
+          <button class="ghost" id="cancelMagicBtn" style="flex: 1;">Cancel</button>
+          <button class="primary" id="runMagicBtn" style="flex: 2; margin-top: 0;">✨ Run Optimization</button>
+        </div>
+        <div id="magicStatus" style="margin-top:12px; font-size:12px; font-family:'IBM Plex Mono',monospace; color:var(--accent-dark); display:none; text-align: center; font-weight: bold;">Processing chunks... This may take a minute.</div>
+      </div>
+    </div>
     <div class="output-tabs">
       <button class="active" data-tab="cards">index cards</button>
       <button data-tab="json">json</button>
@@ -619,6 +659,7 @@
     chunkSize: $('chunkSize'),
     overlapSentences: $('overlapSentences'),
     ocrLang: $('ocrLang'),
+	extractImages: $('extractImages'),
     stripHeaders: $('stripHeaders'),
     forceOcr: $('forceOcr'),
     processBtn: $('processBtn'),
@@ -639,7 +680,26 @@
     jsonPre: $('jsonPre'),
     copyBtn: $('copyBtn'),
     downloadBtn: $('downloadBtn'),
+	ragApiKey: $('ragApiKey'),
+	magicWandBtn: $('magicWandBtn'),
+      magicModal: $('magicModal'),
+      magicApiKey: $('magicApiKey'),
+      magicPrompt: $('magicPrompt'),
+      cancelMagicBtn: $('cancelMagicBtn'),
+      runMagicBtn: $('runMagicBtn'),
+      magicStatus: $('magicStatus'),
   };
+  
+// Independent Storage: Load existing RAG key
+  const savedRagKey = localStorage.getItem('rag_standalone_key');
+  if (savedRagKey) {
+      els.ragApiKey.value = savedRagKey;
+  }
+
+  // Independent Storage: Save key on change
+  els.ragApiKey.addEventListener('change', (e) => {
+      localStorage.setItem('rag_standalone_key', e.target.value.trim());
+  });
 
   let files = [];       // { id, file, name, type, status, error }
   let allChunks = [];   // final chunk objects
@@ -853,20 +913,25 @@
     });
   }
 
-  // ---------------------------------------------------------------
-  // Extraction: PDF (text layer + OCR fallback per page)
+// ---------------------------------------------------------------
+  // Extraction: PDF (text layer + OCR + Logical Page Tracking)
   // ---------------------------------------------------------------
   async function extractPdf(file, opts, onPageProgress){
     const buf = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
     const pages = [];
     let ocrWorker = null;
+    const apiKey = els.ragApiKey.value.trim();
+    
+    let currentLogicalPage = 0;
+    let offsetLocked = false;
 
     for (let i = 1; i <= pdf.numPages; i++){
       onPageProgress(i, pdf.numPages);
       const page = await pdf.getPage(i);
       let pageText = '';
 
+      // 1. Text Layer Extraction
       if (!opts.forceOcr){
         const content = await page.getTextContent();
         let buf2 = '';
@@ -877,24 +942,95 @@
         pageText = buf2.trim();
       }
 
+      const ops = await page.getOperatorList();
+      const hasImages = ops.fnArray.includes(pdfjsLib.OPS.paintImageXObject);
       const looksScanned = opts.forceOcr || pageText.replace(/\s+/g,'').length < 20;
 
+      // 2. OCR Fallback
       if (looksScanned){
         log('Page ' + i + '/' + pdf.numPages + ' looks scanned — running OCR…');
-        if (!ocrWorker){
-          ocrWorker = await Tesseract.createWorker(opts.ocrLang || 'eng');
-        }
+        if (!ocrWorker) ocrWorker = await Tesseract.createWorker(opts.ocrLang || 'eng');
         const viewport = page.getViewport({ scale: 3 });
         const canvas = document.createElement('canvas');
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        const ctx = canvas.getContext('2d');
-        await page.render({ canvasContext: ctx, viewport }).promise;
+        canvas.width = viewport.width; canvas.height = viewport.height;
+        await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
         const { data } = await ocrWorker.recognize(canvas);
         pageText = data.text.trim();
       }
 
-      pages.push({ pageNum: i, text: pageText });
+      // 3. Gemini Vision
+      if (opts.extractImages && hasImages && apiKey && apiKey.length > 10 && !looksScanned) {
+          const viewport = page.getViewport({ scale: 2 }); 
+          const canvas = document.createElement('canvas');
+          canvas.width = viewport.width; canvas.height = viewport.height;
+          await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+          const base64Img = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+          try {
+              const payload = {
+                  contents: [{ role: "user", parts: [
+                      { text: "Describe ONLY the diagrams, charts, or tables in detail. Do not transcribe standard paragraph text." },
+                      { inlineData: { mimeType: "image/jpeg", data: base64Img } }
+                  ]}],
+                  generationConfig: { maxOutputTokens: 400 }
+              };
+              const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+              const data = await res.json();
+              if (data.candidates && data.candidates[0].content.parts[0].text) {
+                  pageText += `\n\n[Diagram Description: ${data.candidates[0].content.parts[0].text.trim()}]\n`;
+              }
+          } catch(err) { log('Vision AI failed on page ' + i, 'err'); }
+      }
+
+      // 4. NEW: Ultra-Resilient Logical Page Number Detection
+      let detectedPageNum = null;
+      const lines = pageText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      
+      // Target the top 4 and bottom 4 lines where page numbers live
+      const edgeLines = [...lines.slice(0, 4), ...lines.slice(-4)];
+
+      for (let line of edgeLines) {
+          // Crush all spaces to fix pdf.js fragmenting (e.g. "9 4" becomes "94", "P a g e" becomes "page")
+          let cleanLine = line.replace(/\s+/g, '').toLowerCase(); 
+          
+          // Strip out common pagination text and border characters
+          cleanLine = cleanLine.replace(/page|p\.|chapter|unit|\[\vert{}\]|-|_|\||\//g, '');
+
+          // If the remaining string is strictly a number
+          if (/^[1-9][0-9]{0,3}$/.test(cleanLine)) {
+              let num = parseInt(cleanLine, 10);
+              
+              // Sanity check: Ensure we didn't lock onto a copyright year (e.g., 2026)
+              if (num < pdf.numPages + 100) {
+                  detectedPageNum = num;
+                  break;
+              }
+          }
+      }
+
+      if (detectedPageNum !== null) {
+          if (!offsetLocked) {
+              currentLogicalPage = detectedPageNum; // Lock in the first valid number
+              offsetLocked = true;
+          } else {
+              // Allow sequential reading or small skips (like skipping a blank page)
+              if (Math.abs(detectedPageNum - (currentLogicalPage + 1)) <= 5) {
+                  currentLogicalPage = detectedPageNum;
+              } 
+              // Allow a sequence reset if the book officially starts Chapter 1 after the preface
+              else if (detectedPageNum <= 3) {
+                  currentLogicalPage = detectedPageNum;
+              }
+              else {
+                  currentLogicalPage++; // Fallback to safe sequential counting if the number jumped wildly
+              }
+          }
+      } else {
+          // If absolutely no number is found on this page, just increment from the last known page
+          if (i === 1) currentLogicalPage = 1;
+          else currentLogicalPage++;
+      }
+
+      pages.push({ pageNum: currentLogicalPage, text: pageText });
     }
 
     if (ocrWorker) await ocrWorker.terminate();
@@ -932,6 +1068,7 @@
     const opts = {
       ocrLang: els.ocrLang.value.trim() || 'eng',
       forceOcr: els.forceOcr.checked,
+	  extractImages: els.extractImages.checked
     };
     const stripHeaders = els.stripHeaders.checked;
 
@@ -1027,6 +1164,7 @@
     els.searchRow.style.display = hasChunks ? 'flex' : 'none';
     els.copyBtn.disabled = !hasChunks;
     els.downloadBtn.disabled = !hasChunks;
+	els.magicWandBtn.disabled = !hasChunks;
 
     if (!hasChunks){
       els.cardsView.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><span class="glyph">🗂️</span><p>No chunks yet. Add a book or paste text, then hit Process.</p></div>';
@@ -1115,6 +1253,88 @@
  els.processBtn.addEventListener('click', runPipeline);
 
   renderFileList();
+  // ---------------------------------------------------------------
+  // MAGIC AI OPTIMIZER LOGIC
+  // ---------------------------------------------------------------
+  els.magicWandBtn.addEventListener('click', () => {
+    els.magicModal.style.display = 'flex';
+  });
+
+  els.cancelMagicBtn.addEventListener('click', () => {
+    els.magicModal.style.display = 'none';
+  });
+
+  els.runMagicBtn.addEventListener('click', async () => {
+    const instructions = els.magicPrompt.value.trim();
+    if (!instructions) return alert("Please enter optimization instructions.");
+    
+    els.runMagicBtn.disabled = true;
+    els.cancelMagicBtn.disabled = true;
+    els.magicStatus.style.display = 'block';
+    els.magicStatus.textContent = `Processing ${allChunks.length} chunks... Please wait.`;
+
+    try {
+        // System prompt ensuring strict schema adherence
+        const systemPrompt = `You are a data optimization AI. You will receive a JSON array of text chunks extracted from a textbook.
+        Your task is to optimize the 'text' field of each chunk based on the user's instructions: "${instructions}".
+        
+        CRITICAL RULES:
+        1. Return ONLY a valid JSON array matching the exact input structure.
+        2. Do NOT change the following keys: book_id, book_title, source_file, language, chunk_id, chunk_index, page_start, page_end.
+        3. Only modify the "text" field to fix broken sentences, combine fragmented ideas within the chunk, and ensure each chunk is coherent, complete, and understandable.
+        4. Recalculate and update the "char_count" key to reflect the new length of the optimized text.`;
+
+        const payload = {
+            contents: [{ role: "user", parts: [{ text: JSON.stringify(allChunks) }] }],
+            systemInstruction: { parts: [{ text: systemPrompt }] },
+            // CRITICAL: Forces Gemini to output pure JSON without markdown wrappers
+            generationConfig: { responseMimeType: "application/json" }
+        };
+
+        const apiKey = els.magicApiKey.value.trim();
+        let fetchUrl = "https://eprashala.pythonanywhere.com/api/chat";
+        let fetchBody = payload;
+
+		if (apiKey && apiKey.length > 10) {
+            // Bypass proxy and use direct Google endpoint if a key is provided
+            fetchUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
+        } else {
+            fetchBody.model = "gemini-flash-latest";
+        }
+
+        const response = await fetch(fetchUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(fetchBody)
+        });
+
+        if (!response.ok) throw new Error("API Network Error: " + response.status);
+        
+        const data = await response.json();
+        const aiOutput = data.candidates[0].content.parts[0].text;
+        
+        // Parse the newly optimized chunks
+        const optimizedChunks = JSON.parse(aiOutput.trim());
+        
+        if (Array.isArray(optimizedChunks) && optimizedChunks.length > 0) {
+            allChunks = optimizedChunks; // Overwrite the local database state
+            renderOutput(); // Refresh the UI cards and JSON view
+            els.magicModal.style.display = 'none';
+            log("✨ Magic optimization successful! Check your JSON tab.", "ok");
+        } else {
+            throw new Error("Invalid array format returned by AI.");
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Optimization failed. The book might be too large for a single request. Try processing fewer pages or use a direct API key.\n\nError: " + err.message);
+        log("Optimization failed: " + err.message, "err");
+    } finally {
+        els.runMagicBtn.disabled = false;
+        els.cancelMagicBtn.disabled = false;
+        els.magicStatus.style.display = 'none';
+    }
+  });
+  
 // ---------------------------------------------------------------
   // DATABASE BRIDGE: SAVE TO LOCAL LIBRARY
   // ---------------------------------------------------------------
@@ -1160,7 +1380,7 @@
         
         tx.oncomplete = () => {
           // Send the unique ID in the URL to Dhwani
-          window.location.href = 'teacher.html?mode=book&id=' + encodeURIComponent(bookId);
+          window.location.href = 'bookrag.html?mode=book&id=' + encodeURIComponent(bookId);
         };
       };
     });
